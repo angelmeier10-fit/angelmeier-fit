@@ -359,7 +359,8 @@ textarea{resize:vertical;min-height:52px}
     </div>
   </div>
   <div id="cv-content"></div>
-  <div id="contact-float" style="display:none;position:fixed;bottom:20px;right:20px;z-index:200">
+  <div id="contact-float" style="display:none;position:fixed;bottom:20px;right:20px;z-index:200;display:none;flex-direction:column;align-items:flex-end;gap:10px">
+    <button onclick="toggleTheme()" id="theme-btn-client" style="background:var(--s1);border:1px solid var(--bd);color:var(--tx);border-radius:50px;padding:10px 16px;font-size:.9rem;font-weight:700;font-family:inherit;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.3)">🌙 Tema</button>
     <button onclick="openContact()" style="background:#25D366;color:#fff;border:none;border-radius:50px;padding:12px 20px;font-size:.9rem;font-weight:700;font-family:inherit;cursor:pointer;display:flex;align-items:center;gap:8px;box-shadow:0 4px 20px rgba(37,211,102,.4)">
       💬 Contactar a Angel
     </button>
@@ -568,15 +569,19 @@ textarea{resize:vertical;min-height:52px}
 
 <script>
 (function(){
-  const saved=localStorage.getItem('theme');
-  if(saved==='day') document.body.classList.add('day');
+  if(localStorage.getItem('theme')==='day') document.body.classList.add('day');
   document.getElementById('theme-btn').textContent=document.body.classList.contains('day')?'☀️':'🌙';
 })();
+function updateThemeIcons(){
+  const isDay=document.body.classList.contains('day');
+  document.getElementById('theme-btn').textContent=isDay?'☀️':'🌙';
+  const cb=document.getElementById('theme-btn-client');
+  if(cb) cb.textContent=isDay?'☀️ Tema':'🌙 Tema';
+}
 function toggleTheme(){
   document.body.classList.toggle('day');
-  const isDay=document.body.classList.contains('day');
-  localStorage.setItem('theme',isDay?'day':'night');
-  document.getElementById('theme-btn').textContent=isDay?'☀️':'🌙';
+  localStorage.setItem('theme',document.body.classList.contains('day')?'day':'night');
+  updateThemeIcons();
 }
 </script>
 
@@ -743,7 +748,8 @@ async function init(){
       document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
       document.getElementById('view-client').classList.add('active');
       document.getElementById('client-selector').style.display='none';
-      document.getElementById('contact-float').style.display='block';
+      document.getElementById('contact-float').style.display='flex';
+      updateThemeIcons();
       hideLoading();
       renderCV(urlId);
       return;
@@ -2215,7 +2221,8 @@ async function checkPlanURL(){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.getElementById('view-client').classList.add('active');
   document.getElementById('client-selector').style.display='none';
-  document.getElementById('contact-float').style.display='block';
+  document.getElementById('contact-float').style.display='flex';
+  updateThemeIcons();
 
   if(!memberId){
     // Show public plan page
