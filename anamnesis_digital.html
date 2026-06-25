@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Anamnesis — Angel Meier</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+:root{--bg:#0f1117;--s1:#1a1d27;--s2:#22263a;--bd:#2e3248;--ac:#7c5cbf;--ac2:#c084fc;--gr:#4ade80;--tx:#e8eaf6;--mu:#8b92b5;--ra:12px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;padding:0 0 60px}
+.hero{background:linear-gradient(135deg,var(--ac),#818cf8);padding:40px 24px;text-align:center}
+.hero h1{font-family:'Space Grotesk',sans-serif;font-size:1.7rem;font-weight:700;color:#fff;margin-bottom:6px}
+.hero p{font-size:.9rem;color:#e8d5ff;max-width:520px;margin:0 auto}
+.container{max-width:660px;margin:0 auto;padding:24px 20px}
+.section{background:var(--s1);border:1px solid var(--bd);border-radius:var(--ra);padding:20px;margin-bottom:16px}
+.section-title{font-family:'Space Grotesk',sans-serif;font-size:1rem;font-weight:700;color:var(--ac2);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.section-title::after{content:'';flex:1;height:1px;background:var(--bd)}
+.form-group{margin-bottom:14px}
+label{display:block;font-size:.76rem;color:var(--mu);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px}
+input[type=text],input[type=email],input[type=tel],input[type=number],textarea,select{width:100%;background:var(--s2);border:1px solid var(--bd);color:var(--tx);border-radius:8px;padding:10px 13px;font-size:.88rem;font-family:inherit;transition:border-color .2s}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--ac2)}
+textarea{resize:vertical;min-height:80px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.checkbox-group{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.checkbox-item{display:flex;align-items:center;gap:6px;background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:7px 12px;cursor:pointer;transition:all .2s;user-select:none}
+.checkbox-item:hover{border-color:var(--ac2)}
+.checkbox-item.selected{background:#7c5cbf22;border-color:var(--ac2);color:var(--ac2)}
+.checkbox-item input{display:none}
+.checkbox-item span{font-size:.84rem;font-weight:500}
+.radio-group{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.radio-item{display:flex;align-items:center;gap:6px;background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:7px 12px;cursor:pointer;transition:all .2s;user-select:none}
+.radio-item:hover{border-color:var(--ac2)}
+.radio-item.selected{background:#7c5cbf22;border-color:var(--ac2);color:var(--ac2)}
+.radio-item input{display:none}
+.required{color:var(--ac2)}
+.submit-wrap{text-align:center;margin-top:24px}
+.submit-btn{background:linear-gradient(135deg,var(--ac),#818cf8);color:#fff;border:none;border-radius:10px;padding:15px 40px;font-size:1rem;font-weight:700;font-family:inherit;cursor:pointer;transition:all .2s;width:100%;max-width:400px}
+.submit-btn:hover{opacity:.9;transform:translateY(-1px)}
+.note{font-size:.78rem;color:var(--mu);text-align:center;margin-top:12px;line-height:1.6}
+.success{display:none;background:#4ade8022;border:1px solid #4ade8044;border-radius:var(--ra);padding:30px;text-align:center;margin-top:20px}
+.success h2{font-family:'Space Grotesk',sans-serif;color:var(--gr);margin-bottom:10px}
+#char-count{font-size:.72rem;color:var(--mu);text-align:right;margin-top:3px}
+@media(max-width:500px){.grid2,.grid3{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div style="font-size:2.5rem;margin-bottom:12px">📋</div>
+  <h1>Anamnesis Deportiva</h1>
+  <p>Completá este formulario para que pueda diseñar tu programa de entrenamiento personalizado. Toda la información es confidencial.</p>
+</div>
+
+<div class="container">
+  <form id="anamnesis-form">
+
+    <!-- 1. DATOS PERSONALES -->
+    <div class="section">
+      <div class="section-title">1️⃣ Datos Personales</div>
+      <div class="grid2">
+        <div class="form-group">
+          <label>Nombre completo <span class="required">*</span></label>
+          <input type="text" name="nombre" required placeholder="Tu nombre y apellido">
+        </div>
+        <div class="form-group">
+          <label>Fecha de nacimiento <span class="required">*</span></label>
+          <input type="text" name="nacimiento" required placeholder="DD/MM/AAAA">
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="form-group">
+          <label>Email <span class="required">*</span></label>
+          <input type="email" name="email" required placeholder="tu@email.com">
+        </div>
+        <div class="form-group">
+          <label>WhatsApp <span class="required">*</span></label>
+          <input type="tel" name="whatsapp" required placeholder="+54 9 11...">
+        </div>
+      </div>
+      <div class="grid3">
+        <div class="form-group">
+          <label>Peso (kg)</label>
+          <input type="number" name="peso" placeholder="70">
+        </div>
+        <div class="form-group">
+          <label>Altura (cm)</label>
+          <input type="number" name="altura" placeholder="170">
+        </div>
+        <div class="form-group">
+          <label>Ocupación</label>
+          <input type="text" name="ocupacion" placeholder="Ej: Oficina, docente...">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Sexo biológico</label>
+        <div class="radio-group" data-name="sexo">
+          <label class="radio-item"><input type="radio" name="sexo" value="Masculino"><span>Masculino</span></label>
+          <label class="radio-item"><input type="radio" name="sexo" value="Femenino"><span>Femenino</span></label>
+          <label class="radio-item"><input type="radio" name="sexo" value="Prefiero no decir"><span>Prefiero no decir</span></label>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. OBJETIVO -->
+    <div class="section">
+      <div class="section-title">2️⃣ Objetivo Principal</div>
+      <div class="form-group">
+        <label>¿Cuál es tu objetivo principal? <span class="required">*</span></label>
+        <div class="checkbox-group" data-name="objetivo">
+          <label class="checkbox-item"><input type="checkbox" name="objetivo" value="Descenso de peso"><span>🔥 Descenso de peso</span></label>
+          <label class="checkbox-item"><input type="checkbox" name="objetivo" value="Ganar masa muscular"><span>💪 Ganar masa muscular</span></label>
+          <label class="checkbox-item"><input type="checkbox" name="objetivo" value="Tonificar"><span>✨ Tonificar</span></label>
+          <label class="checkbox-item"><input type="checkbox" name="objetivo" value="Mejorar rendimiento deportivo"><span>🏃 Mejorar rendimiento</span></label>
+          <label class="checkbox-item"><input type="checkbox" name="objetivo" value="Salud y bienestar general"><span>❤️ Salud y bienestar</span></label>
+          <label class="checkbox-item"><input type="checkbox" name="objetivo" value="Rehabilitación"><span>🩺 Rehabilitación</span></label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>¿Objetivo secundario o específico?</label>
+        <textarea name="objetivo_especifico" placeholder="Ej: Mejorar mi postura, correr 5km sin parar, reducir dolor lumbar..."></textarea>
+      </div>
+
+    </div>
+
+    <!-- 3. EXPERIENCIA -->
+    <div class="section">
+      <div class="section-title">3️⃣ Experiencia Deportiva</div>
+      <div class="form-group">
+        <label>Nivel de experiencia <span class="required">*</span></label>
+        <div class="radio-group" data-name="nivel">
+          <label class="radio-item"><input type="radio" name="nivel" value="Sin experiencia"><span>Sin experiencia</span></label>
+          <label class="radio-item"><input type="radio" name="nivel" value="Principiante (menos de 1 año)"><span>Principiante (&lt;1 año)</span></label>
+          <label class="radio-item"><input type="radio" name="nivel" value="Intermedio (1 a 3 años)"><span>Intermedio (1-3 años)</span></label>
+          <label class="radio-item"><input type="radio" name="nivel" value="Avanzado (más de 3 años)"><span>Avanzado (&gt;3 años)</span></label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>¿Qué deportes o actividades practicás o practicaste?</label>
+        <input type="text" name="deportes" placeholder="Ej: fútbol, natación, crossfit, pesas...">
+      </div>
+      <div class="grid2">
+        <div class="form-group">
+          <label>Días disponibles para entrenar <span class="required">*</span></label>
+          <div class="radio-group" data-name="dias">
+            <label class="radio-item"><input type="radio" name="dias" value="2"><span>2 días</span></label>
+            <label class="radio-item"><input type="radio" name="dias" value="3"><span>3 días</span></label>
+            <label class="radio-item"><input type="radio" name="dias" value="4"><span>4 días</span></label>
+            <label class="radio-item"><input type="radio" name="dias" value="5"><span>5 días</span></label>
+            <label class="radio-item"><input type="radio" name="dias" value="6+"><span>6+ días</span></label>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Duración por sesión</label>
+          <div class="radio-group" data-name="duracion">
+            <label class="radio-item"><input type="radio" name="duracion" value="30-45 min"><span>30-45 min</span></label>
+            <label class="radio-item"><input type="radio" name="duracion" value="45-60 min"><span>45-60 min</span></label>
+            <label class="radio-item"><input type="radio" name="duracion" value="60-90 min"><span>60-90 min</span></label>
+            <label class="radio-item"><input type="radio" name="duracion" value="Más de 90 min"><span>+90 min</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Horario preferido</label>
+        <div class="checkbox-group" data-name="horario">
+          <label class="checkbox-item"><input type="checkbox" name="horario" value="Mañana"><span>🌅 Mañana</span></label>
+          <label class="checkbox-item"><input type="checkbox" name="horario" value="Mediodía"><span>☀️ Mediodía</span></label>
+          <label class="checkbox-item"><input type="checkbox" name="horario" value="Tarde"><span>🌤️ Tarde</span></label>
+          <label class="checkbox-item"><input type="checkbox" name="horario" value="Noche"><span>🌙 Noche</span></label>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. EQUIPAMIENTO -->
+    <div class="section">
+      <div class="section-title">4️⃣ Lugar y Equipamiento</div>
+      <div class="form-group">
+        <label>¿Dónde vas a entrenar? <span class="required">*</span></label>
+        <div class="checkbox-group" data-name="lugar">
+          <label class="checkbox-item"><input type="checkbox" name="lugar" value="Gimnasio completo"><span>🏋️ Gimnasio completo</span></label>
+          <label class="checkbox-item"><input type="checkbox" name="lugar" value="Gimnasio básico"><span>🏠 Gimnasio básico</span></label>
+          <label class="checkbox-item"><input type="checkbox" name="lugar" value="Casa con equipamiento"><span>🏡 Casa con equipo</span></label>
+          <label class="checkbox-item"><input type="checkbox" name="lugar" value="Casa sin equipamiento"><span>🛋️ Casa sin equipo</span></label>
+          <label class="checkbox-item"><input type="checkbox" name="lugar" value="Al aire libre"><span>🌳 Al aire libre</span></label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>¿Con qué equipamiento contás?</label>
+        <textarea name="equipamiento" placeholder="Ej: mancuernas hasta 20kg, barra olímpica, bandas elásticas, cajón pliométrico, sin equipamiento..."></textarea>
+      </div>
+    </div>
+
+    <!-- 5. SALUD -->
+    <div class="section">
+      <div class="section-title">5️⃣ Historial de Salud</div>
+      <div class="form-group">
+        <label>¿Tenés o tuviste alguna de estas condiciones?</label>
+        <div class="checkbox-group" data-name="condiciones">
+          <label class="checkbox-item"><input type="checkbox" name="condiciones" value="Hipertensión"><span>Hipertensión</span></label>
+          <label class="checkbox-item"><input type="checkbox" name="condiciones" value="Diabetes"><span>Diabetes</span></label>
+          <label class="checkbox-item"><input type="checkbox" name="condiciones" value="Problemas cardíacos"><span>Cardíacos</span></label>
+          <label class="checkbox-item"><input type="checkbox" name="condiciones" value="Problemas respiratorios"><span>Respiratorios</span></label>
+          <label class="checkbox-item"><input type="checkbox" name="condiciones" value="Osteoporosis"><span>Osteoporosis</span></label>
+          <label class="checkbox-item"><input type="checkbox" name="condiciones" value="Ninguna"><span>✅ Ninguna</span></label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Lesiones actuales o pasadas</label>
+        <textarea name="lesiones" placeholder="Indicá zona del cuerpo, tipo de lesión y si todavía duele. Ej: Rotura de ligamentos rodilla derecha (2022), sin dolor actual."></textarea>
+      </div>
+      <div class="form-group">
+        <label>¿Restricciones médicas para el ejercicio?</label>
+        <textarea name="restricciones" placeholder="Ej: No puedo hacer sentadillas profundas, no puedo cargar peso encima de los hombros..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>¿Estás bajo tratamiento médico actualmente?</label>
+        <div class="radio-group" data-name="tratamiento">
+          <label class="radio-item"><input type="radio" name="tratamiento" value="No"><span>No</span></label>
+          <label class="radio-item"><input type="radio" name="tratamiento" value="Sí"><span>Sí</span></label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>En caso afirmativo, ¿de qué tipo?</label>
+        <input type="text" name="tipo_tratamiento" placeholder="Ej: Kinesiología, medicación, fisioterapia...">
+      </div>
+      <div class="form-group">
+        <label>¿Tomás alguna medicación que pueda afectar el entrenamiento?</label>
+        <input type="text" name="medicacion" placeholder="Ej: betabloqueantes, corticoides, antidepresivos...">
+      </div>
+    </div>
+
+    <!-- 6. HÁBITOS -->
+    <div class="section">
+      <div class="section-title">6️⃣ Hábitos y Estilo de Vida</div>
+      <div class="form-group">
+        <label>¿Cómo describirías tu alimentación?</label>
+        <div class="radio-group" data-name="alimentacion">
+          <label class="radio-item"><input type="radio" name="alimentacion" value="Muy saludable"><span>Muy saludable</span></label>
+          <label class="radio-item"><input type="radio" name="alimentacion" value="Bastante saludable"><span>Bastante saludable</span></label>
+          <label class="radio-item"><input type="radio" name="alimentacion" value="Regular"><span>Regular</span></label>
+          <label class="radio-item"><input type="radio" name="alimentacion" value="Poco saludable"><span>Poco saludable</span></label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>¿Seguís algún plan nutricional?</label>
+        <div class="radio-group" data-name="nutricion">
+          <label class="radio-item"><input type="radio" name="nutricion" value="No"><span>No</span></label>
+          <label class="radio-item"><input type="radio" name="nutricion" value="Sí, con nutricionista"><span>Sí, con nutricionista</span></label>
+          <label class="radio-item"><input type="radio" name="nutricion" value="Sí, por cuenta propia"><span>Sí, por cuenta propia</span></label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Horas de sueño por noche</label>
+        <div class="radio-group" data-name="sueno">
+          <label class="radio-item"><input type="radio" name="sueno" value="Menos de 6 hs"><span>&lt;6 hs</span></label>
+          <label class="radio-item"><input type="radio" name="sueno" value="6-7 hs"><span>6-7 hs</span></label>
+          <label class="radio-item"><input type="radio" name="sueno" value="7-8 hs"><span>7-8 hs</span></label>
+          <label class="radio-item"><input type="radio" name="sueno" value="Más de 8 hs"><span>&gt;8 hs</span></label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Nivel de estrés cotidiano</label>
+        <div class="radio-group" data-name="estres">
+          <label class="radio-item"><input type="radio" name="estres" value="Bajo"><span>😌 Bajo</span></label>
+          <label class="radio-item"><input type="radio" name="estres" value="Moderado"><span>😐 Moderado</span></label>
+          <label class="radio-item"><input type="radio" name="estres" value="Alto"><span>😤 Alto</span></label>
+          <label class="radio-item"><input type="radio" name="estres" value="Muy alto"><span>😰 Muy alto</span></label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>¿Fumás?</label>
+        <div class="radio-group" data-name="tabaco">
+          <label class="radio-item"><input type="radio" name="tabaco" value="No"><span>No</span></label>
+          <label class="radio-item"><input type="radio" name="tabaco" value="Ocasionalmente"><span>Ocasionalmente</span></label>
+          <label class="radio-item"><input type="radio" name="tabaco" value="Sí"><span>Sí</span></label>
+        </div>
+      </div>
+    </div>
+
+    <!-- 7. MOTIVACIÓN -->
+    <div class="section">
+      <div class="section-title">7️⃣ Motivación y Expectativas</div>
+
+      <div class="form-group">
+        <label>¿Qué ejercicios o tipos de entrenamiento te gustan o disfrutás?</label>
+        <div class="checkbox-group" data-name="gustos_check">
+          <label class="checkbox-item"><input type="checkbox" name="gustos_check" value="Pesas / fuerza"><span>🏋️ Pesas / fuerza</span></label>
+          <label class="checkbox-item"><input type="checkbox" name="gustos_check" value="Cardio / correr"><span>🏃 Cardio / correr</span></label>
+          <label class="checkbox-item"><input type="checkbox" name="gustos_check" value="CrossFit / funcional"><span>🔥 CrossFit / funcional</span></label>
+          <label class="checkbox-item"><input type="checkbox" name="gustos_check" value="Trabajo de glúteos y piernas"><span>🍑 Glúteos y piernas</span></label>
+          <label class="checkbox-item"><input type="checkbox" name="gustos_check" value="Tren superior"><span>💪 Tren superior</span></label>
+          <label class="checkbox-item"><input type="checkbox" name="gustos_check" value="Abdominales"><span>🔲 Abdominales</span></label>
+          <label class="checkbox-item"><input type="checkbox" name="gustos_check" value="Movilidad y flexibilidad"><span>🧘 Movilidad</span></label>
+          <label class="checkbox-item"><input type="checkbox" name="gustos_check" value="Circuitos y HIIT"><span>⚡ Circuitos / HIIT</span></label>
+          <label class="checkbox-item"><input type="checkbox" name="gustos_check" value="Halterofilia / levantamiento olímpico"><span>🏅 Halterofilia</span></label>
+        </div>
+        <textarea name="gustos" placeholder="Podés agregar algo más específico... (opcional)" style="margin-top:8px;min-height:55px"></textarea>
+      </div>
+      <div class="form-group">
+        <label>¿Qué ejercicios o tipos de entrenamiento no te gustan o querés evitar?</label>
+        <div class="checkbox-group" data-name="no_gustos_check">
+          <label class="checkbox-item"><input type="checkbox" name="no_gustos_check" value="Correr / cardio extenso"><span>🚫 Correr mucho</span></label>
+          <label class="checkbox-item"><input type="checkbox" name="no_gustos_check" value="Sentadillas"><span>🚫 Sentadillas</span></label>
+          <label class="checkbox-item"><input type="checkbox" name="no_gustos_check" value="Ejercicios en el suelo"><span>🚫 En el suelo</span></label>
+          <label class="checkbox-item"><input type="checkbox" name="no_gustos_check" value="Burpees"><span>🚫 Burpees</span></label>
+          <label class="checkbox-item"><input type="checkbox" name="no_gustos_check" value="Peso muerto"><span>🚫 Peso muerto</span></label>
+          <label class="checkbox-item"><input type="checkbox" name="no_gustos_check" value="Ejercicios de hombros"><span>🚫 Hombros</span></label>
+          <label class="checkbox-item"><input type="checkbox" name="no_gustos_check" value="Máquinas de gimnasio"><span>🚫 Máquinas</span></label>
+          <label class="checkbox-item"><input type="checkbox" name="no_gustos_check" value="Ejercicios de impacto"><span>🚫 Impacto</span></label>
+        </div>
+        <textarea name="no_gustos" placeholder="Podés agregar algo más o explicar el motivo... (opcional)" style="margin-top:8px;min-height:55px"></textarea>
+      </div>
+      <div class="form-group">
+        <label>¿Qué es lo más importante que querés que tenga en cuenta al diseñar tu programa?</label>
+        <textarea name="consideraciones" placeholder="Esto me ayuda mucho a personalizar tu rutina. Podés escribir lo que quieras."></textarea>
+      </div>
+      <div class="form-group">
+        <label>¿Cómo conociste a Angel Meier?</label>
+        <div class="radio-group" data-name="como_conocio">
+          <label class="radio-item"><input type="radio" name="como_conocio" value="Instagram"><span>Instagram</span></label>
+          <label class="radio-item"><input type="radio" name="como_conocio" value="Recomendación"><span>Recomendación</span></label>
+          <label class="radio-item"><input type="radio" name="como_conocio" value="WhatsApp"><span>WhatsApp</span></label>
+          <label class="radio-item"><input type="radio" name="como_conocio" value="Búsqueda en Google"><span>Google</span></label>
+          <label class="radio-item"><input type="radio" name="como_conocio" value="Otro"><span>Otro</span></label>
+        </div>
+      </div>
+    </div>
+
+    <div class="submit-wrap">
+      <button type="submit" class="submit-btn">📲 Enviar anamnesis por WhatsApp</button>
+      <p class="note">Al enviar, se abrirá WhatsApp con toda la información completada.<br>Tus datos son confidenciales y se usan solo para diseñar tu programa.</p>
+    </div>
+  </form>
+
+  <div class="success" id="success-msg">
+    <div style="font-size:3rem;margin-bottom:12px">✅</div>
+    <h2>¡Listo! Anamnesis enviada</h2>
+    <p style="color:var(--mu);font-size:.88rem">Angel va a revisar tu información y se va a poner en contacto a la brevedad.</p>
+  </div>
+</div>
+
+<script>
+// Toggle checkboxes and radios - robust version
+document.querySelectorAll('.checkbox-item').forEach(item=>{
+  item.addEventListener('click',function(e){
+    e.preventDefault();
+    const inp=this.querySelector('input[type="checkbox"]');
+    inp.checked=!inp.checked;
+    this.classList.toggle('selected', inp.checked);
+  });
+});
+document.querySelectorAll('.radio-item').forEach(item=>{
+  item.addEventListener('click',function(e){
+    e.preventDefault();
+    const inp=this.querySelector('input[type="radio"]');
+    const name=inp.name;
+    document.querySelectorAll(`input[name="${name}"]`).forEach(i=>{
+      i.checked=false;
+      i.closest('.radio-item').classList.remove('selected');
+    });
+    inp.checked=true;
+    this.classList.add('selected');
+  });
+});
+
+document.getElementById('anamnesis-form').addEventListener('submit',function(e){
+  e.preventDefault();
+  const data=new FormData(this);
+  let msg='📋 *ANAMNESIS DEPORTIVA*\n';
+  msg+='_Angel Meier — Entrenamiento Online_\n\n';
+
+  const sections={
+    '👤 DATOS PERSONALES':['nombre','nacimiento','email','whatsapp','peso','altura','ocupacion','sexo'],
+    '🎯 OBJETIVO':['objetivo','objetivo_especifico','tiempo_objetivo'],
+    '🏋️ EXPERIENCIA':['nivel','deportes','dias','duracion','horario'],
+    '🏠 LUGAR Y EQUIPAMIENTO':['lugar','equipamiento'],
+    '🩺 SALUD':['condiciones','lesiones','restricciones','tratamiento','tipo_tratamiento','medicacion'],
+    '😴 HÁBITOS':['alimentacion','nutricion','sueno','estres','tabaco'],
+    '💬 MOTIVACIÓN':['gustos','no_gustos','consideraciones','como_conocio']
+  };
+
+  const labels={
+    nombre:'Nombre',nacimiento:'Nacimiento',email:'Email',whatsapp:'WhatsApp',
+    peso:'Peso (kg)',altura:'Altura (cm)',ocupacion:'Ocupación',sexo:'Sexo',
+    objetivo:'Objetivo',objetivo_especifico:'Objetivo específico',tiempo_objetivo:'Plazo',
+    nivel:'Nivel',deportes:'Deportes/actividades',dias:'Días/semana',duracion:'Duración sesión',horario:'Horario',
+    lugar:'Lugar de entrenamiento',equipamiento:'Equipamiento',
+    condiciones:'Condiciones de salud',lesiones:'Lesiones',restricciones:'Restricciones',
+    tratamiento:'Bajo tratamiento',tipo_tratamiento:'Tipo de tratamiento',medicacion:'Medicación',
+    alimentacion:'Alimentación',nutricion:'Plan nutricional',sueno:'Sueño',estres:'Estrés',tabaco:'Tabaco',
+    gustos:'Qué le gusta hacer',no_gustos:'Qué no le gusta hacer',consideraciones:'Consideraciones',como_conocio:'Cómo conoció a Angel'
+  };
+
+  // Collect checkboxes
+  const checked={};
+  document.querySelectorAll('input[type=checkbox]:checked').forEach(i=>{
+    if(!checked[i.name])checked[i.name]=[];
+    checked[i.name].push(i.value);
+  });
+  // Merge checkbox arrays into text fields
+  if(checked['gustos_check']){
+    const existing=(data.get('gustos')||'').trim();
+    checked['gustos']=(checked['gustos_check'].join(', ')+(existing?', '+existing:'')).trim();
+  }
+  if(checked['no_gustos_check']){
+    const existing=(data.get('no_gustos')||'').trim();
+    checked['no_gustos']=(checked['no_gustos_check'].join(', ')+(existing?', '+existing:'')).trim();
+  }
+
+  for(const[section,fields]of Object.entries(sections)){
+    msg+=`*${section}*\n`;
+    for(const f of fields){
+      const v=checked[f]?checked[f].join(', '):(data.get(f)||'').trim();
+      if(v) msg+=`• ${labels[f]||f}: ${v}\n`;
+    }
+    msg+='\n';
+  }
+
+  const phone='5491172399988';
+  const url=`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+  // Use anchor click to avoid popup blocker
+  const a=document.createElement('a');
+  a.href=url;a.target='_blank';a.rel='noopener';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  document.getElementById('anamnesis-form').style.display='none';
+  document.getElementById('success-msg').style.display='block';
+});
+</script>
+
+<!-- FIREBASE -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBc-icBnX6LCjvaYagVcR1hE3VkMZG05Cw",
+  authDomain: "angelmeier-fit.firebaseapp.com",
+  projectId: "angelmeier-fit",
+  storageBucket: "angelmeier-fit.firebasestorage.app",
+  messagingSenderId: "931547082856",
+  appId: "1:931547082856:web:3e6b8c943c7067b23b0bdc"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// Override the form submit to also save to Firebase
+const originalForm = document.getElementById('anamnesis-form');
+originalForm.addEventListener('submit', async function(e) {
+  // Save to Firebase after main handler runs
+  const data = new FormData(this);
+  
+  // Collect checkboxes
+  const checked = {};
+  document.querySelectorAll('input[type=checkbox]:checked').forEach(i => {
+    if(!checked[i.name]) checked[i.name] = [];
+    checked[i.name].push(i.value);
+  });
+
+  // Build solicitud object
+  const solicitud = {
+    id: 'sol' + Date.now(),
+    status: 'pendiente',
+    createdAt: new Date().toLocaleDateString('es-AR'),
+    createdAtISO: new Date().toISOString(),
+    // Datos personales
+    nombre: data.get('nombre') || '',
+    nacimiento: data.get('nacimiento') || '',
+    email: data.get('email') || '',
+    whatsapp: data.get('whatsapp') || '',
+    peso: data.get('peso') || '',
+    altura: data.get('altura') || '',
+    ocupacion: data.get('ocupacion') || '',
+    sexo: data.get('sexo') || '',
+    // Objetivo
+    objetivo: (checked['objetivo'] || []).join(', '),
+    objetivo_especifico: data.get('objetivo_especifico') || '',
+    // Experiencia
+    nivel: data.get('nivel') || '',
+    deportes: data.get('deportes') || '',
+    dias: data.get('dias') || '',
+    duracion: data.get('duracion') || '',
+    horario: (checked['horario'] || []).join(', '),
+    // Lugar
+    lugar: (checked['lugar'] || []).join(', '),
+    equipamiento: data.get('equipamiento') || '',
+    // Salud
+    condiciones: (checked['condiciones'] || []).join(', '),
+    lesiones: data.get('lesiones') || '',
+    restricciones: data.get('restricciones') || '',
+    tratamiento: data.get('tratamiento') || '',
+    tipo_tratamiento: data.get('tipo_tratamiento') || '',
+    medicacion: data.get('medicacion') || '',
+    // Habitos
+    alimentacion: data.get('alimentacion') || '',
+    nutricion: data.get('nutricion') || '',
+    sueno: data.get('sueno') || '',
+    estres: data.get('estres') || '',
+    tabaco: data.get('tabaco') || '',
+    // Preferencias
+    gustos: (checked['gustos_check'] || []).join(', ') + (data.get('gustos') ? ', ' + data.get('gustos') : ''),
+    no_gustos: (checked['no_gustos_check'] || []).join(', ') + (data.get('no_gustos') ? ', ' + data.get('no_gustos') : ''),
+    // Final
+    consideraciones: data.get('consideraciones') || '',
+    como_conocio: data.get('como_conocio') || '',
+  };
+
+  try {
+    await addDoc(collection(db, 'solicitudes'), solicitud);
+    console.log('Solicitud guardada en Firebase');
+  } catch(err) {
+    console.error('Error guardando en Firebase:', err);
+  }
+});
+</script>
+</body>
+</html>
