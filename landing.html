@@ -1,0 +1,405 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Angel Meier — Movimiento y Bienestar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,800;1,700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #faf8f5; --s1: #ffffff; --warm: #f0ebe3; --tx: #1a1714;
+  --mu: #6b6258; --ac: #4a7c59; --ac2: #3a6145;
+  --wa: #25d366; --wa2: #1da851; --border: #e2d9ce;
+}
+html { scroll-behavior: smooth; }
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tx); line-height: 1.6; }
+
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(250,248,245,0.94); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 32px; display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo { font-family: 'Playfair Display', serif; font-size: 1.15rem; font-weight: 700; color: var(--tx); }
+.nav-links { display: flex; gap: 28px; align-items: center; }
+.nav-links a { text-decoration: none; color: var(--mu); font-size: .85rem; transition: color .2s; }
+.nav-links a:hover { color: var(--tx); }
+.nav-cta { background: var(--tx); color: #fff; padding: 10px 22px; border-radius: 50px; text-decoration: none; font-size: .85rem; font-weight: 600; transition: background .2s; }
+.nav-cta:hover { background: var(--ac); color: #fff; }
+
+.hero { display: grid; grid-template-columns: 1fr 1fr; min-height: 90vh; align-items: center; }
+.hero-text { padding: 80px 48px 80px 64px; }
+.hero-tag { display: inline-block; background: #4a7c5915; color: var(--ac); border: 1px solid #4a7c5930; padding: 5px 14px; border-radius: 40px; font-size: .75rem; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; margin-bottom: 28px; }
+.hero h1 { font-family: 'Playfair Display', serif; font-size: clamp(2.4rem, 4vw, 3.6rem); font-weight: 800; line-height: 1.1; color: var(--tx); margin-bottom: 22px; }
+.hero h1 em { font-style: italic; color: var(--ac); }
+.hero-desc { font-size: 1.05rem; color: var(--mu); line-height: 1.75; max-width: 420px; margin-bottom: 38px; }
+.hero-actions { display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
+.btn-wa { display: inline-flex; align-items: center; gap: 9px; background: var(--wa); color: #fff; padding: 15px 30px; border-radius: 50px; text-decoration: none; font-weight: 700; font-size: 1rem; box-shadow: 0 4px 24px #25d36638; transition: all .2s; }
+.btn-wa:hover { background: var(--wa2); transform: translateY(-2px); box-shadow: 0 8px 32px #25d36648; }
+.hero-sub { font-size: .78rem; color: var(--mu); }
+.hero-img { height: 90vh; background: url('https://plus.unsplash.com/premium_photo-1663036941504-c49a239c8e1e?w=900&q=80') center/cover no-repeat; position: relative; }
+.hero-img::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to right, var(--bg) 0%, transparent 30%); }
+
+.stats { background: var(--tx); padding: 52px 64px; display: grid; grid-template-columns: repeat(4,1fr); gap: 32px; text-align: center; }
+.stat-val { font-family: 'Playfair Display', serif; font-size: 2.6rem; font-weight: 800; color: var(--ac); line-height: 1; margin-bottom: 8px; }
+.stat-label { font-size: .8rem; color: #9a9088; line-height: 1.4; }
+
+.section { padding: 96px 64px; }
+.section-inner { max-width: 1000px; margin: 0 auto; }
+.eyebrow { font-size: .72rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ac); margin-bottom: 12px; }
+.section h2 { font-family: 'Playfair Display', serif; font-size: clamp(1.8rem, 3vw, 2.6rem); font-weight: 700; line-height: 1.2; margin-bottom: 18px; }
+.section-lead { font-size: 1.05rem; color: var(--mu); max-width: 560px; line-height: 1.75; }
+
+.para-quien { background: var(--s1); }
+.signs-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-top: 48px; }
+.sign-card { background: var(--bg); border: 1px solid var(--border); border-radius: 20px; padding: 28px; transition: border-color .2s, transform .2s; }
+.sign-card:hover { border-color: var(--ac); transform: translateY(-2px); }
+.sign-icon { font-size: 2rem; margin-bottom: 14px; }
+.sign-card h3 { font-family: 'Playfair Display', serif; font-size: 1.1rem; font-weight: 700; margin-bottom: 8px; }
+.sign-card p { font-size: .86rem; color: var(--mu); line-height: 1.65; }
+
+.programa { background: var(--warm); }
+.pillars-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 20px; margin-top: 48px; }
+.pillar-card { background: var(--s1); border-radius: 20px; padding: 32px; border: 1px solid var(--border); }
+.pillar-num { width: 36px; height: 36px; border-radius: 50%; background: var(--ac); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: .9rem; margin-bottom: 16px; }
+.pillar-card h3 { font-family: 'Playfair Display', serif; font-size: 1.15rem; font-weight: 700; margin-bottom: 10px; }
+.pillar-card p { font-size: .87rem; color: var(--mu); line-height: 1.7; }
+
+.mid-photo { height: 480px; background: url('https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=1400&q=80') center 40%/cover no-repeat; position: relative; display: flex; align-items: flex-end; }
+.mid-photo-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(26,23,20,.75) 0%, transparent 60%); }
+.mid-photo-text { position: relative; z-index: 1; padding: 52px 64px; }
+.mid-photo-text blockquote { font-family: 'Playfair Display', serif; font-style: italic; font-size: clamp(1.4rem, 2.5vw, 2rem); color: #fff; max-width: 640px; line-height: 1.4; }
+.mid-photo-text cite { display: block; margin-top: 12px; font-size: .82rem; color: rgba(255,255,255,.6); font-style: normal; }
+
+.testimonios { background: var(--s1); }
+.testi-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 20px; margin-top: 48px; }
+.testi-card { background: var(--bg); border: 1px solid var(--border); border-radius: 20px; padding: 28px; }
+.stars { color: #f59e0b; font-size: .9rem; margin-bottom: 14px; letter-spacing: 2px; }
+.testi-card p { font-size: .9rem; color: var(--mu); line-height: 1.7; margin-bottom: 20px; font-style: italic; }
+.testi-author { display: flex; align-items: center; gap: 12px; }
+.testi-name { font-weight: 600; font-size: .88rem; color: var(--tx); }
+.testi-age { font-size: .75rem; color: var(--mu); }
+
+.modalidades { background: var(--bg); }
+.mod-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 48px; }
+.mod-card { border-radius: 20px; padding: 36px; border: 2px solid var(--border); position: relative; transition: border-color .2s; }
+.mod-card:hover { border-color: var(--ac); }
+.mod-card.destacado { border-color: var(--ac); background: #4a7c5908; }
+.mod-badge { position: absolute; top: -12px; left: 32px; background: var(--ac); color: #fff; font-size: .7rem; font-weight: 700; padding: 4px 12px; border-radius: 20px; letter-spacing: .05em; text-transform: uppercase; }
+.mod-card h3 { font-family: 'Playfair Display', serif; font-size: 1.4rem; font-weight: 700; margin-bottom: 10px; }
+.mod-card .mod-desc { font-size: .93rem; color: var(--mu); line-height: 1.7; margin-bottom: 20px; }
+.mod-features { display: flex; flex-direction: column; gap: 8px; }
+.mod-feature { display: flex; align-items: flex-start; gap: 10px; font-size: .86rem; color: var(--tx); }
+.mod-feature::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--ac); flex-shrink: 0; margin-top: 6px; }
+
+.sobre { background: var(--warm); }
+.sobre-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 72px; align-items: center; }
+.sobre-photo { border-radius: 24px; overflow: hidden; aspect-ratio: 3/4; background: url('https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=700&q=80') center/cover no-repeat; box-shadow: 0 24px 64px rgba(0,0,0,.12); }
+.sobre-text h2 { font-family: 'Playfair Display', serif; font-size: clamp(1.8rem,3vw,2.6rem); font-weight: 700; margin-bottom: 20px; }
+.sobre-text p { color: var(--mu); font-size: .95rem; line-height: 1.8; margin-bottom: 14px; }
+.creds { display: flex; flex-direction: column; gap: 10px; margin-top: 24px; }
+.cred { display: flex; align-items: center; gap: 12px; font-size: .87rem; color: var(--tx); }
+.cred-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ac); flex-shrink: 0; }
+
+.proceso { background: var(--s1); }
+.steps { display: grid; grid-template-columns: repeat(3,1fr); gap: 32px; margin-top: 52px; }
+.step-card { text-align: center; }
+.step-n { font-family: 'Playfair Display', serif; font-size: 3.5rem; font-weight: 800; color: #e2d9ce; line-height: 1; margin-bottom: 16px; }
+.step-card h3 { font-family: 'Playfair Display', serif; font-size: 1.15rem; font-weight: 700; margin-bottom: 10px; }
+.step-card p { font-size: .86rem; color: var(--mu); line-height: 1.7; }
+
+.faq { background: var(--warm); }
+.faq-list { margin-top: 48px; display: flex; flex-direction: column; }
+.faq-item { border-bottom: 1px solid var(--border); }
+.faq-item:first-child { border-top: 1px solid var(--border); }
+.faq-q { width: 100%; background: none; border: none; cursor: pointer; display: flex; justify-content: space-between; align-items: center; padding: 22px 0; font-family: 'Inter', sans-serif; font-size: .97rem; font-weight: 600; color: var(--tx); text-align: left; transition: color .2s; }
+.faq-q:hover { color: var(--ac); }
+.faq-icon { font-size: 1.2rem; color: var(--ac); flex-shrink: 0; margin-left: 16px; transition: transform .3s; }
+.faq-item.open .faq-icon { transform: rotate(45deg); }
+.faq-a { font-size: .9rem; color: var(--mu); line-height: 1.75; max-height: 0; overflow: hidden; transition: max-height .35s ease, padding .35s ease; }
+.faq-item.open .faq-a { max-height: 300px; padding-bottom: 20px; }
+
+.cta-final { background: var(--tx); padding: 100px 64px; text-align: center; }
+.cta-final h2 { font-family: 'Playfair Display', serif; font-size: clamp(2rem, 4vw, 3rem); font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 16px; }
+.cta-final p { color: #9a9088; font-size: 1rem; margin-bottom: 40px; max-width: 460px; margin-left: auto; margin-right: auto; }
+
+footer { padding: 32px 64px; display: flex; align-items: center; justify-content: space-between; font-size: .78rem; color: var(--mu); border-top: 1px solid var(--border); }
+.footer-logo { font-family: 'Playfair Display', serif; font-weight: 700; color: var(--tx); }
+
+.section-cta { margin-top: 48px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.section-cta .btn-wa { font-size: .9rem; padding: 12px 24px; }
+.section-cta-note { font-size: .78rem; color: var(--mu); }
+
+.wa-float { position: fixed; bottom: 28px; right: 28px; z-index: 200; background: var(--wa); color: #fff; width: 58px; height: 58px; border-radius: 50%; display: flex; align-items: center; justify-content: center; text-decoration: none; box-shadow: 0 4px 24px #25d36650; transition: all .2s; }
+.wa-float:hover { background: var(--wa2); transform: scale(1.08); }
+
+@media (max-width: 768px) {
+  nav { padding: 14px 20px; }
+  .nav-links { display: none; }
+  .hero { grid-template-columns: 1fr; min-height: auto; }
+  .hero-text { padding: 56px 24px 40px; }
+  .hero-img { height: 300px; }
+  .hero-img::after { background: linear-gradient(to bottom, var(--bg) 0%, transparent 40%); }
+  .stats { grid-template-columns: repeat(2,1fr); padding: 40px 24px; }
+  .section { padding: 64px 24px; }
+  .signs-grid, .pillars-grid, .testi-grid, .steps, .mod-grid { grid-template-columns: 1fr; }
+  .sobre-grid { grid-template-columns: 1fr; gap: 32px; }
+  .sobre-photo { aspect-ratio: 4/3; }
+  .mid-photo-text { padding: 32px 24px; }
+  .cta-final { padding: 64px 24px; }
+  footer { flex-direction: column; gap: 8px; text-align: center; padding: 24px; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">Angel Meier</div>
+  <div class="nav-links">
+    <a href="#programa">El programa</a>
+    <a href="#modalidades">Modalidades</a>
+    <a href="#sobre-mi">Sobre mí</a>
+    <a href="#faq">Preguntas</a>
+    <a class="nav-cta" href="https://wa.me/541172399988?text=Hola%20Angel%2C%20vi%20tu%20p%C3%A1gina%20y%20me%20gustar%C3%ADa%20saber%20m%C3%A1s." target="_blank">Hablemos</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-text">
+    <div class="hero-tag">Movimiento para mayores de 50</div>
+    <h1>Tu cuerpo todavía<br>tiene <em>mucho para dar</em></h1>
+    <p class="hero-desc">Un programa de movimiento personalizado para recuperar tu postura, tu energía y tu autonomía — diseñado especialmente para personas de más de 50 años.</p>
+    <div class="hero-actions">
+      <a class="btn-wa" href="https://wa.me/541172399988?text=Hola%20Angel%2C%20vi%20tu%20p%C3%A1gina%20y%20me%20gustar%C3%ADa%20saber%20m%C3%A1s." target="_blank">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        Quiero empezar
+      </a>
+      <p class="hero-sub">Consulta inicial gratuita · Sin compromiso</p>
+    </div>
+  </div>
+  <div class="hero-img"></div>
+</section>
+
+<div class="stats">
+  <div><div class="stat-val">+11</div><div class="stat-label">años de experiencia<br>en masoterapia</div></div>
+  <div><div class="stat-val">+200</div><div class="stat-label">personas acompañadas<br>en su proceso</div></div>
+  <div><div class="stat-val">3</div><div class="stat-label">disciplinas integradas<br>en cada programa</div></div>
+  <div><div class="stat-val">100%</div><div class="stat-label">programas diseñados<br>a medida</div></div>
+</div>
+
+<section class="section para-quien" id="para-quien">
+  <div class="section-inner">
+    <div class="eyebrow">¿Es para mí?</div>
+    <h2>Señales de que tu cuerpo<br>está pidiendo atención</h2>
+    <p class="section-lead">No hace falta tener una lesión. Muchas personas llegan sintiéndose "bien pero no del todo bien" y eso es suficiente motivo para empezar.</p>
+    <div class="signs-grid">
+      <div class="sign-card"><div class="sign-icon">&#x1FA91;</div><h3>Dolor al levantarte</h3><p>Ese dolor de espalda baja o rodillas al incorporarte por las mañanas que ya naturalizaste como parte de la rutina.</p></div>
+      <div class="sign-card"><div class="sign-icon">&#x1F6B6;</div><h3>Menos seguridad al moverse</h3><p>Sentís que no tenés la misma confianza al caminar en terrenos irregulares, bajar escaleras o hacer actividades cotidianas.</p></div>
+      <div class="sign-card"><div class="sign-icon">&#x1F62E;&#x200D;&#x1F4A8;</div><h3>Te cansás antes</h3><p>Las mismas cosas de siempre te dejan más cansado que antes: hacer las compras, jugar con tus nietos, subir escaleras.</p></div>
+      <div class="sign-card"><div class="sign-icon">&#x2194;&#xFE0F;</div><h3>Cuerpo rígido y encorvado</h3><p>Hombros cerrados hacia adelante, cuello tenso, sensación de que el cuerpo "se encogió" con los años.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="section programa" id="programa">
+  <div class="section-inner">
+    <div class="eyebrow">El programa</div>
+    <h2>Movimiento inteligente,<br>no esfuerzo sin sentido</h2>
+    <p class="section-lead">Integro tres disciplinas para que tu cuerpo responda de manera completa y duradera.</p>
+    <div class="pillars-grid">
+      <div class="pillar-card"><div class="pillar-num">1</div><h3>Reeducación postural</h3><p>Trabajamos los patrones de movimiento que con los años se fueron deteriorando. Recuperás la alineación natural de tu columna y tus articulaciones.</p></div>
+      <div class="pillar-card"><div class="pillar-num">2</div><h3>Fuerza funcional</h3><p>Ejercicios que se traducen directamente en tu vida cotidiana: levantarte del piso, cargar bolsas, caminar sin cansarte — sin dolor al día siguiente.</p></div>
+      <div class="pillar-card"><div class="pillar-num">3</div><h3>Movilidad y equilibrio</h3><p>Mejorás tu autonomía, tu confianza al moverte y reducís el riesgo de caídas — uno de los factores más críticos pasados los 50.</p></div>
+      <div class="pillar-card"><div class="pillar-num">4</div><h3>Recuperación con masoterapia</h3><p>Integro técnicas de masaje terapéutico para que el cuerpo responda mejor al movimiento y no quedes contracturado al día siguiente.</p></div>
+    </div>
+    <div class="section-cta">
+      <a class="btn-wa" href="https://wa.me/541172399988?text=Hola%20Angel%2C%20vi%20tu%20p%C3%A1gina%20y%20me%20gustar%C3%ADa%20saber%20m%C3%A1s." target="_blank">
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        Quiero saber más
+      </a>
+      <span class="section-cta-note">Consulta inicial gratuita · Sin compromiso</span>
+    </div>
+  </div>
+</section>
+
+<div class="mid-photo">
+  <div class="mid-photo-overlay"></div>
+  <div class="mid-photo-text">
+    <blockquote>"El movimiento no tiene fecha de vencimiento. Lo que cambia es cómo lo entendemos."</blockquote>
+    <cite>— Angel Meier</cite>
+  </div>
+</div>
+
+<section class="section testimonios" id="testimonios">
+  <div class="section-inner">
+    <div class="eyebrow">Lo que dicen</div>
+    <h2>Personas que ya<br>dieron el primer paso</h2>
+    <div class="testi-grid">
+      <div class="testi-card">
+        <div class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+        <p>"Tenía 58 años y hacía años que no podía agacharme sin sentir dolor. En dos meses con Ángel recuperé una movilidad que creía perdida. Lo que más valoro es que nunca me hizo sentir que era tarde."</p>
+        <div class="testi-author">
+          <div><div class="testi-name">Graciela M.</div><div class="testi-age">61 años · Quilmes</div></div>
+        </div>
+      </div>
+      <div class="testi-card">
+        <div class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+        <p>"Empecé con mucho miedo de lastimarme. Ángel me explicó todo desde cero, adaptó cada ejercicio a lo que yo podía hacer y fui progresando sin apuros. Hoy bajo las escaleras del trabajo sin agarrarme del pasamanos."</p>
+        <div class="testi-author">
+          <div><div class="testi-name">Roberto P.</div><div class="testi-age">64 años · San Isidro</div></div>
+        </div>
+      </div>
+      <div class="testi-card">
+        <div class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+        <p>"Lo que más me sorprendió fue cómo combina el masaje con los ejercicios. No sólo mejoré la postura, también bajé el nivel de tensión que cargaba en la espalda hace años. Me siento otra persona."</p>
+        <div class="testi-author">
+          <div><div class="testi-name">Marta L.</div><div class="testi-age">57 años · Palermo</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section modalidades" id="modalidades">
+  <div class="section-inner">
+    <div class="eyebrow">Modalidades</div>
+    <h2>Elegí el formato<br>que mejor se adapta a vos</h2>
+    <p class="section-lead">Ofrezco dos opciones según tus objetivos, tu disponibilidad y el nivel de acompañamiento que necesitás.</p>
+    <div class="mod-grid">
+      <div class="mod-card">
+        <h3>Programa General</h3>
+        <p class="mod-desc">Un programa online prediseñado para adultos de más de 50 años. Trabajás a tu propio ritmo, desde casa, con ejercicios orientados a mejorar la postura, la movilidad y la fuerza funcional.</p>
+        <div class="mod-features">
+          <div class="mod-feature">100% online, sin horarios fijos</div>
+          <div class="mod-feature">Ejercicios progresivos para adultos +50</div>
+          <div class="mod-feature">Reeducación postural, movilidad y equilibrio</div>
+          <div class="mod-feature">Ideal para empezar sin experiencia previa</div>
+        </div>
+      </div>
+      <div class="mod-card destacado">
+        <div class="mod-badge">Más elegido</div>
+        <h3>Programa Personalizado</h3>
+        <p class="mod-desc">Un programa 100% diseñado para vos. Evaluación individual, objetivos específicos y ajuste continuo según cómo responde tu cuerpo. Incluye integración de masoterapia.</p>
+        <div class="mod-features">
+          <div class="mod-feature">Evaluación postural y funcional inicial</div>
+          <div class="mod-feature">Plan exclusivo según tus necesidades</div>
+          <div class="mod-feature">Sesiones presenciales o virtuales</div>
+          <div class="mod-feature">Integración opcional de masaje terapéutico</div>
+        </div>
+      </div>
+    </div>
+    <div class="section-cta">
+      <a class="btn-wa" href="https://wa.me/541172399988?text=Hola%20Angel%2C%20vi%20tu%20p%C3%A1gina%20y%20me%20gustar%C3%ADa%20saber%20m%C3%A1s." target="_blank">
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        Quiero empezar
+      </a>
+      <span class="section-cta-note">Consulta inicial gratuita · Sin compromiso</span>
+    </div>
+  </div>
+</section>
+
+<section class="section sobre" id="sobre-mi">
+  <div class="section-inner sobre-grid">
+    <div class="sobre-photo"></div>
+    <div class="sobre-text">
+      <div class="eyebrow">Quién soy</div>
+      <h2>Ángel Meier</h2>
+      <p>Soy Profesor de Educación Física, masajista terapéutico con más de 11 años de experiencia y estudiante avanzado de Kinesiología.</p>
+      <p>Esa combinación no es casualidad. Cada disciplina me da una herramienta diferente para entender tu cuerpo: la educación física para diseñar el movimiento, la masoterapia para liberar la tensión acumulada y la kinesiología para entender los mecanismos detrás del dolor.</p>
+      <p>Trabajo especialmente con personas de más de 50 porque entiendo los miedos, las limitaciones reales y el enorme potencial que hay en esa etapa de la vida.</p>
+      <div class="creds">
+        <div class="cred"><div class="cred-dot"></div>Profesor de Educación Física — UNLu (ex INEF)</div>
+        <div class="cred"><div class="cred-dot"></div>Masajista terapéutico — +11 años de práctica</div>
+        <div class="cred"><div class="cred-dot"></div>Estudiante de Kinesiología y Fisiatría</div>
+        <div class="cred"><div class="cred-dot"></div>Especialización en adultos mayores y posturología</div>
+      </div>
+    </div>
+    <div class="section-cta">
+      <a class="btn-wa" href="https://wa.me/541172399988?text=Hola%20Angel%2C%20vi%20tu%20p%C3%A1gina%20y%20me%20gustar%C3%ADa%20saber%20m%C3%A1s." target="_blank">
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        Escribime
+      </a>
+      <span class="section-cta-note">Consulta inicial gratuita · Sin compromiso</span>
+    </div>
+  </div>
+</section>
+
+<section class="section proceso" id="proceso">
+  <div class="section-inner">
+    <div class="eyebrow">¿Cómo empezamos?</div>
+    <h2>Tres pasos para arrancar</h2>
+    <p class="section-lead">Sin turnos de espera ni formularios interminables. El proceso es tan simple como una conversación.</p>
+    <div class="steps">
+      <div class="step-card"><div class="step-n">01</div><h3>Me escribís</h3><p>Mandame un WhatsApp contándome brevemente qué sentís o qué querés mejorar. Sin compromiso, sin costo.</p></div>
+      <div class="step-card"><div class="step-n">02</div><h3>Evaluación inicial</h3><p>Hacemos una evaluación gratuita de tu postura, movilidad y objetivos. De ahí surge el programa diseñado para vos.</p></div>
+      <div class="step-card"><div class="step-n">03</div><h3>Empezamos</h3><p>Arrancás con sesiones guiadas, seguimiento semanal y ajustes continuos. A tu ritmo, desde donde estás hoy.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="section faq" id="faq">
+  <div class="section-inner">
+    <div class="eyebrow">Preguntas frecuentes</div>
+    <h2>Lo que más me preguntan</h2>
+    <div class="faq-list">
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">¿Necesito tener experiencia haciendo ejercicio? <span class="faq-icon">+</span></button>
+        <div class="faq-a">Para nada. La mayoría de mis clientes vienen sin haber hecho actividad física en años. El programa empieza exactamente desde donde estás vos, sin comparaciones ni ritmos ajenos.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">¿Puedo hacerlo aunque tenga una lesión o dolor crónico? <span class="faq-icon">+</span></button>
+        <div class="faq-a">En la mayoría de los casos, sí. La evaluación inicial nos permite entender tus condiciones y adaptar cada ejercicio en consecuencia. Si hay algo que requiera derivación médica previa, te lo voy a decir con total honestidad antes de empezar.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">¿Las sesiones son presenciales o virtuales? <span class="faq-icon">+</span></button>
+        <div class="faq-a">Trabajo de las dos formas. Las sesiones presenciales tienen la ventaja de la corrección postural en tiempo real y la integración del masaje terapéutico. Las virtuales son ideales para quienes no pueden movilizarse fácilmente o prefieren entrenar desde casa.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">¿Cuánto tiempo hasta ver resultados? <span class="faq-icon">+</span></button>
+        <div class="faq-a">La mayoría de las personas nota cambios en la primera o segunda semana: menos rigidez matutina, más soltura al moverse. Los cambios posturales más profundos se consolidan entre el mes y los tres meses, dependiendo de la frecuencia y el punto de partida.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">¿Qué necesito para empezar? <span class="faq-icon">+</span></button>
+        <div class="faq-a">Ropa cómoda, una colchoneta si entrenamos en casa, y muchas ganas. Nada más. El equipamiento específico lo vamos incorporando de a poco según los objetivos de cada etapa.</div>
+      </div>
+    </div>
+    <div class="section-cta">
+      <a class="btn-wa" href="https://wa.me/541172399988?text=Hola%20Angel%2C%20vi%20tu%20p%C3%A1gina%20y%20me%20gustar%C3%ADa%20saber%20m%C3%A1s." target="_blank">
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        Tengo una pregunta
+      </a>
+      <span class="section-cta-note">Te respondo por WhatsApp</span>
+    </div>
+  </div>
+</section>
+
+<section class="cta-final">
+  <h2>El mejor momento<br>para empezar es hoy</h2>
+  <p>No necesitas estar en forma para empezar. Necesitas empezar para estar en forma.</p>
+  <a class="btn-wa" href="https://wa.me/541172399988?text=Hola%20Angel%2C%20vi%20tu%20p%C3%A1gina%20y%20me%20gustar%C3%ADa%20saber%20m%C3%A1s." target="_blank">
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+    Escribime - es gratis
+  </a>
+</section>
+
+<footer>
+  <div class="footer-logo">Angel Meier</div>
+  <div>2026 · Movimiento y Bienestar · Buenos Aires</div>
+</footer>
+
+<a class="wa-float" href="https://wa.me/541172399988?text=Hola%20Angel%2C%20vi%20tu%20p%C3%A1gina%20y%20me%20gustar%C3%ADa%20saber%20m%C3%A1s." target="_blank" title="Escribime por WhatsApp">
+  <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+</a>
+
+<script>
+function toggleFaq(btn) {
+  var item = btn.parentElement;
+  var isOpen = item.classList.contains('open');
+  document.querySelectorAll('.faq-item.open').forEach(function(el) { el.classList.remove('open'); });
+  if (!isOpen) item.classList.add('open');
+}
+</script>
+</body>
+</html>
