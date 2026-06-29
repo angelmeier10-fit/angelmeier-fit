@@ -105,6 +105,16 @@ textarea{resize:vertical;min-height:52px}
 .dtabs{display:flex;gap:5px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch;scrollbar-width:none}.dtabs::-webkit-scrollbar{display:none}
 .dtab{padding:7px 16px;border-radius:8px;border:1px solid var(--bd);background:var(--s2);color:var(--mu);cursor:pointer;font-size:.8rem;font-family:inherit;transition:all .2s;white-space:nowrap;flex-shrink:0}
 .dtab.active{background:var(--ac);border-color:var(--ac);color:#fff;font-weight:700;box-shadow:0 2px 10px var(--ac)44}
+.day-acc{border:1px solid var(--bd);border-radius:var(--ra);margin-bottom:10px;overflow:hidden;transition:border-color .2s}
+.day-acc:hover{border-color:var(--ac2)44}
+.day-acc-hdr{padding:14px 16px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px;user-select:none;background:var(--s2);transition:background .18s}
+.day-acc-hdr.open{background:var(--ac)18;border-bottom:1px solid var(--bd)}
+.day-acc-title{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.93rem;display:flex;align-items:center;gap:8px}
+.day-acc-badge{font-size:.68rem;padding:2px 8px;border-radius:20px;font-weight:600}
+.day-acc-arr{color:var(--mu);font-size:.82rem;transition:transform .22s;flex-shrink:0}
+.day-acc-hdr.open .day-acc-arr{transform:rotate(180deg)}
+.day-acc-body{display:none;padding:14px 16px}
+.day-acc-body.open{display:block}
 .cvg{border:1px solid var(--bd);border-radius:var(--ra);margin-bottom:11px;overflow:hidden;transition:border-color .2s}
 .cvg:hover{border-color:var(--ac2)}
 .cvg-hdr{padding:13px 15px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:9px;user-select:none}
@@ -1445,8 +1455,21 @@ async function renderCV(clientId){
     return;
   }
   const initials=c.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
-  const tabs=(c.days||[]).map((d,i)=>`<button class="dtab ${i===0?'active':''}" onclick="switchDay(${i},this,'${clientId}')" id="dtab-${clientId}-${i}">${d.name||'Día '+(i+1)}</button>`).join('');
+  const nextIdx=getNextDayIdx(c);
   const mpReminder=c.mpLink&&c.payStatus==='free'?`<a href="${c.mpLink}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:#009EE322;color:#009EE3;border:1px solid #009EE344;border-radius:8px;padding:6px 14px;font-size:.78rem;font-weight:600;text-decoration:none;margin-bottom:12px">💳 Renovar / pagar plan</a>`:'';
+  const daysAccHtml=(c.days||[]).map((d,i)=>{
+    const isOpen=i===nextIdx;
+    const isNext=i===nextIdx;
+    const isDone=(c.progress?.['snote-'+i]||[]).length>0;
+    const badge=isNext?`<span class="day-acc-badge" style="background:var(--ac)33;color:var(--ac2)">Siguiente</span>`:isDone?`<span class="day-acc-badge" style="background:var(--gr)22;color:var(--gr)">Completado</span>`:'';
+    return`<div class="day-acc" id="day-acc-${clientId}-${i}">
+      <div class="day-acc-hdr${isOpen?' open':''}" onclick="toggleDayAcc('${clientId}',${i})">
+        <div class="day-acc-title">${d.name||'Día '+(i+1)}${badge?'&nbsp;'+badge:''}</div>
+        <div class="day-acc-arr">▼</div>
+      </div>
+      <div class="day-acc-body${isOpen?' open':''}" id="day-body-${clientId}-${i}"></div>
+    </div>`;
+  }).join('');
   document.getElementById('cv-content').innerHTML=`
     <div class="hero">
       <div class="hero-top"><div class="hav">${initials}</div>
@@ -1460,20 +1483,36 @@ async function renderCV(clientId){
         ${(()=>{if(!c.expiry)return'';const exp=new Date(c.expiry+'T00:00:00');const daysLeft=Math.ceil((exp-new Date())/(1000*60*60*24));const isNear=daysLeft<=7;return`<span class="badge" style="background:${isNear?'#f8717122':'#fbbf2422'};color:${isNear?'var(--rd)':'var(--yw)'}">📅 Vence ${exp.toLocaleDateString('es-AR')} ${daysLeft>0?'('+daysLeft+' días)':'(vencido)'}</span>`;})()}
         ${(()=>{const info=getMesoInfo(c);if(!c.totalWeeks&&!c.startDate)return'';return`<span class="badge" style="background:var(--ac)22;color:var(--ac2)">🗓️ Semana ${info.currentWeek} de ${info.totalWeeks} — Meso ${info.mesoNum}/${info.totalMesos}</span>`;})()}
       </div>
-      <div class="dtabs">${tabs}</div>
     </div>
-    <div id="day-view-${clientId}"></div>`;
-  renderDay(clientId,0);
+    ${daysAccHtml}`;
+  (c.days||[]).forEach((_,i)=>renderDay(clientId,i));
 }
-window.switchDay=function(idx,btn,clientId){
-  document.querySelectorAll(`[id^="dtab-${clientId}-"]`).forEach(t=>t.classList.remove('active'));
-  btn.classList.add('active');renderDay(clientId,idx);
+function getNextDayIdx(c){
+  const days=c.days||[];
+  if(!days.length)return 0;
+  let lastDate=null;let lastIdx=-1;
+  days.forEach((_,i)=>{
+    (c.progress?.['snote-'+i]||[]).forEach(n=>{
+      if(!lastDate||n.date>lastDate){lastDate=n.date;lastIdx=i;}
+    });
+  });
+  if(lastIdx===-1)return 0;
+  return(lastIdx+1)%days.length;
+}
+window.toggleDayAcc=function(clientId,idx){
+  const hdr=document.querySelector(`#day-acc-${clientId}-${idx} .day-acc-hdr`);
+  const body=document.getElementById(`day-body-${clientId}-${idx}`);
+  if(!hdr||!body)return;
+  const isOpen=hdr.classList.contains('open');
+  hdr.classList.toggle('open',!isOpen);
+  body.classList.toggle('open',!isOpen);
 };
 
 function renderDay(clientId,dIdx){
   const c=clients.find(cl=>cl.id===clientId);
   const day=c.days[dIdx];
-  const container=document.getElementById('day-view-'+clientId);
+  const container=document.getElementById(`day-body-${clientId}-${dIdx}`);
+  if(!container)return;
   if(!day||!day.blocks?.length){container.innerHTML='<div style="text-align:center;padding:40px;color:var(--mu)">Sin bloques en este día.</div>';return}
   let html='';
   day.blocks.forEach((blk,bi)=>{
@@ -2298,7 +2337,20 @@ function renderGroupCV(plan,member){
   const initials=member.name.charAt(0).toUpperCase();
   const expDate=member.expiry?new Date(member.expiry+'T00:00:00').toLocaleDateString('es-AR'):'—';
   const daysLeft=member.expiry?Math.max(0,Math.ceil((new Date(member.expiry+'T00:00:00')-new Date())/(1000*60*60*24))):null;
-  const tabs=(plan.days||[]).map((d,i)=>`<button class="dtab ${i===0?'active':''}" onclick="switchGroupDay(${i},this,'${plan.id}','${member.id}')" id="gdtab-${plan.id}-${i}">${d.name||'Día '+(i+1)}</button>`).join('');
+  const fakeC={progress:member.progress||{}};
+  const nextIdx=getNextDayIdx({days:plan.days,...fakeC});
+  const daysAccHtml=(plan.days||[]).map((d,i)=>{
+    const isOpen=i===nextIdx;
+    const isDone=(member.progress?.['snote-'+i]||[]).length>0;
+    const badge=isOpen?`<span class="day-acc-badge" style="background:var(--ac)33;color:var(--ac2)">Siguiente</span>`:isDone?`<span class="day-acc-badge" style="background:var(--gr)22;color:var(--gr)">Completado</span>`:'';
+    return`<div class="day-acc" id="gday-acc-${plan.id}-${member.id}-${i}">
+      <div class="day-acc-hdr${isOpen?' open':''}" onclick="toggleGroupDayAcc('${plan.id}','${member.id}',${i})">
+        <div class="day-acc-title">${d.name||'Día '+(i+1)}${badge?'&nbsp;'+badge:''}</div>
+        <div class="day-acc-arr">▼</div>
+      </div>
+      <div class="day-acc-body${isOpen?' open':''}" id="gday-body-${plan.id}-${member.id}-${i}"></div>
+    </div>`;
+  }).join('');
   document.getElementById('cv-content').innerHTML=`
     <div class="hero">
       <div class="hero-top">
@@ -2312,23 +2364,24 @@ function renderGroupCV(plan,member){
         ${daysLeft!==null?`<span class="badge ${daysLeft<=7?'brd2':'byw2'}">📅 Vence en ${daysLeft} día${daysLeft!==1?'s':''} (${expDate})</span>`:''}
       </div>
       ${plan.mpLink&&daysLeft<=7?`<a href="${plan.mpLink}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:#009EE322;color:#009EE3;border:1px solid #009EE344;border-radius:8px;padding:6px 14px;font-size:.78rem;font-weight:600;text-decoration:none;margin-bottom:12px">💳 Renovar plan</a>`:''}
-      <div class="dtabs">${tabs}</div>
     </div>
-    <div id="group-day-view-${plan.id}-${member.id}"></div>`;
-  renderGroupDay(plan,member,0);
+    ${daysAccHtml}`;
+  (plan.days||[]).forEach((_,i)=>renderGroupDay(plan,member,i));
 }
 
-window.switchGroupDay=function(idx,btn,planId,memberId){
-  document.querySelectorAll(`[id^="gdtab-${planId}-"]`).forEach(t=>t.classList.remove('active'));
-  btn.classList.add('active');
-  const plan=planes.find(p=>p.id===planId);
-  const member=plan.members.find(m=>m.id===memberId);
-  renderGroupDay(plan,member,idx);
+window.toggleGroupDayAcc=function(planId,memberId,idx){
+  const hdr=document.querySelector(`#gday-acc-${planId}-${memberId}-${idx} .day-acc-hdr`);
+  const body=document.getElementById(`gday-body-${planId}-${memberId}-${idx}`);
+  if(!hdr||!body)return;
+  const isOpen=hdr.classList.contains('open');
+  hdr.classList.toggle('open',!isOpen);
+  body.classList.toggle('open',!isOpen);
 };
 
 function renderGroupDay(plan,member,dIdx){
   const day=plan.days[dIdx];
-  const container=document.getElementById(`group-day-view-${plan.id}-${member.id}`);
+  const container=document.getElementById(`gday-body-${plan.id}-${member.id}-${dIdx}`);
+  if(!container)return;
   if(!day||!day.blocks?.length){container.innerHTML='<div style="text-align:center;padding:40px;color:var(--mu)">Sin bloques en este día.</div>';return}
   // Reuse same render functions but with plan+member as client proxy
   const fakeClient={id:`${plan.id}-${member.id}`,progress:member.progress||{},days:plan.days};
