@@ -1319,6 +1319,7 @@ function renderClientList(){
       </div>
       <div class="ca">
         <button class="btn bpu sm" onclick="openEdit('${c.id}')">✏️ Editar</button>
+        <button class="btn bcy sm" onclick="duplicateClient('${c.id}')">📋 Duplicar</button>
         <button class="btn bd2 sm" onclick="delClient('${c.id}')">🗑️</button>
       </div>`;
     el.appendChild(div);
@@ -1335,6 +1336,20 @@ async function delClient(id){
   renderClientList();toast('🗑️ Eliminado');
 }
 window.delClient=delClient;
+
+async function duplicateClient(id){
+  const c=clients.find(cl=>cl.id===id);if(!c)return;
+  const copy=JSON.parse(JSON.stringify(c));
+  copy.name=c.name+' (copia)';
+  copy.progress={};
+  delete copy.id;
+  const ref=await addDoc(collection(db,'clients'),copy);
+  copy.id=ref.id;
+  await setDoc(doc(db,'clients',ref.id),{...copy,id:ref.id});
+  clients.push({...copy,id:ref.id});
+  renderClientList();toast('📋 Planificación duplicada');
+}
+window.duplicateClient=duplicateClient;
 
 function openEdit(id){
   editingId=id;const c=clients.find(cl=>cl.id===id);
@@ -2132,6 +2147,7 @@ function renderPlanesList(){
         <div style="display:flex;gap:7px;flex-wrap:wrap">
           <button class="btn bpu sm" onclick="openEditPlan('${plan.id}')">✏️ Editar rutina</button>
           <button class="btn bcy sm" onclick="openMembers('${plan.id}')">👤 Alumnos</button>
+          <button class="btn bcy sm" onclick="duplicatePlan('${plan.id}')">📋 Duplicar</button>
           <button class="btn bgr sm" onclick="copyLink('${pubLink}')">🌐 Link público</button>
           <button class="btn bd2 sm" onclick="deletePlan('${plan.id}')">🗑️</button>
         </div>
@@ -2166,6 +2182,19 @@ async function deletePlan(id){
   renderPlanesList();toast('🗑️ Plan eliminado');
 }
 window.deletePlan=deletePlan;
+
+async function duplicatePlan(id){
+  const plan=planes.find(p=>p.id===id);if(!plan)return;
+  const copy=JSON.parse(JSON.stringify(plan));
+  copy.name=plan.name+' (copia)';
+  copy.members=[];
+  delete copy.id;
+  const ref=await addDoc(collection(db,'planes'),copy);
+  await setDoc(doc(db,'planes',ref.id),{...copy,id:ref.id});
+  planes.push({...copy,id:ref.id});
+  renderPlanesList();toast('📋 Plan duplicado');
+}
+window.duplicatePlan=duplicatePlan;
 
 // ── MEMBERS ──
 function openMembers(planId){
