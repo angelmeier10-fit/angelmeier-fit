@@ -134,12 +134,13 @@ textarea{resize:vertical;min-height:52px}
 .day-acc-hdr.open .day-acc-arr{transform:rotate(180deg)}
 .day-acc-body{display:none;padding:14px 16px}
 .day-acc-body.open{display:block}
-.cv-day-picker{border:1px solid var(--bd);border-radius:var(--ra);margin-bottom:14px;overflow:hidden}
-.cv-day-picker-hdr{padding:13px 16px;background:var(--s2);cursor:pointer;user-select:none;display:flex;align-items:center;justify-content:space-between;gap:10px;transition:background .18s}
-.cv-day-picker-hdr:hover{background:var(--bd)33}
-.cv-day-picker-hdr.open{border-bottom:1px solid var(--bd)}
-.cv-day-picker-label{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.93rem;display:flex;align-items:center;gap:8px;flex:1;min-width:0}
-.cv-day-picker-arr{color:var(--mu);font-size:.82rem;transition:transform .22s;flex-shrink:0}
+.cv-day-picker{border:2px solid var(--ac);border-radius:var(--ra);margin-bottom:14px;overflow:hidden}
+.cv-day-picker-title{font-size:.72rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ac2);padding:6px 16px 0;opacity:.85}
+.cv-day-picker-hdr{padding:10px 16px 12px;background:var(--ac)18;cursor:pointer;user-select:none;display:flex;align-items:center;justify-content:space-between;gap:10px;transition:background .18s}
+.cv-day-picker-hdr:hover{background:var(--ac)28}
+.cv-day-picker-hdr.open{border-bottom:1px solid var(--ac)44}
+.cv-day-picker-label{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.93rem;color:var(--ac2);display:flex;align-items:center;gap:8px;flex:1;min-width:0}
+.cv-day-picker-arr{color:var(--ac2);font-size:.82rem;transition:transform .22s;flex-shrink:0}
 .cv-day-picker-hdr.open .cv-day-picker-arr{transform:rotate(180deg)}
 .cv-day-list{display:none}
 .cv-day-list.open{display:block}
@@ -1589,6 +1590,7 @@ async function renderCV(clientId){
       </div>
     </div>
     <div class="cv-day-picker">
+      <div class="cv-day-picker-title">Seleccionar día</div>
       <div class="cv-day-picker-hdr" id="cv-day-picker-hdr-${clientId}" onclick="toggleCVDayPicker('${clientId}')">
         <div class="cv-day-picker-label" id="cv-day-picker-label-${clientId}">📅 ${activeDayName}</div>
         <div class="cv-day-picker-arr">▼</div>
@@ -2541,6 +2543,7 @@ function renderGroupCV(plan,member){
       ${plan.mpLink&&daysLeft<=7?`<a href="${plan.mpLink}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:#009EE322;color:#009EE3;border:1px solid #009EE344;border-radius:8px;padding:6px 14px;font-size:.78rem;font-weight:600;text-decoration:none;margin-bottom:12px">💳 Renovar plan</a>`:''}
     </div>
     <div class="cv-day-picker">
+      <div class="cv-day-picker-title">Seleccionar día</div>
       <div class="cv-day-picker-hdr" id="gv-picker-hdr-${gkey}" onclick="toggleGroupCVDayPicker('${gkey}')">
         <div class="cv-day-picker-label" id="gv-picker-label-${gkey}">📅 ${activeDayName}</div>
         <div class="cv-day-picker-arr">▼</div>
