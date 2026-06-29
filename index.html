@@ -1821,11 +1821,12 @@ function renderGymBlock(c,bkey,blk,bi){
     }
     inner+=vidHtml;
     const logs=c.progress[`${c.id}-${ekey}-logs`]||[];
-    const logsHtml=logs.slice(-5).reverse().map((l,ri)=>{const realIdx=logs.length-1-ri;return`<div class="lent"><span>${l.date}</span><span class="lv">${l.weight?l.weight+'kg':'—'} × ${l.reps||'—'}</span><button onclick="deleteLog('${c.id}','${ekey}',${realIdx})" style="background:none;border:none;color:var(--mu);cursor:pointer;font-size:.75rem;padding:0 4px;opacity:.6" title="Borrar">✕</button></div>`;}).join('');
+    const logsHtml=logs.slice(-5).reverse().map((l,ri)=>{const realIdx=logs.length-1-ri;return`<div class="lent"><span>${l.date}</span><span class="lv">${l.weight?l.weight+'kg':'—'} × ${l.reps||'—'}</span><button onclick="deleteLog('${c.id}','${ekey}',${realIdx})" style="background:none;border:none;color:var(--mu);cursor:pointer;font-size:.75rem;padding:0 4px;opacity:.6" title="Borrar">✕</button>${l.note?`<div style="font-size:.72rem;color:var(--mu);font-style:italic;margin-top:2px;grid-column:1/-1">📝 ${l.note}</div>`:''}</div>`;}).join('');
     const lastLog=logs.length?logs[logs.length-1]:null;
     inner+=`<div class="plog">
       <div style="font-size:.69rem;color:var(--mu);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">📊 Registrar</div>
       <div class="lr"><input type="number" id="pw-${c.id}-${ekey}" placeholder="${lastLog&&lastLog.weight?'Último: '+lastLog.weight+'kg':'Peso (kg)'}" step="0.5"><input type="number" id="pr-${c.id}-${ekey}" placeholder="${lastLog&&lastLog.reps?'Último: '+lastLog.reps+'rep':'Reps'}"><button class="btn bgr sm" onclick="logGym('${c.id}','${ekey}')">✓</button></div>
+      <input type="text" id="pn-${c.id}-${ekey}" placeholder="Nota (opcional): ej. usé mancuernas..." style="margin-top:5px;font-size:.78rem;padding:6px 10px;border-radius:8px;border:1px solid var(--bd);background:var(--s2);color:var(--tx);width:100%;box-sizing:border-box">
       ${logsHtml}</div></div>`;
   });
   return`<div class="cvg" id="cvg-${c.id}-${bkey}">
@@ -1914,11 +1915,16 @@ window.logGym=async function(cId,ekey){
   const c=clients.find(cl=>cl.id===cId);
   const w=document.getElementById('pw-'+cId+'-'+ekey).value;
   const r=document.getElementById('pr-'+cId+'-'+ekey).value;
+  const n=(document.getElementById('pn-'+cId+'-'+ekey)?.value||'').trim();
   if(!w&&!r)return;const key=cId+'-'+ekey+'-logs';
   if(!c.progress[key])c.progress[key]=[];
-  c.progress[key].push({date:new Date().toLocaleDateString('es-AR'),weight:w,reps:r});
+  const entry={date:new Date().toLocaleDateString('es-AR'),weight:w,reps:r};
+  if(n)entry.note=n;
+  c.progress[key].push(entry);
   await updateDoc(doc(db,'clients',cId),{progress:c.progress});
-  document.getElementById('pw-'+cId+'-'+ekey).value='';document.getElementById('pr-'+cId+'-'+ekey).value='';
+  document.getElementById('pw-'+cId+'-'+ekey).value='';
+  document.getElementById('pr-'+cId+'-'+ekey).value='';
+  if(document.getElementById('pn-'+cId+'-'+ekey))document.getElementById('pn-'+cId+'-'+ekey).value='';
   toast('📊 Guardado');const dIdx=parseInt(ekey.split('-')[0]);renderDay(cId,dIdx);
 };
 
@@ -2654,14 +2660,19 @@ window.logGym=async function(cId,ekey){
     const member=plan.members.find(m=>m.id===memberId);if(!member)return;
     const w=document.getElementById('pw-'+cId+'-'+ekey).value;
     const r=document.getElementById('pr-'+cId+'-'+ekey).value;
+    const n=(document.getElementById('pn-'+cId+'-'+ekey)?.value||'').trim();
     if(!w&&!r)return;
     if(!member.progress)member.progress={};
     const key=cId+'-'+ekey+'-logs';
     if(!member.progress[key])member.progress[key]=[];
-    member.progress[key].push({date:new Date().toLocaleDateString('es-AR'),weight:w,reps:r});
+    const entry={date:new Date().toLocaleDateString('es-AR'),weight:w,reps:r};
+    if(n)entry.note=n;
+    member.progress[key].push(entry);
     plan.members=plan.members.map(m=>m.id===memberId?member:m);
     await setDoc(doc(db,'planes',planId),plan);
-    document.getElementById('pw-'+cId+'-'+ekey).value='';document.getElementById('pr-'+cId+'-'+ekey).value='';
+    document.getElementById('pw-'+cId+'-'+ekey).value='';
+    document.getElementById('pr-'+cId+'-'+ekey).value='';
+    if(document.getElementById('pn-'+cId+'-'+ekey))document.getElementById('pn-'+cId+'-'+ekey).value='';
     toast('📊 Guardado');const dIdx=parseInt(ekey.split('-')[0]);renderGroupDay(plan,member,dIdx);
     return;
   }
