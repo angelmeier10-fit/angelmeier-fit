@@ -61,12 +61,17 @@ textarea{resize:vertical;min-height:52px}
 .lbox{background:var(--s2);border:1px solid var(--ac);border-radius:8px;padding:7px 11px;display:flex;align-items:center;justify-content:space-between;gap:7px;margin-top:7px}
 .ltxt{font-size:.72rem;color:var(--ac2);font-family:monospace;word-break:break-all}
 .day-block{border:1px solid var(--bd);border-radius:var(--ra);margin-bottom:14px;overflow:hidden}
-.day-header{padding:12px 16px;background:var(--s2);border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.day-header{padding:12px 16px;background:var(--s2);border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;cursor:pointer;user-select:none}
+.day-header:hover{background:var(--bd)33}
 .day-title{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1rem;display:flex;align-items:center;gap:8px}
+.day-toggle-arr{color:var(--mu);font-size:.82rem;transition:transform .22s;margin-left:4px}
+.day-block.collapsed .day-toggle-arr{transform:rotate(-90deg)}
 .day-name-input{background:transparent;border:none;border-bottom:1px solid var(--bd);color:var(--tx);font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.95rem;padding:2px 6px;width:180px}
 .day-name-input:focus{outline:none;border-color:var(--ac2)}
 .day-actions{display:flex;gap:5px;flex-wrap:wrap}
+.day-block.collapsed .day-actions{display:none}
 .day-body{padding:14px 16px}
+.day-block.collapsed .day-body{display:none}
 .blk{border:1px solid var(--bd);border-radius:11px;margin-bottom:10px;overflow:hidden}
 .blk-hdr{display:flex;align-items:center;justify-content:space-between;padding:9px 13px;background:var(--s2);gap:7px;flex-wrap:wrap}
 .blk-type{font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.05em}
@@ -972,11 +977,12 @@ function buildDays(cid,count,data=[]){
 function buildOneDay(cid,idx,data=null){
   const did=cid+'-d'+idx;
   const div=document.createElement('div');div.className='day-block';div.id=did;
-  div.innerHTML=`<div class="day-header">
+  div.innerHTML=`<div class="day-header" onclick="toggleDayBlock('${did}',event)">
     <div class="day-title"><span>📅</span>
-      <input class="day-name-input" value="${data?.name||'Día '+(idx+1)}" placeholder="Ej: Día 1 — Piernas">
+      <input class="day-name-input" value="${data?.name||'Día '+(idx+1)}" placeholder="Ej: Día 1 — Piernas" onclick="event.stopPropagation()">
+      <span class="day-toggle-arr">▼</span>
     </div>
-    <div class="day-actions">
+    <div class="day-actions" onclick="event.stopPropagation()">
       <button class="btn bcy sm" onclick="addWarmupBlock('${did}-body')">🔥 + Entrada en calor</button>
       <button class="btn bg2 sm" onclick="addGymBlock('${did}-body','simple')">+ Ejercicio</button>
       <button class="btn byw sm" onclick="addGymBlock('${did}-body','super')">+ Superserie</button>
@@ -994,6 +1000,12 @@ function buildOneDay(cid,idx,data=null){
     else addCFBlock(did+'-body',b.cftype,b);
   });
 }
+
+window.toggleDayBlock=function(did,e){
+  if(e&&e.target.closest('input,button,select,textarea'))return;
+  const block=document.getElementById(did);
+  if(block)block.classList.toggle('collapsed');
+};
 
 function showCFMenu(bodyId,btn){
   const existing=document.getElementById('cf-menu-popup');if(existing)existing.remove();
