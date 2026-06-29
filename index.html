@@ -1038,7 +1038,7 @@ function buildDays(cid,count,data=[]){
 
 function buildOneDay(cid,idx,data=null){
   const did=cid+'-d'+idx;
-  const div=document.createElement('div');div.className='day-block';div.id=did;
+  const div=document.createElement('div');div.className='day-block collapsed';div.id=did;
   div.innerHTML=`<div class="day-header" onclick="toggleDayBlock('${did}',event)">
     <div class="day-title"><span>📅</span>
       <input class="day-name-input" value="${data?.name||'Día '+(idx+1)}" placeholder="Ej: Día 1 — Piernas" onclick="event.stopPropagation()">
@@ -1604,11 +1604,11 @@ async function renderCV(clientId){
     </div>
     <div class="cv-day-picker">
       <div class="cv-day-picker-title">Seleccionar día</div>
-      <div class="cv-day-picker-hdr open" id="cv-day-picker-hdr-${clientId}" onclick="toggleCVDayPicker('${clientId}')">
+      <div class="cv-day-picker-hdr" id="cv-day-picker-hdr-${clientId}" onclick="toggleCVDayPicker('${clientId}')">
         <div class="cv-day-picker-label" id="cv-day-picker-label-${clientId}">📅 ${activeDayName}</div>
         <div class="cv-day-picker-arr">▼</div>
       </div>
-      <div class="cv-day-list open" id="cv-day-list-${clientId}">${dayListItems}</div>
+      <div class="cv-day-list" id="cv-day-list-${clientId}">${dayListItems}</div>
     </div>
     <div id="day-view-${clientId}"></div>`;
   const cvClient=Object.assign({},c,{days:activeDays});
@@ -2578,11 +2578,11 @@ function renderGroupCV(plan,member){
     </div>
     <div class="cv-day-picker">
       <div class="cv-day-picker-title">Seleccionar día</div>
-      <div class="cv-day-picker-hdr open" id="gv-picker-hdr-${gkey}" onclick="toggleGroupCVDayPicker('${gkey}')">
+      <div class="cv-day-picker-hdr" id="gv-picker-hdr-${gkey}" onclick="toggleGroupCVDayPicker('${gkey}')">
         <div class="cv-day-picker-label" id="gv-picker-label-${gkey}">📅 ${activeDayName}</div>
         <div class="cv-day-picker-arr">▼</div>
       </div>
-      <div class="cv-day-list open" id="gv-day-list-${gkey}">${dayListItems}</div>
+      <div class="cv-day-list" id="gv-day-list-${gkey}">${dayListItems}</div>
     </div>
     <div id="gday-view-${gkey}"></div>`;
   renderGroupDay(plan,member,nextIdx);
