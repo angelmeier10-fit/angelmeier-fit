@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="UTF-8"><title>Seed Plan</title>
+<style>body{font-family:sans-serif;max-width:500px;margin:60px auto;text-align:center;background:#0f1117;color:#e8eaf6}
+button{padding:14px 28px;background:#7c5cbf;color:#fff;border:none;border-radius:10px;font-size:1rem;cursor:pointer;margin-top:20px}
+#msg{margin-top:20px;font-size:.95rem;line-height:1.6}</style>
+</head>
+<body>
+<h2>Agregar plan grupal</h2>
+<p style="color:#8b92b5">Glúteos, Piernas y Abdominales — 4 días</p>
+<button onclick="seed()">Agregar a Firestore</button>
+<div id="msg"></div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, addDoc, collection } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const app = initializeApp({
+  apiKey: "AIzaSyBc-icBnX6LCjvaYagVcR1hE3VkMZG05Cw",
+  authDomain: "angelmeier-fit.firebaseapp.com",
+  projectId: "angelmeier-fit",
+  storageBucket: "angelmeier-fit.firebasestorage.app",
+  messagingSenderId: "931547082856",
+  appId: "1:931547082856:web:3e6b8c943c7067b23b0bdc"
+});
+const db = getFirestore(app);
+
+const plan = {
+  name: "GLÚTEOS, PIERNAS Y ABS",
+  desc: "Programa de 4 días enfocado en glúteos, cuádriceps, isquiotibiales y core. Sesiones de 45 a 60 minutos con progresión de cargas y trabajo de abdominales integrado.",
+  level: "Intermedio",
+  cat: "Glúteos y Piernas",
+  price: "",
+  mpLink: "",
+  durationDays: 30,
+  img: "",
+  members: [],
+  days: [
+    {
+      name: "Día 1 — Glúteos y Posterior",
+      blocks: [
+        {
+          kind: "warmup", duration: "10 min",
+          exercises: [
+            { name: "Movilidad de cadera (círculos)", reps: "10 c/lado", video: "", obs: "" },
+            { name: "Glute bridge sin carga", reps: "15 reps", video: "", obs: "Activar glúteos antes de cargar" },
+            { name: "Sentadilla libre sin carga", reps: "10 reps", video: "", obs: "Foco en técnica y profundidad" }
+          ]
+        },
+        {
+          kind: "gym", type: "simple", rest: "90s",
+          exercises: [{ name: "Hip Thrust con barra", video: "", obs: "Elevar la cadera hasta alinear rodillas-cadera-hombros. Apretar glúteos en la cima.",
+            scheme: [{ reps: "12", load: "carga moderada" }, { reps: "12", load: "+5 kg" }, { reps: "10", load: "+5 kg" }, { reps: "10", load: "máximo tolerable" }]
+          }]
+        },
+        {
+          kind: "gym", type: "simple", rest: "90s",
+          exercises: [{ name: "Sentadilla con barra", video: "", obs: "Descender hasta paralelo o más. Rodillas alineadas con pies.",
+            scheme: [{ reps: "10", load: "65% 1RM" }, { reps: "10", load: "70% 1RM" }, { reps: "8", load: "75% 1RM" }, { reps: "8", load: "75% 1RM" }]
+          }]
+        },
+        {
+          kind: "gym", type: "simple", rest: "75s",
+          exercises: [{ name: "Romanian Deadlift (RDL)", video: "", obs: "Empujar caderas hacia atrás. Sentir elongación en isquiotibiales. Espalda neutra.",
+            scheme: [{ reps: "10", load: "" }, { reps: "10", load: "" }, { reps: "10", load: "" }]
+          }]
+        },
+        {
+          kind: "gym", type: "simple", rest: "60s",
+          exercises: [{ name: "Abducción en máquina", video: "", obs: "Movimiento controlado. Sin rebotes.",
+            scheme: [{ reps: "15", load: "" }, { reps: "15", load: "" }, { reps: "15", load: "" }]
+          }]
+        },
+        {
+          kind: "gym", type: "super", rest: "60s",
+          exercises: [
+            { name: "Plancha frontal", video: "", obs: "No elevar ni bajar caderas.",
+              scheme: [{ reps: "45 seg", load: "—" }, { reps: "45 seg", load: "—" }, { reps: "45 seg", load: "—" }]
+            },
+            { name: "Crunch inverso", video: "", obs: "Elevar la pelvis del suelo. Control en el descenso.",
+              scheme: [{ reps: "20", load: "—" }, { reps: "20", load: "—" }, { reps: "20", load: "—" }]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      name: "Día 2 — Cuádriceps y Core",
+      blocks: [
+        {
+          kind: "warmup", duration: "8 min",
+          exercises: [
+            { name: "Trote en lugar o cinta", reps: "3 min", video: "", obs: "" },
+            { name: "Movilidad de rodilla (círculos)", reps: "10 c/pierna", video: "", obs: "" },
+            { name: "Sentadilla goblet sin carga", reps: "10 reps", video: "", obs: "Profundidad máxima" }
+          ]
+        },
+        {
+          kind: "gym", type: "simple", rest: "90s",
+          exercises: [{ name: "Prensa 45°", video: "", obs: "Pies a la altura de los hombros. No bloquear rodillas al extender. Bajar con control.",
+            scheme: [{ reps: "12", load: "" }, { reps: "12", load: "" }, { reps: "10", load: "+carga" }, { reps: "10", load: "+carga" }]
+          }]
+        },
+        {
+          kind: "gym", type: "simple", rest: "90s",
+          exercises: [{ name: "Sentadilla goblet con mancuerna", video: "", obs: "Mancuerna al pecho. Descender profundo. Talones apoyados.",
+            scheme: [{ reps: "12", load: "" }, { reps: "10", load: "+carga" }, { reps: "10", load: "+carga" }, { reps: "10", load: "" }]
+          }]
+        },
+        {
+          kind: "gym", type: "super", rest: "60s",
+          exercises: [
+            { name: "Extensión de cuádriceps en máquina", video: "", obs: "Extensión completa. Pausa 1 seg arriba.",
+              scheme: [{ reps: "15", load: "" }, { reps: "15", load: "" }, { reps: "15", load: "" }]
+            },
+            { name: "Curl femoral en máquina (acostado)", video: "", obs: "Rango completo. No arquear la espalda baja.",
+              scheme: [{ reps: "15", load: "" }, { reps: "15", load: "" }, { reps: "15", load: "" }]
+            }
+          ]
+        },
+        {
+          kind: "gym", type: "super", rest: "45s",
+          exercises: [
+            { name: "Rueda abdominal", video: "", obs: "Extender lento. Contraer core para volver. Rodillas si es necesario.",
+              scheme: [{ reps: "10", load: "—" }, { reps: "10", load: "—" }, { reps: "10", load: "—" }]
+            },
+            { name: "Elevación de piernas (colgado o en banco)", video: "", obs: "No balancear. Control total en el descenso.",
+              scheme: [{ reps: "15", load: "—" }, { reps: "15", load: "—" }, { reps: "15", load: "—" }]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      name: "Día 3 — Glúteos Énfasis",
+      blocks: [
+        {
+          kind: "warmup", duration: "10 min",
+          exercises: [
+            { name: "Caminata lateral con banda elástica en rodillas", reps: "2 × 15 pasos c/lado", video: "", obs: "Activar glúteo medio" },
+            { name: "Clamshell con banda", reps: "15 c/lado", video: "", obs: "" },
+            { name: "Hip thrust sin carga", reps: "15 reps", video: "", obs: "Activación previa" }
+          ]
+        },
+        {
+          kind: "gym", type: "simple", rest: "90s",
+          exercises: [{ name: "Sentadilla búlgara (Split squat)", video: "", obs: "Pie trasero en banco. Bajar hasta que rodilla trasera casi toque el suelo. Control total.",
+            scheme: [{ reps: "10 c/pierna", load: "" }, { reps: "10 c/pierna", load: "+carga" }, { reps: "10 c/pierna", load: "+carga" }, { reps: "10 c/pierna", load: "" }]
+          }]
+        },
+        {
+          kind: "gym", type: "simple", rest: "75s",
+          exercises: [{ name: "Hip Thrust unilateral", video: "", obs: "Una sola pierna apoyada. Controlar que la cadera no rote. Apretar glúteo arriba.",
+            scheme: [{ reps: "12 c/pierna", load: "" }, { reps: "12 c/pierna", load: "" }, { reps: "12 c/pierna", load: "" }]
+          }]
+        },
+        {
+          kind: "gym", type: "simple", rest: "75s",
+          exercises: [{ name: "Sentadilla sumo con mancuerna", video: "", obs: "Pies anchos, puntas hacia afuera. Énfasis en aductores y glúteos. Espalda erguida.",
+            scheme: [{ reps: "15", load: "" }, { reps: "15", load: "" }, { reps: "15", load: "" }]
+          }]
+        },
+        {
+          kind: "gym", type: "simple", rest: "60s",
+          exercises: [{ name: "Patada trasera en cable o con tobillera", video: "", obs: "Contraer glúteo al final. No arquear la espalda. Movimiento controlado.",
+            scheme: [{ reps: "15 c/pierna", load: "" }, { reps: "15 c/pierna", load: "" }, { reps: "15 c/pierna", load: "" }]
+          }]
+        },
+        {
+          kind: "gym", type: "super", rest: "45s",
+          exercises: [
+            { name: "Plancha lateral", video: "", obs: "Mantener caderas alineadas. No dejar caer la cadera.",
+              scheme: [{ reps: "30 seg c/lado", load: "—" }, { reps: "30 seg c/lado", load: "—" }, { reps: "30 seg c/lado", load: "—" }]
+            },
+            { name: "Bicicleta abdominal", video: "", obs: "Movimiento lento y controlado. No jalar del cuello.",
+              scheme: [{ reps: "20", load: "—" }, { reps: "20", load: "—" }, { reps: "20", load: "—" }]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      name: "Día 4 — Pierna Completa + Core",
+      blocks: [
+        {
+          kind: "warmup", duration: "10 min",
+          exercises: [
+            { name: "Bisagra de cadera sin carga (hip hinge)", reps: "10 reps", video: "", obs: "Preparar el patrón del peso muerto" },
+            { name: "Sentadilla con pausa abajo", reps: "8 reps", video: "", obs: "Sostener 2 seg en la posición más baja" },
+            { name: "Activación de glúteo medio en suelo", reps: "15 c/lado", video: "", obs: "" }
+          ]
+        },
+        {
+          kind: "gym", type: "simple", rest: "120s",
+          exercises: [{ name: "Peso muerto convencional", video: "", obs: "Espalda neutra. Empujar el suelo con los pies al subir. Barra pegada al cuerpo.",
+            scheme: [{ reps: "8", load: "70% 1RM" }, { reps: "8", load: "75% 1RM" }, { reps: "6", load: "80% 1RM" }, { reps: "6", load: "80% 1RM" }]
+          }]
+        },
+        {
+          kind: "gym", type: "simple", rest: "90s",
+          exercises: [{ name: "Zancadas caminando con mancuernas", video: "", obs: "Paso largo. Rodilla delantera no pasa la punta del pie. Torso erguido.",
+            scheme: [{ reps: "12 c/pierna", load: "" }, { reps: "12 c/pierna", load: "" }, { reps: "12 c/pierna", load: "" }]
+          }]
+        },
+        {
+          kind: "gym", type: "simple", rest: "75s",
+          exercises: [{ name: "Step up con mancuernas", video: "", obs: "Banco a altura de rodilla. Empujar con el talón del pie que sube. Bajar con control.",
+            scheme: [{ reps: "10 c/pierna", load: "" }, { reps: "10 c/pierna", load: "" }, { reps: "10 c/pierna", load: "" }]
+          }]
+        },
+        {
+          kind: "gym", type: "tri", rest: "60s",
+          exercises: [
+            { name: "Plancha frontal", video: "", obs: "Cuerpo recto. No bajar caderas.",
+              scheme: [{ reps: "45 seg", load: "—" }, { reps: "45 seg", load: "—" }, { reps: "45 seg", load: "—" }]
+            },
+            { name: "Crunch abdominal", video: "", obs: "No jalar del cuello. Exhalar al subir.",
+              scheme: [{ reps: "20", load: "—" }, { reps: "20", load: "—" }, { reps: "20", load: "—" }]
+            },
+            { name: "Elevación de piernas en banco", video: "", obs: "Bajar lento sin apoyar los pies. Control total.",
+              scheme: [{ reps: "15", load: "—" }, { reps: "15", load: "—" }, { reps: "15", load: "—" }]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+};
+
+window.seed = async function() {
+  const btn = document.querySelector('button');
+  const msg = document.getElementById('msg');
+  btn.disabled = true;
+  btn.textContent = 'Guardando...';
+  try {
+    const ref = await addDoc(collection(db, 'planes'), plan);
+    msg.innerHTML = `<span style="color:#4ade80">Plan agregado. ID: ${ref.id}</span><br><br>Podés cerrar esta página.`;
+    btn.textContent = 'Listo';
+  } catch(e) {
+    msg.innerHTML = `<span style="color:#f87171">Error: ${e.message}</span>`;
+    btn.disabled = false;
+    btn.textContent = 'Reintentar';
+  }
+};
+</script>
+</body>
+</html>
