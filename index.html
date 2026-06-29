@@ -3224,6 +3224,20 @@ window.convertirEnCliente=async function(docId){
     const diasNum=parseInt(s.dias)||3;
     setVal('nc-days', diasNum);
     buildDays('days-container', diasNum);
+    // Selector para copiar rutina de cliente existente
+    const existingPicker=document.getElementById('nc-copy-routine-wrap');
+    if(existingPicker) existingPicker.remove();
+    const wrap=document.createElement('div');
+    wrap.id='nc-copy-routine-wrap';
+    wrap.style.cssText='margin-top:14px;padding:14px;background:var(--s2);border-radius:10px;border:1px solid var(--bd)';
+    wrap.innerHTML=`<label style="font-size:.78rem;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:8px">📋 Copiar rutina de cliente existente (opcional)</label>
+      <select id="nc-copy-routine-sel" style="width:100%" onchange="applyCopyRoutine()">
+        <option value="">— Sin copiar rutina —</option>
+        ${clients.map(c=>`<option value="${c.id}">${c.name}</option>`).join('')}
+      </select>
+      <div style="font-size:.72rem;color:var(--mu);margin-top:6px">Reemplaza los días del formulario con la rutina del cliente seleccionado.</div>`;
+    const daysContainer=document.getElementById('days-container');
+    daysContainer.parentNode.insertBefore(wrap,daysContainer);
     toast('✅ Datos pre-cargados — revisá y completá la rutina');
     // Mark solicitud as converted
     updateDoc(doc(db,'solicitudes',docId),{status:'convertida'});
@@ -3244,6 +3258,17 @@ window.marcarVista=async function(docId){
   renderSolicitudes();
 }
 
+window.applyCopyRoutine=function(){
+  const sel=document.getElementById('nc-copy-routine-sel');
+  if(!sel||!sel.value)return;
+  const src=clients.find(c=>c.id===sel.value);
+  if(!src?.days?.length)return;
+  const diasNum=src.days.length;
+  const daysEl=document.getElementById('nc-days');
+  if(daysEl)daysEl.value=diasNum;
+  buildDays('days-container',diasNum,src.days);
+  toast('📋 Rutina copiada de '+src.name);
+};
 
 
 
