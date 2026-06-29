@@ -778,6 +778,7 @@ let scC=0;
 let isClientMode=false;
 
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2400)}
+function norm(s){return(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')}
 function getYTId(url){if(!url)return null;const m=url.match(/(?:shorts\/|v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);return m?m[1]:null}
 function hideLoading(){document.getElementById('loading').style.display='none'}
 
@@ -1268,9 +1269,9 @@ function getExByGroup(){
   return groups;
 }
 function filterEx(input,ddId){
-  const dd=document.getElementById(ddId);const q=input.value.toLowerCase();dd.innerHTML='';let has=false;
+  const dd=document.getElementById(ddId);const q=norm(input.value);dd.innerHTML='';let has=false;
   for(const[cat,exs]of Object.entries(getExByGroup())){
-    const f=exs.filter(e=>e.name.toLowerCase().includes(q));if(!f.length)continue;has=true;
+    const f=exs.filter(e=>norm(e.name).includes(q));if(!f.length)continue;has=true;
     const gl=document.createElement('div');gl.className='ex-gl';gl.textContent=cat;dd.appendChild(gl);
     f.forEach(ex=>{const opt=document.createElement('div');opt.className='ex-opt';
       opt.innerHTML=`<span>${ex.name}</span><span class="ex-cat-lbl">${cat}</span>`;
@@ -1952,7 +1953,7 @@ function populateCatFilter(){
 function renderExDB(){
   const q=document.getElementById('ex-search-db').value.toLowerCase();
   const cat=document.getElementById('ex-cat-filter').value;
-  const filtered=exDB.filter(e=>(!q||e.name.toLowerCase().includes(q))&&(!cat||e.cat===cat));
+  const filtered=exDB.filter(e=>(!q||norm(e.name).includes(norm(q)))&&(!cat||e.cat===cat));
   const el=document.getElementById('exdb-list');
   if(!filtered.length){el.innerHTML='<div style="padding:20px;text-align:center;color:var(--mu)">No se encontraron ejercicios.</div>';return}
   el.innerHTML=filtered.map(ex=>{
