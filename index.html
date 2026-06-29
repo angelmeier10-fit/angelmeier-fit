@@ -1455,13 +1455,12 @@ async function renderCV(clientId){
     return;
   }
   const initials=c.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
-  const nextIdx=getNextDayIdx(c);
+  const {dayIdx:nextIdx,days:activeDays,weekNum:displayWeek}=getNextDayInfo(c);
   const mpReminder=c.mpLink&&c.payStatus==='free'?`<a href="${c.mpLink}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:#009EE322;color:#009EE3;border:1px solid #009EE344;border-radius:8px;padding:6px 14px;font-size:.78rem;font-weight:600;text-decoration:none;margin-bottom:12px">💳 Renovar / pagar plan</a>`:'';
-  const daysAccHtml=(c.days||[]).map((d,i)=>{
+  const daysAccHtml=activeDays.map((d,i)=>{
     const isOpen=i===nextIdx;
-    const isNext=i===nextIdx;
     const isDone=(c.progress?.['snote-'+i]||[]).length>0;
-    const badge=isNext?`<span class="day-acc-badge" style="background:var(--ac)33;color:var(--ac2)">Siguiente</span>`:isDone?`<span class="day-acc-badge" style="background:var(--gr)22;color:var(--gr)">Completado</span>`:'';
+    const badge=isOpen?`<span class="day-acc-badge" style="background:var(--ac)33;color:var(--ac2)">Siguiente</span>`:isDone?`<span class="day-acc-badge" style="background:var(--gr)22;color:var(--gr)">Completado</span>`:'';
     return`<div class="day-acc" id="day-acc-${clientId}-${i}">
       <div class="day-acc-hdr${isOpen?' open':''}" onclick="toggleDayAcc('${clientId}',${i})">
         <div class="day-acc-title">${d.name||'Día '+(i+1)}${badge?'&nbsp;'+badge:''}</div>
@@ -1470,6 +1469,7 @@ async function renderCV(clientId){
       <div class="day-acc-body${isOpen?' open':''}" id="day-body-${clientId}-${i}"></div>
     </div>`;
   }).join('');
+  const weekLabel=displayWeek&&c.weeks?`<span class="badge" style="background:var(--ac)22;color:var(--ac2)">📅 Semana ${displayWeek}</span>`:'';
   document.getElementById('cv-content').innerHTML=`
     <div class="hero">
       <div class="hero-top"><div class="hav">${initials}</div>
@@ -1481,24 +1481,37 @@ async function renderCV(clientId){
       ${mpReminder}
       <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px">
         ${(()=>{if(!c.expiry)return'';const exp=new Date(c.expiry+'T00:00:00');const daysLeft=Math.ceil((exp-new Date())/(1000*60*60*24));const isNear=daysLeft<=7;return`<span class="badge" style="background:${isNear?'#f8717122':'#fbbf2422'};color:${isNear?'var(--rd)':'var(--yw)'}">📅 Vence ${exp.toLocaleDateString('es-AR')} ${daysLeft>0?'('+daysLeft+' días)':'(vencido)'}</span>`;})()}
-        ${(()=>{const info=getMesoInfo(c);if(!c.totalWeeks&&!c.startDate)return'';return`<span class="badge" style="background:var(--ac)22;color:var(--ac2)">🗓️ Semana ${info.currentWeek} de ${info.totalWeeks} — Meso ${info.mesoNum}/${info.totalMesos}</span>`;})()}
+        ${weekLabel||(()=>{const info=getMesoInfo(c);if(!c.totalWeeks&&!c.startDate)return'';return`<span class="badge" style="background:var(--ac)22;color:var(--ac2)">🗓️ Semana ${info.currentWeek} de ${info.totalWeeks} — Meso ${info.mesoNum}/${info.totalMesos}</span>`;})()}
       </div>
     </div>
     ${daysAccHtml}`;
-  (c.days||[]).forEach((_,i)=>renderDay(clientId,i));
+  // Store active days on a proxy so renderDay can access them
+  const cvClient=Object.assign({},c,{days:activeDays});
+  const idx=clients.findIndex(cl=>cl.id===clientId);
+  if(idx>=0)clients[idx]=cvClient;
+  activeDays.forEach((_,i)=>renderDay(clientId,i));
 }
-function getNextDayIdx(c){
+function getNextDayInfo(c){
   const days=c.days||[];
-  if(!days.length)return 0;
+  if(!days.length)return{dayIdx:0,days:days,weekNum:null};
   let lastDate=null;let lastIdx=-1;
   days.forEach((_,i)=>{
     (c.progress?.['snote-'+i]||[]).forEach(n=>{
       if(!lastDate||n.date>lastDate){lastDate=n.date;lastIdx=i;}
     });
   });
-  if(lastIdx===-1)return 0;
-  return(lastIdx+1)%days.length;
+  if(lastIdx===-1)return{dayIdx:0,days:days,weekNum:null};
+  const nextIdx=lastIdx+1;
+  if(nextIdx<days.length)return{dayIdx:nextIdx,days:days,weekNum:null};
+  // Last day completed — check for next week
+  if(c.weeks&&c.activeWeek){
+    const sortedWeeks=Object.keys(c.weeks).map(Number).sort((a,b)=>a-b);
+    const nextWeek=sortedWeeks.find(w=>w>c.activeWeek);
+    if(nextWeek&&c.weeks[nextWeek]?.length)return{dayIdx:0,days:c.weeks[nextWeek],weekNum:nextWeek};
+  }
+  return{dayIdx:0,days:days,weekNum:null};
 }
+function getNextDayIdx(c){return getNextDayInfo(c).dayIdx;}
 window.toggleDayAcc=function(clientId,idx){
   const hdr=document.querySelector(`#day-acc-${clientId}-${idx} .day-acc-hdr`);
   const body=document.getElementById(`day-body-${clientId}-${idx}`);
