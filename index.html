@@ -162,6 +162,8 @@ textarea{resize:vertical;min-height:52px}
 .cvg.open .cvg-arr{transform:rotate(180deg)}
 .cvg-body{display:none;border-top:1px solid var(--bd);padding:14px 15px}
 .cvg.open .cvg-body{display:block}
+.cvg.open .cvg-hdr{background:var(--ac)18;border-bottom:1px solid var(--ac)44}
+.cvg.open{border-color:var(--ac)88}
 .stbl{width:100%;border-collapse:collapse;margin-bottom:11px}
 .stbl th,.stbl td{padding:6px 9px;font-size:.76rem;text-align:left;border-bottom:1px solid var(--bd)}
 .stbl th{color:var(--mu);font-weight:600;text-transform:uppercase;font-size:.65rem;letter-spacing:.05em}
@@ -1705,7 +1707,7 @@ function renderDay(clientId,dIdx){
     <textarea id="snote-${clientId}-${dIdx}" placeholder="¿Cómo te sentiste hoy? ¿Algo a mejorar? ¿Peso usado?..." style="min-height:70px;margin-bottom:8px;font-size:.83rem"></textarea>
     <button class="btn bgr sm" onclick="saveSessionNote('${clientId}',${dIdx})">💾 Guardar nota</button>
     ${notesHtml}
-  </div>`;
+  </div><div style="height:90px"></div>`;
   container.innerHTML=html;
 }
 
@@ -2625,7 +2627,7 @@ function renderGroupDay(plan,member,dIdx){
     <textarea id="gsnote-${plan.id}-${member.id}-${dIdx}" placeholder="¿Cómo te sentiste hoy?..." style="min-height:70px;margin-bottom:8px;font-size:.83rem"></textarea>
     <button class="btn bgr sm" onclick="saveGroupNote('${plan.id}','${member.id}',${dIdx})">💾 Guardar nota</button>
     ${notesHtml}
-  </div>`;
+  </div><div style="height:90px"></div>`;
   container.innerHTML=html;
 }
 
