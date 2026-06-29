@@ -380,70 +380,6 @@ document.querySelectorAll('.radio-item').forEach(item=>{
   });
 });
 
-document.getElementById('anamnesis-form').addEventListener('submit',function(e){
-  e.preventDefault();
-  const data=new FormData(this);
-  let msg='📋 *ANAMNESIS DEPORTIVA*\n';
-  msg+='_Angel Meier — Entrenamiento Online_\n\n';
-
-  const sections={
-    '👤 DATOS PERSONALES':['nombre','nacimiento','email','whatsapp','peso','altura','ocupacion','sexo'],
-    '🎯 OBJETIVO':['objetivo','objetivo_especifico','tiempo_objetivo'],
-    '🏋️ EXPERIENCIA':['nivel','deportes','dias','duracion','horario'],
-    '🏠 LUGAR Y EQUIPAMIENTO':['lugar','equipamiento'],
-    '🩺 SALUD':['condiciones','lesiones','restricciones','tratamiento','tipo_tratamiento','medicacion'],
-    '😴 HÁBITOS':['alimentacion','nutricion','sueno','estres','tabaco'],
-    '💬 MOTIVACIÓN':['gustos','no_gustos','consideraciones','como_conocio']
-  };
-
-  const labels={
-    nombre:'Nombre',nacimiento:'Nacimiento',email:'Email',whatsapp:'WhatsApp',
-    peso:'Peso (kg)',altura:'Altura (cm)',ocupacion:'Ocupación',sexo:'Sexo',
-    objetivo:'Objetivo',objetivo_especifico:'Objetivo específico',tiempo_objetivo:'Plazo',
-    nivel:'Nivel',deportes:'Deportes/actividades',dias:'Días/semana',duracion:'Duración sesión',horario:'Horario',
-    lugar:'Lugar de entrenamiento',equipamiento:'Equipamiento',
-    condiciones:'Condiciones de salud',lesiones:'Lesiones',restricciones:'Restricciones',
-    tratamiento:'Bajo tratamiento',tipo_tratamiento:'Tipo de tratamiento',medicacion:'Medicación',
-    alimentacion:'Alimentación',nutricion:'Plan nutricional',sueno:'Sueño',estres:'Estrés',tabaco:'Tabaco',
-    gustos:'Qué le gusta hacer',no_gustos:'Qué no le gusta hacer',consideraciones:'Consideraciones',como_conocio:'Cómo conoció a Angel'
-  };
-
-  // Collect checkboxes
-  const checked={};
-  document.querySelectorAll('input[type=checkbox]:checked').forEach(i=>{
-    if(!checked[i.name])checked[i.name]=[];
-    checked[i.name].push(i.value);
-  });
-  // Merge checkbox arrays into text fields
-  if(checked['gustos_check']){
-    const existing=(data.get('gustos')||'').trim();
-    checked['gustos']=(checked['gustos_check'].join(', ')+(existing?', '+existing:'')).trim();
-  }
-  if(checked['no_gustos_check']){
-    const existing=(data.get('no_gustos')||'').trim();
-    checked['no_gustos']=(checked['no_gustos_check'].join(', ')+(existing?', '+existing:'')).trim();
-  }
-
-  for(const[section,fields]of Object.entries(sections)){
-    msg+=`*${section}*\n`;
-    for(const f of fields){
-      const v=checked[f]?checked[f].join(', '):(data.get(f)||'').trim();
-      if(v) msg+=`• ${labels[f]||f}: ${v}\n`;
-    }
-    msg+='\n';
-  }
-
-  const phone='5491172399988';
-  const url=`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
-  // Use anchor click to avoid popup blocker
-  const a=document.createElement('a');
-  a.href=url;a.target='_blank';a.rel='noopener';
-  document.body.appendChild(a);a.click();document.body.removeChild(a);
-  document.getElementById('anamnesis-form').style.display='none';
-  document.getElementById('success-msg').style.display='block';
-});
-</script>
-
 <!-- FIREBASE -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
@@ -461,26 +397,32 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// Override the form submit to also save to Firebase
-const originalForm = document.getElementById('anamnesis-form');
-originalForm.addEventListener('submit', async function(e) {
-  // Save to Firebase after main handler runs
+document.getElementById('anamnesis-form').addEventListener('submit', function(e) {
+  e.preventDefault();
   const data = new FormData(this);
-  
-  // Collect checkboxes
+
   const checked = {};
   document.querySelectorAll('input[type=checkbox]:checked').forEach(i => {
     if(!checked[i.name]) checked[i.name] = [];
     checked[i.name].push(i.value);
   });
 
-  // Build solicitud object
+  const nombre = data.get('nombre') || 'alguien';
+
+  // Abrir WhatsApp con mensaje corto — SINCRÓNICO antes de cualquier await
+  const waMsg = `Hola Angel! Soy ${nombre} y acabo de completar la anamnesis. Quedo a tu disposición 💪`;
+  window.open(`https://wa.me/5491172399988?text=${encodeURIComponent(waMsg)}`, '_blank');
+
+  // Mostrar confirmación
+  document.getElementById('anamnesis-form').style.display = 'none';
+  document.getElementById('success-msg').style.display = 'block';
+
+  // Guardar en Firebase
   const solicitud = {
     id: 'sol' + Date.now(),
     status: 'pendiente',
     createdAt: new Date().toLocaleDateString('es-AR'),
     createdAtISO: new Date().toISOString(),
-    // Datos personales
     nombre: data.get('nombre') || '',
     nacimiento: data.get('nacimiento') || '',
     email: data.get('email') || '',
@@ -489,45 +431,33 @@ originalForm.addEventListener('submit', async function(e) {
     altura: data.get('altura') || '',
     ocupacion: data.get('ocupacion') || '',
     sexo: data.get('sexo') || '',
-    // Objetivo
     objetivo: (checked['objetivo'] || []).join(', '),
     objetivo_especifico: data.get('objetivo_especifico') || '',
-    // Experiencia
     nivel: data.get('nivel') || '',
     deportes: data.get('deportes') || '',
     dias: data.get('dias') || '',
     duracion: data.get('duracion') || '',
     horario: (checked['horario'] || []).join(', '),
-    // Lugar
     lugar: (checked['lugar'] || []).join(', '),
     equipamiento: data.get('equipamiento') || '',
-    // Salud
     condiciones: (checked['condiciones'] || []).join(', '),
     lesiones: data.get('lesiones') || '',
     restricciones: data.get('restricciones') || '',
     tratamiento: data.get('tratamiento') || '',
     tipo_tratamiento: data.get('tipo_tratamiento') || '',
     medicacion: data.get('medicacion') || '',
-    // Habitos
     alimentacion: data.get('alimentacion') || '',
     nutricion: data.get('nutricion') || '',
     sueno: data.get('sueno') || '',
     estres: data.get('estres') || '',
     tabaco: data.get('tabaco') || '',
-    // Preferencias
     gustos: (checked['gustos_check'] || []).join(', ') + (data.get('gustos') ? ', ' + data.get('gustos') : ''),
     no_gustos: (checked['no_gustos_check'] || []).join(', ') + (data.get('no_gustos') ? ', ' + data.get('no_gustos') : ''),
-    // Final
     consideraciones: data.get('consideraciones') || '',
     como_conocio: data.get('como_conocio') || '',
   };
 
-  try {
-    await addDoc(collection(db, 'solicitudes'), solicitud);
-    console.log('Solicitud guardada en Firebase');
-  } catch(err) {
-    console.error('Error guardando en Firebase:', err);
-  }
+  addDoc(collection(db, 'solicitudes'), solicitud).catch(err => console.error('Error guardando en Firebase:', err));
 });
 </script>
 </body>
