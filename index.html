@@ -73,7 +73,21 @@ textarea{resize:vertical;min-height:52px}
 .day-body{padding:14px 16px}
 .day-block.collapsed .day-body{display:none}
 .blk{border:1px solid var(--bd);border-radius:11px;margin-bottom:10px;overflow:hidden}
-.blk-hdr{display:flex;align-items:center;justify-content:space-between;padding:9px 13px;background:var(--s2);gap:7px;flex-wrap:wrap}
+.blk-hdr{display:flex;align-items:center;justify-content:space-between;padding:9px 13px;background:var(--s2);gap:7px;flex-wrap:wrap;cursor:pointer;user-select:none}
+.blk-hdr:hover{background:var(--bd)22}
+.blk.collapsed .blk-body{display:none}
+.blk-toggle{color:var(--mu);font-size:.78rem;transition:transform .2s;flex-shrink:0;margin-left:4px}
+.blk.collapsed .blk-toggle{transform:rotate(-90deg)}
+.cf-hdr{padding:11px 14px;display:flex;align-items:center;justify-content:space-between;gap:7px;flex-wrap:wrap;cursor:pointer;user-select:none}
+.cf-blk.collapsed .cf-body{display:none}
+.cf-toggle{color:var(--mu);font-size:.78rem;transition:transform .2s;flex-shrink:0;margin-left:4px}
+.cf-blk.collapsed .cf-toggle{transform:rotate(-90deg)}
+.collapsible-card-hdr{display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;margin-bottom:0}
+.collapsible-card-hdr h2{margin-bottom:0}
+.collapsible-card-body{margin-top:14px}
+.card.collapsed .collapsible-card-body{display:none}
+.card-toggle{color:var(--mu);font-size:.85rem;transition:transform .2s}
+.card.collapsed .card-toggle{transform:rotate(-90deg)}
 .blk-type{font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.05em}
 .t-simple{background:#7c5cbf22;color:var(--ac2);border:1px solid #7c5cbf44}
 .t-warmup{background:#22d3ee22;color:var(--cy);border:1px solid #22d3ee44}
@@ -275,6 +289,7 @@ textarea{resize:vertical;min-height:52px}
     <button class="itab" id="it-macro" style="display:none" onclick="showPanel('macro',this)">📊 Macrociclo</button>
   </div>
   <div id="panel-clients">
+    <input id="client-search" placeholder="🔍 Buscar cliente por nombre..." oninput="filterClients(this.value)" style="margin-bottom:12px;font-size:.88rem">
     <div id="client-list"></div>
     <div id="no-clients" class="card" style="text-align:center;padding:40px;display:none">
       <div style="font-size:2.5rem;margin-bottom:10px">👥</div>
@@ -283,9 +298,11 @@ textarea{resize:vertical;min-height:52px}
     </div>
   </div>
   <div id="panel-new" style="display:none">
-    <div class="card">
-      <h2>Datos del cliente</h2>
-      <div class="grid2">
+    <div class="card" id="nc-data-card">
+      <div class="collapsible-card-hdr" onclick="document.getElementById('nc-data-card').classList.toggle('collapsed');this.querySelector('.card-toggle').style.transform=document.getElementById('nc-data-card').classList.contains('collapsed')?'rotate(-90deg)':''">
+        <h2>Datos del cliente</h2><span class="card-toggle">▼</span>
+      </div>
+      <div class="collapsible-card-body"><div class="grid2">
         <div class="fg"><label>Nombre completo</label><input id="nc-name" placeholder="Ej: Gabriela Rodríguez"></div>
         <div class="fg"><label>Edad</label><input id="nc-age" type="number" placeholder="32"></div>
         <div class="fg"><label>Peso (kg)</label><input id="nc-weight" type="number" placeholder="70"></div>
@@ -303,7 +320,7 @@ textarea{resize:vertical;min-height:52px}
         <div class="fg"><label>Total de semanas (macrociclo)</label><input id="nc-totalweeks" type="number" value="12" min="1" max="52"></div>
         <div class="fg"><label>Semanas por mesociclo</label><input id="nc-mesoweeks" type="number" value="4" min="1" max="12"></div>
         <div class="fg"><label>Semana actual (manual, opcional)</label><input id="nc-currentweek" type="number" min="1" placeholder="Ej: 3"></div>
-      </div>
+      </div></div>
     </div>
     <div class="card" style="margin-bottom:10px;padding:14px 16px">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
@@ -317,6 +334,13 @@ textarea{resize:vertical;min-height:52px}
       </div>
       <p style="font-size:.74rem;color:var(--mu);margin-top:8px">Cada semana tiene su propia rutina. Cambiá de semana arriba para planificar otra, o duplicá la actual para editar solo algunos cambios.</p>
     </div>
+    <div id="days-nav-nc" style="background:var(--s2);border:1px solid var(--bd);border-radius:var(--ra);margin-bottom:10px;overflow:hidden">
+      <div style="padding:9px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'flex':'none';this.querySelector('span').style.transform=this.nextElementSibling.style.display==='none'?'rotate(-90deg)':''">
+        <div style="font-size:.78rem;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.05em">📋 Ir a día</div>
+        <span style="color:var(--mu);font-size:.78rem;transition:transform .2s">▼</span>
+      </div>
+      <div id="days-nav-nc-list" style="display:flex;flex-wrap:wrap;gap:5px;padding:8px 14px 12px"></div>
+    </div>
     <div id="days-container"></div>
     <button class="btn bg2" onclick="addExtraDay('days-container')" style="width:100%;justify-content:center;padding:10px;font-size:.88rem;margin-top:4px;margin-bottom:4px">＋ Agregar día</button>
     <button class="btn bp" onclick="saveClient()" style="width:100%;justify-content:center;padding:12px;font-size:.93rem;margin-top:4px">💾 Guardar cliente</button>
@@ -324,8 +348,10 @@ textarea{resize:vertical;min-height:52px}
   <div id="panel-macro" style="display:none"><div id="macro-content"></div></div>
   <div id="panel-edit" style="display:none">
     <div class="card" id="edit-client-data">
-      <h2 id="edit-client-title">Editando cliente</h2>
-      <div class="grid2">
+      <div class="collapsible-card-hdr" onclick="document.getElementById('edit-client-data').classList.toggle('collapsed');this.querySelector('.card-toggle').style.transform=document.getElementById('edit-client-data').classList.contains('collapsed')?'rotate(-90deg)':''">
+        <h2 id="edit-client-title">Editando cliente</h2><span class="card-toggle">▼</span>
+      </div>
+      <div class="collapsible-card-body"><div class="grid2">
         <div class="fg"><label>Nombre completo</label><input id="ec-name"></div>
         <div class="fg"><label>Edad</label><input id="ec-age" type="number"></div>
         <div class="fg"><label>Peso (kg)</label><input id="ec-weight" type="number"></div>
@@ -343,7 +369,7 @@ textarea{resize:vertical;min-height:52px}
         <div class="fg"><label>Total de semanas (macrociclo)</label><input id="ec-totalweeks" type="number" value="12"></div>
         <div class="fg"><label>Semanas por mesociclo</label><input id="ec-mesoweeks" type="number" value="4"></div>
         <div class="fg"><label>Semana actual (manual)</label><input id="ec-currentweek" type="number" min="1" placeholder="Ej: 3"></div>
-      </div>
+      </div></div>
     </div>
     <div class="card" style="margin-bottom:10px;padding:14px 16px">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
@@ -356,6 +382,13 @@ textarea{resize:vertical;min-height:52px}
         </div>
       </div>
       <p style="font-size:.74rem;color:var(--mu);margin-top:8px">Cada semana tiene su propia rutina. Cambiá de semana arriba, o duplicá la actual para editar solo algunos cambios.</p>
+    </div>
+    <div id="days-nav-ec" style="background:var(--s2);border:1px solid var(--bd);border-radius:var(--ra);margin-bottom:10px;overflow:hidden">
+      <div style="padding:9px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'flex':'none';this.querySelector('span').style.transform=this.nextElementSibling.style.display==='none'?'rotate(-90deg)':''">
+        <div style="font-size:.78rem;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.05em">📋 Ir a día</div>
+        <span style="color:var(--mu);font-size:.78rem;transition:transform .2s">▼</span>
+      </div>
+      <div id="days-nav-ec-list" style="display:flex;flex-wrap:wrap;gap:5px;padding:8px 14px 12px"></div>
     </div>
     <div id="edit-days-container"></div>
     <button class="btn bg2" onclick="addExtraDay('edit-days-container')" style="width:100%;justify-content:center;padding:10px;font-size:.88rem;margin-top:4px;margin-bottom:4px">＋ Agregar día</button>
@@ -972,6 +1005,7 @@ window.duplicateWeek=function(prefix){
 function buildDays(cid,count,data=[]){
   const c=document.getElementById(cid);c.innerHTML='';
   for(let i=0;i<count;i++) buildOneDay(cid,i,data[i]||null);
+  refreshDayNav(cid);
 }
 
 function buildOneDay(cid,idx,data=null){
@@ -993,6 +1027,7 @@ function buildOneDay(cid,idx,data=null){
   </div>
   <div class="day-body" id="${did}-body"></div>`;
   document.getElementById(cid).appendChild(div);
+  refreshDayNav(cid);
   if(data?.blocks) data.blocks.forEach(b=>{
     if(b.kind==='warmup') addWarmupBlock(did+'-body',b);
     else if(b.kind==='gym') addGymBlock(did+'-body',b.type,b);
@@ -1006,6 +1041,24 @@ window.toggleDayBlock=function(did,e){
   const block=document.getElementById(did);
   if(block)block.classList.toggle('collapsed');
 };
+window.toggleBlk=function(id,e){
+  if(e&&e.target.closest('input,button,select,textarea'))return;
+  const el=document.getElementById(id);
+  if(el)el.classList.toggle('collapsed');
+};
+
+function refreshDayNav(cid){
+  const navId=cid==='days-container'?'days-nav-nc-list':'days-nav-ec-list';
+  const nav=document.getElementById(navId);if(!nav)return;
+  nav.innerHTML='';
+  document.querySelectorAll('#'+cid+' .day-block').forEach(block=>{
+    const name=block.querySelector('.day-name-input')?.value||block.id;
+    const btn=document.createElement('button');
+    btn.className='btn bg2 sm';btn.textContent=name;
+    btn.onclick=()=>{block.classList.remove('collapsed');block.scrollIntoView({behavior:'smooth',block:'start'})};
+    nav.appendChild(btn);
+  });
+}
 
 function showCFMenu(bodyId,btn){
   const existing=document.getElementById('cf-menu-popup');if(existing)existing.remove();
@@ -1034,13 +1087,14 @@ function addGymBlock(bodyId,type,data=null){
   const typeName=type==='tri'?'Triserie':type==='super'?'Superserie':'Ejercicio';
   const tc=type==='tri'?'t-tri':type==='super'?'t-super':'t-simple';
   const div=document.createElement('div');div.className='blk';div.id=gid;div.dataset.kind='gym';div.dataset.type=type;
-  div.innerHTML=`<div class="blk-hdr">
+  div.innerHTML=`<div class="blk-hdr" onclick="toggleBlk('${gid}',event)">
     <span class="blk-type ${tc}">${typeName}</span>
-    <div style="display:flex;align-items:center;gap:6px;flex:1;margin-left:8px;flex-wrap:wrap">
+    <div style="display:flex;align-items:center;gap:6px;flex:1;margin-left:8px;flex-wrap:wrap" onclick="event.stopPropagation()">
       <label style="font-size:.7rem;color:var(--mu);white-space:nowrap">Descanso:</label>
       <input type="text" value="${data?.rest||(type==='simple'?'60s':'90s')}" class="sg-rest" style="max-width:70px;font-size:.78rem;padding:4px 8px">
     </div>
-    <button class="btn bd2 xs" onclick="document.getElementById('${gid}').remove()">✕</button>
+    <button class="btn bd2 xs" onclick="event.stopPropagation();document.getElementById('${gid}').remove()">✕</button>
+    <span class="blk-toggle">▼</span>
   </div>
   <div class="blk-body" id="${gid}-body"></div>`;
   c.appendChild(div);
@@ -1057,13 +1111,14 @@ function addWarmupBlock(bodyId,data=null){
   const c=document.getElementById(bodyId);
   const gid='w'+Date.now()+Math.random().toString(36).slice(2,5);
   const div=document.createElement('div');div.className='blk';div.id=gid;div.dataset.kind='warmup';
-  div.innerHTML=`<div class="blk-hdr">
+  div.innerHTML=`<div class="blk-hdr" onclick="toggleBlk('${gid}',event)">
     <span class="blk-type t-warmup">🔥 Entrada en calor</span>
-    <div style="display:flex;align-items:center;gap:6px;flex:1;margin-left:8px">
+    <div style="display:flex;align-items:center;gap:6px;flex:1;margin-left:8px" onclick="event.stopPropagation()">
       <label style="font-size:.7rem;color:var(--mu);white-space:nowrap">Duración total:</label>
       <input type="text" value="${data?.duration||'10 min'}" class="wu-duration" style="max-width:80px;font-size:.78rem;padding:4px 8px">
     </div>
-    <button class="btn bd2 xs" onclick="document.getElementById('${gid}').remove()">✕</button>
+    <button class="btn bd2 xs" onclick="event.stopPropagation();document.getElementById('${gid}').remove()">✕</button>
+    <span class="blk-toggle">▼</span>
   </div>
   <div class="blk-body" id="${gid}-body"></div>`;
   c.appendChild(div);
@@ -1143,9 +1198,10 @@ function addCFBlock(bodyId,cftype,data=null){
   const bid='cf'+Date.now()+Math.random().toString(36).slice(2,5);
   const div=document.createElement('div');div.className='cf-blk';div.id=bid;div.dataset.kind='cf';div.dataset.cftype=cftype;
   const metaF=cfg.fields.map(f=>`<div class="fg"><label>${f.label}</label><input type="text" value="${data?.meta?.[f.id]||''}" class="cf-meta-${f.id}" placeholder="${f.label}"></div>`).join('');
-  div.innerHTML=`<div class="cf-hdr" style="background:${cfg.color}11;border-bottom:1px solid ${cfg.color}33">
+  div.innerHTML=`<div class="cf-hdr" style="background:${cfg.color}11;border-bottom:1px solid ${cfg.color}33" onclick="toggleBlk('${bid}',event)">
     <div class="cf-lbl">${cfg.icon} <span style="color:${cfg.color}">${cfg.label}</span> <span style="font-size:.72rem;color:var(--mu);font-weight:400">${cfg.desc}</span></div>
-    <button class="btn bd2 xs" onclick="document.getElementById('${bid}').remove()">✕</button>
+    <button class="btn bd2 xs" onclick="event.stopPropagation();document.getElementById('${bid}').remove()">✕</button>
+    <span class="cf-toggle">▼</span>
   </div>
   <div class="cf-body">
     <div class="cf-meta">${metaF}</div>
@@ -1338,6 +1394,14 @@ function renderClientList(){
   });
 }
 
+window.filterClients=function(q){
+  const term=q.trim().toLowerCase();
+  document.querySelectorAll('#client-list .ccrd').forEach(card=>{
+    const name=card.querySelector('.cn')?.textContent?.toLowerCase()||'';
+    card.style.display=(!term||name.includes(term))?'':'none';
+  });
+};
+
 function copyLink(link){navigator.clipboard.writeText(link).then(()=>toast('📋 Link copiado'))}
 window.copyLink=copyLink;
 
@@ -1420,23 +1484,26 @@ async function renderCV(clientId){
   }
   const c=clients.find(cl=>cl.id===clientId);if(!c)return;
   // Email verification
-  if(c.email){
+  if(c.email||c.whatsapp){
     const verified=localStorage.getItem('verified-'+clientId);
     if(!verified){
+      const hasEmail=!!c.email,hasWa=!!c.whatsapp;
+      const hint=hasEmail&&hasWa?'tu email o número de celular':hasEmail?'tu email':'tu número de celular';
+      const pholder=hasEmail&&hasWa?'email o celular (sin +)':hasEmail?'tumail@gmail.com':'Ej: 1112345678';
       document.getElementById('cv-content').innerHTML=`
         <div style="text-align:center;padding:60px 20px;max-width:380px;margin:0 auto">
-          <div style="font-size:3rem;margin-bottom:16px">✉️</div>
+          <div style="font-size:3rem;margin-bottom:16px">🔐</div>
           <div style="font-family:'Space Grotesk',sans-serif;font-size:1.3rem;font-weight:700;margin-bottom:10px">Verificar identidad</div>
-          <div style="color:var(--mu);font-size:.88rem;margin-bottom:22px">Ingresá tu email para acceder a tu rutina.</div>
-          <input type="email" id="email-verify-input" placeholder="tumail@gmail.com"
+          <div style="color:var(--mu);font-size:.88rem;margin-bottom:22px">Ingresá ${hint} para acceder a tu rutina.</div>
+          <input id="email-verify-input" placeholder="${pholder}"
             style="width:100%;margin-bottom:12px;font-size:.95rem;padding:12px 14px;border-radius:10px;border:1px solid var(--bd);background:var(--s2);color:var(--tx)"
-            onkeydown="if(event.key==='Enter')verifyEmail('${clientId}','${c.email}')">
-          <button onclick="verifyEmail('${clientId}','${c.email}')"
+            onkeydown="if(event.key==='Enter')verifyEmail('${clientId}','${c.email||''}','${(c.whatsapp||'').replace(/[^0-9]/g,'')}')">
+          <button onclick="verifyEmail('${clientId}','${c.email||''}','${(c.whatsapp||'').replace(/[^0-9]/g,'')}')"
             style="width:100%;background:linear-gradient(135deg,var(--ac),#818cf8);color:#fff;border:none;border-radius:10px;padding:13px;font-size:.95rem;font-weight:700;font-family:inherit;cursor:pointer">
             Acceder a mi rutina
           </button>
           <div id="email-verify-error" style="color:var(--rd);font-size:.82rem;margin-top:10px;display:none">
-            ❌ Email incorrecto. Verificá que sea el email registrado.
+            ❌ Dato incorrecto. Verificá tu email o celular registrado.
           </div>
         </div>`;
       return;
@@ -2895,12 +2962,15 @@ window.launchCFTimerFromUI=function(cftype, tid){
   setTimeout(()=>cfTimerToggle(),100);
 };
 
-window.verifyEmail=function(clientId, correctEmail){
+window.verifyEmail=function(clientId, correctEmail, correctWa){
   const input=document.getElementById('email-verify-input');
   const error=document.getElementById('email-verify-error');
   if(!input)return;
-  const entered=input.value.trim().toLowerCase();
-  if(entered===correctEmail.toLowerCase()){
+  const entered=input.value.trim().toLowerCase().replace(/[^0-9a-z@._+-]/g,'');
+  const enteredDigits=entered.replace(/[^0-9]/g,'');
+  const emailOk=correctEmail&&entered===correctEmail.toLowerCase();
+  const waOk=correctWa&&enteredDigits.length>=6&&correctWa.endsWith(enteredDigits);
+  if(emailOk||waOk){
     localStorage.setItem('verified-'+clientId,'1');
     renderCV(clientId);
   } else {
