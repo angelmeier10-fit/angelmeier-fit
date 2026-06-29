@@ -73,6 +73,8 @@ textarea{resize:vertical;min-height:52px}
 .day-body{padding:14px 16px}
 .day-block.collapsed .day-body{display:none}
 .blk{border:1px solid var(--bd);border-radius:11px;margin-bottom:10px;overflow:hidden}
+.blk:not(.collapsed){border-color:rgba(181,101,74,.6);background:rgba(181,101,74,.08)}
+.blk:not(.collapsed) .blk-hdr{background:rgba(181,101,74,.15)}
 .blk-hdr{display:flex;align-items:center;justify-content:space-between;padding:9px 13px;background:var(--s2);gap:7px;flex-wrap:wrap;cursor:pointer;user-select:none}
 .blk-hdr:hover{background:var(--bd)22}
 .blk.collapsed .blk-body{display:none}
