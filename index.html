@@ -495,6 +495,7 @@ textarea{resize:vertical;min-height:52px}
 <div id="view-tracking" class="view">
   <h1>📊 Panel de Seguimiento</h1>
   <p class="sub">Último entrenamiento y notas de sesión de todos tus clientes.</p>
+  <input id="tracking-search" type="text" placeholder="Buscar cliente..." oninput="renderTracking()" style="width:100%;box-sizing:border-box;padding:10px 14px;border-radius:10px;border:1.5px solid var(--s3);background:var(--s2);color:var(--tx);font-size:.9rem;margin-bottom:14px">
   <div id="tracking-content"></div>
 </div>
 
@@ -564,7 +565,11 @@ textarea{resize:vertical;min-height:52px}
         <div class="fg"><label>Email o identificador</label><input id="nm-email" placeholder="Ej: lucia@gmail.com"></div>
         <div class="fg"><label>Estado</label><select id="nm-status"><option value="active">Activo ✅</option><option value="pending">Pendiente ⏳</option></select></div>
       </div>
-      <p style="font-size:.76rem;color:var(--mu);margin-top:6px">⏱ El vencimiento se calcula automáticamente desde hoy según la duración del plan.</p>
+      <p style="font-size:.76rem;color:var(--mu);margin-top:6px">⏱ El vencimiento se calcula automáticamente desde hoy según la duración de cada plan.</p>
+      <div class="fg full" style="margin-top:10px">
+        <label>También agregar a estos planes</label>
+        <div id="nm-extra-plans" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px"></div>
+      </div>
       <button class="btn bp" onclick="addMember()" style="margin-top:10px">➕ Agregar y generar link</button>
     </div>
     <div id="members-list"></div>
@@ -843,8 +848,11 @@ window.showView=showView;
 function renderTracking(){
   const el=document.getElementById('tracking-content');
   if(!clients.length){el.innerHTML='<div style="text-align:center;padding:40px;color:var(--mu)">No hay clientes todavía.</div>';return}
+  const q=(document.getElementById('tracking-search')?.value||'').toLowerCase().trim();
+  const filtered=q?clients.filter(c=>c.name.toLowerCase().includes(q)):clients;
+  if(!filtered.length){el.innerHTML='<div style="text-align:center;padding:40px;color:var(--mu)">Sin resultados para "'+q+'".</div>';return}
   let html='';
-  clients.forEach(c=>{
+  filtered.forEach(c=>{
     const initials=c.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
     // Last training: find most recent log entry
     let lastDate='—';let lastDay='—';
@@ -2327,6 +2335,12 @@ function openMembers(planId){
     </div>`;
   // Set default expiry = today + durationDays
   const expDate=new Date();expDate.setDate(expDate.getDate()+(plan.durationDays||30));
+  // Renderizar checkboxes de planes adicionales (todos excepto el actual)
+  const extraEl=document.getElementById('nm-extra-plans');
+  extraEl.innerHTML=planes.filter(p=>p.id!==planId).map(p=>`
+    <label style="display:flex;align-items:center;gap:6px;background:var(--s2);border-radius:8px;padding:6px 10px;cursor:pointer;font-size:.82rem">
+      <input type="checkbox" value="${p.id}" style="accent-color:var(--ac)"> ${p.name}
+    </label>`).join('');
   document.getElementById('itp-members').style.display='inline-block';
   document.getElementById('itp-seg').style.display='inline-block';
   showPlanesPanel('members',document.getElementById('itp-members'));
@@ -2364,24 +2378,33 @@ function renderMembersList(planId){
 async function addMember(){
   const name=document.getElementById('nm-name').value.trim();
   if(!name){alert('Ingresá el nombre.');return}
+  const email=document.getElementById('nm-email').value.trim();
+  const status=document.getElementById('nm-status').value;
+  const addedAt=new Date().toLocaleDateString('es-AR');
+
+  // Planes seleccionados: el plan actual + los checkboxes marcados
+  const extraIds=[...document.querySelectorAll('#nm-extra-plans input:checked')].map(cb=>cb.value);
+  const allPlanIds=[activePlanId,...extraIds];
+
+  // Agregar el alumno a cada plan con su propio vencimiento
+  for(const pid of allPlanIds){
+    const p=planes.find(pl=>pl.id===pid);
+    if(!p)continue;
+    const expDate=new Date();expDate.setDate(expDate.getDate()+(p.durationDays||30));
+    const expiry=expDate.toISOString().split('T')[0];
+    const member={id:'m'+Date.now(),name,email,status,expiry,addedAt};
+    if(!p.members)p.members=[];
+    p.members.push(member);
+    await setDoc(doc(db,'planes',pid),p);
+  }
+
   const plan=planes.find(p=>p.id===activePlanId);
-  const mid='m'+Date.now();
-  const expDate=new Date();expDate.setDate(expDate.getDate()+(plan.durationDays||30));
-  const expiry=expDate.toISOString().split('T')[0];
-  const member={
-    id:mid,
-    name,
-    email:document.getElementById('nm-email').value.trim(),
-    status:document.getElementById('nm-status').value,
-    expiry,
-    addedAt:new Date().toLocaleDateString('es-AR')
-  };
-  if(!plan.members)plan.members=[];
-  plan.members.push(member);
-  await setDoc(doc(db,'planes',activePlanId),plan);
   document.getElementById('nm-name').value='';
   document.getElementById('nm-email').value='';
-  toast('✅ Alumno agregado. Acceso por '+plan.durationDays+' días.');
+  // Desmarcar checkboxes
+  document.querySelectorAll('#nm-extra-plans input').forEach(cb=>cb.checked=false);
+  const planNames=allPlanIds.map(pid=>planes.find(p=>p.id===pid)?.name).filter(Boolean).join(', ');
+  toast('✅ Alumno agregado a: '+planNames);
   renderMembersList(activePlanId);
   // Send WhatsApp notification to trainer
   const link=`${location.origin}${location.pathname}?plan=${activePlanId}&member=${mid}`;
