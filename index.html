@@ -134,6 +134,20 @@ textarea{resize:vertical;min-height:52px}
 .day-acc-hdr.open .day-acc-arr{transform:rotate(180deg)}
 .day-acc-body{display:none;padding:14px 16px}
 .day-acc-body.open{display:block}
+.cv-day-picker{border:1px solid var(--bd);border-radius:var(--ra);margin-bottom:14px;overflow:hidden}
+.cv-day-picker-hdr{padding:13px 16px;background:var(--s2);cursor:pointer;user-select:none;display:flex;align-items:center;justify-content:space-between;gap:10px;transition:background .18s}
+.cv-day-picker-hdr:hover{background:var(--bd)33}
+.cv-day-picker-hdr.open{border-bottom:1px solid var(--bd)}
+.cv-day-picker-label{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.93rem;display:flex;align-items:center;gap:8px;flex:1;min-width:0}
+.cv-day-picker-arr{color:var(--mu);font-size:.82rem;transition:transform .22s;flex-shrink:0}
+.cv-day-picker-hdr.open .cv-day-picker-arr{transform:rotate(180deg)}
+.cv-day-list{display:none}
+.cv-day-list.open{display:block}
+.cv-day-item{padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;border-bottom:1px solid var(--bd);transition:background .15s}
+.cv-day-item:last-child{border-bottom:none}
+.cv-day-item:hover{background:var(--s2)}
+.cv-day-item.active{background:var(--ac)18}
+.cv-day-item-name{font-weight:600;font-size:.88rem}
 .cvg{border:1px solid var(--bd);border-radius:var(--ra);margin-bottom:11px;overflow:hidden;transition:border-color .2s}
 .cvg:hover{border-color:var(--ac2)}
 .cvg-hdr{padding:13px 15px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:9px;user-select:none}
@@ -1551,19 +1565,15 @@ async function renderCV(clientId){
   const initials=c.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
   const {dayIdx:nextIdx,days:activeDays,weekNum:displayWeek}=getNextDayInfo(c);
   const mpReminder=c.mpLink&&c.payStatus==='free'?`<a href="${c.mpLink}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:#009EE322;color:#009EE3;border:1px solid #009EE344;border-radius:8px;padding:6px 14px;font-size:.78rem;font-weight:600;text-decoration:none;margin-bottom:12px">💳 Renovar / pagar plan</a>`:'';
-  const daysAccHtml=activeDays.map((d,i)=>{
-    const isOpen=i===nextIdx;
+  const weekLabel=displayWeek&&c.weeks?`<span class="badge" style="background:var(--ac)22;color:var(--ac2)">📅 Semana ${displayWeek}</span>`:'';
+  const activeDayName=activeDays[nextIdx]?.name||'Día '+(nextIdx+1);
+  const dayListItems=activeDays.map((d,i)=>{
     const isDone=(c.progress?.['snote-'+i]||[]).length>0||isDayDoneViaSeries(c,activeDays,i);
-    const badge=isOpen?`<span class="day-acc-badge" style="background:var(--ac)33;color:var(--ac2)">Siguiente</span>`:isDone?`<span class="day-acc-badge" style="background:var(--gr)22;color:var(--gr)">Completado</span>`:'';
-    return`<div class="day-acc" id="day-acc-${clientId}-${i}">
-      <div class="day-acc-hdr${isOpen?' open':''}" onclick="toggleDayAcc('${clientId}',${i})">
-        <div class="day-acc-title">${d.name||'Día '+(i+1)}${badge?'&nbsp;'+badge:''}</div>
-        <div class="day-acc-arr">▼</div>
-      </div>
-      <div class="day-acc-body${isOpen?' open':''}" id="day-body-${clientId}-${i}"></div>
+    const badge=i===nextIdx?`<span style="font-size:.68rem;padding:2px 8px;border-radius:20px;font-weight:600;background:var(--ac)33;color:var(--ac2)">Siguiente</span>`:isDone?`<span style="font-size:.68rem;padding:2px 8px;border-radius:20px;font-weight:600;background:var(--gr)22;color:var(--gr)">✓</span>`:'';
+    return`<div class="cv-day-item${i===nextIdx?' active':''}" id="cv-ditem-${clientId}-${i}" onclick="selectCVDay('${clientId}',${i})">
+      <span class="cv-day-item-name">${d.name||'Día '+(i+1)}</span>${badge}
     </div>`;
   }).join('');
-  const weekLabel=displayWeek&&c.weeks?`<span class="badge" style="background:var(--ac)22;color:var(--ac2)">📅 Semana ${displayWeek}</span>`:'';
   document.getElementById('cv-content').innerHTML=`
     <div class="hero">
       <div class="hero-top"><div class="hav">${initials}</div>
@@ -1578,13 +1588,40 @@ async function renderCV(clientId){
         ${weekLabel||(()=>{const info=getMesoInfo(c);if(!c.totalWeeks&&!c.startDate)return'';return`<span class="badge" style="background:var(--ac)22;color:var(--ac2)">🗓️ Semana ${info.currentWeek} de ${info.totalWeeks} — Meso ${info.mesoNum}/${info.totalMesos}</span>`;})()}
       </div>
     </div>
-    ${daysAccHtml}`;
-  // Store active days on a proxy so renderDay can access them
+    <div class="cv-day-picker">
+      <div class="cv-day-picker-hdr" id="cv-day-picker-hdr-${clientId}" onclick="toggleCVDayPicker('${clientId}')">
+        <div class="cv-day-picker-label" id="cv-day-picker-label-${clientId}">📅 ${activeDayName}</div>
+        <div class="cv-day-picker-arr">▼</div>
+      </div>
+      <div class="cv-day-list" id="cv-day-list-${clientId}">${dayListItems}</div>
+    </div>
+    <div id="day-view-${clientId}"></div>`;
   const cvClient=Object.assign({},c,{days:activeDays});
   const idx=clients.findIndex(cl=>cl.id===clientId);
   if(idx>=0)clients[idx]=cvClient;
-  activeDays.forEach((_,i)=>renderDay(clientId,i));
+  renderDay(clientId,nextIdx);
 }
+window.toggleCVDayPicker=function(clientId){
+  const hdr=document.getElementById('cv-day-picker-hdr-'+clientId);
+  const list=document.getElementById('cv-day-list-'+clientId);
+  if(!hdr||!list)return;
+  hdr.classList.toggle('open');
+  list.classList.toggle('open');
+};
+window.selectCVDay=function(clientId,idx){
+  const c=clients.find(cl=>cl.id===clientId);if(!c)return;
+  // Update active item
+  document.querySelectorAll(`[id^="cv-ditem-${clientId}-"]`).forEach(el=>el.classList.remove('active'));
+  const item=document.getElementById(`cv-ditem-${clientId}-${idx}`);
+  if(item)item.classList.add('active');
+  // Update header label
+  const label=document.getElementById('cv-day-picker-label-'+clientId);
+  if(label)label.textContent='📅 '+(c.days[idx]?.name||'Día '+(idx+1));
+  // Collapse list
+  document.getElementById('cv-day-picker-hdr-'+clientId)?.classList.remove('open');
+  document.getElementById('cv-day-list-'+clientId)?.classList.remove('open');
+  renderDay(clientId,idx);
+};
 function isDayDoneViaSeries(c,days,dIdx){
   const day=days[dIdx];if(!day?.blocks?.length)return false;
   let total=0,done=0;
@@ -1638,7 +1675,7 @@ window.toggleDayAcc=function(clientId,idx){
 function renderDay(clientId,dIdx){
   const c=clients.find(cl=>cl.id===clientId);
   const day=c.days[dIdx];
-  const container=document.getElementById(`day-body-${clientId}-${dIdx}`);
+  const container=document.getElementById('day-view-'+clientId);
   if(!container)return;
   if(!day||!day.blocks?.length){container.innerHTML='<div style="text-align:center;padding:40px;color:var(--mu)">Sin bloques en este día.</div>';return}
   let html='';
@@ -2478,18 +2515,15 @@ function renderGroupCV(plan,member){
   const initials=member.name.charAt(0).toUpperCase();
   const expDate=member.expiry?new Date(member.expiry+'T00:00:00').toLocaleDateString('es-AR'):'—';
   const daysLeft=member.expiry?Math.max(0,Math.ceil((new Date(member.expiry+'T00:00:00')-new Date())/(1000*60*60*24))):null;
-  const fakeC={progress:member.progress||{}};
+  const fakeC={id:`${plan.id}-${member.id}`,progress:member.progress||{}};
   const nextIdx=getNextDayIdx({days:plan.days,...fakeC});
-  const daysAccHtml=(plan.days||[]).map((d,i)=>{
-    const isOpen=i===nextIdx;
-    const isDone=(member.progress?.['snote-'+i]||[]).length>0||isDayDoneViaSeries({id:`${plan.id}-${member.id}`,progress:member.progress||{}},plan.days,i);
-    const badge=isOpen?`<span class="day-acc-badge" style="background:var(--ac)33;color:var(--ac2)">Siguiente</span>`:isDone?`<span class="day-acc-badge" style="background:var(--gr)22;color:var(--gr)">Completado</span>`:'';
-    return`<div class="day-acc" id="gday-acc-${plan.id}-${member.id}-${i}">
-      <div class="day-acc-hdr${isOpen?' open':''}" onclick="toggleGroupDayAcc('${plan.id}','${member.id}',${i})">
-        <div class="day-acc-title">${d.name||'Día '+(i+1)}${badge?'&nbsp;'+badge:''}</div>
-        <div class="day-acc-arr">▼</div>
-      </div>
-      <div class="day-acc-body${isOpen?' open':''}" id="gday-body-${plan.id}-${member.id}-${i}"></div>
+  const gkey=`${plan.id}-${member.id}`;
+  const activeDayName=plan.days[nextIdx]?.name||'Día '+(nextIdx+1);
+  const dayListItems=(plan.days||[]).map((d,i)=>{
+    const isDone=(member.progress?.['snote-'+i]||[]).length>0||isDayDoneViaSeries(fakeC,plan.days,i);
+    const badge=i===nextIdx?`<span style="font-size:.68rem;padding:2px 8px;border-radius:20px;font-weight:600;background:var(--ac)33;color:var(--ac2)">Siguiente</span>`:isDone?`<span style="font-size:.68rem;padding:2px 8px;border-radius:20px;font-weight:600;background:var(--gr)22;color:var(--gr)">✓</span>`:'';
+    return`<div class="cv-day-item${i===nextIdx?' active':''}" id="gv-ditem-${gkey}-${i}" onclick="selectGroupCVDay('${plan.id}','${member.id}',${i})">
+      <span class="cv-day-item-name">${d.name||'Día '+(i+1)}</span>${badge}
     </div>`;
   }).join('');
   document.getElementById('cv-content').innerHTML=`
@@ -2506,22 +2540,39 @@ function renderGroupCV(plan,member){
       </div>
       ${plan.mpLink&&daysLeft<=7?`<a href="${plan.mpLink}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:#009EE322;color:#009EE3;border:1px solid #009EE344;border-radius:8px;padding:6px 14px;font-size:.78rem;font-weight:600;text-decoration:none;margin-bottom:12px">💳 Renovar plan</a>`:''}
     </div>
-    ${daysAccHtml}`;
-  (plan.days||[]).forEach((_,i)=>renderGroupDay(plan,member,i));
+    <div class="cv-day-picker">
+      <div class="cv-day-picker-hdr" id="gv-picker-hdr-${gkey}" onclick="toggleGroupCVDayPicker('${gkey}')">
+        <div class="cv-day-picker-label" id="gv-picker-label-${gkey}">📅 ${activeDayName}</div>
+        <div class="cv-day-picker-arr">▼</div>
+      </div>
+      <div class="cv-day-list" id="gv-day-list-${gkey}">${dayListItems}</div>
+    </div>
+    <div id="gday-view-${gkey}"></div>`;
+  renderGroupDay(plan,member,nextIdx);
 }
 
-window.toggleGroupDayAcc=function(planId,memberId,idx){
-  const hdr=document.querySelector(`#gday-acc-${planId}-${memberId}-${idx} .day-acc-hdr`);
-  const body=document.getElementById(`gday-body-${planId}-${memberId}-${idx}`);
-  if(!hdr||!body)return;
-  const isOpen=hdr.classList.contains('open');
-  hdr.classList.toggle('open',!isOpen);
-  body.classList.toggle('open',!isOpen);
+window.toggleGroupCVDayPicker=function(gkey){
+  document.getElementById('gv-picker-hdr-'+gkey)?.classList.toggle('open');
+  document.getElementById('gv-day-list-'+gkey)?.classList.toggle('open');
+};
+window.selectGroupCVDay=function(planId,memberId,idx){
+  const plan=planes.find(p=>p.id===planId);
+  const member=plan?.members?.find(m=>m.id===memberId);
+  if(!plan||!member)return;
+  const gkey=`${planId}-${memberId}`;
+  document.querySelectorAll(`[id^="gv-ditem-${gkey}-"]`).forEach(el=>el.classList.remove('active'));
+  document.getElementById(`gv-ditem-${gkey}-${idx}`)?.classList.add('active');
+  const label=document.getElementById('gv-picker-label-'+gkey);
+  if(label)label.textContent='📅 '+(plan.days[idx]?.name||'Día '+(idx+1));
+  document.getElementById('gv-picker-hdr-'+gkey)?.classList.remove('open');
+  document.getElementById('gv-day-list-'+gkey)?.classList.remove('open');
+  renderGroupDay(plan,member,idx);
 };
 
 function renderGroupDay(plan,member,dIdx){
   const day=plan.days[dIdx];
-  const container=document.getElementById(`gday-body-${plan.id}-${member.id}-${dIdx}`);
+  const gkey=`${plan.id}-${member.id}`;
+  const container=document.getElementById('gday-view-'+gkey);
   if(!container)return;
   if(!day||!day.blocks?.length){container.innerHTML='<div style="text-align:center;padding:40px;color:var(--mu)">Sin bloques en este día.</div>';return}
   // Reuse same render functions but with plan+member as client proxy
