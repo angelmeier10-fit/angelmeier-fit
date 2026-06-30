@@ -1093,6 +1093,17 @@ window.moveDayBlock=function(did,dir){
   refreshDayNav(container.id);
 };
 
+window.moveBlk=function(id,dir){
+  const el=document.getElementById(id);if(!el)return;
+  const parent=el.parentElement;
+  const siblings=[...parent.querySelectorAll(':scope > .blk, :scope > .cf-blk')];
+  const idx=siblings.indexOf(el);
+  const target=siblings[idx+dir];
+  if(!target)return;
+  if(dir===-1) parent.insertBefore(el,target);
+  else parent.insertBefore(target,el);
+};
+
 window.deleteDayBlock=function(did){
   const block=document.getElementById(did);if(!block)return;
   const name=block.querySelector('.day-name-input')?.value||'este día';
@@ -1148,6 +1159,8 @@ function addGymBlock(bodyId,type,data=null){
       <label style="font-size:.7rem;color:var(--mu);white-space:nowrap">Descanso:</label>
       <input type="text" value="${data?.rest||(type==='simple'?'60s':'90s')}" class="sg-rest" style="max-width:70px;font-size:.78rem;padding:4px 8px">
     </div>
+    <button class="btn bg2 xs" onclick="event.stopPropagation();moveBlk('${gid}',-1)" title="Mover arriba">↑</button>
+    <button class="btn bg2 xs" onclick="event.stopPropagation();moveBlk('${gid}',1)" title="Mover abajo">↓</button>
     <button class="btn bd2 xs" onclick="event.stopPropagation();document.getElementById('${gid}').remove()">✕</button>
     <span class="blk-toggle">▼</span>
   </div>
@@ -1172,6 +1185,8 @@ function addWarmupBlock(bodyId,data=null){
       <label style="font-size:.7rem;color:var(--mu);white-space:nowrap">Duración total:</label>
       <input type="text" value="${data?.duration||'10 min'}" class="wu-duration" style="max-width:80px;font-size:.78rem;padding:4px 8px">
     </div>
+    <button class="btn bg2 xs" onclick="event.stopPropagation();moveBlk('${gid}',-1)" title="Mover arriba">↑</button>
+    <button class="btn bg2 xs" onclick="event.stopPropagation();moveBlk('${gid}',1)" title="Mover abajo">↓</button>
     <button class="btn bd2 xs" onclick="event.stopPropagation();document.getElementById('${gid}').remove()">✕</button>
     <span class="blk-toggle">▼</span>
   </div>
@@ -1255,6 +1270,8 @@ function addCFBlock(bodyId,cftype,data=null){
   const metaF=cfg.fields.map(f=>`<div class="fg"><label>${f.label}</label><input type="text" value="${data?.meta?.[f.id]||''}" class="cf-meta-${f.id}" placeholder="${f.label}"></div>`).join('');
   div.innerHTML=`<div class="cf-hdr" style="background:${cfg.color}11;border-bottom:1px solid ${cfg.color}33" onclick="toggleBlk('${bid}',event)">
     <div class="cf-lbl">${cfg.icon} <span style="color:${cfg.color}">${cfg.label}</span> <span style="font-size:.72rem;color:var(--mu);font-weight:400">${cfg.desc}</span></div>
+    <button class="btn bg2 xs" onclick="event.stopPropagation();moveBlk('${bid}',-1)" title="Mover arriba">↑</button>
+    <button class="btn bg2 xs" onclick="event.stopPropagation();moveBlk('${bid}',1)" title="Mover abajo">↓</button>
     <button class="btn bd2 xs" onclick="event.stopPropagation();document.getElementById('${bid}').remove()">✕</button>
     <span class="cf-toggle">▼</span>
   </div>
