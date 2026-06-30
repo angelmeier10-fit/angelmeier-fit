@@ -1054,6 +1054,9 @@ function buildOneDay(cid,idx,data=null){
       <button class="btn bgr sm" onclick="addGymBlock('${did}-body','tri')">+ Triserie</button>
       <button class="btn bor sm" onclick="showCFMenu('${did}-body',this)">🔥 + WOD</button>
       <button class="btn bpu sm" onclick="addFuncBlock('${did}-body')">🧓 + Actividad funcional</button>
+      <button class="btn bg2 sm" onclick="moveDayBlock('${did}',-1)" title="Mover arriba">↑</button>
+      <button class="btn bg2 sm" onclick="moveDayBlock('${did}',1)" title="Mover abajo">↓</button>
+      <button class="btn bd2 sm" onclick="deleteDayBlock('${did}')" title="Borrar día">🗑️</button>
     </div>
   </div>
   <div class="day-body" id="${did}-body"></div>`;
@@ -1076,6 +1079,27 @@ window.toggleBlk=function(id,e){
   if(e&&e.target.closest('input,button,select,textarea'))return;
   const el=document.getElementById(id);
   if(el)el.classList.toggle('collapsed');
+};
+
+window.moveDayBlock=function(did,dir){
+  const block=document.getElementById(did);if(!block)return;
+  const container=block.parentElement;
+  const blocks=[...container.querySelectorAll(':scope > .day-block')];
+  const idx=blocks.indexOf(block);
+  const target=blocks[idx+dir];
+  if(!target)return;
+  if(dir===-1) container.insertBefore(block,target);
+  else container.insertBefore(target,block);
+  refreshDayNav(container.id);
+};
+
+window.deleteDayBlock=function(did){
+  const block=document.getElementById(did);if(!block)return;
+  const name=block.querySelector('.day-name-input')?.value||'este día';
+  if(!confirm(`¿Borrar "${name}"? Se perderán todos sus ejercicios.`))return;
+  const cid=block.parentElement.id;
+  block.remove();
+  refreshDayNav(cid);
 };
 
 function refreshDayNav(cid){
