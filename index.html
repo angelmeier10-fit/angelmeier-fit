@@ -1217,6 +1217,11 @@ function addWarmupEx(body,data=null){
   </div>
   <div>
     <div style="font-size:.7rem;color:var(--mu);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Series y repeticiones</div>
+    <div style="display:flex;gap:6px;margin-bottom:7px;align-items:center;background:var(--bg2);border:1.5px dashed var(--acc);border-radius:8px;padding:7px 10px">
+      <span style="font-size:.75rem;color:var(--acc);font-weight:700;white-space:nowrap">Acceso rápido</span>
+      <input type="text" class="sh-input" placeholder="Ej: 3x12 (50%)" style="flex:1;font-size:.82rem;padding:5px 8px;border:1px solid var(--brd);border-radius:6px;background:var(--bg)" onkeydown="if(event.key==='Enter'){parseShorthand(this,'${eid}-sc');event.preventDefault()}">
+      <button class="btn bp xs" onclick="parseShorthand(this.previousElementSibling,'${eid}-sc')">Agregar</button>
+    </div>
     <div class="sc-rows" id="${eid}-sc"></div>
     <button class="sc-add" onclick="addSR('${eid}-sc')">＋ Serie</button>
   </div>`;
@@ -1241,6 +1246,11 @@ function addExEntry(body,data=null){
   <div class="fg"><label>Observaciones</label><input type="text" class="ex-obs" value="${data?.obs||''}" placeholder="RPE, técnica..."></div>
   <div>
     <div style="font-size:.7rem;color:var(--mu);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Series y repeticiones</div>
+    <div style="display:flex;gap:6px;margin-bottom:7px;align-items:center;background:var(--bg2);border:1.5px dashed var(--acc);border-radius:8px;padding:7px 10px">
+      <span style="font-size:.75rem;color:var(--acc);font-weight:700;white-space:nowrap">Acceso rápido</span>
+      <input type="text" class="sh-input" placeholder="Ej: 3x12 (50%)" style="flex:1;font-size:.82rem;padding:5px 8px;border:1px solid var(--brd);border-radius:6px;background:var(--bg)" onkeydown="if(event.key==='Enter'){parseShorthand(this,'${eid}-sc');event.preventDefault()}">
+      <button class="btn bp xs" onclick="parseShorthand(this.previousElementSibling,'${eid}-sc')">Agregar</button>
+    </div>
     <div class="sc-rows" id="${eid}-sc"></div>
     <button class="sc-add" onclick="addSR('${eid}-sc')">＋ Serie</button>
   </div>`;
@@ -1261,6 +1271,20 @@ function addSR(cid,data=null){
 window.addSR=addSR;
 function rmSR(rid,cid){document.getElementById(rid).remove();document.getElementById(cid).querySelectorAll('.sc-num').forEach((el,i)=>el.textContent=i+1)}
 window.rmSR=rmSR;
+
+function parseShorthand(inp,cid){
+  const raw=inp.value.trim();if(!raw)return;
+  // Soporta: 3x12 (50%), 4x8 60kg, 5x5, 3x10-12 (RPE8)
+  const m=raw.match(/^(\d+)\s*[xX×]\s*([\w\-\/]+)\s*(?:\(([^)]+)\)|([\w%]+))?/);
+  if(!m){toast('Formato inválido. Usá: 3x12 (50%)');return;}
+  const count=parseInt(m[1]);const reps=m[2];const load=m[3]||m[4]||'';
+  // Limpiar filas existentes vacías si las hay
+  const c=document.getElementById(cid);
+  c.querySelectorAll('.sc-row').forEach(r=>{if(!r.querySelector('.sr-reps').value&&!r.querySelector('.sr-load').value)r.remove();});
+  for(let i=0;i<count;i++) addSR(cid,{reps,load});
+  inp.value='';
+}
+window.parseShorthand=parseShorthand;
 
 function addCFBlock(bodyId,cftype,data=null){
   const c=document.getElementById(bodyId);
