@@ -3130,35 +3130,59 @@ function buildSolCard(s,isNew){
         <button class="btn bd2 sm" onclick="eliminarSolicitud('${s._docId}')">🗑️</button>
       </div>
     </div>
-    <details>
-      <summary style="cursor:pointer;font-size:.8rem;color:var(--ac2);font-weight:600">▼ Ver anamnesis completa</summary>
-      <div style="background:var(--s2);border-radius:9px;padding:13px;margin-top:8px;font-size:.79rem;line-height:1.9;display:grid;grid-template-columns:1fr 1fr;gap:4px 16px">
-        ${s.peso?`<div><b>Peso:</b> ${s.peso} kg</div>`:''}
-        ${s.altura?`<div><b>Altura:</b> ${s.altura} cm</div>`:''}
-        ${s.nacimiento?`<div><b>Nacimiento:</b> ${s.nacimiento}</div>`:''}
-        ${s.sexo?`<div><b>Sexo:</b> ${s.sexo}</div>`:''}
-        ${s.ocupacion?`<div><b>Ocupación:</b> ${s.ocupacion}</div>`:''}
-        ${s.objetivo_especifico?`<div style="grid-column:span 2"><b>Objetivo específico:</b> ${s.objetivo_especifico}</div>`:''}
-        ${s.nivel?`<div><b>Nivel:</b> ${s.nivel}</div>`:''}
-        ${s.deportes?`<div><b>Deportes:</b> ${s.deportes}</div>`:''}
-        ${s.dias?`<div><b>Días/semana:</b> ${s.dias}</div>`:''}
-        ${s.duracion?`<div><b>Duración:</b> ${s.duracion}</div>`:''}
-        ${s.horario?`<div><b>Horario:</b> ${s.horario}</div>`:''}
-        ${s.equipamiento?`<div style="grid-column:span 2"><b>Equipamiento:</b> ${s.equipamiento}</div>`:''}
-        ${s.condiciones?`<div style="grid-column:span 2"><b>Condiciones:</b> ${s.condiciones}</div>`:''}
-        ${s.lesiones?`<div style="grid-column:span 2"><b>Lesiones:</b> ${s.lesiones}</div>`:''}
-        ${s.restricciones?`<div style="grid-column:span 2"><b>Restricciones:</b> ${s.restricciones}</div>`:''}
-        ${s.gustos?`<div style="grid-column:span 2"><b>Le gusta:</b> ${s.gustos}</div>`:''}
-        ${s.no_gustos?`<div style="grid-column:span 2"><b>No le gusta:</b> ${s.no_gustos}</div>`:''}
-        ${s.consideraciones?`<div style="grid-column:span 2"><b>Consideraciones:</b> ${s.consideraciones}</div>`:''}
-        ${s.como_conocio?`<div><b>Cómo conoció:</b> ${s.como_conocio}</div>`:''}
-        ${s.alimentacion?`<div><b>Alimentación:</b> ${s.alimentacion}</div>`:''}
-        ${s.sueno?`<div><b>Sueño:</b> ${s.sueno}</div>`:''}
-        ${s.estres?`<div><b>Estrés:</b> ${s.estres}</div>`:''}
-      </div>
-    </details>
+    <button class="btn bg2 sm" onclick="verAnamnesis('${s._docId}')" style="margin-top:4px">📋 Ver anamnesis completa</button>
   </div>`;
 }
+
+window.verAnamnesis=function(docId){
+  const s=solicitudes.find(x=>x._docId===docId);
+  if(!s)return;
+  const row=(label,val)=>val?`<div style="padding:10px 0;border-bottom:1px solid var(--bd);display:grid;grid-template-columns:160px 1fr;gap:10px"><span style="color:var(--mu);font-size:.82rem;font-weight:600">${label}</span><span style="font-size:.9rem">${val}</span></div>`:'';
+  const modal=document.getElementById('modal-bg');
+  modal.style.display='flex';
+  modal.innerHTML=`<div style="background:var(--s1);border-radius:16px;padding:24px;width:100%;max-width:600px;max-height:90vh;overflow-y:auto;position:relative">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+      <div>
+        <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.1rem">${s.nombre||'Sin nombre'}</div>
+        <div style="font-size:.76rem;color:var(--mu);margin-top:3px">${s.email||''} ${s.whatsapp?'· '+s.whatsapp:''} · ${s.createdAt||''}</div>
+      </div>
+      <button onclick="document.getElementById('modal-bg').style.display='none'" style="background:none;border:none;color:var(--mu);font-size:1.4rem;cursor:pointer;padding:4px">✕</button>
+    </div>
+    ${row('Nacimiento',s.nacimiento)}
+    ${row('Sexo',s.sexo)}
+    ${row('Peso',s.peso?s.peso+' kg':'')}
+    ${row('Altura',s.altura?s.altura+' cm':'')}
+    ${row('Ocupación',s.ocupacion)}
+    ${row('Objetivo',s.objetivo)}
+    ${row('Objetivo específico',s.objetivo_especifico)}
+    ${row('Nivel',s.nivel)}
+    ${row('Deportes / actividades',s.deportes)}
+    ${row('Días por semana',s.dias)}
+    ${row('Duración de sesión',s.duracion)}
+    ${row('Horario',s.horario)}
+    ${row('Lugar de entrenamiento',s.lugar)}
+    ${row('Equipamiento',s.equipamiento)}
+    ${row('Condiciones de salud',s.condiciones)}
+    ${row('Lesiones',s.lesiones)}
+    ${row('Restricciones',s.restricciones)}
+    ${row('Bajo tratamiento',s.tratamiento)}
+    ${row('Tipo de tratamiento',s.tipo_tratamiento)}
+    ${row('Medicación',s.medicacion)}
+    ${row('Alimentación',s.alimentacion)}
+    ${row('Plan nutricional',s.nutricion)}
+    ${row('Sueño',s.sueno)}
+    ${row('Estrés',s.estres)}
+    ${row('Tabaco',s.tabaco)}
+    ${row('Le gusta',s.gustos)}
+    ${row('No le gusta',s.no_gustos)}
+    ${row('Consideraciones',s.consideraciones)}
+    ${row('Cómo conoció a Angel',s.como_conocio)}
+    <div style="margin-top:18px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn bp" onclick="convertirEnCliente('${docId}');document.getElementById('modal-bg').style.display='none'">✅ Convertir en cliente</button>
+      ${(s.whatsapp||'').replace(/[^0-9]/g,'')?`<a href="https://wa.me/${(s.whatsapp||'').replace(/[^0-9]/g,'')}" target="_blank" class="btn bgr">💬 WhatsApp</a>`:''}
+    </div>
+  </div>`;
+};
 
 window.marcarVista=async function(docId){
   await updateDoc(doc(db,'solicitudes',docId),{estado:'vista'});
