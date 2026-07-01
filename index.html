@@ -105,6 +105,8 @@ textarea{resize:vertical;min-height:52px}
 .ex-entry{display:flex;flex-direction:column;gap:6px}
 .ex-top{display:flex;gap:7px;align-items:flex-start}
 .ex-wrap{position:relative;flex:1}
+.ex-search{position:relative}
+.ex-wrap:focus-within .ex-search{z-index:301}
 .ex-dd{position:absolute;top:100%;left:0;right:0;background:var(--s1);border:1px solid var(--bd);border-radius:9px;max-height:210px;overflow-y:auto;z-index:300;margin-top:3px;display:none;box-shadow:0 8px 24px rgba(0,0,0,.5)}
 .ex-dd.open{display:block}
 .ex-opt{padding:8px 12px;cursor:pointer;font-size:.82rem;display:flex;justify-content:space-between;align-items:center}

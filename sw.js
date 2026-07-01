@@ -1,4 +1,4 @@
-const CACHE = 'amfit-v3';
+const CACHE = 'amfit-v4';
 const ASSETS = [
   './',
   './index.html',
@@ -31,16 +31,12 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  // Shell de la app: cache-first con actualización en segundo plano
+  // Shell de la app: network-first para ver cambios al instante, con fallback a caché offline
   e.respondWith(
-    caches.match(e.request).then(cached => {
-      const fetchPromise = fetch(e.request).then(res => {
-        const resClone = res.clone();
-        caches.open(CACHE).then(c => c.put(e.request, resClone));
-        return res;
-      }).catch(() => cached || caches.match('./index.html'));
-
-      return cached || fetchPromise;
-    })
+    fetch(e.request).then(res => {
+      const resClone = res.clone();
+      caches.open(CACHE).then(c => c.put(e.request, resClone));
+      return res;
+    }).catch(() => caches.match(e.request).then(cached => cached || caches.match('./index.html')))
   );
 });
