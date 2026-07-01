@@ -306,7 +306,15 @@ textarea{resize:vertical;min-height:52px}
     <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.3rem;margin-bottom:4px">Angel Meier</div>
     <div style="color:var(--mu);font-size:.85rem;margin-bottom:24px">Panel de entrenador</div>
     <input id="login-email" type="email" placeholder="Email" style="margin-bottom:10px" autocomplete="username">
-    <input id="login-pass" type="password" placeholder="Contraseña" style="margin-bottom:14px" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+    <div style="position:relative;margin-bottom:5px">
+      <input id="login-pass" type="password" placeholder="Contraseña" style="padding-right:42px" autocomplete="current-password" oninput="checkPassReqs()" onkeydown="if(event.key==='Enter')doLogin()">
+      <span onclick="togglePassVisibility()" id="pass-eye" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;color:var(--mu);font-size:1rem">👁️</span>
+    </div>
+    <div id="login-pass-reqs" style="display:none;text-align:left;font-size:.72rem;color:var(--mu);margin-bottom:10px;line-height:1.6"></div>
+    <div style="position:relative;margin-bottom:14px;display:none" id="login-pass2-wrap">
+      <input id="login-pass2" type="password" placeholder="Repetir contraseña" style="padding-right:42px" autocomplete="new-password" oninput="checkPassReqs()" onkeydown="if(event.key==='Enter')doLogin()">
+      <span onclick="togglePassVisibility2()" id="pass-eye2" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;color:var(--mu);font-size:1rem">👁️</span>
+    </div>
     <button class="btn bp" id="login-main-btn" onclick="doLogin()" style="width:100%;justify-content:center">Ingresar</button>
     <div id="login-error" style="color:var(--rd);font-size:.82rem;margin-top:10px"></div>
     <div style="display:flex;justify-content:space-between;margin-top:16px;font-size:.8rem">
@@ -745,41 +753,90 @@ function showLoginScreen(msg){
 }
 function hideLoginScreen(){document.getElementById('login-screen').style.display='none';}
 let signupMode=false;
+window.togglePassVisibility=function(){
+  const inp=document.getElementById('login-pass');
+  const eye=document.getElementById('pass-eye');
+  const show=inp.type==='password';
+  inp.type=show?'text':'password';
+  eye.textContent=show?'🙈':'👁️';
+};
+window.togglePassVisibility2=function(){
+  const inp=document.getElementById('login-pass2');
+  const eye=document.getElementById('pass-eye2');
+  const show=inp.type==='password';
+  inp.type=show?'text':'password';
+  eye.textContent=show?'🙈':'👁️';
+};
+const PASS_REQS=[
+  {test:p=>p.length>=8,label:'Mínimo 8 caracteres'},
+  {test:p=>/[A-Za-z]/.test(p),label:'Al menos una letra'},
+  {test:p=>/[0-9]/.test(p),label:'Al menos un número'}
+];
+function passReqsOk(pass){return PASS_REQS.every(r=>r.test(pass))}
+window.checkPassReqs=function(){
+  if(!signupMode)return;
+  const pass=document.getElementById('login-pass').value;
+  const box=document.getElementById('login-pass-reqs');
+  box.innerHTML=PASS_REQS.map(r=>`<div style="color:${r.test(pass)?'var(--gr)':'var(--mu)'}">${r.test(pass)?'✓':'○'} ${r.label}</div>`).join('');
+};
 window.toggleSignupMode=function(){
   signupMode=!signupMode;
   document.getElementById('login-main-btn').textContent=signupMode?'Crear cuenta':'Ingresar';
   document.getElementById('login-mode-toggle').textContent=signupMode?'Ya tengo cuenta':'Crear cuenta';
   document.getElementById('login-error').textContent='';
+  document.getElementById('login-pass-reqs').style.display=signupMode?'block':'none';
+  document.getElementById('login-pass2-wrap').style.display=signupMode?'block':'none';
+  document.getElementById('login-pass2').value='';
+  checkPassReqs();
 };
 window.doLogin=async function(){
   const email=document.getElementById('login-email').value.trim();
   const pass=document.getElementById('login-pass').value;
-  if(!email||!pass){document.getElementById('login-error').textContent='Completá email y contraseña.';return}
+  const errEl=document.getElementById('login-error');
+  errEl.style.color='var(--rd)';
+  if(!email||!pass){errEl.textContent='Completá email y contraseña.';return}
   if(signupMode){
-    if(pass.length<6){document.getElementById('login-error').textContent='La contraseña debe tener al menos 6 caracteres.';return}
+    if(!passReqsOk(pass)){errEl.textContent='La contraseña no cumple los requisitos de arriba.';return}
+    const pass2=document.getElementById('login-pass2').value;
+    if(pass!==pass2){errEl.textContent='Las contraseñas no coinciden.';return}
     try{
       await createUserWithEmailAndPassword(auth,email,pass);
     }catch(err){
-      document.getElementById('login-error').textContent=err.code==='auth/email-already-in-use'?'Ese email ya tiene una cuenta creada.':'No se pudo crear la cuenta.';
+      const msgs={
+        'auth/email-already-in-use':'Ese email ya tiene una cuenta creada.',
+        'auth/invalid-email':'El email no es válido.',
+        'auth/weak-password':'La contraseña es muy débil.',
+        'auth/operation-not-allowed':'El acceso por email/contraseña no está habilitado en Firebase. Activalo en Authentication → Sign-in method.',
+        'auth/network-request-failed':'Sin conexión. Revisá tu internet e intentá de nuevo.'
+      };
+      errEl.textContent=msgs[err.code]||('No se pudo crear la cuenta ('+err.code+').');
     }
     return;
   }
   try{
     await signInWithEmailAndPassword(auth,email,pass);
   }catch(err){
-    document.getElementById('login-error').textContent='Usuario o contraseña incorrectos.';
+    const msgs={
+      'auth/invalid-credential':'Usuario o contraseña incorrectos.',
+      'auth/user-not-found':'No existe una cuenta con ese email.',
+      'auth/wrong-password':'Contraseña incorrecta.',
+      'auth/invalid-email':'El email no es válido.',
+      'auth/network-request-failed':'Sin conexión. Revisá tu internet e intentá de nuevo.'
+    };
+    errEl.textContent=msgs[err.code]||('Usuario o contraseña incorrectos ('+err.code+').');
   }
 };
 window.doForgotPassword=async function(){
   const email=document.getElementById('login-email').value.trim();
-  if(!email){document.getElementById('login-error').textContent='Escribí tu email arriba y tocá de nuevo "Olvidé mi contraseña".';return}
+  const errEl=document.getElementById('login-error');
+  if(!email){errEl.style.color='var(--rd)';errEl.textContent='Escribí tu email arriba y tocá de nuevo "Olvidé mi contraseña".';return}
   try{
     await sendPasswordResetEmail(auth,email);
-    document.getElementById('login-error').style.color='var(--gr)';
-    document.getElementById('login-error').textContent='✅ Te enviamos un email para restablecer tu contraseña.';
+    errEl.style.color='var(--gr)';
+    errEl.textContent='✅ Te enviamos un email para restablecer tu contraseña.';
   }catch(err){
-    document.getElementById('login-error').style.color='var(--rd)';
-    document.getElementById('login-error').textContent='No se pudo enviar el email. Revisá que esté bien escrito.';
+    errEl.style.color='var(--rd)';
+    errEl.textContent='No se pudo enviar el email. Revisá que esté bien escrito.';
   }
 };
 window.doLogout=async function(){await signOut(auth)};
