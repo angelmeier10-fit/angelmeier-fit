@@ -113,9 +113,8 @@ textarea{resize:vertical;min-height:52px}
 .ex-opt:hover{background:var(--s2)}
 .ex-cat-lbl{font-size:.68rem;color:var(--mu)}
 .ex-gl{padding:5px 12px 3px;font-size:.66rem;color:var(--ac2);text-transform:uppercase;letter-spacing:.08em;font-weight:700;background:var(--s2);position:sticky;top:0}
-.ex-cat-chips{display:flex;gap:5px;align-items:center;overflow-x:auto;padding:8px 10px;position:sticky;top:0;background:var(--s1);border-bottom:1px solid var(--bd);z-index:1}
-.ex-cat-chip{flex-shrink:0;white-space:nowrap;font-size:.7rem;padding:4px 10px;border-radius:20px;border:1px solid var(--bd);color:var(--mu);cursor:pointer;background:var(--s2)}
-.ex-cat-chip.active{background:var(--ac);border-color:var(--ac);color:#fff}
+.ex-cat-chips{display:flex;gap:5px;align-items:center;padding:8px 10px;position:sticky;top:0;background:var(--s1);border-bottom:1px solid var(--bd);z-index:1}
+.ex-cat-select{flex:1;font-size:.78rem;padding:6px 9px;border-radius:8px;border:1px solid var(--bd);color:var(--tx);background:var(--s2);cursor:pointer}
 .ex-dd-close{display:none;flex-shrink:0;margin-left:auto;background:var(--s2);border:1px solid var(--bd);color:var(--mu);border-radius:50%;width:26px;height:26px;align-items:center;justify-content:center;cursor:pointer;font-size:.85rem}
 .ex-add-new{color:var(--ac2);font-weight:600;border-top:1px dashed var(--bd)}
 @media (max-width:640px){
@@ -124,8 +123,8 @@ textarea{resize:vertical;min-height:52px}
   .ex-opt{padding:13px 16px;font-size:.95rem}
   .ex-cat-lbl{font-size:.74rem}
   .ex-gl{font-size:.72rem;padding:9px 16px 6px}
-  .ex-cat-chips{padding:10px 12px;flex-wrap:wrap;overflow-x:visible}
-  .ex-cat-chip{font-size:.8rem;padding:7px 13px}
+  .ex-cat-chips{padding:10px 12px}
+  .ex-cat-select{font-size:.88rem;padding:9px 12px}
 }
 .ex-sep{text-align:center;font-size:.7rem;color:var(--mu);font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:3px 0;border-top:1px dashed var(--bd);border-bottom:1px dashed var(--bd);margin:3px 0}
 .sc-row{display:grid;grid-template-columns:20px 1fr 1fr auto;gap:5px;align-items:center;margin-bottom:4px}
@@ -1598,8 +1597,11 @@ function getExByGroup(){
 }
 function catChipsHtml(ddId){
   const dd=document.getElementById(ddId);const active=dd?.dataset.cat||'';
-  const chip=(label,val)=>`<span class="ex-cat-chip${active===val?' active':''}" onclick="event.stopPropagation();setExCatFilter('${ddId}','${val.replace(/'/g,"\\'")}')">${label}</span>`;
-  return`<div class="ex-cat-chips">${chip('Todas','')}${exCats.map(c=>chip(c,c)).join('')}<span class="ex-dd-close" onclick="event.stopPropagation();document.getElementById('${ddId}').classList.remove('open')">✕</span></div>`;
+  const opt=(label,val)=>`<option value="${val}"${active===val?' selected':''}>${label}</option>`;
+  return`<div class="ex-cat-chips">
+    <select class="ex-cat-select" onclick="event.stopPropagation()" onchange="event.stopPropagation();setExCatFilter('${ddId}',this.value)">${opt('Todas','')}${exCats.map(c=>opt(c,c)).join('')}</select>
+    <span class="ex-dd-close" onclick="event.stopPropagation();document.getElementById('${ddId}').classList.remove('open')">✕</span>
+  </div>`;
 }
 window.setExCatFilter=function(ddId,val){
   const dd=document.getElementById(ddId);dd.dataset.cat=val;
