@@ -307,8 +307,12 @@ textarea{resize:vertical;min-height:52px}
     <div style="color:var(--mu);font-size:.85rem;margin-bottom:24px">Panel de entrenador</div>
     <input id="login-email" type="email" placeholder="Email" style="margin-bottom:10px" autocomplete="username">
     <input id="login-pass" type="password" placeholder="Contraseña" style="margin-bottom:14px" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
-    <button class="btn bp" onclick="doLogin()" style="width:100%;justify-content:center">Ingresar</button>
+    <button class="btn bp" id="login-main-btn" onclick="doLogin()" style="width:100%;justify-content:center">Ingresar</button>
     <div id="login-error" style="color:var(--rd);font-size:.82rem;margin-top:10px"></div>
+    <div style="display:flex;justify-content:space-between;margin-top:16px;font-size:.8rem">
+      <span onclick="toggleSignupMode()" style="color:var(--ac2);cursor:pointer" id="login-mode-toggle">Crear cuenta</span>
+      <span onclick="doForgotPassword()" style="color:var(--mu);cursor:pointer">Olvidé mi contraseña</span>
+    </div>
   </div>
 </div>
 
@@ -712,7 +716,7 @@ function toggleTheme(){
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, addDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 /* r3 */
 (async()=>{
@@ -740,14 +744,42 @@ function showLoginScreen(msg){
   document.getElementById('login-error').textContent=msg||'';
 }
 function hideLoginScreen(){document.getElementById('login-screen').style.display='none';}
+let signupMode=false;
+window.toggleSignupMode=function(){
+  signupMode=!signupMode;
+  document.getElementById('login-main-btn').textContent=signupMode?'Crear cuenta':'Ingresar';
+  document.getElementById('login-mode-toggle').textContent=signupMode?'Ya tengo cuenta':'Crear cuenta';
+  document.getElementById('login-error').textContent='';
+};
 window.doLogin=async function(){
   const email=document.getElementById('login-email').value.trim();
   const pass=document.getElementById('login-pass').value;
-  if(!email||!pass){document.getElementById('login-error').textContent='Completá usuario y contraseña.';return}
+  if(!email||!pass){document.getElementById('login-error').textContent='Completá email y contraseña.';return}
+  if(signupMode){
+    if(pass.length<6){document.getElementById('login-error').textContent='La contraseña debe tener al menos 6 caracteres.';return}
+    try{
+      await createUserWithEmailAndPassword(auth,email,pass);
+    }catch(err){
+      document.getElementById('login-error').textContent=err.code==='auth/email-already-in-use'?'Ese email ya tiene una cuenta creada.':'No se pudo crear la cuenta.';
+    }
+    return;
+  }
   try{
     await signInWithEmailAndPassword(auth,email,pass);
   }catch(err){
     document.getElementById('login-error').textContent='Usuario o contraseña incorrectos.';
+  }
+};
+window.doForgotPassword=async function(){
+  const email=document.getElementById('login-email').value.trim();
+  if(!email){document.getElementById('login-error').textContent='Escribí tu email arriba y tocá de nuevo "Olvidé mi contraseña".';return}
+  try{
+    await sendPasswordResetEmail(auth,email);
+    document.getElementById('login-error').style.color='var(--gr)';
+    document.getElementById('login-error').textContent='✅ Te enviamos un email para restablecer tu contraseña.';
+  }catch(err){
+    document.getElementById('login-error').style.color='var(--rd)';
+    document.getElementById('login-error').textContent='No se pudo enviar el email. Revisá que esté bien escrito.';
   }
 };
 window.doLogout=async function(){await signOut(auth)};
