@@ -118,7 +118,7 @@ textarea{resize:vertical;min-height:52px}
 .ex-dd-close{display:none;flex-shrink:0;margin-left:auto;background:var(--s2);border:1px solid var(--bd);color:var(--mu);border-radius:50%;width:26px;height:26px;align-items:center;justify-content:center;cursor:pointer;font-size:.85rem}
 .ex-add-new{color:var(--ac2);font-weight:600;border-top:1px dashed var(--bd)}
 @media (max-width:640px){
-  .ex-dd.open{position:fixed;left:0;right:0;bottom:0;top:auto;max-height:75vh;border-radius:16px 16px 0 0;margin-top:0;box-shadow:0 -8px 30px rgba(0,0,0,.6)}
+  .ex-dd.open{position:fixed;left:8px;right:8px;top:56px;bottom:auto;max-height:none;height:calc(var(--vvh,100vh) - 64px);border-radius:12px;margin-top:0;box-shadow:0 8px 30px rgba(0,0,0,.6)}
   .ex-wrap:has(.ex-dd.open) .ex-search{position:fixed;top:8px;left:8px;right:8px;z-index:500;box-shadow:0 4px 16px rgba(0,0,0,.5)}
   .ex-dd-close{display:flex}
   .ex-opt{padding:13px 16px;font-size:.95rem}
@@ -1591,6 +1591,11 @@ function addCFEx(cid,data=null){
 window.addCFEx=addCFEx;
 
 // ══ EXERCISE SEARCH ══
+if(window.visualViewport){
+  const updateVVH=()=>document.documentElement.style.setProperty('--vvh',visualViewport.height+'px');
+  visualViewport.addEventListener('resize',updateVVH);
+  updateVVH();
+}
 function getExByGroup(){
   const groups={};
   exDB.forEach(ex=>{if(!groups[ex.cat])groups[ex.cat]=[];groups[ex.cat].push(ex)});
