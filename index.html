@@ -111,6 +111,10 @@ textarea{resize:vertical;min-height:52px}
 .ex-opt:hover{background:var(--s2)}
 .ex-cat-lbl{font-size:.68rem;color:var(--mu)}
 .ex-gl{padding:5px 12px 3px;font-size:.66rem;color:var(--ac2);text-transform:uppercase;letter-spacing:.08em;font-weight:700;background:var(--s2);position:sticky;top:0}
+.ex-cat-chips{display:flex;gap:5px;overflow-x:auto;padding:8px 10px;position:sticky;top:0;background:var(--s1);border-bottom:1px solid var(--bd);z-index:1}
+.ex-cat-chip{flex-shrink:0;white-space:nowrap;font-size:.7rem;padding:4px 10px;border-radius:20px;border:1px solid var(--bd);color:var(--mu);cursor:pointer;background:var(--s2)}
+.ex-cat-chip.active{background:var(--ac);border-color:var(--ac);color:#fff}
+.ex-add-new{color:var(--ac2);font-weight:600;border-top:1px dashed var(--bd)}
 .ex-sep{text-align:center;font-size:.7rem;color:var(--mu);font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:3px 0;border-top:1px dashed var(--bd);border-bottom:1px dashed var(--bd);margin:3px 0}
 .sc-row{display:grid;grid-template-columns:20px 1fr 1fr auto;gap:5px;align-items:center;margin-bottom:4px}
 .sc-num{font-size:.7rem;color:var(--mu);font-weight:600;text-align:center}
@@ -612,6 +616,7 @@ textarea{resize:vertical;min-height:52px}
   <p class="sub">Agregá, editá o importá ejercicios con sus links de YouTube.</p>
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
     <button class="btn bp" onclick="openAddExModal()">➕ Agregar ejercicio</button>
+    <button class="btn bg2" onclick="openCatModal()">⚙️ Categorías</button>
     <label class="btn bg2" style="cursor:pointer">📥 Importar CSV<input type="file" accept=".csv" style="display:none" onchange="importExercises(this)"></label>
     <button class="btn bg2" onclick="exportExercisesCSV()">📤 Exportar CSV</button>
     <input type="text" id="ex-search-db" placeholder="Buscar ejercicio..." style="flex:1;min-width:150px" oninput="renderExDB()">
@@ -631,7 +636,7 @@ textarea{resize:vertical;min-height:52px}
     <div style="display:flex;flex-direction:column;gap:10px">
       <div class="fg"><label>Nombre del ejercicio</label><input id="em-name" placeholder="Ej: Sentadilla búlgara con mancuernas"></div>
       <div class="fg"><label>Categoría</label>
-        <select id="em-cat"><option>Pecho</option><option>Espalda</option><option>Hombros</option><option>Bíceps</option><option>Tríceps</option><option>Abdomen</option><option>Cuádriceps</option><option>Isquiotibiales y Glúteos</option><option>Pantorrillas</option><option>CrossFit / Funcional</option><option>Otra</option></select>
+        <select id="em-cat"></select>
       </div>
       <div class="fg"><label>Link de YouTube (opcional)</label><input id="em-video" placeholder="https://youtube.com/..."></div>
       <div id="em-preview" style="display:none"></div>
@@ -640,6 +645,21 @@ textarea{resize:vertical;min-height:52px}
     <div style="display:flex;gap:8px;margin-top:16px">
       <button class="btn bp" onclick="saveExercise()" style="flex:1;justify-content:center">💾 Guardar</button>
       <button class="btn bg2" onclick="closeExModal()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CATEGORIAS -->
+<div class="modal-bg" id="cat-modal">
+  <div class="modal">
+    <h2>⚙️ Categorías de ejercicios</h2>
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <input id="cat-new-name" placeholder="Nueva categoría...">
+      <button class="btn bp sm" onclick="addCategory()">➕ Agregar</button>
+    </div>
+    <div id="cat-list" style="display:flex;flex-direction:column;gap:6px;max-height:340px;overflow-y:auto"></div>
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <button class="btn bg2" onclick="closeCatModal()" style="flex:1;justify-content:center">Cerrar</button>
     </div>
   </div>
 </div>
@@ -781,6 +801,8 @@ const CF_TYPES={
 
 // ══ STATE ══
 let exDB=[];
+let exCats=[];
+const DEFAULT_CATS=['Pecho','Espalda','Hombros','Bíceps','Tríceps','Abdomen','Cuádriceps','Isquiotibiales y Glúteos','Pantorrillas','CrossFit / Funcional','Otra'];
 let clients=[];
 let editingId=null;
 let scC=0;
@@ -812,6 +834,18 @@ async function init(){
   } else {
     exDB=exSnap.docs.map(d=>d.data());
   }
+
+  // Load exercise categories
+  const catSnap=await getDoc(doc(db,'meta','categories'));
+  if(catSnap.exists()){
+    exCats=catSnap.data().list||[];
+  } else {
+    exCats=[...DEFAULT_CATS];
+    await setDoc(doc(db,'meta','categories'),{list:exCats});
+  }
+  // Ensure any category already used by an exercise (legacy data) shows up in the list
+  exDB.forEach(ex=>{if(ex.cat&&!exCats.includes(ex.cat))exCats.push(ex.cat)});
+  populateEmCat();
 
   // Load clients
   const clientSnap=await getDocs(collection(db,'clients'));
@@ -1148,9 +1182,56 @@ function showCFMenu(bodyId,btn){
   menu.style.top=(rect.bottom+6)+'px';
   menu.style.left=Math.min(rect.left,window.innerWidth-350)+'px';
   document.body.appendChild(menu);
-  setTimeout(()=>document.addEventListener('click',function h(e){if(!menu.contains(e.target)&&e.target!==btn){menu.remove();document.removeEventListener('click',h)}}),100);
+  setTimeout(()=>document.addEventListener('click',function h(e){if(!menu.contains(e.target)&&e.target!==btn){menu.remove();document.removeEventListener('click',h,true)}},true),100);
 }
 window.showCFMenu=showCFMenu;
+
+function addFuncBlock(bodyId,data=null){
+  const c=document.getElementById(bodyId);
+  const gid='fn'+Date.now()+Math.random().toString(36).slice(2,5);
+  const div=document.createElement('div');div.className='blk';div.id=gid;div.dataset.kind='func';
+  div.innerHTML=`<div class="blk-hdr" onclick="toggleBlk('${gid}',event)">
+    <span class="blk-type t-warmup">🧓 Actividad funcional</span>
+    <button class="btn bg2 xs" onclick="event.stopPropagation();moveBlk('${gid}',-1)" title="Mover arriba">↑</button>
+    <button class="btn bg2 xs" onclick="event.stopPropagation();moveBlk('${gid}',1)" title="Mover abajo">↓</button>
+    <button class="btn bd2 xs" onclick="event.stopPropagation();document.getElementById('${gid}').remove()">✕</button>
+    <span class="blk-toggle">▼</span>
+  </div>
+  <div class="blk-body" id="${gid}-body">
+    <div class="fg full"><label>Nombre de la actividad</label><input type="text" class="func-title" value="${data?.title||''}" placeholder="Ej: Circuito funcional"></div>
+    <div class="fg full"><label>Descripción</label><textarea class="func-desc" placeholder="Explicación de la actividad...">${data?.desc||''}</textarea></div>
+    <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:9px">
+      <div class="fg" style="flex:1;min-width:90px"><label>Series</label><input type="text" class="func-sets" value="${data?.sets||''}" placeholder="Ej: 3"></div>
+      <div class="fg" style="flex:1;min-width:90px"><label>Reps/tiempo</label><input type="text" class="func-reps" value="${data?.reps||''}" placeholder="Ej: 30 seg"></div>
+      <div class="fg" style="flex:1;min-width:90px"><label>Descanso</label><input type="text" class="func-rest" value="${data?.rest||''}" placeholder="Ej: 60s"></div>
+    </div>
+    <div style="margin:8px 0 5px"><label>Ejercicios incluidos</label></div>
+    <div id="${gid}-exs"></div>
+    <button class="btn bg2 sm" style="margin-top:5px" onclick="addFuncEx('${gid}-exs')">+ Ejercicio</button>
+  </div>`;
+  c.appendChild(div);
+  if(data?.exercises?.length) data.exercises.forEach(ex=>addFuncEx(gid+'-exs',ex));
+  else addFuncEx(gid+'-exs');
+}
+window.addFuncBlock=addFuncBlock;
+
+function addFuncEx(cid,data=null){
+  const c=document.getElementById(cid);
+  const eid='fe'+Date.now()+Math.random().toString(36).slice(2,5);
+  const div=document.createElement('div');div.className='ex-entry';div.id=eid;
+  div.innerHTML=`<div style="display:flex;gap:7px;align-items:flex-start">
+    <input type="text" class="func-ex-reps" value="${data?.reps||''}" placeholder="Reps/tiempo" style="max-width:100px;flex-shrink:0">
+    <div class="ex-wrap" style="flex:1">
+      <input type="text" class="ex-search" value="${data?.name||''}" placeholder="Ejercicio..."
+        oninput="filterEx(this,'${eid}-dd')" onfocus="showDd(this,'${eid}-dd')"
+        data-name="${data?.name||''}" data-video="${data?.video||''}">
+      <div class="ex-dd" id="${eid}-dd"></div>
+    </div>
+    <button class="btn bd2 xs" style="flex-shrink:0" onclick="document.getElementById('${eid}').remove()">✕</button>
+  </div>`;
+  c.appendChild(div);
+}
+window.addFuncEx=addFuncEx;
 
 function addGymBlock(bodyId,type,data=null){
   const c=document.getElementById(bodyId);
@@ -1342,22 +1423,43 @@ function getExByGroup(){
   exDB.forEach(ex=>{if(!groups[ex.cat])groups[ex.cat]=[];groups[ex.cat].push(ex)});
   return groups;
 }
+function catChipsHtml(ddId){
+  const dd=document.getElementById(ddId);const active=dd?.dataset.cat||'';
+  const chip=(label,val)=>`<span class="ex-cat-chip${active===val?' active':''}" onclick="event.stopPropagation();setExCatFilter('${ddId}','${val.replace(/'/g,"\\'")}')">${label}</span>`;
+  return`<div class="ex-cat-chips">${chip('Todas','')}${exCats.map(c=>chip(c,c)).join('')}</div>`;
+}
+window.setExCatFilter=function(ddId,val){
+  const dd=document.getElementById(ddId);dd.dataset.cat=val;
+  const input=dd.parentElement.querySelector('.ex-search');
+  if(input.value)filterEx(input,ddId);else showDd(input,ddId);
+};
 function filterEx(input,ddId){
-  const dd=document.getElementById(ddId);const q=norm(input.value);dd.innerHTML='';let has=false;
+  const dd=document.getElementById(ddId);const q=norm(input.value);const activeCat=dd.dataset.cat||'';
+  dd.innerHTML=catChipsHtml(ddId);let has=false;
   for(const[cat,exs]of Object.entries(getExByGroup())){
+    if(activeCat&&cat!==activeCat)continue;
     const f=exs.filter(e=>norm(e.name).includes(q));if(!f.length)continue;has=true;
     const gl=document.createElement('div');gl.className='ex-gl';gl.textContent=cat;dd.appendChild(gl);
     f.forEach(ex=>{const opt=document.createElement('div');opt.className='ex-opt';
       opt.innerHTML=`<span>${ex.name}</span><span class="ex-cat-lbl">${cat}</span>`;
       opt.onclick=()=>selEx(input,ddId,ex);dd.appendChild(opt)});
   }
-  dd.classList.toggle('open',has&&q.length>0);
+  if(input.value.trim()){
+    const addOpt=document.createElement('div');addOpt.className='ex-opt ex-add-new';
+    addOpt.textContent=`➕ Agregar "${input.value.trim()}" como ejercicio nuevo`;
+    addOpt.onclick=()=>openAddExFromPlan(input,ddId);
+    dd.appendChild(addOpt);
+  }
+  dd.classList.toggle('open',!!activeCat||q.length>0);
 }
 function showDd(input,ddId){
-  if(input.value)return;const dd=document.getElementById(ddId);dd.innerHTML='';
+  if(input.value)return;const dd=document.getElementById(ddId);const activeCat=dd.dataset.cat||'';
+  dd.innerHTML=catChipsHtml(ddId);
   for(const[cat,exs]of Object.entries(getExByGroup())){
+    if(activeCat&&cat!==activeCat)continue;
     const gl=document.createElement('div');gl.className='ex-gl';gl.textContent=cat;dd.appendChild(gl);
-    exs.slice(0,3).forEach(ex=>{const opt=document.createElement('div');opt.className='ex-opt';
+    const list=activeCat?exs:exs.slice(0,3);
+    list.forEach(ex=>{const opt=document.createElement('div');opt.className='ex-opt';
       opt.innerHTML=`<span>${ex.name}</span><span class="ex-cat-lbl">${cat}</span>`;
       opt.onclick=()=>selEx(input,ddId,ex);dd.appendChild(opt)});
   }
@@ -1365,7 +1467,7 @@ function showDd(input,ddId){
 }
 function selEx(input,ddId,ex){input.value=ex.name;input.dataset.name=ex.name;input.dataset.video=ex.video||'';document.getElementById(ddId).classList.remove('open')}
 window.filterEx=filterEx;window.showDd=showDd;
-document.addEventListener('click',e=>{if(!e.target.closest('.ex-wrap'))document.querySelectorAll('.ex-dd').forEach(d=>d.classList.remove('open'))});
+document.addEventListener('click',e=>{if(!e.target.closest('.ex-wrap'))document.querySelectorAll('.ex-dd').forEach(d=>d.classList.remove('open'))},true);
 
 // ══ COLLECT DATA ══
 function collectDays(cid,count){
@@ -2021,9 +2123,76 @@ window.logCF=async function(cId,bkey,rk){
 // ══ EXERCISE DB ══
 function populateCatFilter(){
   const sel=document.getElementById('ex-cat-filter');
-  const cats=[...new Set(exDB.map(e=>e.cat))].sort();
-  sel.innerHTML='<option value="">Todas las categorías</option>'+cats.map(c=>`<option>${c}</option>`).join('');
+  const prev=sel.value;
+  sel.innerHTML='<option value="">Todas las categorías</option>'+exCats.map(c=>`<option>${c}</option>`).join('');
+  if(exCats.includes(prev))sel.value=prev;
 }
+function populateEmCat(){
+  const sel=document.getElementById('em-cat');
+  const prev=sel.value;
+  sel.innerHTML=exCats.map(c=>`<option>${c}</option>`).join('');
+  if(exCats.includes(prev))sel.value=prev;
+}
+async function saveCats(){await setDoc(doc(db,'meta','categories'),{list:exCats})}
+
+window.openCatModal=function(){renderCatList();document.getElementById('cat-modal').classList.add('open')};
+window.closeCatModal=function(){document.getElementById('cat-modal').classList.remove('open')};
+function renderCatList(){
+  const el=document.getElementById('cat-list');
+  el.innerHTML=exCats.map(c=>{
+    const count=exDB.filter(e=>e.cat===c).length;
+    return`<div style="display:flex;align-items:center;gap:7px;background:var(--s2);border-radius:8px;padding:7px 10px">
+      <span style="flex:1;font-size:.85rem">${c}</span>
+      <span style="font-size:.72rem;color:var(--mu)">${count} ej.</span>
+      <button class="btn bg2 xs" onclick="renameCategory('${c.replace(/'/g,"\\'")}')">✏️</button>
+      <button class="btn bd2 xs" onclick="deleteCategory('${c.replace(/'/g,"\\'")}')">🗑️</button>
+    </div>`;
+  }).join('')||'<div style="color:var(--mu);font-size:.83rem;padding:10px">Sin categorías.</div>';
+}
+window.addCategory=async function(){
+  const inp=document.getElementById('cat-new-name');
+  const name=inp.value.trim();
+  if(!name)return;
+  if(exCats.some(c=>c.toLowerCase()===name.toLowerCase())){toast('Esa categoría ya existe');return}
+  exCats.push(name);
+  await saveCats();
+  inp.value='';
+  renderCatList();populateCatFilter();populateEmCat();
+  toast('✅ Categoría agregada');
+};
+window.renameCategory=async function(oldName){
+  const newName=prompt('Nuevo nombre para la categoría:',oldName);
+  if(!newName||!newName.trim()||newName.trim()===oldName)return;
+  const trimmed=newName.trim();
+  if(exCats.some(c=>c.toLowerCase()===trimmed.toLowerCase())){toast('Ya existe una categoría con ese nombre');return}
+  exCats=exCats.map(c=>c===oldName?trimmed:c);
+  await saveCats();
+  const affected=exDB.filter(e=>e.cat===oldName);
+  for(const ex of affected){
+    ex.cat=trimmed;
+    await setDoc(doc(db,'exercises',ex.id),{...ex,cat:trimmed});
+  }
+  renderCatList();renderExDB();populateCatFilter();populateEmCat();
+  toast('✅ Categoría renombrada');
+};
+window.deleteCategory=async function(name){
+  const affected=exDB.filter(e=>e.cat===name);
+  const msg=affected.length
+    ?`Hay ${affected.length} ejercicio(s) en "${name}". Se moverán a "Otra". ¿Eliminar la categoría igual?`
+    :`¿Eliminar la categoría "${name}"?`;
+  if(!confirm(msg))return;
+  if(affected.length){
+    if(!exCats.includes('Otra')){exCats.push('Otra')}
+    for(const ex of affected){
+      ex.cat='Otra';
+      await setDoc(doc(db,'exercises',ex.id),{...ex,cat:'Otra'});
+    }
+  }
+  exCats=exCats.filter(c=>c!==name);
+  await saveCats();
+  renderCatList();renderExDB();populateCatFilter();populateEmCat();
+  toast('🗑️ Categoría eliminada');
+};
 function renderExDB(){
   const q=document.getElementById('ex-search-db').value.toLowerCase();
   const cat=document.getElementById('ex-cat-filter').value;
@@ -2045,6 +2214,7 @@ function renderExDB(){
 }
 window.renderExDB=renderExDB;
 
+let pendingExTarget=null;
 window.openAddExModal=function(){
   document.getElementById('em-name').value='';
   document.getElementById('em-video').value='';
@@ -2053,7 +2223,14 @@ window.openAddExModal=function(){
   document.getElementById('ex-modal-title').textContent='Agregar ejercicio';
   document.getElementById('ex-modal').classList.add('open');
 };
+window.openAddExFromPlan=function(input,ddId){
+  pendingExTarget={input,ddId};
+  openAddExModal();
+  document.getElementById('em-name').value=input.value.trim();
+  document.getElementById(ddId)?.classList.remove('open');
+};
 window.openEditEx=function(id){
+  pendingExTarget=null;
   const ex=exDB.find(e=>e.id===id);if(!ex)return;
   document.getElementById('em-name').value=ex.name;
   document.getElementById('em-cat').value=ex.cat;
@@ -2069,7 +2246,7 @@ function showVideoPreview(url){
   if(ytId){prev.style.display='block';prev.innerHTML=`<img src="https://img.youtube.com/vi/${ytId}/mqdefault.jpg" style="width:100%;border-radius:8px;margin-top:6px">`}
   else prev.style.display='none';
 }
-window.closeExModal=function(){document.getElementById('ex-modal').classList.remove('open')};
+window.closeExModal=function(){pendingExTarget=null;document.getElementById('ex-modal').classList.remove('open')};
 
 window.saveExercise=async function(){
   const name=document.getElementById('em-name').value.trim();
@@ -2077,6 +2254,7 @@ window.saveExercise=async function(){
   const cat=document.getElementById('em-cat').value;
   const video=document.getElementById('em-video').value.trim();
   const existingId=document.getElementById('em-id').value;
+  const target=pendingExTarget;pendingExTarget=null;
   if(existingId){
     const ex=exDB.find(e=>e.id===existingId);
     if(ex){ex.name=name;ex.cat=cat;ex.video=video;}
@@ -2088,7 +2266,13 @@ window.saveExercise=async function(){
     exDB.push({id,name,cat,video});
     toast('✅ Ejercicio agregado');
   }
-  closeExModal();renderExDB();populateCatFilter();
+  document.getElementById('ex-modal').classList.remove('open');renderExDB();populateCatFilter();
+  if(target){
+    target.input.value=name;
+    target.input.dataset.name=name;
+    target.input.dataset.video=video;
+    target.input.focus();
+  }
 };
 
 window.delEx=async function(id){
@@ -2120,9 +2304,10 @@ window.importExercises=async function(input){
           const id='ex'+Date.now()+Math.random().toString(36).slice(2,5);
           await setDoc(doc(db,'exercises',id),{id,name,cat,video});
           exDB.push({id,name,cat,video});added++;
+          if(!exCats.includes(cat)){exCats.push(cat);await saveCats();}
         }
       }
-      renderExDB();populateCatFilter();toast(`✅ ${added} ejercicios importados`);
+      renderExDB();populateCatFilter();populateEmCat();toast(`✅ ${added} ejercicios importados`);
     }catch(err){toast('❌ Error al importar');}
     input.value='';
   };
@@ -2285,7 +2470,10 @@ async function updatePlan(){
   plan.days=blocks.map(db2=>({
     name:db2.querySelector('.day-name-input').value,
     blocks:[...document.getElementById(db2.id+'-body').children].filter(el=>el.dataset.kind).map(blk=>{
-      if(blk.dataset.kind==='warmup'){
+      if(blk.dataset.kind==='func'){
+        const exercises=[...blk.querySelectorAll('.ex-entry')].map(en=>{const inp=en.querySelector('.ex-search');return{name:inp.dataset.name||inp.value,video:inp.dataset.video||'',reps:en.querySelector('.func-ex-reps')?.value||''};}).filter(e=>e.name);
+        return{kind:'func',title:blk.querySelector('.func-title').value,desc:blk.querySelector('.func-desc').value,reps:blk.querySelector('.func-reps').value,rest:blk.querySelector('.func-rest').value,sets:blk.querySelector('.func-sets').value,exercises};
+      } else if(blk.dataset.kind==='warmup'){
         const duration=blk.querySelector('.wu-duration')?.value||'10 min';
         const exercises=[...blk.querySelectorAll('.ex-entry')].map(en=>{const inp=en.querySelector('.ex-search');return{name:inp.dataset.name||inp.value,video:inp.dataset.video||'',reps:en.querySelector('.wu-reps')?.value||'',obs:en.querySelector('.ex-obs')?.value||''};}).filter(e=>e.name);
         return{kind:'warmup',duration,exercises};
@@ -2693,6 +2881,7 @@ function renderGroupDay(plan,member,dIdx){
     const bkey=`${dIdx}-${bi}`;
     if(blk.kind==='warmup') html+=renderWarmupBlock(fakeClient,bkey,blk,bi);
     else if(blk.kind==='gym') html+=renderGymBlock(fakeClient,bkey,blk,bi);
+    else if(blk.kind==='func') html+=renderFuncBlock(fakeClient,bkey,blk,bi);
     else html+=renderCFBlock(fakeClient,bkey,blk,bi);
   });
   // Session notes
