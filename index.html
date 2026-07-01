@@ -111,10 +111,20 @@ textarea{resize:vertical;min-height:52px}
 .ex-opt:hover{background:var(--s2)}
 .ex-cat-lbl{font-size:.68rem;color:var(--mu)}
 .ex-gl{padding:5px 12px 3px;font-size:.66rem;color:var(--ac2);text-transform:uppercase;letter-spacing:.08em;font-weight:700;background:var(--s2);position:sticky;top:0}
-.ex-cat-chips{display:flex;gap:5px;overflow-x:auto;padding:8px 10px;position:sticky;top:0;background:var(--s1);border-bottom:1px solid var(--bd);z-index:1}
+.ex-cat-chips{display:flex;gap:5px;align-items:center;overflow-x:auto;padding:8px 10px;position:sticky;top:0;background:var(--s1);border-bottom:1px solid var(--bd);z-index:1}
 .ex-cat-chip{flex-shrink:0;white-space:nowrap;font-size:.7rem;padding:4px 10px;border-radius:20px;border:1px solid var(--bd);color:var(--mu);cursor:pointer;background:var(--s2)}
 .ex-cat-chip.active{background:var(--ac);border-color:var(--ac);color:#fff}
+.ex-dd-close{display:none;flex-shrink:0;margin-left:auto;background:var(--s2);border:1px solid var(--bd);color:var(--mu);border-radius:50%;width:26px;height:26px;align-items:center;justify-content:center;cursor:pointer;font-size:.85rem}
 .ex-add-new{color:var(--ac2);font-weight:600;border-top:1px dashed var(--bd)}
+@media (max-width:640px){
+  .ex-dd.open{position:fixed;left:0;right:0;bottom:0;top:auto;max-height:75vh;border-radius:16px 16px 0 0;margin-top:0;box-shadow:0 -8px 30px rgba(0,0,0,.6)}
+  .ex-dd-close{display:flex}
+  .ex-opt{padding:13px 16px;font-size:.95rem}
+  .ex-cat-lbl{font-size:.74rem}
+  .ex-gl{font-size:.72rem;padding:9px 16px 6px}
+  .ex-cat-chips{padding:10px 12px;flex-wrap:wrap;overflow-x:visible}
+  .ex-cat-chip{font-size:.8rem;padding:7px 13px}
+}
 .ex-sep{text-align:center;font-size:.7rem;color:var(--mu);font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:3px 0;border-top:1px dashed var(--bd);border-bottom:1px dashed var(--bd);margin:3px 0}
 .sc-row{display:grid;grid-template-columns:20px 1fr 1fr auto;gap:5px;align-items:center;margin-bottom:4px}
 .sc-num{font-size:.7rem;color:var(--mu);font-weight:600;text-align:center}
@@ -290,6 +300,18 @@ textarea{resize:vertical;min-height:52px}
   <div style="color:var(--mu);font-size:.88rem">Cargando...</div>
 </div>
 
+<div id="login-screen" style="display:none;position:fixed;inset:0;z-index:9999;background:var(--bg);align-items:center;justify-content:center;flex-direction:column;padding:20px">
+  <div style="max-width:340px;width:100%;text-align:center">
+    <div style="font-size:2.4rem;margin-bottom:10px">💪</div>
+    <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.3rem;margin-bottom:4px">Angel Meier</div>
+    <div style="color:var(--mu);font-size:.85rem;margin-bottom:24px">Panel de entrenador</div>
+    <input id="login-email" type="email" placeholder="Email" style="margin-bottom:10px" autocomplete="username">
+    <input id="login-pass" type="password" placeholder="Contraseña" style="margin-bottom:14px" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="btn bp" onclick="doLogin()" style="width:100%;justify-content:center">Ingresar</button>
+    <div id="login-error" style="color:var(--rd);font-size:.82rem;margin-top:10px"></div>
+  </div>
+</div>
+
 <nav id="main-nav">
   <div>
     <div class="nav-logo">💪 Angel Meier</div>
@@ -305,6 +327,7 @@ textarea{resize:vertical;min-height:52px}
 
   </div>
   <button id="theme-btn" onclick="toggleTheme()" style="background:var(--s2);border:1px solid var(--bd);color:var(--tx);border-radius:9px;padding:6px 12px;cursor:pointer;font-size:1rem;transition:all .2s;flex-shrink:0" title="Cambiar tema">🌙</button>
+  <button onclick="doLogout()" style="background:var(--s2);border:1px solid var(--bd);color:var(--tx);border-radius:9px;padding:6px 12px;cursor:pointer;font-size:.85rem;transition:all .2s;flex-shrink:0" title="Cerrar sesión">🚪 Salir</button>
 </nav>
 
 <!-- TRAINER -->
@@ -689,6 +712,7 @@ function toggleTheme(){
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, addDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 /* r3 */
 (async()=>{
@@ -705,6 +729,43 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = initializeFirestore(app, {
   localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+});
+const auth = getAuth(app);
+await setPersistence(auth, browserLocalPersistence);
+
+// ══ AUTH (panel de entrenador) ══
+function showLoginScreen(msg){
+  document.getElementById('loading').style.display='none';
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('login-error').textContent=msg||'';
+}
+function hideLoginScreen(){document.getElementById('login-screen').style.display='none';}
+window.doLogin=async function(){
+  const email=document.getElementById('login-email').value.trim();
+  const pass=document.getElementById('login-pass').value;
+  if(!email||!pass){document.getElementById('login-error').textContent='Completá usuario y contraseña.';return}
+  try{
+    await signInWithEmailAndPassword(auth,email,pass);
+  }catch(err){
+    document.getElementById('login-error').textContent='Usuario o contraseña incorrectos.';
+  }
+};
+window.doLogout=async function(){await signOut(auth)};
+
+let appStarted=false;
+const isClientLink=new URLSearchParams(location.search).get('plan');
+onAuthStateChanged(auth,(user)=>{
+  if(isClientLink){
+    // Los links de plan para clientes no requieren login del entrenador
+    if(!appStarted){appStarted=true;init();}
+    return;
+  }
+  if(user){
+    hideLoginScreen();
+    if(!appStarted){appStarted=true;init();}
+  } else {
+    showLoginScreen();
+  }
 });
 
 // ══ EXERCISE DB ══
@@ -1426,7 +1487,7 @@ function getExByGroup(){
 function catChipsHtml(ddId){
   const dd=document.getElementById(ddId);const active=dd?.dataset.cat||'';
   const chip=(label,val)=>`<span class="ex-cat-chip${active===val?' active':''}" onclick="event.stopPropagation();setExCatFilter('${ddId}','${val.replace(/'/g,"\\'")}')">${label}</span>`;
-  return`<div class="ex-cat-chips">${chip('Todas','')}${exCats.map(c=>chip(c,c)).join('')}</div>`;
+  return`<div class="ex-cat-chips">${chip('Todas','')}${exCats.map(c=>chip(c,c)).join('')}<span class="ex-dd-close" onclick="event.stopPropagation();document.getElementById('${ddId}').classList.remove('open')">✕</span></div>`;
 }
 window.setExCatFilter=function(ddId,val){
   const dd=document.getElementById(ddId);dd.dataset.cat=val;
@@ -3826,7 +3887,7 @@ function setupMacroListeners(cid){
 }
 
 // ══ START ══
-init();
+// init() ahora se dispara desde onAuthStateChanged (ver arriba)
 })();
 </script>
 <script>
