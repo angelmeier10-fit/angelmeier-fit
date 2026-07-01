@@ -867,6 +867,11 @@ window.doLogout=async function(){localStorage.removeItem('amfit-had-session');aw
 let appStarted=false;
 const isClientLink=new URLSearchParams(location.search).get('plan');
 function startAppOnce(){if(!appStarted){appStarted=true;init();}}
+if(!isClientLink && localStorage.getItem('amfit-had-session')==='1'){
+  // Ya hubo sesión antes: si Firebase Auth no confirma nada (p.ej. sin conexión),
+  // no dejamos al entrenador trabado en el login; arrancamos con lo que haya en caché.
+  setTimeout(()=>{if(!appStarted){hideLoginScreen();startAppOnce();}},2500);
+}
 onAuthStateChanged(auth,(user)=>{
   if(isClientLink){
     // Los links de plan para clientes no requieren login del entrenador
@@ -877,12 +882,7 @@ onAuthStateChanged(auth,(user)=>{
     localStorage.setItem('amfit-had-session','1');
     hideLoginScreen();
     startAppOnce();
-  } else if(!navigator.onLine && localStorage.getItem('amfit-had-session')==='1'){
-    // Sin conexión pero ya hubo sesión antes: no bloquear con el login,
-    // Firestore sirve los datos ya sincronizados desde su caché offline.
-    hideLoginScreen();
-    startAppOnce();
-  } else {
+  } else if(!appStarted && localStorage.getItem('amfit-had-session')!=='1'){
     showLoginScreen();
   }
 });
