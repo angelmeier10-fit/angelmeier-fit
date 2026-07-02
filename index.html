@@ -4019,7 +4019,27 @@ function setupMacroListeners(cid){
 </script>
 <script>
 if('serviceWorker' in navigator){
-  window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js'));
+  function swBadge(msg,color){
+    var b=document.getElementById('sw-badge');
+    if(!b){b=document.createElement('div');b.id='sw-badge';
+      b.style.cssText='position:fixed;bottom:8px;left:8px;z-index:99999;font-size:.7rem;padding:5px 10px;border-radius:8px;color:#fff;font-family:sans-serif;opacity:.9';
+      document.body.appendChild(b);}
+    b.textContent=msg;b.style.background=color;
+  }
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('./sw.js').then(reg=>{
+      const track=sw=>{
+        if(!sw)return;
+        swBadge('⏳ Preparando modo offline...','#7c5cbf');
+        sw.addEventListener('statechange',()=>{
+          if(sw.state==='activated')swBadge('✅ Listo para modo offline','#16a34a');
+          if(sw.state==='redundant')swBadge('⚠️ Service worker con error','#dc2626');
+        });
+      };
+      if(reg.active)swBadge('✅ Listo para modo offline','#16a34a');
+      track(reg.installing||reg.waiting);
+    }).catch(err=>swBadge('❌ No se pudo activar modo offline: '+err.message,'#dc2626'));
+  });
 }
 </script>
 </body>
