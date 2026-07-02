@@ -1445,6 +1445,7 @@ function addGymBlock(bodyId,type,data=null){
   const div=document.createElement('div');div.className='blk';div.id=gid;div.dataset.kind='gym';div.dataset.type=type;
   div.innerHTML=`<div class="blk-hdr" onclick="toggleBlk('${gid}',event)">
     <span class="blk-type ${tc}">${typeName}</span>
+    <span class="blk-ex-names" id="${gid}-names" style="font-size:.78rem;color:var(--mu);margin-left:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
     <div style="display:flex;align-items:center;gap:6px;flex:1;margin-left:8px;flex-wrap:wrap" onclick="event.stopPropagation()">
       <label style="font-size:.7rem;color:var(--mu);white-space:nowrap">Descanso:</label>
       <input type="text" value="${data?.rest||(type==='simple'?'60s':'90s')}" class="sg-rest" style="max-width:70px;font-size:.78rem;padding:4px 8px">
@@ -1462,6 +1463,8 @@ function addGymBlock(bodyId,type,data=null){
     if(i>0){const s=document.createElement('div');s.className='ex-sep';s.textContent=type==='tri'?'▼ TRISERIE':'▼ SUPERSERIE';body.appendChild(s)}
     addExEntry(body,exData[i]||null);
   }
+  const namesEl=document.getElementById(gid+'-names');
+  if(namesEl)namesEl.textContent=exData.map(e=>e?.name).filter(Boolean).join(' + ');
 }
 window.addGymBlock=addGymBlock;
 
@@ -1528,7 +1531,7 @@ function addExEntry(body,data=null){
     <div class="ex-wrap">
       <label style="font-size:.7rem;color:var(--mu);text-transform:uppercase;letter-spacing:.04em;font-weight:500">Ejercicio</label>
       <input type="text" class="ex-search" value="${data?.name||''}" placeholder="Buscá ejercicio..."
-        oninput="filterEx(this,'${eid}-dd')" onfocus="showDd(this,'${eid}-dd')"
+        oninput="filterEx(this,'${eid}-dd');updateBlkNames(this)" onfocus="showDd(this,'${eid}-dd')"
         data-name="${data?.name||''}" data-video="${data?.video||''}">
       <div class="ex-dd" id="${eid}-dd"></div>
     </div>
@@ -1676,7 +1679,14 @@ function showDd(input,ddId){
   }
   dd.classList.add('open');
 }
-function selEx(input,ddId,ex){input.value=ex.name;input.dataset.name=ex.name;input.dataset.video=ex.video||'';document.getElementById(ddId).classList.remove('open')}
+function selEx(input,ddId,ex){input.value=ex.name;input.dataset.name=ex.name;input.dataset.video=ex.video||'';document.getElementById(ddId).classList.remove('open');updateBlkNames(input)}
+function updateBlkNames(input){
+  const blk=input.closest('.blk');if(!blk)return;
+  const names=document.getElementById(blk.id+'-names');if(!names)return;
+  const vals=[...blk.querySelectorAll('.ex-search')].map(i=>i.value.trim()).filter(Boolean);
+  names.textContent=vals.join(' + ');
+}
+window.updateBlkNames=updateBlkNames;
 window.filterEx=filterEx;window.showDd=showDd;
 document.addEventListener('click',e=>{if(!e.target.closest('.ex-wrap'))document.querySelectorAll('.ex-dd').forEach(d=>d.classList.remove('open'))},true);
 
