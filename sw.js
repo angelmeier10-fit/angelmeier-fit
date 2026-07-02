@@ -1,4 +1,4 @@
-const CACHE = 'amfit-v5';
+const CACHE = 'amfit-v6';
 const ASSETS = [
   './',
   './index.html',
@@ -6,7 +6,10 @@ const ASSETS = [
   './manifest.json',
   './icons/icon-192.svg',
   './icons/icon-512.svg',
-  './icons/icon-maskable.svg'
+  './icons/icon-maskable.svg',
+  'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js',
+  'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js',
+  'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js'
 ];
 
 self.addEventListener('install', e => {
@@ -33,8 +36,11 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
 
-  // Dejar pasar directo lo que ya maneja su propio caché offline (Firestore/Auth) o son requests no-GET
-  if (e.request.method !== 'GET' || url.hostname.endsWith('googleapis.com') || url.hostname.endsWith('gstatic.com')) {
+  // Dejar pasar directo las llamadas de datos de Firestore/Auth (googleapis.com),
+  // que ya manejan su propio caché offline. gstatic.com es donde vive el CÓDIGO
+  // del SDK de Firebase, no datos: eso sí lo cacheamos como cualquier otro asset,
+  // porque sin él la app entera no puede ni arrancar sin conexión.
+  if (e.request.method !== 'GET' || url.hostname.endsWith('googleapis.com')) {
     return;
   }
 

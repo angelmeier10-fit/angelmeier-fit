@@ -4055,11 +4055,11 @@ if('serviceWorker' in navigator){
         if(!sw)return;
         swBadge('⏳ Preparando modo offline...','#7c5cbf');
         sw.addEventListener('statechange',()=>{
-          if(sw.state==='activated')swBadge('✅ Listo offline (build 6)','#16a34a');
+          if(sw.state==='activated')swBadge('✅ Listo offline (build 7)','#16a34a');
           if(sw.state==='redundant')swBadge('⚠️ Service worker con error','#dc2626');
         });
       };
-      if(reg.active)swBadge('✅ Listo offline (build 6)','#16a34a');
+      if(reg.active)swBadge('✅ Listo offline (build 7)','#16a34a');
       track(reg.installing||reg.waiting);
     }).catch(err=>swBadge('❌ No se pudo activar modo offline: '+err.message,'#dc2626'));
   });
