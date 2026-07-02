@@ -300,7 +300,17 @@ textarea{resize:vertical;min-height:52px}
 <div id="loading">
   <div class="spin"></div>
   <div style="color:var(--mu);font-size:.88rem">Cargando...</div>
+  <div id="loading-stuck" style="display:none;color:var(--mu);font-size:.8rem;margin-top:14px;max-width:280px;text-align:center">Está tardando más de lo normal.<br>Si no hay conexión, revisá tu internet.<br><button class="btn bg2 sm" style="margin-top:10px" onclick="location.reload()">Reintentar</button></div>
 </div>
+<script>
+setTimeout(()=>{
+  const l=document.getElementById('loading');
+  if(l && l.style.display!=='none'){
+    const s=document.getElementById('loading-stuck');
+    if(s)s.style.display='block';
+  }
+},6000);
+</script>
 
 <div id="login-screen" style="display:none;position:fixed;inset:0;z-index:9999;background:var(--bg);align-items:center;justify-content:center;flex-direction:column;padding:20px">
   <div style="max-width:340px;width:100%;text-align:center">
@@ -752,7 +762,8 @@ const db = initializeFirestore(app, {
   localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
 });
 const auth = getAuth(app);
-await setPersistence(auth, browserLocalPersistence);
+// No bloquear el arranque si setPersistence tarda o falla sin conexión.
+setPersistence(auth, browserLocalPersistence).catch(()=>{});
 
 // ══ AUTH (panel de entrenador) ══
 function showLoginScreen(msg){
