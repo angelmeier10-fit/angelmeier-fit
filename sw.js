@@ -1,4 +1,4 @@
-const CACHE = 'amfit-v4';
+const CACHE = 'amfit-v5';
 const ASSETS = [
   './',
   './index.html',
@@ -10,7 +10,14 @@ const ASSETS = [
 ];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
+  // Si un solo asset falla, cache.addAll() aborta todo el precache y el SW
+  // nunca queda instalado (por eso la app quedaba en blanco offline).
+  // Cacheamos cada uno por separado para que uno roto no tumbe al resto.
+  e.waitUntil(
+    caches.open(CACHE).then(c =>
+      Promise.all(ASSETS.map(a => c.add(a).catch(() => {})))
+    )
+  );
   self.skipWaiting();
 });
 
