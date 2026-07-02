@@ -732,7 +732,7 @@ function toggleTheme(){
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, addDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, getDoc, getDocs, getDocFromCache, getDocsFromCache, setDoc, updateDoc, deleteDoc, addDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 /* r3 */
@@ -994,6 +994,18 @@ function getYTId(url){if(!url)return null;const m=url.match(/(?:shorts\/|v=|yout
 function hideLoading(){document.getElementById('loading').style.display='none'}
 
 // ══ INIT ══
+// Sin conexión, getDocs()/getDoc() pueden tardar mucho en resolver antes de
+// caer al caché local. Si no responden rápido, forzamos leer del caché para
+// no dejar la app trabada en "Cargando...".
+function withCacheFallback(promise,cacheFallback){
+  return Promise.race([
+    promise.catch(()=>null),
+    new Promise(resolve=>setTimeout(()=>resolve(null),2500))
+  ]).then(res=>res!==null?res:cacheFallback().catch(()=>({empty:true,docs:[],exists:()=>false,data:()=>({})})));
+}
+async function getDocsSafe(ref){return withCacheFallback(getDocs(ref),()=>getDocsFromCache(ref))}
+async function getDocSafe(ref){return withCacheFallback(getDoc(ref),()=>getDocFromCache(ref))}
+
 async function init(){
   const params=new URLSearchParams(location.search);
 
@@ -1004,7 +1016,7 @@ async function init(){
   }
 
   // Load exercises from Firestore
-  const exSnap=await getDocs(collection(db,'exercises'));
+  const exSnap=await getDocsSafe(collection(db,'exercises'));
   if(exSnap.empty){
     for(const ex of DEFAULT_EX){
       const id='ex'+Date.now()+Math.random().toString(36).slice(2,6);
@@ -1016,7 +1028,7 @@ async function init(){
   }
 
   // Load exercise categories
-  const catSnap=await getDoc(doc(db,'meta','categories'));
+  const catSnap=await getDocSafe(doc(db,'meta','categories'));
   if(catSnap.exists()){
     exCats=catSnap.data().list||[];
   } else {
@@ -1028,7 +1040,7 @@ async function init(){
   populateEmCat();
 
   // Load clients
-  const clientSnap=await getDocs(collection(db,'clients'));
+  const clientSnap=await getDocsSafe(collection(db,'clients'));
   clients=clientSnap.docs.map(d=>d.data());
 
   // Load planes
@@ -2593,7 +2605,7 @@ let editingPlanId=null;
 let activePlanId=null;
 
 async function loadPlanes(){
-  const snap=await getDocs(collection(db,'planes'));
+  const snap=await getDocsSafe(collection(db,'planes'));
   planes=snap.docs.map(d=>({id:d.id,...d.data()}));
 }
 
@@ -3528,7 +3540,7 @@ window.verifyEmail=function(clientId, correctEmail, correctWa){
 let solicitudes=[];
 
 async function loadSolicitudes(){
-  const snap=await getDocs(collection(db,'solicitudes'));
+  const snap=await getDocsSafe(collection(db,'solicitudes'));
   solicitudes=snap.docs.map(d=>({...d.data(),_docId:d.id}));
   solicitudes.sort((a,b)=>{
     // Sort by newest first using fechaEnvio
