@@ -981,7 +981,7 @@ const DEFAULT_EX=[
 const CF_TYPES={
   amrap:{label:"AMRAP",icon:"🔄",color:"var(--or)",fields:[{id:"duration",label:"Duración (ej: 20 min)"}],desc:"As Many Rounds/Reps As Possible"},
   fortime:{label:"FOR TIME",icon:"⏱",color:"var(--rd)",fields:[{id:"rounds",label:"Rondas"}],desc:"Completar lo más rápido posible"},
-  emom:{label:"EMOM",icon:"📡",color:"var(--cy)",fields:[{id:"duration",label:"Duración"},{id:"interval",label:"Intervalo"}],desc:"Every Minute On the Minute"},
+  emom:{label:"EMOM",icon:"📡",color:"var(--cy)",fields:[{id:"duration",label:"Duración"},{id:"interval",label:"Intervalo",placeholder:"Ej: 1:30, 1 min 30s, 45s"}],desc:"Every Minute On the Minute"},
   tabata:{label:"TABATA",icon:"⚡",color:"var(--yw)",fields:[{id:"rounds",label:"Rondas"},{id:"work",label:"Trabajo"},{id:"rest",label:"Descanso"}],desc:"20s trabajo / 10s descanso"},
   endurance:{label:"ENDURANCE",icon:"🏃",color:"var(--gr)",fields:[{id:"duration",label:"Duración"},{id:"intensity",label:"Intensidad"}],desc:"Resistencia aeróbica"},
   circuit:{label:"CIRCUITO",icon:"🔁",color:"var(--ac2)",fields:[{id:"rounds",label:"Rondas"},{id:"rest",label:"Descanso entre rondas"}],desc:"Circuito metabólico"},
@@ -1599,7 +1599,7 @@ function addCFBlock(bodyId,cftype,data=null){
   const cfg=CF_TYPES[cftype];
   const bid='cf'+Date.now()+Math.random().toString(36).slice(2,5);
   const div=document.createElement('div');div.className='cf-blk';div.id=bid;div.dataset.kind='cf';div.dataset.cftype=cftype;
-  const metaF=cfg.fields.map(f=>`<div class="fg"><label>${f.label}</label><input type="text" value="${data?.meta?.[f.id]||''}" class="cf-meta-${f.id}" placeholder="${f.label}"></div>`).join('');
+  const metaF=cfg.fields.map(f=>`<div class="fg"><label>${f.label}</label><input type="text" value="${data?.meta?.[f.id]||''}" class="cf-meta-${f.id}" placeholder="${f.placeholder||f.label}"></div>`).join('');
   div.innerHTML=`<div class="cf-hdr" style="background:${cfg.color}11;border-bottom:1px solid ${cfg.color}33" onclick="toggleBlk('${bid}',event)">
     <div class="cf-lbl">${cfg.icon} <span style="color:${cfg.color}">${cfg.label}</span> <span style="font-size:.72rem;color:var(--mu);font-weight:400">${cfg.desc}</span></div>
     <button class="btn bg2 xs" onclick="event.stopPropagation();moveBlk('${bid}',-1)" title="Mover arriba">↑</button>
@@ -3460,8 +3460,11 @@ window.cfTimerApplyEdit=function(){
 function parseToSecs(str){
   if(!str)return 0;
   const s=str.toString().toLowerCase().trim();
-  const m=s.match(/(\d+\.?\d*)\s*min/);if(m)return Math.round(parseFloat(m[1])*60);
-  const sc=s.match(/(\d+\.?\d*)\s*s/);if(sc)return Math.round(parseFloat(sc[1]));
+  const cm=s.match(/^(\d+)\s*:\s*(\d+)$/);if(cm)return parseInt(cm[1])*60+parseInt(cm[2]);
+  let total=0,matched=false;
+  const m=s.match(/(\d+\.?\d*)\s*min/);if(m){total+=parseFloat(m[1])*60;matched=true;}
+  const sc=s.match(/(\d+\.?\d*)\s*s/);if(sc){total+=parseFloat(sc[1]);matched=true;}
+  if(matched)return Math.round(total);
   const n=parseFloat(s);return isNaN(n)?0:Math.round(n);
 }
 
