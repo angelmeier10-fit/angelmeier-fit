@@ -610,8 +610,22 @@ setTimeout(()=>{
         <div class="fg"><label>Imagen de portada (URL)</label><input id="np-img" placeholder="https://... (opcional)"></div>
         <div class="fg"><label>Nivel</label><select id="np-level"><option>Principiante</option><option>Intermedio</option><option>Alto</option><option>Todos los niveles</option></select></div>
         <div class="fg"><label>Categoría</label><input id="np-cat" placeholder="Ej: Glúteos, Postural, Cardio..."></div>
+        <div class="fg"><label>Total de semanas (macrociclo)</label><input id="np-totalweeks" type="number" value="12" min="1" max="52"></div>
+        <div class="fg"><label>Semanas por mesociclo</label><input id="np-mesoweeks" type="number" value="4" min="1" max="12"></div>
         <div class="fg full"><label>Cantidad de días de entrenamiento</label><input id="np-days" type="number" value="3" min="1" max="14"></div>
       </div>
+    </div>
+    <div class="card" style="margin-bottom:10px;padding:14px 16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <label style="font-size:.75rem;color:var(--mu);font-weight:700;text-transform:uppercase;letter-spacing:.05em">📅 Planificando semana</label>
+          <select id="np-week-selector" onchange="onWeekChange('np')" style="background:var(--s2);border:1px solid var(--bd);color:var(--tx);border-radius:8px;padding:6px 12px;font-size:.88rem;font-family:inherit;font-weight:700"></select>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn bcy sm" onclick="duplicateWeek('np')">📋 Duplicar esta semana</button>
+        </div>
+      </div>
+      <p style="font-size:.74rem;color:var(--mu);margin-top:8px">Si cargás más de una semana, los alumnos rotan entre todas ellas en bucle según en cuál elijas que arranquen.</p>
     </div>
     <div id="np-days-container"></div>
     <button class="btn bp" onclick="savePlan()" style="width:100%;justify-content:center;padding:12px;font-size:.93rem;margin-top:4px">💾 Guardar plan</button>
@@ -628,7 +642,22 @@ setTimeout(()=>{
         <div class="fg"><label>Imagen de portada (URL)</label><input id="ep-img"></div>
         <div class="fg"><label>Nivel</label><select id="ep-level"><option>Principiante</option><option>Intermedio</option><option>Alto</option><option>Todos los niveles</option></select></div>
         <div class="fg"><label>Categoría</label><input id="ep-cat"></div>
+        <div class="fg"><label>Total de semanas (macrociclo)</label><input id="ep-totalweeks" type="number" min="1" max="52"></div>
+        <div class="fg"><label>Semanas por mesociclo</label><input id="ep-mesoweeks" type="number" min="1" max="12"></div>
+        <input type="hidden" id="ep-days">
       </div>
+    </div>
+    <div class="card" style="margin-bottom:10px;padding:14px 16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <label style="font-size:.75rem;color:var(--mu);font-weight:700;text-transform:uppercase;letter-spacing:.05em">📅 Planificando semana</label>
+          <select id="ep-week-selector" onchange="onWeekChange('ep')" style="background:var(--s2);border:1px solid var(--bd);color:var(--tx);border-radius:8px;padding:6px 12px;font-size:.88rem;font-family:inherit;font-weight:700"></select>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn bcy sm" onclick="duplicateWeek('ep')">📋 Duplicar esta semana</button>
+        </div>
+      </div>
+      <p style="font-size:.74rem;color:var(--mu);margin-top:8px">Si cargás más de una semana, los alumnos rotan entre todas ellas en bucle según en cuál elijas que arranquen.</p>
     </div>
     <div id="ep-days-container"></div>
     <button class="btn bp" onclick="updatePlan()" style="width:100%;justify-content:center;padding:12px;font-size:.93rem;margin-top:4px">💾 Guardar cambios</button>
@@ -644,6 +673,7 @@ setTimeout(()=>{
         <div class="fg"><label>Nombre</label><input id="nm-name" placeholder="Ej: Lucía Gómez"></div>
         <div class="fg"><label>Email o identificador</label><input id="nm-email" placeholder="Ej: lucia@gmail.com"></div>
         <div class="fg"><label>Estado</label><select id="nm-status"><option value="active">Activo ✅</option><option value="pending">Pendiente ⏳</option></select></div>
+        <div class="fg" id="nm-startweek-wrap" style="display:none"><label>¿En qué semana arranca?</label><select id="nm-startweek"></select></div>
       </div>
       <p style="font-size:.76rem;color:var(--mu);margin-top:6px">⏱ El vencimiento se calcula automáticamente desde hoy según la duración de cada plan.</p>
       <div class="fg full" style="margin-top:10px">
@@ -1217,12 +1247,26 @@ let ncWeeklyData={1:[]}; // {weekNum: [days]}
 let ncCurrentWeek=1;
 let ecWeeklyData={};
 let ecCurrentWeek=1;
+let npWeeklyData={1:[]};
+let npCurrentWeek=1;
+let epWeeklyData={};
+let epCurrentWeek=1;
+
+function weekStoreFor(prefix){
+  const stores={
+    nc:{data:ncWeeklyData,containerId:'days-container',countId:'nc-days',getCur:()=>ncCurrentWeek,setCur:v=>ncCurrentWeek=v},
+    ec:{data:ecWeeklyData,containerId:'edit-days-container',countId:'ec-days',getCur:()=>ecCurrentWeek,setCur:v=>ecCurrentWeek=v},
+    np:{data:npWeeklyData,containerId:'np-days-container',countId:'np-days',getCur:()=>npCurrentWeek,setCur:v=>npCurrentWeek=v},
+    ep:{data:epWeeklyData,containerId:'ep-days-container',countId:'ep-days',getCur:()=>epCurrentWeek,setCur:v=>epCurrentWeek=v},
+  };
+  return stores[prefix];
+}
 
 function setupWeekSelector(prefix,totalWeeksHint){
   const sel=document.getElementById(prefix+'-week-selector');
   if(!sel)return;
-  const data=prefix==='nc'?ncWeeklyData:ecWeeklyData;
-  const weekNums=Object.keys(data).map(Number).sort((a,b)=>a-b);
+  const store=weekStoreFor(prefix);
+  const weekNums=Object.keys(store.data).map(Number).sort((a,b)=>a-b);
   sel.innerHTML='';
   weekNums.forEach(w=>{
     const opt=document.createElement('option');
@@ -1232,17 +1276,16 @@ function setupWeekSelector(prefix,totalWeeksHint){
   const addOpt=document.createElement('option');
   addOpt.value='__new__';addOpt.textContent='＋ Agregar nueva semana...';
   sel.appendChild(addOpt);
-  sel.value=prefix==='nc'?ncCurrentWeek:ecCurrentWeek;
+  sel.value=store.getCur();
 }
 
 window.onWeekChange=function(prefix){
   const sel=document.getElementById(prefix+'-week-selector');
-  const containerId=prefix==='nc'?'days-container':'edit-days-container';
-  const countId=prefix==='nc'?'nc-days':'ec-days';
-  let data=prefix==='nc'?ncWeeklyData:ecWeeklyData;
+  const store=weekStoreFor(prefix);
+  const{containerId,countId,data}=store;
 
   // Save current week's days before switching
-  const curWeek=prefix==='nc'?ncCurrentWeek:ecCurrentWeek;
+  const curWeek=store.getCur();
   const curCount=parseInt(document.getElementById(countId).value)||1;
   data[curWeek]=collectDays(containerId,curCount);
 
@@ -1257,7 +1300,7 @@ window.onWeekChange=function(prefix){
     newWeek=parseInt(newWeek);
   }
 
-  if(prefix==='nc')ncCurrentWeek=newWeek;else ecCurrentWeek=newWeek;
+  store.setCur(newWeek);
   setupWeekSelector(prefix);
   const weekDays=data[newWeek]||[];
   document.getElementById(countId).value=weekDays.length||4;
@@ -1265,10 +1308,9 @@ window.onWeekChange=function(prefix){
 };
 
 window.duplicateWeek=function(prefix){
-  const containerId=prefix==='nc'?'days-container':'edit-days-container';
-  const countId=prefix==='nc'?'nc-days':'ec-days';
-  let data=prefix==='nc'?ncWeeklyData:ecWeeklyData;
-  const curWeek=prefix==='nc'?ncCurrentWeek:ecCurrentWeek;
+  const store=weekStoreFor(prefix);
+  const{containerId,countId,data}=store;
+  const curWeek=store.getCur();
   const curCount=parseInt(document.getElementById(countId).value)||1;
 
   // Save current state first
@@ -1278,7 +1320,7 @@ window.duplicateWeek=function(prefix){
   const newWeek=Math.max(...weekNums)+1;
   data[newWeek]=JSON.parse(JSON.stringify(data[curWeek])); // full deep copy
 
-  if(prefix==='nc')ncCurrentWeek=newWeek;else ecCurrentWeek=newWeek;
+  store.setCur(newWeek);
   setupWeekSelector(prefix);
   const weekDays=data[newWeek];
   document.getElementById(countId).value=weekDays.length;
@@ -2673,9 +2715,15 @@ window.showPlanesPanel=showPlanesPanel;
 function initNewPlan(){
   ['np-name','np-desc','np-price','np-mp','np-img','np-cat'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});
   document.getElementById('np-duration').value=30;
+  document.getElementById('np-totalweeks').value=12;
+  document.getElementById('np-mesoweeks').value=4;
   document.getElementById('np-days').value=3;
+  npWeeklyData={1:[]};
+  npCurrentWeek=1;
   document.getElementById('np-days-container').innerHTML='';
   buildDays('np-days-container',3);
+  npWeeklyData[1]=collectDays('np-days-container',3);
+  setupWeekSelector('np');
 }
 document.getElementById('np-days').addEventListener('change',function(){buildDays('np-days-container',parseInt(this.value)||1)});
 
@@ -2684,6 +2732,7 @@ async function savePlan(){
   if(!name){alert('Ingresá el nombre del plan.');return}
   const count=parseInt(document.getElementById('np-days').value)||3;
   const id='plan'+Date.now();
+  npWeeklyData[npCurrentWeek]=collectDays('np-days-container',count);
   const plan={
     id,name,
     desc:document.getElementById('np-desc').value,
@@ -2693,7 +2742,10 @@ async function savePlan(){
     img:document.getElementById('np-img').value.trim(),
     level:document.getElementById('np-level').value,
     cat:document.getElementById('np-cat').value,
-    days:collectDays('np-days-container',count),
+    totalWeeks:parseInt(document.getElementById('np-totalweeks').value)||12,
+    mesoWeeks:parseInt(document.getElementById('np-mesoweeks').value)||4,
+    weeks:npWeeklyData,activeWeek:npCurrentWeek,
+    days:npWeeklyData[npCurrentWeek],
     members:[],
     createdAt:new Date().toLocaleDateString('es-AR')
   };
@@ -2714,8 +2766,10 @@ async function updatePlan(){
   plan.level=document.getElementById('ep-level').value;
   plan.cat=document.getElementById('ep-cat').value;
   plan.durationDays=parseInt(document.getElementById('ep-duration').value)||30;
+  plan.totalWeeks=parseInt(document.getElementById('ep-totalweeks').value)||12;
+  plan.mesoWeeks=parseInt(document.getElementById('ep-mesoweeks').value)||4;
   const blocks=[...document.getElementById('ep-days-container').querySelectorAll('.day-block')];
-  plan.days=blocks.map(db2=>({
+  epWeeklyData[epCurrentWeek]=blocks.map(db2=>({
     name:db2.querySelector('.day-name-input').value,
     blocks:[...document.getElementById(db2.id+'-body').children].filter(el=>el.dataset.kind).map(blk=>{
       if(blk.dataset.kind==='func'){
@@ -2737,6 +2791,9 @@ async function updatePlan(){
       }
     })
   }));
+  plan.weeks=epWeeklyData;
+  plan.activeWeek=epCurrentWeek;
+  plan.days=epWeeklyData[epCurrentWeek];
   await setDoc(doc(db,'planes',editingPlanId),plan);
   toast('✅ Plan actualizado');
   showPlanesPanel('list',document.getElementById('itp-list'));
@@ -2815,8 +2872,16 @@ function openEditPlan(id){
   document.getElementById('ep-img').value=plan.img||'';
   document.getElementById('ep-level').value=plan.level||'Todos los niveles';
   document.getElementById('ep-cat').value=plan.cat||'';
+  document.getElementById('ep-totalweeks').value=plan.totalWeeks||12;
+  document.getElementById('ep-mesoweeks').value=plan.mesoWeeks||4;
+  // Migrar planes viejos de una sola semana (plan.days) a plan.weeks
+  epWeeklyData=plan.weeks&&Object.keys(plan.weeks).length?JSON.parse(JSON.stringify(plan.weeks)):{1:plan.days||[]};
+  epCurrentWeek=plan.activeWeek&&epWeeklyData[plan.activeWeek]?plan.activeWeek:Object.keys(epWeeklyData).map(Number)[0]||1;
+  setupWeekSelector('ep');
+  const weekDays=epWeeklyData[epCurrentWeek]||[];
+  document.getElementById('ep-days').value=weekDays.length||4;
   document.getElementById('ep-days-container').innerHTML='';
-  buildDays('ep-days-container',plan.days.length,plan.days);
+  buildDays('ep-days-container',weekDays.length,weekDays);
   document.getElementById('itp-edit').style.display='inline-block';
   showPlanesPanel('edit',document.getElementById('itp-edit'));
 }
@@ -2862,12 +2927,44 @@ function openMembers(planId){
     <label style="display:flex;align-items:center;gap:6px;background:var(--s2);border-radius:8px;padding:6px 10px;cursor:pointer;font-size:.82rem">
       <input type="checkbox" value="${p.id}" style="accent-color:var(--ac)"> ${p.name}
     </label>`).join('');
+  renderStartWeekSelect('nm-startweek',plan);
   document.getElementById('itp-members').style.display='inline-block';
   document.getElementById('itp-seg').style.display='inline-block';
   showPlanesPanel('members',document.getElementById('itp-members'));
   renderMembersList(planId);
 }
 window.openMembers=openMembers;
+
+// ── ROTACIÓN DE SEMANAS PARA PLANES GRUPALES ──
+function planWeekNums(plan){
+  return plan.weeks?Object.keys(plan.weeks).map(Number).sort((a,b)=>a-b):[];
+}
+
+function renderStartWeekSelect(selectId,plan){
+  const sel=document.getElementById(selectId);
+  const wrap=document.getElementById(selectId+'-wrap');
+  if(!sel)return;
+  const weekNums=planWeekNums(plan);
+  if(weekNums.length<2){
+    sel.innerHTML='';
+    if(wrap)wrap.style.display='none';
+    return;
+  }
+  sel.innerHTML=weekNums.map(w=>`<option value="${w}">Semana ${w}</option>`).join('');
+  if(wrap)wrap.style.display='flex';
+}
+
+// Arma la secuencia de días de un alumno rotando las semanas del plan a partir de su semana de inicio.
+// Cuando se completa la última semana de la secuencia, la lógica existente de "próximo día" vuelve a
+// empezar desde el día 0, generando el bucle indefinido pedido.
+function getMemberPlanDays(plan,member){
+  const weekNums=planWeekNums(plan);
+  if(!weekNums.length)return plan.days||[];
+  const start=weekNums.includes(member?.startWeek)?member.startWeek:weekNums[0];
+  const startIdx=weekNums.indexOf(start);
+  const rotated=[...weekNums.slice(startIdx),...weekNums.slice(0,startIdx)];
+  return rotated.flatMap(w=>plan.weeks[w]||[]);
+}
 
 function renderMembersList(planId){
   const plan=planes.find(p=>p.id===planId);
@@ -2882,7 +2979,7 @@ function renderMembersList(planId){
       return`<div class="member-row">
         <div class="member-av">${m.name.charAt(0).toUpperCase()}</div>
         <div style="flex:1;min-width:0">
-          <div style="font-weight:600;font-size:.86rem">${m.name} ${statusBadge}</div>
+          <div style="font-weight:600;font-size:.86rem">${m.name} ${statusBadge}${(()=>{if(!plan.totalWeeks||!m.startDate)return'';const info=getMesoInfo({totalWeeks:plan.totalWeeks,mesoWeeks:plan.mesoWeeks,startDate:m.startDate,currentWeekManual:m.currentWeekManual});return` <span class="badge" style="background:var(--ac)22;color:var(--ac2)">🗓️ Sem ${info.currentWeek}/${info.totalWeeks} · Meso ${info.mesoNum}/${info.totalMesos}</span>`;})()}</div>
           <div style="font-size:.72rem;color:var(--mu)">${m.email||''} ${m.expiry?'· Vence: '+new Date(m.expiry+'T00:00:00').toLocaleDateString('es-AR'):''}</div>
           <div style="font-size:.7rem;color:var(--ac2);word-break:break-all;margin-top:2px">${link}</div>
         </div>
@@ -2902,6 +2999,7 @@ async function addMember(){
   const email=document.getElementById('nm-email').value.trim();
   const status=document.getElementById('nm-status').value;
   const addedAt=new Date().toLocaleDateString('es-AR');
+  const startWeek=parseInt(document.getElementById('nm-startweek').value)||1;
 
   // Planes seleccionados: el plan actual + los checkboxes marcados
   const extraIds=[...document.querySelectorAll('#nm-extra-plans input:checked')].map(cb=>cb.value);
@@ -2913,7 +3011,7 @@ async function addMember(){
     if(!p)continue;
     const expDate=new Date();expDate.setDate(expDate.getDate()+(p.durationDays||30));
     const expiry=expDate.toISOString().split('T')[0];
-    const member={id:'m'+Date.now(),name,email,status,expiry,addedAt};
+    const member={id:'m'+Date.now(),name,email,status,expiry,addedAt,startDate:new Date().toISOString().split('T')[0],startWeek:pid===activePlanId?startWeek:1};
     if(!p.members)p.members=[];
     p.members.push(member);
     await setDoc(doc(db,'planes',pid),p);
@@ -3064,12 +3162,14 @@ function renderGroupCV(plan,member){
   const initials=member.name.charAt(0).toUpperCase();
   const expDate=member.expiry?new Date(member.expiry+'T00:00:00').toLocaleDateString('es-AR'):'—';
   const daysLeft=member.expiry?Math.max(0,Math.ceil((new Date(member.expiry+'T00:00:00')-new Date())/(1000*60*60*24))):null;
+  const days=getMemberPlanDays(plan,member);
   const fakeC={id:`${plan.id}-${member.id}`,progress:member.progress||{}};
-  const nextIdx=getNextDayIdx({days:plan.days,...fakeC});
+  const nextIdx=getNextDayIdx({days,...fakeC});
   const gkey=`${plan.id}-${member.id}`;
-  const activeDayName=plan.days[nextIdx]?.name||'Día '+(nextIdx+1);
-  const dayListItems=(plan.days||[]).map((d,i)=>{
-    const isDone=(member.progress?.['snote-'+i]||[]).length>0||isDayDoneViaSeries(fakeC,plan.days,i);
+  const activeDayName=days[nextIdx]?.name||'Día '+(nextIdx+1);
+  const mesoBadge=(plan.totalWeeks&&member.startDate)?(()=>{const info=getMesoInfo({totalWeeks:plan.totalWeeks,mesoWeeks:plan.mesoWeeks,startDate:member.startDate,currentWeekManual:member.currentWeekManual});return`<span class="badge" style="background:var(--ac)22;color:var(--ac2)">🗓️ Semana ${info.currentWeek} de ${info.totalWeeks} — Meso ${info.mesoNum}/${info.totalMesos}</span>`;})():'';
+  const dayListItems=(days||[]).map((d,i)=>{
+    const isDone=(member.progress?.['snote-'+i]||[]).length>0||isDayDoneViaSeries(fakeC,days,i);
     const badge=i===nextIdx?`<span style="font-size:.68rem;padding:2px 8px;border-radius:20px;font-weight:600;background:var(--ac)33;color:var(--ac2)">Siguiente</span>`:isDone?`<span style="font-size:.68rem;padding:2px 8px;border-radius:20px;font-weight:600;background:var(--gr)22;color:var(--gr)">✓</span>`:'';
     return`<div class="cv-day-item${i===nextIdx?' active':''}" id="gv-ditem-${gkey}-${i}" onclick="selectGroupCVDay('${plan.id}','${member.id}',${i})">
       <span class="cv-day-item-name">${d.name||'Día '+(i+1)}</span>${badge}
@@ -3086,6 +3186,7 @@ function renderGroupCV(plan,member){
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
         <span class="badge bgr2">✅ Acceso activo</span>
         ${daysLeft!==null?`<span class="badge ${daysLeft<=7?'brd2':'byw2'}">📅 Vence en ${daysLeft} día${daysLeft!==1?'s':''} (${expDate})</span>`:''}
+        ${mesoBadge}
       </div>
       ${plan.mpLink&&daysLeft<=7?`<a href="${plan.mpLink}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:#009EE322;color:#009EE3;border:1px solid #009EE344;border-radius:8px;padding:6px 14px;font-size:.78rem;font-weight:600;text-decoration:none;margin-bottom:12px">💳 Renovar plan</a>`:''}
     </div>
@@ -3113,20 +3214,22 @@ window.selectGroupCVDay=function(planId,memberId,idx){
   document.querySelectorAll(`[id^="gv-ditem-${gkey}-"]`).forEach(el=>el.classList.remove('active'));
   document.getElementById(`gv-ditem-${gkey}-${idx}`)?.classList.add('active');
   const label=document.getElementById('gv-picker-label-'+gkey);
-  if(label)label.textContent='📅 '+(plan.days[idx]?.name||'Día '+(idx+1));
+  const days=getMemberPlanDays(plan,member);
+  if(label)label.textContent='📅 '+(days[idx]?.name||'Día '+(idx+1));
   document.getElementById('gv-picker-hdr-'+gkey)?.classList.remove('open');
   document.getElementById('gv-day-list-'+gkey)?.classList.remove('open');
   renderGroupDay(plan,member,idx);
 };
 
 function renderGroupDay(plan,member,dIdx){
-  const day=plan.days[dIdx];
+  const days=getMemberPlanDays(plan,member);
+  const day=days[dIdx];
   const gkey=`${plan.id}-${member.id}`;
   const container=document.getElementById('gday-view-'+gkey);
   if(!container)return;
   if(!day||!day.blocks?.length){container.innerHTML='<div style="text-align:center;padding:40px;color:var(--mu)">Sin bloques en este día.</div>';return}
   // Reuse same render functions but with plan+member as client proxy
-  const fakeClient={id:`${plan.id}-${member.id}`,progress:member.progress||{},days:plan.days};
+  const fakeClient={id:`${plan.id}-${member.id}`,progress:member.progress||{},days};
   let html='';
   day.blocks.forEach((blk,bi)=>{
     const bkey=`${dIdx}-${bi}`;
@@ -3921,10 +4024,14 @@ window.asignarAPlanGrupal=function(docId){
     </div>
     <div style="font-size:.82rem;color:var(--mu);margin-bottom:12px">${s.nombre||'Sin nombre'} · elegí uno o varios planes</div>
     <div id="asig-plan-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:18px">
-      ${planes.map(p=>`
-        <label style="display:flex;align-items:center;gap:8px;background:var(--s2);border-radius:8px;padding:8px 11px;cursor:pointer;font-size:.86rem">
-          <input type="checkbox" value="${p.id}" style="accent-color:var(--ac)"> ${p.name}
-        </label>`).join('')}
+      ${planes.map(p=>{
+        const weekNums=planWeekNums(p);
+        const weekSel=weekNums.length>1?`<select data-startweek-for="${p.id}" style="background:var(--s1);border:1px solid var(--bd);color:var(--tx);border-radius:6px;padding:4px 8px;font-size:.78rem;font-family:inherit" onclick="event.stopPropagation()">${weekNums.map(w=>`<option value="${w}">Semana ${w}</option>`).join('')}</select>`:'';
+        return`<label style="display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--s2);border-radius:8px;padding:8px 11px;cursor:pointer;font-size:.86rem">
+          <span style="display:flex;align-items:center;gap:8px"><input type="checkbox" value="${p.id}" style="accent-color:var(--ac)"> ${p.name}</span>
+          ${weekSel}
+        </label>`;
+      }).join('')}
     </div>
     <button class="btn bp" onclick="confirmarAsignacionPlanGrupal('${docId}')">✅ Asignar</button>
   </div>`;
@@ -3943,7 +4050,8 @@ window.confirmarAsignacionPlanGrupal=async function(docId){
     if(!p)continue;
     const expDate=new Date();expDate.setDate(expDate.getDate()+(p.durationDays||30));
     const expiry=expDate.toISOString().split('T')[0];
-    const member={id:'m'+Date.now()+Math.floor(Math.random()*1000),name:s.nombre||'Sin nombre',email:s.email||'',status:'active',expiry,addedAt,notes};
+    const startWeek=parseInt(document.querySelector(`[data-startweek-for="${pid}"]`)?.value)||1;
+    const member={id:'m'+Date.now()+Math.floor(Math.random()*1000),name:s.nombre||'Sin nombre',email:s.email||'',status:'active',expiry,addedAt,notes,startDate:new Date().toISOString().split('T')[0],startWeek};
     if(!p.members)p.members=[];
     p.members.push(member);
     await setDoc(doc(db,'planes',pid),p);
