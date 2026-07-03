@@ -60,6 +60,9 @@ textarea{resize:vertical;min-height:52px}
 .cm{font-size:.74rem;color:var(--mu);margin-top:3px;display:flex;flex-wrap:wrap;gap:7px;align-items:center}
 .ca{display:flex;gap:5px;flex-shrink:0;flex-direction:column}
 .badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:.68rem;font-weight:600}
+.notif-item{padding:10px 14px;border-bottom:1px solid var(--bd);cursor:pointer;font-size:.82rem;line-height:1.4}
+.notif-item:last-child{border-bottom:none}
+.notif-item:hover{background:var(--s2)}
 .bpu2{background:#7c5cbf22;color:var(--ac2)}
 .bgr2{background:#4ade8022;color:var(--gr)}
 .byw2{background:#fbbf2422;color:var(--yw)}
@@ -356,6 +359,12 @@ setTimeout(()=>{
     <button class="tab-btn" onclick="showView('planes',this)">👥 Planes Grupales</button>
     <button class="tab-btn" onclick="showView('solicitudes',this)" id="tab-solicitudes">📬 Solicitudes</button>
 
+  </div>
+  <div style="position:relative;flex-shrink:0">
+    <button id="notif-bell-btn" onclick="toggleNotifPanel()" style="background:var(--s2);border:1px solid var(--bd);color:var(--tx);border-radius:9px;padding:6px 12px;cursor:pointer;font-size:1rem;transition:all .2s;position:relative" title="Notificaciones">
+      🔔<span id="notif-badge" style="display:none;position:absolute;top:-4px;right:-4px;background:var(--rd);color:#fff;border-radius:50%;min-width:16px;height:16px;font-size:.62rem;font-weight:700;align-items:center;justify-content:center;padding:0 3px;line-height:1"></span>
+    </button>
+    <div id="notif-panel" style="display:none;position:absolute;top:calc(100% + 6px);right:0;width:280px;max-height:360px;overflow-y:auto;background:var(--s1);border:1px solid var(--bd);border-radius:var(--ra);box-shadow:0 8px 24px rgba(0,0,0,.25);z-index:100"></div>
   </div>
   <button id="theme-btn" onclick="toggleTheme()" style="background:var(--s2);border:1px solid var(--bd);color:var(--tx);border-radius:9px;padding:6px 12px;cursor:pointer;font-size:1rem;transition:all .2s;flex-shrink:0" title="Cambiar tema">🌙</button>
   <button onclick="doLogout()" style="background:var(--s2);border:1px solid var(--bd);color:var(--tx);border-radius:9px;padding:6px 12px;cursor:pointer;font-size:.85rem;transition:all .2s;flex-shrink:0" title="Cerrar sesión">🚪 Salir</button>
@@ -1058,6 +1067,7 @@ async function init(){
   await loadPlanes();
   // Load solicitudes
   await loadSolicitudes();
+  buildNotifications();
 
   // Check if individual client link
   const urlId=params.get('client');
@@ -2643,6 +2653,7 @@ let activePlanId=null;
 async function loadPlanes(){
   const snap=await getDocsSafe(collection(db,'planes'));
   planes=snap.docs.map(d=>({id:d.id,...d.data()}));
+  buildNotifications();
 }
 
 function showPlanesPanel(p,btn){
@@ -2915,6 +2926,7 @@ async function addMember(){
   const planNames=allPlanIds.map(pid=>planes.find(p=>p.id===pid)?.name).filter(Boolean).join(', ');
   toast('✅ Alumno agregado a: '+planNames);
   renderMembersList(activePlanId);
+  buildNotifications();
   // Send WhatsApp notification to trainer
   const link=`${location.origin}${location.pathname}?plan=${activePlanId}&member=${mid}`;
   const msg=encodeURIComponent(`🏋️ Nuevo alumno en "${plan.name}"
@@ -2937,6 +2949,7 @@ async function renewMember(planId,memberId){
   await setDoc(doc(db,'planes',planId),plan);
   toast('✅ Acceso renovado por '+plan.durationDays+' días');
   renderMembersList(planId);
+  buildNotifications();
   if(document.getElementById('view-tracking')?.classList.contains('active')) renderTracking();
   // WhatsApp notification to member
   const link=`${location.origin}${location.pathname}?plan=${planId}&member=${memberId}`;
@@ -2955,6 +2968,7 @@ async function removeMember(planId,memberId){
   await setDoc(doc(db,'planes',planId),plan);
   toast('🗑️ Alumno eliminado');
   renderMembersList(planId);
+  buildNotifications();
 }
 window.removeMember=removeMember;
 
@@ -3576,6 +3590,116 @@ window.verifyEmail=function(clientId, correctEmail, correctWa){
   }
 };
 
+// ══ NOTIFICATIONS ══
+let notifications=[];
+let notifPanelOpen=false;
+
+function parseARDate(str){
+  if(!str)return null;
+  const parts=str.split('/');
+  if(parts.length!==3)return null;
+  const d=Number(parts[0]),m=Number(parts[1]),y=Number(parts[2]);
+  if(!d||!m||!y)return null;
+  return new Date(y,m-1,d);
+}
+
+function buildNotifications(){
+  const notifs=[];
+  const today=new Date();today.setHours(0,0,0,0);
+
+  // Vencimientos próximos (hoy hasta +3 días)
+  planes.forEach(plan=>{
+    (plan.members||[]).forEach(m=>{
+      if(m.status!=='active'||!m.expiry)return;
+      const exp=new Date(m.expiry+'T00:00:00');
+      const diff=Math.round((exp-today)/86400000);
+      if(diff>=0&&diff<=3){
+        const label=diff===0?'vence hoy':diff===1?'vence mañana':`vence en ${diff} días`;
+        notifs.push({tipo:'vencimiento',texto:`⏰ ${m.name} (${plan.name}) ${label}`,fecha:exp,targetView:'planes',order:0});
+      }
+    });
+  });
+
+  // Anamnesis pendientes
+  solicitudes.forEach(s=>{
+    const pendiente=(!s.status&&!s.estado)||s.status==='pendiente'||s.estado==='pendiente';
+    if(pendiente){
+      notifs.push({tipo:'anamnesis',texto:`📬 Nueva anamnesis: ${s.nombre||s.name||'Sin nombre'}`,fecha:null,targetView:'solicitudes',order:1});
+    }
+  });
+
+  // Alumnos nuevos (últimas 48hs, granularidad de día ya que addedAt no tiene hora)
+  planes.forEach(plan=>{
+    (plan.members||[]).forEach(m=>{
+      const added=parseARDate(m.addedAt);
+      if(!added)return;
+      const diffDays=Math.round((today-added)/86400000);
+      if(diffDays>=0&&diffDays<=2){
+        notifs.push({tipo:'alumno',texto:`🏋️ Nuevo alumno: ${m.name} en "${plan.name}"`,fecha:added,targetView:'planes',order:2});
+      }
+    });
+  });
+
+  notifs.sort((a,b)=>a.order-b.order);
+  notifications=notifs;
+  renderNotifBadge();
+  if(notifPanelOpen)renderNotifPanel();
+  return notifs;
+}
+window.buildNotifications=buildNotifications;
+
+function renderNotifBadge(){
+  const badge=document.getElementById('notif-badge');
+  if(!badge)return;
+  if(notifications.length>0){
+    badge.textContent=notifications.length>9?'9+':String(notifications.length);
+    badge.style.display='flex';
+  } else {
+    badge.style.display='none';
+  }
+}
+
+function renderNotifPanel(){
+  const panel=document.getElementById('notif-panel');
+  if(!panel)return;
+  if(!notifications.length){
+    panel.innerHTML='<div style="padding:20px;text-align:center;color:var(--mu);font-size:.85rem">Sin novedades</div>';
+    return;
+  }
+  panel.innerHTML=notifications.map((n,i)=>`<div class="notif-item" onclick="goToNotification(${i})">${n.texto}</div>`).join('');
+}
+
+function toggleNotifPanel(){
+  notifPanelOpen=!notifPanelOpen;
+  const panel=document.getElementById('notif-panel');
+  if(!panel)return;
+  if(notifPanelOpen){
+    renderNotifPanel();
+    panel.style.display='block';
+  } else {
+    panel.style.display='none';
+  }
+}
+window.toggleNotifPanel=toggleNotifPanel;
+
+function goToNotification(i){
+  const n=notifications[i];
+  if(!n)return;
+  toggleNotifPanel();
+  const btn=document.querySelector(`.tab-btn[onclick*="showView('${n.targetView}'"]`);
+  if(btn)showView(n.targetView,btn);
+}
+window.goToNotification=goToNotification;
+
+document.addEventListener('click',(e)=>{
+  if(!notifPanelOpen)return;
+  const panel=document.getElementById('notif-panel');
+  const btn=document.getElementById('notif-bell-btn');
+  if(panel&&!panel.contains(e.target)&&btn&&!btn.contains(e.target)){
+    toggleNotifPanel();
+  }
+});
+
 // ══ SOLICITUDES ══
 let solicitudes=[];
 
@@ -3590,6 +3714,7 @@ async function loadSolicitudes(){
   const pendientes=solicitudes.filter(s=>!s.status&&!s.estado||s.status==='pendiente'||s.estado==='pendiente').length;
   const tabBtn=document.getElementById('tab-solicitudes');
   if(tabBtn) tabBtn.textContent=pendientes>0?`📬 Solicitudes (${pendientes})`:'📬 Solicitudes';
+  buildNotifications();
 }
 
 function renderSolicitudes(){
