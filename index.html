@@ -981,7 +981,7 @@ const DEFAULT_EX=[
 const CF_TYPES={
   amrap:{label:"AMRAP",icon:"🔄",color:"var(--or)",fields:[{id:"duration",label:"Duración (ej: 20 min)"}],desc:"As Many Rounds/Reps As Possible"},
   fortime:{label:"FOR TIME",icon:"⏱",color:"var(--rd)",fields:[{id:"rounds",label:"Rondas"}],desc:"Completar lo más rápido posible"},
-  emom:{label:"EMOM",icon:"📡",color:"var(--cy)",fields:[{id:"duration",label:"Duración"},{id:"interval",label:"Intervalo",placeholder:"Ej: 1:30, 1 min 30s, 45s"}],desc:"Every Minute On the Minute"},
+  emom:{label:"EMOM",icon:"📡",color:"var(--cy)",fields:[{id:"duration",label:"Duración",placeholder:"Vacío = infinito (Death by...)"},{id:"interval",label:"Intervalo",placeholder:"Ej: 1:30, 1 min 30s, 45s"}],desc:"Every Minute On the Minute"},
   tabata:{label:"TABATA",icon:"⚡",color:"var(--yw)",fields:[{id:"rounds",label:"Rondas"},{id:"work",label:"Trabajo"},{id:"rest",label:"Descanso"}],desc:"20s trabajo / 10s descanso"},
   endurance:{label:"ENDURANCE",icon:"🏃",color:"var(--gr)",fields:[{id:"duration",label:"Duración"},{id:"intensity",label:"Intensidad"}],desc:"Resistencia aeróbica"},
   circuit:{label:"CIRCUITO",icon:"🔁",color:"var(--ac2)",fields:[{id:"rounds",label:"Rondas"},{id:"rest",label:"Descanso entre rondas"}],desc:"Circuito metabólico"},
@@ -3285,7 +3285,7 @@ function cfTimerUpdateDisplay(){
     sub.textContent=`${phase} · Ronda ${cfTimer.currentRound} / ${cfTimer.rounds}`;
   } else if(cfTimer.mode==='emom'){
     const minuto=cfTimer.currentRound;
-    sub.textContent=`Minuto ${minuto} / ${cfTimer.rounds}`;
+    sub.textContent=isFinite(cfTimer.rounds)?`Minuto ${minuto} / ${cfTimer.rounds}`:`Minuto ${minuto}`;
   } else if(cfTimer.mode==='fortime'){
     sub.textContent='⏱ Tiempo transcurrido';
     disp.textContent=fmtTime(cfTimer.currentSecs);
@@ -3487,12 +3487,13 @@ function launchCFTimer(cftype, meta, customLabel){
 
   } else if(cftype==='emom'){
     const interval=parseToSecs(meta?.interval||'1 min');
-    const total=parseToSecs(meta?.duration||'20 min');
-    const rounds=interval>0?Math.floor(total/interval):20;
+    const durRaw=(meta?.duration||'').trim();
+    const infinite=!durRaw;
+    const rounds=infinite?Infinity:(interval>0?Math.floor(parseToSecs(durRaw)/interval):20);
     cfTimer.mode='emom';cfTimer.emomInterval=interval;
     cfTimer.totalSecs=interval;cfTimer.currentSecs=interval;
     cfTimer.rounds=rounds;cfTimer.currentRound=1;
-    label.textContent=`EMOM — cada ${meta?.interval||'1 min'} × ${rounds} rondas`;
+    label.textContent=infinite?`EMOM infinito — cada ${meta?.interval||'1 min'} (Death by...)`:`EMOM — cada ${meta?.interval||'1 min'} × ${rounds} rondas`;
     cfTimerSetColor('var(--cy)');
 
   } else if(cftype==='tabata'){
