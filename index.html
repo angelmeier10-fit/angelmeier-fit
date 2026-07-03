@@ -3761,6 +3761,7 @@ function buildSolCard(s,isNew){
       <div style="display:flex;gap:6px;flex-wrap:wrap">
         ${waNum?`<a href="https://wa.me/${waNum}" target="_blank" class="btn bgr sm">💬 WhatsApp</a>`:''}
         <button class="btn bp sm" onclick="convertirEnCliente('${s._docId}')">✅ ${isNew?'Convertir en cliente':'Re-convertir'}</button>
+        <button class="btn bpu sm" onclick="asignarAPlanGrupal('${s._docId}')">👥 Asignar a plan grupal</button>
         <button class="btn bd2 sm" onclick="eliminarSolicitud('${s._docId}')">🗑️</button>
       </div>
     </div>
@@ -3813,6 +3814,7 @@ window.verAnamnesis=function(docId){
     ${row('Cómo conoció a Angel',s.como_conocio)}
     <div style="margin-top:18px;display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn bp" onclick="convertirEnCliente('${docId}');document.getElementById('modal-bg').style.display='none'">✅ Convertir en cliente</button>
+      <button class="btn bpu" onclick="asignarAPlanGrupal('${docId}')">👥 Asignar a plan grupal</button>
       ${(s.whatsapp||'').replace(/[^0-9]/g,'')?`<a href="https://wa.me/${(s.whatsapp||'').replace(/[^0-9]/g,'')}" target="_blank" class="btn bgr">💬 WhatsApp</a>`:''}
     </div>
   </div>`;
@@ -3831,6 +3833,18 @@ window.eliminarSolicitud=async function(docId){
   toast('🗑️ Eliminada');
   renderSolicitudes();
 };
+
+function notasDeSolicitud(s){
+  const notes=[];
+  if(s.lesiones) notes.push('Lesiones: '+s.lesiones);
+  if(s.restricciones) notes.push('Restricciones: '+s.restricciones);
+  if(s.condiciones&&s.condiciones!=='Ninguna') notes.push('Condiciones: '+s.condiciones);
+  if(s.gustos) notes.push('Le gusta: '+s.gustos);
+  if(s.no_gustos) notes.push('No le gusta: '+s.no_gustos);
+  if(s.equipamiento) notes.push('Equipamiento: '+s.equipamiento);
+  if(s.consideraciones) notes.push(s.consideraciones);
+  return notes.join('\n');
+}
 
 window.convertirEnCliente=async function(docId){
   const s=solicitudes.find(x=>x._docId===docId);
@@ -3869,15 +3883,7 @@ window.convertirEnCliente=async function(docId){
     const goalParts=[s.objetivo,s.objetivo_especifico].filter(Boolean);
     setVal('nc-goal', goalParts.join(' — '));
     // Notes from health & preferences
-    const notes=[];
-    if(s.lesiones) notes.push('Lesiones: '+s.lesiones);
-    if(s.restricciones) notes.push('Restricciones: '+s.restricciones);
-    if(s.condiciones&&s.condiciones!=='Ninguna') notes.push('Condiciones: '+s.condiciones);
-    if(s.gustos) notes.push('Le gusta: '+s.gustos);
-    if(s.no_gustos) notes.push('No le gusta: '+s.no_gustos);
-    if(s.equipamiento) notes.push('Equipamiento: '+s.equipamiento);
-    if(s.consideraciones) notes.push(s.consideraciones);
-    setVal('nc-notes', notes.join('\n'));
+    setVal('nc-notes', notasDeSolicitud(s));
     // Training days
     const diasNum=parseInt(s.dias)||3;
     setVal('nc-days', diasNum);
@@ -3901,6 +3907,56 @@ window.convertirEnCliente=async function(docId){
     updateDoc(doc(db,'solicitudes',docId),{status:'convertida'});
   },300);
 }
+
+window.asignarAPlanGrupal=function(docId){
+  const s=solicitudes.find(x=>x._docId===docId);
+  if(!s)return;
+  if(!planes.length){alert('Todavía no creaste ningún plan grupal.');return}
+  const modal=document.getElementById('modal-bg');
+  modal.style.display='flex';
+  modal.innerHTML=`<div style="background:var(--s1);border-radius:16px;padding:24px;width:100%;max-width:420px;max-height:90vh;overflow-y:auto;position:relative">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.05rem">👥 Asignar a plan grupal</div>
+      <button onclick="document.getElementById('modal-bg').style.display='none'" style="background:none;border:none;color:var(--mu);font-size:1.4rem;cursor:pointer;padding:4px">✕</button>
+    </div>
+    <div style="font-size:.82rem;color:var(--mu);margin-bottom:12px">${s.nombre||'Sin nombre'} · elegí uno o varios planes</div>
+    <div id="asig-plan-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:18px">
+      ${planes.map(p=>`
+        <label style="display:flex;align-items:center;gap:8px;background:var(--s2);border-radius:8px;padding:8px 11px;cursor:pointer;font-size:.86rem">
+          <input type="checkbox" value="${p.id}" style="accent-color:var(--ac)"> ${p.name}
+        </label>`).join('')}
+    </div>
+    <button class="btn bp" onclick="confirmarAsignacionPlanGrupal('${docId}')">✅ Asignar</button>
+  </div>`;
+};
+
+window.confirmarAsignacionPlanGrupal=async function(docId){
+  const s=solicitudes.find(x=>x._docId===docId);
+  if(!s)return;
+  const planIds=[...document.querySelectorAll('#asig-plan-list input:checked')].map(cb=>cb.value);
+  if(!planIds.length){alert('Elegí al menos un plan.');return}
+  const notes=notasDeSolicitud(s);
+  const addedAt=new Date().toLocaleDateString('es-AR');
+  const assignedNames=[];
+  for(const pid of planIds){
+    const p=planes.find(pl=>pl.id===pid);
+    if(!p)continue;
+    const expDate=new Date();expDate.setDate(expDate.getDate()+(p.durationDays||30));
+    const expiry=expDate.toISOString().split('T')[0];
+    const member={id:'m'+Date.now()+Math.floor(Math.random()*1000),name:s.nombre||'Sin nombre',email:s.email||'',status:'active',expiry,addedAt,notes};
+    if(!p.members)p.members=[];
+    p.members.push(member);
+    await setDoc(doc(db,'planes',pid),p);
+    assignedNames.push(p.name);
+  }
+  await updateDoc(doc(db,'solicitudes',docId),{status:'convertida'});
+  const solIdx=solicitudes.findIndex(x=>x._docId===docId);
+  if(solIdx>=0)solicitudes[solIdx].status='convertida';
+  document.getElementById('modal-bg').style.display='none';
+  toast('✅ Asignado a: '+assignedNames.join(', '));
+  renderSolicitudes();
+  buildNotifications();
+};
 
 window.eliminarSolicitud=async function(docId){
   if(!confirm('¿Eliminar esta solicitud?'))return;
