@@ -2013,8 +2013,9 @@ async function renderCV(clientId){
   document.getElementById('cv-content').innerHTML=`
     <div class="hero">
       <div class="hero-top"><div class="hav">${initials}</div>
-        <div><div class="hn">Hola, ${c.name.split(' ')[0]}! 💪</div>
+        <div style="flex:1"><div class="hn">Hola, ${c.name.split(' ')[0]}! 💪</div>
           <div class="hm">🎯 ${c.goal||''} &nbsp;|&nbsp; 📊 ${c.level}${c.weight?' &nbsp;|&nbsp; '+c.weight+'kg':''}</div></div>
+        ${c.email||c.whatsapp?`<button onclick="clientLogout('${clientId}')" style="background:var(--s2);border:1px solid var(--bd);color:var(--tx);border-radius:9px;padding:6px 12px;cursor:pointer;font-size:.8rem;flex-shrink:0" title="Cerrar sesión">🚪 Salir</button>`:''}
       </div>
       ${c.routineName?`<div style="font-family:'Space Grotesk',sans-serif;font-size:.9rem;font-weight:700;color:var(--ac2);margin-bottom:11px;letter-spacing:.05em">${c.routineName}</div>`:''}
       ${c.notes?`<div style="font-size:.78rem;color:var(--mu);background:var(--s2);border-radius:8px;padding:8px 11px;margin-bottom:12px">${c.notes}</div>`:''}
@@ -3570,6 +3571,11 @@ window.launchCFTimerFromUI=function(cftype, tid){
   launchCFTimer(cftype, meta, '');
   // Auto-start with 10s countdown
   setTimeout(()=>cfTimerToggle(),100);
+};
+
+window.clientLogout=function(clientId){
+  localStorage.removeItem('verified-'+clientId);
+  renderCV(clientId);
 };
 
 window.verifyEmail=function(clientId, correctEmail, correctWa){
