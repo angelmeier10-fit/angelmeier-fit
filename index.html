@@ -599,9 +599,11 @@ setTimeout(()=>{
     </div>
   </div>
   <div id="planes-panel-new" style="display:none">
-    <div class="card">
-      <h2>Datos del plan</h2>
-      <div class="grid2">
+    <div class="card" id="np-data-card">
+      <div class="collapsible-card-hdr" onclick="document.getElementById('np-data-card').classList.toggle('collapsed');this.querySelector('.card-toggle').style.transform=document.getElementById('np-data-card').classList.contains('collapsed')?'rotate(-90deg)':''">
+        <h2>Datos del plan</h2><span class="card-toggle">▼</span>
+      </div>
+      <div class="collapsible-card-body"><div class="grid2">
         <div class="fg full"><label>Nombre del plan</label><input id="np-name" placeholder="Ej: Glúteos de acero 🍑"></div>
         <div class="fg full"><label>Descripción (aparece en la página pública)</label><textarea id="np-desc" placeholder="Ej: Programa de 4 semanas para tonificar y fortalecer glúteos e isquiotibiales. Incluye 3 sesiones semanales con progresión de cargas."></textarea></div>
         <div class="fg"><label>Precio ($)</label><input id="np-price" type="number" placeholder="15000"></div>
@@ -613,7 +615,7 @@ setTimeout(()=>{
         <div class="fg"><label>Total de semanas (macrociclo)</label><input id="np-totalweeks" type="number" value="12" min="1" max="52"></div>
         <div class="fg"><label>Semanas por mesociclo</label><input id="np-mesoweeks" type="number" value="4" min="1" max="12"></div>
         <div class="fg full"><label>Cantidad de días de entrenamiento</label><input id="np-days" type="number" value="3" min="1" max="14"></div>
-      </div>
+      </div></div>
     </div>
     <div class="card" style="margin-bottom:10px;padding:14px 16px">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
@@ -627,13 +629,23 @@ setTimeout(()=>{
       </div>
       <p style="font-size:.74rem;color:var(--mu);margin-top:8px">Si cargás más de una semana, los alumnos rotan entre todas ellas en bucle según en cuál elijas que arranquen.</p>
     </div>
+    <div id="days-nav-np" style="background:var(--s2);border:1px solid var(--bd);border-radius:var(--ra);margin-bottom:10px;overflow:hidden">
+      <div style="padding:9px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'flex':'none';this.querySelector('span').style.transform=this.nextElementSibling.style.display==='none'?'rotate(-90deg)':''">
+        <div style="font-size:.78rem;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.05em">📋 Ir a día</div>
+        <span style="color:var(--mu);font-size:.78rem;transition:transform .2s">▼</span>
+      </div>
+      <div id="days-nav-np-list" style="display:flex;flex-wrap:wrap;gap:5px;padding:8px 14px 12px"></div>
+    </div>
     <div id="np-days-container"></div>
+    <button class="btn bg2" onclick="addExtraDay('np-days-container')" style="width:100%;justify-content:center;padding:10px;font-size:.88rem;margin-top:4px;margin-bottom:4px">＋ Agregar día</button>
     <button class="btn bp" onclick="savePlan()" style="width:100%;justify-content:center;padding:12px;font-size:.93rem;margin-top:4px">💾 Guardar plan</button>
   </div>
   <div id="planes-panel-edit" style="display:none">
-    <div class="card">
-      <h2 id="edit-plan-title">Editando plan</h2>
-      <div class="grid2">
+    <div class="card" id="ep-data-card">
+      <div class="collapsible-card-hdr" onclick="document.getElementById('ep-data-card').classList.toggle('collapsed');this.querySelector('.card-toggle').style.transform=document.getElementById('ep-data-card').classList.contains('collapsed')?'rotate(-90deg)':''">
+        <h2 id="edit-plan-title">Editando plan</h2><span class="card-toggle">▼</span>
+      </div>
+      <div class="collapsible-card-body"><div class="grid2">
         <div class="fg full"><label>Nombre del plan</label><input id="ep-name"></div>
         <div class="fg full"><label>Descripción</label><textarea id="ep-desc"></textarea></div>
         <div class="fg"><label>Precio ($)</label><input id="ep-price" type="number"></div>
@@ -645,7 +657,7 @@ setTimeout(()=>{
         <div class="fg"><label>Total de semanas (macrociclo)</label><input id="ep-totalweeks" type="number" min="1" max="52"></div>
         <div class="fg"><label>Semanas por mesociclo</label><input id="ep-mesoweeks" type="number" min="1" max="12"></div>
         <input type="hidden" id="ep-days">
-      </div>
+      </div></div>
     </div>
     <div class="card" style="margin-bottom:10px;padding:14px 16px">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
@@ -659,7 +671,15 @@ setTimeout(()=>{
       </div>
       <p style="font-size:.74rem;color:var(--mu);margin-top:8px">Si cargás más de una semana, los alumnos rotan entre todas ellas en bucle según en cuál elijas que arranquen.</p>
     </div>
+    <div id="days-nav-ep" style="background:var(--s2);border:1px solid var(--bd);border-radius:var(--ra);margin-bottom:10px;overflow:hidden">
+      <div style="padding:9px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'flex':'none';this.querySelector('span').style.transform=this.nextElementSibling.style.display==='none'?'rotate(-90deg)':''">
+        <div style="font-size:.78rem;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.05em">📋 Ir a día</div>
+        <span style="color:var(--mu);font-size:.78rem;transition:transform .2s">▼</span>
+      </div>
+      <div id="days-nav-ep-list" style="display:flex;flex-wrap:wrap;gap:5px;padding:8px 14px 12px"></div>
+    </div>
     <div id="ep-days-container"></div>
+    <button class="btn bg2" onclick="addExtraDay('ep-days-container')" style="width:100%;justify-content:center;padding:10px;font-size:.88rem;margin-top:4px;margin-bottom:4px">＋ Agregar día</button>
     <button class="btn bp" onclick="updatePlan()" style="width:100%;justify-content:center;padding:12px;font-size:.93rem;margin-top:4px">💾 Guardar cambios</button>
   </div>
   <div id="planes-panel-seg" style="display:none">
@@ -1409,7 +1429,8 @@ window.deleteDayBlock=function(did){
 };
 
 function refreshDayNav(cid){
-  const navId=cid==='days-container'?'days-nav-nc-list':'days-nav-ec-list';
+  const navIds={'days-container':'days-nav-nc-list','edit-days-container':'days-nav-ec-list','np-days-container':'days-nav-np-list','ep-days-container':'days-nav-ep-list'};
+  const navId=navIds[cid];if(!navId)return;
   const nav=document.getElementById(navId);if(!nav)return;
   nav.innerHTML='';
   document.querySelectorAll('#'+cid+' .day-block').forEach(block=>{
@@ -4123,7 +4144,8 @@ window.addExtraDay=function(containerId){
   const n=container.querySelectorAll('.day-block').length;
   buildOneDay(containerId,n,{name:'Día '+(n+1),blocks:[]});
   // Update the days-count input so collectDays() picks up the new day
-  const countInputId=containerId==='days-container'?'nc-days':'ec-days';
+  const countInputIds={'days-container':'nc-days','edit-days-container':'ec-days','np-days-container':'np-days','ep-days-container':'ep-days'};
+  const countInputId=countInputIds[containerId];
   const countInput=document.getElementById(countInputId);
   if(countInput) countInput.value=n+1;
   toast('✅ Día '+(n+1)+' agregado');
