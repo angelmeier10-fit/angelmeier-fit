@@ -609,7 +609,12 @@ setTimeout(()=>{
         <div class="fg"><label>Precio ($)</label><input id="np-price" type="number" placeholder="15000"></div>
         <div class="fg"><label>Duración del acceso (días)</label><input id="np-duration" type="number" placeholder="30" value="30"></div>
         <div class="fg"><label>Link de pago Mercado Pago</label><input id="np-mp" placeholder="https://mpago.la/..."></div>
-        <div class="fg"><label>Imagen de portada (URL)</label><input id="np-img" placeholder="https://... (opcional)"></div>
+        <div class="fg full">
+          <label>Imagen de portada</label>
+          <input type="file" id="np-img-file" accept="image/*" onchange="handleImgUpload(this,'np-img')">
+          <div id="np-img-preview" style="margin-top:8px"></div>
+          <input id="np-img" placeholder="https://... (o subí un archivo arriba)" style="margin-top:8px" oninput="updateImgPreview('np-img')">
+        </div>
         <div class="fg"><label>Nivel</label><select id="np-level"><option>Principiante</option><option>Intermedio</option><option>Alto</option><option>Todos los niveles</option></select></div>
         <div class="fg"><label>Categoría</label><input id="np-cat" placeholder="Ej: Glúteos, Postural, Cardio..."></div>
         <div class="fg"><label>Total de semanas (macrociclo)</label><input id="np-totalweeks" type="number" value="12" min="1" max="52"></div>
@@ -651,7 +656,12 @@ setTimeout(()=>{
         <div class="fg"><label>Precio ($)</label><input id="ep-price" type="number"></div>
         <div class="fg"><label>Duración del acceso (días)</label><input id="ep-duration" type="number"></div>
         <div class="fg"><label>Link de pago Mercado Pago</label><input id="ep-mp"></div>
-        <div class="fg"><label>Imagen de portada (URL)</label><input id="ep-img"></div>
+        <div class="fg full">
+          <label>Imagen de portada</label>
+          <input type="file" id="ep-img-file" accept="image/*" onchange="handleImgUpload(this,'ep-img')">
+          <div id="ep-img-preview" style="margin-top:8px"></div>
+          <input id="ep-img" placeholder="https://... (o subí un archivo arriba)" style="margin-top:8px" oninput="updateImgPreview('ep-img')">
+        </div>
         <div class="fg"><label>Nivel</label><select id="ep-level"><option>Principiante</option><option>Intermedio</option><option>Alto</option><option>Todos los niveles</option></select></div>
         <div class="fg"><label>Categoría</label><input id="ep-cat"></div>
         <div class="fg"><label>Total de semanas (macrociclo)</label><input id="ep-totalweeks" type="number" min="1" max="52"></div>
@@ -2709,6 +2719,36 @@ window.deleteNote=async function(cId,dIdx,noteIdx){
   renderDay(cId,dIdx);
 };
 
+// ══ IMAGEN DE PORTADA (subida con compresión) ══
+function updateImgPreview(targetId){
+  const val=document.getElementById(targetId).value.trim();
+  const prev=document.getElementById(targetId+'-preview');
+  if(!prev)return;
+  prev.innerHTML=val?`<img src="${val}" style="max-width:220px;max-height:140px;border-radius:8px;display:block" onerror="this.style.display='none'">`:'';
+}
+window.updateImgPreview=updateImgPreview;
+
+function handleImgUpload(fileInput,targetId){
+  const file=fileInput.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const img=new Image();
+    img.onload=()=>{
+      const maxW=900;
+      const scale=Math.min(1,maxW/img.width);
+      const canvas=document.createElement('canvas');
+      canvas.width=img.width*scale;canvas.height=img.height*scale;
+      canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
+      const dataUrl=canvas.toDataURL('image/jpeg',0.72);
+      document.getElementById(targetId).value=dataUrl;
+      updateImgPreview(targetId);
+    };
+    img.src=e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+window.handleImgUpload=handleImgUpload;
+
 // ══ PLANES GRUPALES ══
 let planes=[];
 let editingPlanId=null;
@@ -2735,6 +2775,8 @@ window.showPlanesPanel=showPlanesPanel;
 
 function initNewPlan(){
   ['np-name','np-desc','np-price','np-mp','np-img','np-cat'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});
+  document.getElementById('np-img-file').value='';
+  updateImgPreview('np-img');
   document.getElementById('np-duration').value=30;
   document.getElementById('np-totalweeks').value=12;
   document.getElementById('np-mesoweeks').value=4;
@@ -2891,6 +2933,8 @@ function openEditPlan(id){
   document.getElementById('ep-duration').value=plan.durationDays||30;
   document.getElementById('ep-mp').value=plan.mpLink||'';
   document.getElementById('ep-img').value=plan.img||'';
+  document.getElementById('ep-img-file').value='';
+  updateImgPreview('ep-img');
   document.getElementById('ep-level').value=plan.level||'Todos los niveles';
   document.getElementById('ep-cat').value=plan.cat||'';
   document.getElementById('ep-totalweeks').value=plan.totalWeeks||12;
