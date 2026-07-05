@@ -1,4 +1,4 @@
-const CACHE = 'amfit-v6';
+const CACHE = 'amfit-v7';
 const ASSETS = [
   './',
   './index.html',
@@ -46,7 +46,7 @@ self.addEventListener('fetch', e => {
 
   // Shell de la app: network-first para ver cambios al instante, con fallback a caché offline
   e.respondWith(
-    fetch(e.request).then(res => {
+    fetch(e.request, { cache: 'no-store' }).then(res => {
       const resClone = res.clone();
       caches.open(CACHE).then(c => c.put(e.request, resClone));
       return res;
