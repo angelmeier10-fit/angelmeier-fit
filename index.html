@@ -2335,9 +2335,15 @@ function renderFuncBlock(c,bkey,blk,bi){
       const vidHtml=ytId?`<div class="yt-th" onclick="embedYT(this,'${ytId}')"><img src="https://img.youtube.com/vi/${ytId}/mqdefault.jpg" loading="lazy"><div class="yt-pl">▶</div></div>`:'';
       const logs=(c.progress||{})[c.id+'-'+ekey+'-logs']||[];
       const lastLog=logs.length?logs[logs.length-1]:null;
+      const isTime=/\d+\s*(min|s$|seg|km)/i.test((ex.reps||'').trim());
+      const timerBtn=isTime?`<button onclick="launchExTimer('${c.id}-${ekey}','${ex.name}','${ex.reps}')"
+        style="background:var(--ac)22;color:var(--ac2);border:1px solid var(--ac)44;border-radius:7px;padding:5px 12px;font-size:.78rem;font-weight:700;font-family:inherit;cursor:pointer;display:flex;align-items:center;gap:5px;margin-top:6px">
+        ⏱ ${ex.reps}
+      </button>`:'';
       inner+=`<div class="cv-ex">
         <div class="cv-ex-name">${ex.name}${ex.reps?' <span style="color:var(--ac2);font-size:.78rem">× '+ex.reps+'</span>':''}</div>
         ${vidHtml}
+        ${timerBtn}
         <div class="plog">
           <div style="font-size:.69rem;color:var(--mu);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">📊 Registrar</div>
           <div class="lr">
