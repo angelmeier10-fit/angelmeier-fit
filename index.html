@@ -104,6 +104,7 @@ textarea{resize:vertical;min-height:52px}
 .t-warmup{background:#22d3ee22;color:var(--cy);border:1px solid #22d3ee44}
 .t-super{background:#fbbf2422;color:var(--yw);border:1px solid #fbbf2433}
 .t-tri{background:#4ade8022;color:var(--gr);border:1px solid #4ade8033}
+.t-giant{background:#f8717122;color:var(--rd);border:1px solid #f8717133}
 .blk-body{padding:11px 13px;display:flex;flex-direction:column;gap:9px}
 .ex-entry{display:flex;flex-direction:column;gap:6px}
 .ex-top{display:flex;gap:7px;align-items:flex-start}
@@ -133,6 +134,11 @@ textarea{resize:vertical;min-height:52px}
   .ex-cat-select{font-size:.88rem;padding:9px 12px}
 }
 .ex-sep{text-align:center;font-size:.7rem;color:var(--mu);font-weight:700;text-transform:uppercase;letter-spacing:.08em;padding:3px 0;border-top:1px dashed var(--bd);border-bottom:1px dashed var(--bd);margin:3px 0}
+.ex-sep-row{display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px 0;border-top:1px dashed var(--bd);border-bottom:1px dashed var(--bd);margin:3px 0}
+.ex-sep-lbl{font-size:.7rem;color:var(--mu);font-weight:700;text-transform:uppercase;letter-spacing:.08em}
+.ex-sep-pause{display:flex;align-items:center;gap:8px}
+.ex-sep-pause label{font-size:.7rem;color:var(--mu);white-space:nowrap}
+.ex-sep-pause input{max-width:130px;font-size:.78rem;padding:5px 8px}
 .sc-row{display:grid;grid-template-columns:20px 1fr 1fr auto auto;gap:5px;align-items:center;margin-bottom:4px}
 .sc-num{font-size:.7rem;color:var(--mu);font-weight:600;text-align:center}
 .sc-row input{font-size:.78rem;padding:5px 8px}
@@ -1385,6 +1391,7 @@ function buildOneDay(cid,idx,data=null){
       <button class="btn bg2 sm" onclick="addGymBlock('${did}-body','simple')">+ Ejercicio</button>
       <button class="btn byw sm" onclick="addGymBlock('${did}-body','super')">+ Superserie</button>
       <button class="btn bgr sm" onclick="addGymBlock('${did}-body','tri')">+ Triserie</button>
+      <button class="btn bd2 sm" onclick="addGymBlock('${did}-body','giant')">+ Serie gigante</button>
       <button class="btn bor sm" onclick="showCFMenu('${did}-body',this)">🔥 + WOD</button>
       <button class="btn bpu sm" onclick="addFuncBlock('${did}-body')">🧓 + Actividad funcional</button>
       <button class="btn bg2 sm" onclick="moveDayBlock('${did}',-1)" title="Mover arriba">↑</button>
@@ -1531,9 +1538,10 @@ window.addFuncEx=addFuncEx;
 function addGymBlock(bodyId,type,data=null){
   const c=document.getElementById(bodyId);
   const gid='g'+Date.now()+Math.random().toString(36).slice(2,5);
-  const exCount=type==='tri'?3:type==='super'?2:1;
-  const typeName=type==='tri'?'Triserie':type==='super'?'Superserie':'Ejercicio';
-  const tc=type==='tri'?'t-tri':type==='super'?'t-super':'t-simple';
+  const isGiant=type==='giant';
+  const exCount=type==='tri'?3:type==='super'?2:isGiant?Math.max(data?.exercises?.length||4,4):1;
+  const typeName=type==='tri'?'Triserie':type==='super'?'Superserie':isGiant?'Serie gigante':'Ejercicio';
+  const tc=type==='tri'?'t-tri':type==='super'?'t-super':isGiant?'t-giant':'t-simple';
   const div=document.createElement('div');div.className='blk';div.id=gid;div.dataset.kind='gym';div.dataset.type=type;
   div.innerHTML=`<div class="blk-hdr" onclick="toggleBlk('${gid}',event)">
     <span class="blk-type ${tc}">${typeName}</span>
@@ -1551,14 +1559,53 @@ function addGymBlock(bodyId,type,data=null){
   c.appendChild(div);
   const body=document.getElementById(gid+'-body');
   const exData=data?.exercises||[];
+  const pauses=data?.pauses||[];
   for(let i=0;i<exCount;i++){
-    if(i>0){const s=document.createElement('div');s.className='ex-sep';s.textContent=type==='tri'?'▼ TRISERIE':'▼ SUPERSERIE';body.appendChild(s)}
-    addExEntry(body,exData[i]||null);
+    if(i>0)addExSep(body,type,pauses[i-1]||'');
+    addExEntry(body,exData[i]||null,isGiant);
+  }
+  if(isGiant){
+    const addBtn=document.createElement('button');
+    addBtn.className='btn bg2 sm giant-add-btn';addBtn.style.marginTop='5px';addBtn.textContent='+ Ejercicio';
+    addBtn.onclick=()=>addGiantEx(gid);
+    body.appendChild(addBtn);
   }
   const namesEl=document.getElementById(gid+'-names');
   if(namesEl)namesEl.textContent=exData.map(e=>e?.name).filter(Boolean).join(' + ');
 }
 window.addGymBlock=addGymBlock;
+
+function addExSep(body,type,pauseVal,before=null){
+  const sid='sep'+Date.now()+Math.random().toString(36).slice(2,5);
+  const label=type==='tri'?'TRISERIE':type==='super'?'SUPERSERIE':'SERIE GIGANTE';
+  const div=document.createElement('div');div.className='ex-sep-row';div.id=sid;
+  div.innerHTML=`<div class="ex-sep-lbl">▼ ${label}</div>
+    <div class="ex-sep-pause"><label>⏸ Pausa entre ejercicios</label><input type="text" class="ex-sep-pause-inp" value="${pauseVal||''}" placeholder="Vacío = sin descanso"></div>`;
+  body.insertBefore(div,before);
+  return div;
+}
+window.addExSep=addExSep;
+
+function addGiantEx(gid){
+  const body=document.getElementById(gid+'-body');
+  const addBtn=body.querySelector('.giant-add-btn');
+  addExSep(body,'giant','',addBtn);
+  addExEntry(body,null,true,addBtn);
+  const namesEl=document.getElementById(gid+'-names');
+  if(namesEl)namesEl.textContent=[...body.querySelectorAll('.ex-search')].map(i=>i.value.trim()).filter(Boolean).join(' + ');
+}
+window.addGiantEx=addGiantEx;
+
+function removeGiantEx(eid){
+  const entry=document.getElementById(eid);if(!entry)return;
+  const body=entry.parentElement;
+  if(body.querySelectorAll('.ex-entry').length<=2){toast('Debe quedar al menos 2 ejercicios en la serie gigante');return}
+  const prev=entry.previousElementSibling;
+  if(prev&&prev.classList.contains('ex-sep-row'))prev.remove();
+  else{const next=entry.nextElementSibling;if(next&&next.classList.contains('ex-sep-row'))next.remove();}
+  entry.remove();
+}
+window.removeGiantEx=removeGiantEx;
 
 function addWarmupBlock(bodyId,data=null){
   const c=document.getElementById(bodyId);
@@ -1617,7 +1664,7 @@ function addWarmupEx(body,data=null){
 }
 window.addWarmupEx=addWarmupEx;
 
-function addExEntry(body,data=null){
+function addExEntry(body,data=null,removable=false,before=null){
   const eid='e'+Date.now()+Math.random().toString(36).slice(2,5);
   const div=document.createElement('div');div.className='ex-entry';div.id=eid;
   div.innerHTML=`<div class="ex-top">
@@ -1629,6 +1676,7 @@ function addExEntry(body,data=null){
       ${vidBadgeHtml(data?.video||'')}
       <div class="ex-dd" id="${eid}-dd"></div>
     </div>
+    ${removable?`<button class="btn bd2 xs" style="margin-top:18px;flex-shrink:0" onclick="removeGiantEx('${eid}')">✕</button>`:''}
   </div>
   <div class="fg"><label>Observaciones</label><input type="text" class="ex-obs" value="${data?.obs||''}" placeholder="RPE, técnica..."></div>
   <div>
@@ -1641,7 +1689,7 @@ function addExEntry(body,data=null){
     <div class="sc-rows" id="${eid}-sc"></div>
     <button class="sc-add" onclick="addSR('${eid}-sc')">＋ Serie</button>
   </div>`;
-  body.appendChild(div);
+  body.insertBefore(div,before);
   if(data?.scheme?.length) data.scheme.forEach(s=>addSR(eid+'-sc',s));
   else{addSR(eid+'-sc');addSR(eid+'-sc');addSR(eid+'-sc')}
 }
@@ -1894,7 +1942,8 @@ function collectDays(cid,count){
           const scheme=[...en.querySelectorAll('.sc-row')].map(r=>({reps:r.querySelector('.sr-reps').value,load:r.querySelector('.sr-load').value}));
           return{name:inp.dataset.name||inp.value,video:inp.dataset.video||'',obs:en.querySelector('.ex-obs').value,scheme};
         }).filter(e=>e.name);
-        return{kind:'gym',type,rest,exercises};
+        const pauses=[...blk.querySelectorAll('.ex-sep-pause-inp')].map(i=>i.value);
+        return{kind:'gym',type,rest,exercises,pauses};
       } else {
         const cftype=blk.dataset.cftype;const cfg=CF_TYPES[cftype];
         const sections=collectCFSections(blk,cfg);
@@ -2371,15 +2420,21 @@ function renderFuncBlock(c,bkey,blk,bi){
 }
 
 function renderGymBlock(c,bkey,blk,bi){
-  const typeBadge=blk.type==='tri'?'<span class="badge bgr2">🟢 Triserie</span>':blk.type==='super'?'<span class="badge byw2">🟡 Superserie</span>':'';
+  const typeBadge=blk.type==='tri'?'<span class="badge bgr2">🟢 Triserie</span>':blk.type==='super'?'<span class="badge byw2">🟡 Superserie</span>':blk.type==='giant'?'<span class="badge" style="background:#f8717122;color:var(--rd)">🔴 Serie gigante</span>':'';
   const mainTitle=blk.exercises.map(e=>e.name).join(' + ');
   const totalSeries=blk.exercises[0]?.scheme?.length||0;
+  const typeLabel=blk.type==='tri'?'TRISERIE':blk.type==='super'?'SUPERSERIE':'SERIE GIGANTE';
   let inner='';
   blk.exercises.forEach((ex,ei)=>{
     const ekey=`${bkey}-e${ei}`;
     const ytId=getYTId(ex.video);
     const vidHtml=ytId?`<div class="yt-th" onclick="embedYT(this,'${ytId}')"><img src="https://img.youtube.com/vi/${ytId}/mqdefault.jpg" loading="lazy"><div class="yt-pl">▶</div></div>`:ex.video?`<a href="${ex.video}" target="_blank" class="btn bg2 sm" style="margin-top:6px">▶ Ver video</a>`:'';
-    if(ei>0){const sl=blk.type==='tri'?'TRISERIE — sin descanso':'SUPERSERIE — sin descanso';inner+=`<div class="cv-sep">${sl}</div>`}
+    if(ei>0){
+      const pause=(blk.pauses||[])[ei-1]||'';
+      const pauseTimerId=`${c.id}-${bkey}-pause${ei-1}`;
+      const pauseBtn=pause?`<button onclick="launchExTimer('${pauseTimerId}','Pausa','${pause}')" style="background:var(--ac)22;color:var(--ac2);border:1px solid var(--ac)44;border-radius:7px;padding:4px 11px;font-size:.75rem;font-weight:700;font-family:inherit;cursor:pointer;margin-top:4px">⏱ ${pause}</button>`:'';
+      inner+=`<div class="cv-sep">${typeLabel} — ${pause||'sin descanso'}${pauseBtn?`<br>${pauseBtn}`:''}</div>`;
+    }
     inner+=`<div class="cv-ex">
       <div class="cv-ex-name">${ex.name}${ex.video?` <a href="${ex.video}" target="_blank" style="font-size:.7rem;color:var(--ac2);text-decoration:none">▶</a>`:''}</div>
       ${ex.obs?`<div class="cv-obs">📝 ${ex.obs}</div>`:''}`;
@@ -2922,7 +2977,8 @@ async function updatePlan(){
       } else if(blk.dataset.kind==='gym'){
         const type=blk.dataset.type;const rest=blk.querySelector('.sg-rest').value;
         const exercises=[...blk.querySelectorAll('.ex-entry')].map(en=>{const inp=en.querySelector('.ex-search');const scheme=[...en.querySelectorAll('.sc-row')].map(r=>({reps:r.querySelector('.sr-reps').value,load:r.querySelector('.sr-load').value}));return{name:inp.dataset.name||inp.value,video:inp.dataset.video||'',obs:en.querySelector('.ex-obs').value,scheme};}).filter(e=>e.name);
-        return{kind:'gym',type,rest,exercises};
+        const pauses=[...blk.querySelectorAll('.ex-sep-pause-inp')].map(i=>i.value);
+        return{kind:'gym',type,rest,exercises,pauses};
       } else {
         const cftype=blk.dataset.cftype;const cfg=CF_TYPES[cftype];
         const sections=collectCFSections(blk,cfg);
