@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="es">
+<head><meta charset="UTF-8"><title>Seed Plan</title>
+<style>body{font-family:sans-serif;max-width:500px;margin:60px auto;text-align:center;background:#0f1117;color:#e8eaf6}
+button{padding:14px 28px;background:#7c5cbf;color:#fff;border:none;border-radius:10px;font-size:1rem;cursor:pointer;margin-top:20px}
+#msg{margin-top:20px;font-size:.95rem;line-height:1.6}</style>
+</head>
+<body>
+<h2>Agregar plan grupal</h2>
+<p style="color:#8b92b5">Entrenamiento sin elementos en casa — 3 días</p>
+<button onclick="seed()">Agregar a Firestore</button>
+<div id="msg"></div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, setDoc, doc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const app = initializeApp({
+  apiKey: "AIzaSyBc-icBnX6LCjvaYagVcR1hE3VkMZG05Cw",
+  authDomain: "angelmeier-fit.firebaseapp.com",
+  projectId: "angelmeier-fit",
+  storageBucket: "angelmeier-fit.firebasestorage.app",
+  messagingSenderId: "931547082856",
+  appId: "1:931547082856:web:3e6b8c943c7067b23b0bdc"
+});
+const db = getFirestore(app);
+
+function warmup(){
+  return {
+    kind: "warmup", duration: "5 min",
+    exercises: [
+      { name: "Jumping jacks", reps: "40 seg", video: "", obs: "Ritmo suave para elevar pulsaciones" },
+      { name: "Rotación de brazos y cadera", reps: "30 seg", video: "", obs: "" },
+      { name: "Sentadilla libre sin carga", reps: "10 reps", video: "", obs: "Foco en técnica y profundidad" }
+    ]
+  };
+}
+
+// ---------- MESOCICLO 1 (semanas 1-4): base, técnica ----------
+const m1 = {
+  d1: [
+    warmup(),
+    { kind:"gym", type:"simple", rest:"45s", exercises:[{ name:"Sentadilla sin carga", video:"", obs:"Bajar hasta paralelo, rodillas alineadas con los pies.",
+      scheme:[{reps:"15",load:"peso corporal"},{reps:"15",load:"peso corporal"},{reps:"15",load:"peso corporal"}] }] },
+    { kind:"gym", type:"simple", rest:"45s", exercises:[{ name:"Flexiones de brazos (rodillas si hace falta)", video:"", obs:"Cuerpo recto, bajar controlado.",
+      scheme:[{reps:"8-10",load:"peso corporal"},{reps:"8-10",load:"peso corporal"},{reps:"8-10",load:"peso corporal"}] }] },
+    { kind:"gym", type:"super", rest:"45s", exercises:[
+      { name:"Zancada estática (sin carga)", video:"", obs:"Rodilla delantera no pasa la punta del pie.",
+        scheme:[{reps:"10 c/pierna",load:"peso corporal"},{reps:"10 c/pierna",load:"peso corporal"},{reps:"10 c/pierna",load:"peso corporal"}] },
+      { name:"Puente de glúteo (glute bridge)", video:"", obs:"Apretar glúteos arriba, 1 seg de pausa.",
+        scheme:[{reps:"15",load:"peso corporal"},{reps:"15",load:"peso corporal"},{reps:"15",load:"peso corporal"}] }
+    ] },
+    { kind:"gym", type:"super", rest:"30s", exercises:[
+      { name:"Plancha frontal", video:"", obs:"Cuerpo recto, no bajar caderas.",
+        scheme:[{reps:"20 seg",load:"—"},{reps:"20 seg",load:"—"},{reps:"20 seg",load:"—"}] },
+      { name:"Crunch abdominal", video:"", obs:"Exhalar al subir, no jalar del cuello.",
+        scheme:[{reps:"15",load:"—"},{reps:"15",load:"—"},{reps:"15",load:"—"}] }
+    ] }
+  ],
+  d2: [
+    warmup(),
+    { kind:"gym", type:"simple", rest:"45s", exercises:[{ name:"Sentadilla sumo sin carga", video:"", obs:"Pies anchos, puntas afuera, foco en glúteos/aductores.",
+      scheme:[{reps:"15",load:"peso corporal"},{reps:"15",load:"peso corporal"},{reps:"15",load:"peso corporal"}] }] },
+    { kind:"gym", type:"simple", rest:"45s", exercises:[{ name:"Remo con toalla o mochila (o isométrico dorsal)", video:"", obs:"Apretar la espalda, escápulas juntas.",
+      scheme:[{reps:"12",load:"liviano"},{reps:"12",load:"liviano"},{reps:"12",load:"liviano"}] }] },
+    { kind:"gym", type:"tri", rest:"45s", exercises:[
+      { name:"Zancada caminando sin carga", video:"", obs:"Paso largo, torso erguido.",
+        scheme:[{reps:"10 c/pierna",load:"peso corporal"},{reps:"10 c/pierna",load:"peso corporal"},{reps:"10 c/pierna",load:"peso corporal"}] },
+      { name:"Elevación de talones (pantorrillas)", video:"", obs:"Subir hasta la punta de los pies, pausa arriba.",
+        scheme:[{reps:"20",load:"peso corporal"},{reps:"20",load:"peso corporal"},{reps:"20",load:"peso corporal"}] },
+      { name:"Superman (lumbar)", video:"", obs:"Elevar brazos y piernas a la vez, contraer 2 seg.",
+        scheme:[{reps:"12",load:"—"},{reps:"12",load:"—"},{reps:"12",load:"—"}] }
+    ] },
+    { kind:"gym", type:"super", rest:"30s", exercises:[
+      { name:"Plancha lateral", video:"", obs:"Cadera alineada, no dejarla caer.",
+        scheme:[{reps:"15 seg c/lado",load:"—"},{reps:"15 seg c/lado",load:"—"},{reps:"15 seg c/lado",load:"—"}] },
+      { name:"Elevación de piernas acostado", video:"", obs:"Bajar lento, sin apoyar del todo.",
+        scheme:[{reps:"12",load:"—"},{reps:"12",load:"—"},{reps:"12",load:"—"}] }
+    ] }
+  ],
+  d3: [
+    warmup(),
+    { kind:"gym", type:"simple", rest:"45s", exercises:[{ name:"Sentadilla con salto suave (o sin salto)", video:"", obs:"Aterrizar suave, rodillas semiflexionadas.",
+      scheme:[{reps:"12",load:"peso corporal"},{reps:"12",load:"peso corporal"},{reps:"12",load:"peso corporal"}] }] },
+    { kind:"gym", type:"simple", rest:"45s", exercises:[{ name:"Flexiones inclinadas (manos en silla/mesada)", video:"", obs:"Más fácil que la flexión estándar, buena técnica.",
+      scheme:[{reps:"10",load:"peso corporal"},{reps:"10",load:"peso corporal"},{reps:"10",load:"peso corporal"}] }] },
+    { kind:"gym", type:"super", rest:"45s", exercises:[
+      { name:"Hip thrust en el piso (pies apoyados)", video:"", obs:"Apretar glúteo, 1 seg de pausa arriba.",
+        scheme:[{reps:"15",load:"peso corporal"},{reps:"15",load:"peso corporal"},{reps:"15",load:"peso corporal"}] },
+      { name:"Sentadilla búlgara (pie trasero en silla, sin carga)", video:"", obs:"Bajar controlado, torso erguido.",
+        scheme:[{reps:"10 c/pierna",load:"peso corporal"},{reps:"10 c/pierna",load:"peso corporal"},{reps:"10 c/pierna",load:"peso corporal"}] }
+    ] },
+    { kind:"gym", type:"super", rest:"30s", exercises:[
+      { name:"Bicicleta abdominal", video:"", obs:"Movimiento lento, sin jalar el cuello.",
+        scheme:[{reps:"20",load:"—"},{reps:"20",load:"—"},{reps:"20",load:"—"}] },
+      { name:"Crunch inverso", video:"", obs:"Elevar la pelvis del piso, bajar con control.",
+        scheme:[{reps:"15",load:"—"},{reps:"15",load:"—"},{reps:"15",load:"—"}] }
+    ] }
+  ]
+};
+
+// ---------- MESOCICLO 2 (semanas 5-8): más volumen ----------
+const m2 = {
+  d1: [
+    warmup(),
+    { kind:"gym", type:"simple", rest:"40s", exercises:[{ name:"Sentadilla sin carga", video:"", obs:"Sumar tempo: 3 seg de bajada.",
+      scheme:[{reps:"18",load:"peso corporal"},{reps:"18",load:"peso corporal"},{reps:"18",load:"peso corporal"},{reps:"15",load:"peso corporal"}] }] },
+    { kind:"gym", type:"simple", rest:"40s", exercises:[{ name:"Flexiones de brazos", video:"", obs:"Rango completo, cuerpo recto.",
+      scheme:[{reps:"12",load:"peso corporal"},{reps:"12",load:"peso corporal"},{reps:"10",load:"peso corporal"},{reps:"10",load:"peso corporal"}] }] },
+    { kind:"gym", type:"super", rest:"40s", exercises:[
+      { name:"Zancada estática", video:"", obs:"Aumentar profundidad respecto al mes 1.",
+        scheme:[{reps:"12 c/pierna",load:"peso corporal"},{reps:"12 c/pierna",load:"peso corporal"},{reps:"12 c/pierna",load:"peso corporal"}] },
+      { name:"Puente de glúteo a una pierna", video:"", obs:"Progresión del puente bipodal.",
+        scheme:[{reps:"12 c/pierna",load:"peso corporal"},{reps:"12 c/pierna",load:"peso corporal"},{reps:"12 c/pierna",load:"peso corporal"}] }
+    ] },
+    { kind:"gym", type:"super", rest:"25s", exercises:[
+      { name:"Plancha frontal", video:"", obs:"Aumentar el tiempo respecto al mes 1.",
+        scheme:[{reps:"30 seg",load:"—"},{reps:"30 seg",load:"—"},{reps:"30 seg",load:"—"}] },
+      { name:"Crunch abdominal", video:"", obs:"",
+        scheme:[{reps:"20",load:"—"},{reps:"20",load:"—"},{reps:"20",load:"—"}] }
+    ] }
+  ],
+  d2: [
+    warmup(),
+    { kind:"gym", type:"simple", rest:"40s", exercises:[{ name:"Sentadilla sumo sin carga", video:"", obs:"Agregar pausa de 2 seg abajo.",
+      scheme:[{reps:"18",load:"peso corporal"},{reps:"18",load:"peso corporal"},{reps:"15",load:"peso corporal"},{reps:"15",load:"peso corporal"}] }] },
+    { kind:"gym", type:"simple", rest:"40s", exercises:[{ name:"Remo con toalla o mochila", video:"", obs:"Aumentar peso de la mochila si es posible.",
+      scheme:[{reps:"15",load:"moderado"},{reps:"15",load:"moderado"},{reps:"15",load:"moderado"}] }] },
+    { kind:"gym", type:"tri", rest:"40s", exercises:[
+      { name:"Zancada caminando", video:"", obs:"",
+        scheme:[{reps:"12 c/pierna",load:"peso corporal"},{reps:"12 c/pierna",load:"peso corporal"},{reps:"12 c/pierna",load:"peso corporal"}] },
+      { name:"Elevación de talones", video:"", obs:"Pausa 2 seg arriba.",
+        scheme:[{reps:"25",load:"peso corporal"},{reps:"25",load:"peso corporal"},{reps:"25",load:"peso corporal"}] },
+      { name:"Superman", video:"", obs:"",
+        scheme:[{reps:"15",load:"—"},{reps:"15",load:"—"},{reps:"15",load:"—"}] }
+    ] },
+    { kind:"gym", type:"super", rest:"25s", exercises:[
+      { name:"Plancha lateral", video:"", obs:"",
+        scheme:[{reps:"25 seg c/lado",load:"—"},{reps:"25 seg c/lado",load:"—"},{reps:"25 seg c/lado",load:"—"}] },
+      { name:"Elevación de piernas acostado", video:"", obs:"",
+        scheme:[{reps:"15",load:"—"},{reps:"15",load:"—"},{reps:"15",load:"—"}] }
+    ] }
+  ],
+  d3: [
+    warmup(),
+    { kind:"gym", type:"simple", rest:"40s", exercises:[{ name:"Sentadilla con salto suave", video:"", obs:"Aumentar la intensidad del salto si el mes 1 fue cómodo.",
+      scheme:[{reps:"15",load:"peso corporal"},{reps:"15",load:"peso corporal"},{reps:"15",load:"peso corporal"}] }] },
+    { kind:"gym", type:"simple", rest:"40s", exercises:[{ name:"Flexiones (más cerca del piso que el mes 1)", video:"", obs:"Progresión desde flexión inclinada.",
+      scheme:[{reps:"12",load:"peso corporal"},{reps:"12",load:"peso corporal"},{reps:"10",load:"peso corporal"}] }] },
+    { kind:"gym", type:"super", rest:"40s", exercises:[
+      { name:"Hip thrust en el piso", video:"", obs:"Sumar pausa de 2 seg arriba.",
+        scheme:[{reps:"18",load:"peso corporal"},{reps:"18",load:"peso corporal"},{reps:"18",load:"peso corporal"}] },
+      { name:"Sentadilla búlgara (pie trasero en silla)", video:"", obs:"",
+        scheme:[{reps:"12 c/pierna",load:"peso corporal"},{reps:"12 c/pierna",load:"peso corporal"},{reps:"12 c/pierna",load:"peso corporal"}] }
+    ] },
+    { kind:"gym", type:"super", rest:"25s", exercises:[
+      { name:"Bicicleta abdominal", video:"", obs:"",
+        scheme:[{reps:"25",load:"—"},{reps:"25",load:"—"},{reps:"25",load:"—"}] },
+      { name:"Crunch inverso", video:"", obs:"",
+        scheme:[{reps:"18",load:"—"},{reps:"18",load:"—"},{reps:"18",load:"—"}] }
+    ] }
+  ]
+};
+
+// ---------- MESOCICLO 3 (semanas 9-12): mayor exigencia / tiempos bajo tensión ----------
+const m3 = {
+  d1: [
+    warmup(),
+    { kind:"gym", type:"simple", rest:"35s", exercises:[{ name:"Sentadilla con pausa abajo (3 seg)", video:"", obs:"Mayor tiempo bajo tensión.",
+      scheme:[{reps:"15",load:"peso corporal"},{reps:"15",load:"peso corporal"},{reps:"15",load:"peso corporal"},{reps:"15",load:"peso corporal"}] }] },
+    { kind:"gym", type:"simple", rest:"35s", exercises:[{ name:"Flexiones de brazos (tempo lento)", video:"", obs:"3 seg de bajada, 1 seg de pausa abajo.",
+      scheme:[{reps:"12",load:"peso corporal"},{reps:"12",load:"peso corporal"},{reps:"12",load:"peso corporal"},{reps:"10",load:"peso corporal"}] }] },
+    { kind:"gym", type:"giant", rest:"40s", exercises:[
+      { name:"Zancada estática", video:"", obs:"",
+        scheme:[{reps:"15 c/pierna",load:"peso corporal"},{reps:"15 c/pierna",load:"peso corporal"},{reps:"15 c/pierna",load:"peso corporal"}] },
+      { name:"Puente de glúteo a una pierna", video:"", obs:"",
+        scheme:[{reps:"15 c/pierna",load:"peso corporal"},{reps:"15 c/pierna",load:"peso corporal"},{reps:"15 c/pierna",load:"peso corporal"}] },
+      { name:"Sentadilla sumo", video:"", obs:"",
+        scheme:[{reps:"15",load:"peso corporal"},{reps:"15",load:"peso corporal"},{reps:"15",load:"peso corporal"}] },
+      { name:"Elevación de talones", video:"", obs:"",
+        scheme:[{reps:"25",load:"peso corporal"},{reps:"25",load:"peso corporal"},{reps:"25",load:"peso corporal"}] }
+    ], pauses:["20s","20s","20s"] },
+    { kind:"gym", type:"super", rest:"20s", exercises:[
+      { name:"Plancha frontal", video:"", obs:"",
+        scheme:[{reps:"40 seg",load:"—"},{reps:"40 seg",load:"—"},{reps:"40 seg",load:"—"}] },
+      { name:"Crunch abdominal", video:"", obs:"",
+        scheme:[{reps:"25",load:"—"},{reps:"25",load:"—"},{reps:"25",load:"—"}] }
+    ] }
+  ],
+  d2: [
+    warmup(),
+    { kind:"gym", type:"simple", rest:"35s", exercises:[{ name:"Sentadilla sumo (tempo lento)", video:"", obs:"",
+      scheme:[{reps:"20",load:"peso corporal"},{reps:"20",load:"peso corporal"},{reps:"18",load:"peso corporal"},{reps:"18",load:"peso corporal"}] }] },
+    { kind:"gym", type:"simple", rest:"35s", exercises:[{ name:"Remo con mochila cargada", video:"", obs:"Máximo peso posible manteniendo la técnica.",
+      scheme:[{reps:"15",load:"máximo tolerable"},{reps:"15",load:"máximo tolerable"},{reps:"15",load:"máximo tolerable"}] }] },
+    { kind:"gym", type:"giant", rest:"40s", exercises:[
+      { name:"Zancada caminando", video:"", obs:"",
+        scheme:[{reps:"15 c/pierna",load:"peso corporal"},{reps:"15 c/pierna",load:"peso corporal"},{reps:"15 c/pierna",load:"peso corporal"}] },
+      { name:"Elevación de talones a una pierna", video:"", obs:"Progresión de la bipodal.",
+        scheme:[{reps:"15 c/pierna",load:"peso corporal"},{reps:"15 c/pierna",load:"peso corporal"},{reps:"15 c/pierna",load:"peso corporal"}] },
+      { name:"Superman", video:"", obs:"",
+        scheme:[{reps:"18",load:"—"},{reps:"18",load:"—"},{reps:"18",load:"—"}] },
+      { name:"Puente de glúteo a una pierna", video:"", obs:"",
+        scheme:[{reps:"15 c/pierna",load:"peso corporal"},{reps:"15 c/pierna",load:"peso corporal"},{reps:"15 c/pierna",load:"peso corporal"}] }
+    ], pauses:["20s","20s","20s"] },
+    { kind:"gym", type:"super", rest:"20s", exercises:[
+      { name:"Plancha lateral", video:"", obs:"",
+        scheme:[{reps:"35 seg c/lado",load:"—"},{reps:"35 seg c/lado",load:"—"},{reps:"35 seg c/lado",load:"—"}] },
+      { name:"Elevación de piernas acostado", video:"", obs:"",
+        scheme:[{reps:"18",load:"—"},{reps:"18",load:"—"},{reps:"18",load:"—"}] }
+    ] }
+  ],
+  d3: [
+    warmup(),
+    { kind:"gym", type:"simple", rest:"35s", exercises:[{ name:"Sentadilla con salto", video:"", obs:"Explosiva, aterrizaje suave.",
+      scheme:[{reps:"15",load:"peso corporal"},{reps:"15",load:"peso corporal"},{reps:"15",load:"peso corporal"},{reps:"12",load:"peso corporal"}] }] },
+    { kind:"gym", type:"simple", rest:"35s", exercises:[{ name:"Flexiones de brazos estándar", video:"", obs:"Máxima cantidad posible con buena técnica.",
+      scheme:[{reps:"15",load:"peso corporal"},{reps:"15",load:"peso corporal"},{reps:"12",load:"peso corporal"},{reps:"12",load:"peso corporal"}] }] },
+    { kind:"gym", type:"giant", rest:"40s", exercises:[
+      { name:"Hip thrust en el piso", video:"", obs:"",
+        scheme:[{reps:"20",load:"peso corporal"},{reps:"20",load:"peso corporal"},{reps:"20",load:"peso corporal"}] },
+      { name:"Sentadilla búlgara", video:"", obs:"",
+        scheme:[{reps:"15 c/pierna",load:"peso corporal"},{reps:"15 c/pierna",load:"peso corporal"},{reps:"15 c/pierna",load:"peso corporal"}] },
+      { name:"Zancada estática", video:"", obs:"",
+        scheme:[{reps:"15 c/pierna",load:"peso corporal"},{reps:"15 c/pierna",load:"peso corporal"},{reps:"15 c/pierna",load:"peso corporal"}] },
+      { name:"Puente de glúteo", video:"", obs:"",
+        scheme:[{reps:"20",load:"peso corporal"},{reps:"20",load:"peso corporal"},{reps:"20",load:"peso corporal"}] }
+    ], pauses:["20s","20s","20s"] },
+    { kind:"gym", type:"super", rest:"20s", exercises:[
+      { name:"Bicicleta abdominal", video:"", obs:"",
+        scheme:[{reps:"30",load:"—"},{reps:"30",load:"—"},{reps:"30",load:"—"}] },
+      { name:"Crunch inverso", video:"", obs:"",
+        scheme:[{reps:"20",load:"—"},{reps:"20",load:"—"},{reps:"20",load:"—"}] }
+    ] }
+  ]
+};
+
+function days(meso){
+  return [
+    { name:"Día 1 — Pierna y Core", blocks: meso.d1 },
+    { name:"Día 2 — Full Body y Core", blocks: meso.d2 },
+    { name:"Día 3 — Glúteos y Core", blocks: meso.d3 }
+  ];
+}
+
+const weeks = {};
+for (let w=1; w<=4; w++) weeks[w] = days(m1);
+for (let w=5; w<=8; w++) weeks[w] = days(m2);
+for (let w=9; w<=12; w++) weeks[w] = days(m3);
+
+const id = 'plan' + Date.now();
+const plan = {
+  id,
+  name: "ENTRENAMIENTO SIN ELEMENTOS EN CASA",
+  desc: "Programa de 3 días semanales para hacer en casa, sin elementos o con muy pocos (silla, mochila, toalla). Sesiones de aproximadamente 30 minutos. 3 mesociclos de 4 semanas cada uno (12 semanas / 1 macrociclo), con progresión de volumen e intensidad.",
+  level: "Principiante/Intermedio",
+  cat: "Otra",
+  price: "",
+  mpLink: "",
+  durationDays: 84,
+  img: "",
+  totalWeeks: 12,
+  mesoWeeks: 4,
+  weeks,
+  activeWeek: 1,
+  days: weeks[1],
+  members: [],
+  createdAt: new Date().toLocaleDateString('es-AR')
+};
+
+window.seed = async function() {
+  const btn = document.querySelector('button');
+  const msg = document.getElementById('msg');
+  btn.disabled = true;
+  btn.textContent = 'Guardando...';
+  try {
+    await setDoc(doc(db, 'planes', id), plan);
+    msg.innerHTML = `<span style="color:#4ade80">Plan agregado. ID: ${id}</span><br><br>Podés cerrar esta página.`;
+    btn.textContent = 'Listo';
+  } catch(e) {
+    msg.innerHTML = `<span style="color:#f87171">Error: ${e.message}</span>`;
+    btn.disabled = false;
+    btn.textContent = 'Reintentar';
+  }
+};
+</script>
+</body>
+</html>

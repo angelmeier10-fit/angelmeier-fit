@@ -713,6 +713,12 @@ setTimeout(()=>{
     <div class="card" id="members-plan-info"></div>
     <div class="card">
       <h2>➕ Agregar alumno</h2>
+      <div class="fg full">
+        <label>Alumno ya cargado</label>
+        <select id="nm-existing" onchange="fillExistingMember()">
+          <option value="">— Nuevo alumno —</option>
+        </select>
+      </div>
       <div class="grid2">
         <div class="fg"><label>Nombre</label><input id="nm-name" placeholder="Ej: Lucía Gómez"></div>
         <div class="fg"><label>Email o identificador</label><input id="nm-email" placeholder="Ej: lucia@gmail.com"></div>
@@ -3132,12 +3138,46 @@ function openMembers(planId){
       <input type="checkbox" value="${p.id}" style="accent-color:var(--ac)"> ${p.name}
     </label>`).join('');
   renderStartWeekSelect('nm-startweek',plan);
+  renderExistingMembersSelect();
   document.getElementById('itp-members').style.display='inline-block';
   document.getElementById('itp-seg').style.display='inline-block';
   showPlanesPanel('members',document.getElementById('itp-members'));
   renderMembersList(planId);
 }
 window.openMembers=openMembers;
+
+// Alumnos únicos ya cargados en cualquier plan (por nombre+email), para reutilizar en lugar de tipear de nuevo
+function getAllKnownMembers(){
+  const seen=new Set();
+  const result=[];
+  planes.forEach(p=>(p.members||[]).forEach(m=>{
+    const key=(m.name+'|'+(m.email||'')).toLowerCase();
+    if(seen.has(key))return;
+    seen.add(key);
+    result.push({name:m.name,email:m.email||''});
+  }));
+  result.sort((a,b)=>a.name.localeCompare(b.name));
+  return result;
+}
+
+function renderExistingMembersSelect(){
+  const sel=document.getElementById('nm-existing');
+  if(!sel)return;
+  const known=getAllKnownMembers();
+  sel.innerHTML='<option value="">— Nuevo alumno —</option>'+known.map((m,i)=>`<option value="${i}">${m.name}${m.email?' ('+m.email+')':''}</option>`).join('');
+  sel.dataset.known=JSON.stringify(known);
+}
+
+function fillExistingMember(){
+  const sel=document.getElementById('nm-existing');
+  if(!sel||sel.value==='')return;
+  const known=JSON.parse(sel.dataset.known||'[]');
+  const m=known[parseInt(sel.value)];
+  if(!m)return;
+  document.getElementById('nm-name').value=m.name;
+  document.getElementById('nm-email').value=m.email;
+}
+window.fillExistingMember=fillExistingMember;
 
 // ── ROTACIÓN DE SEMANAS PARA PLANES GRUPALES ──
 function planWeekNums(plan){
@@ -3917,6 +3957,20 @@ function parseARDate(str){
   return new Date(y,m-1,d);
 }
 
+function getDismissedNotifs(){
+  try{return JSON.parse(localStorage.getItem('dismissedNotifs')||'[]')}catch(e){return []}
+}
+function dismissNotif(id){
+  const d=getDismissedNotifs();
+  if(!d.includes(id)){d.push(id);localStorage.setItem('dismissedNotifs',JSON.stringify(d))}
+}
+function notifId(n){
+  if(n.tipo==='vencimiento')return `venc:${n.planId}:${n.member}:${n.fecha?n.fecha.getTime():''}`;
+  if(n.tipo==='anamnesis')return `anam:${n.docId}`;
+  if(n.tipo==='alumno')return `alu:${n.planId}:${n.member}:${n.fecha?n.fecha.getTime():''}`;
+  return n.texto;
+}
+
 function buildNotifications(){
   const notifs=[];
   const today=new Date();today.setHours(0,0,0,0);
@@ -3929,7 +3983,7 @@ function buildNotifications(){
       const diff=Math.round((exp-today)/86400000);
       if(diff>=0&&diff<=3){
         const label=diff===0?'vence hoy':diff===1?'vence mañana':`vence en ${diff} días`;
-        notifs.push({tipo:'vencimiento',texto:`⏰ ${m.name} (${plan.name}) ${label}`,fecha:exp,targetView:'planes',order:0});
+        notifs.push({tipo:'vencimiento',texto:`⏰ ${m.name} (${plan.name}) ${label}`,fecha:exp,targetView:'planes',order:0,planId:plan.id,member:m.name});
       }
     });
   });
@@ -3938,7 +3992,7 @@ function buildNotifications(){
   solicitudes.forEach(s=>{
     const pendiente=(!s.status&&!s.estado)||s.status==='pendiente'||s.estado==='pendiente';
     if(pendiente){
-      notifs.push({tipo:'anamnesis',texto:`📬 Nueva anamnesis: ${s.nombre||s.name||'Sin nombre'}`,fecha:null,targetView:'solicitudes',order:1});
+      notifs.push({tipo:'anamnesis',texto:`📬 Nueva anamnesis: ${s.nombre||s.name||'Sin nombre'}`,fecha:null,targetView:'solicitudes',order:1,docId:s._docId});
     }
   });
 
@@ -3949,16 +4003,17 @@ function buildNotifications(){
       if(!added)return;
       const diffDays=Math.round((today-added)/86400000);
       if(diffDays>=0&&diffDays<=2){
-        notifs.push({tipo:'alumno',texto:`🏋️ Nuevo alumno: ${m.name} en "${plan.name}"`,fecha:added,targetView:'planes',order:2});
+        notifs.push({tipo:'alumno',texto:`🏋️ Nuevo alumno: ${m.name} en "${plan.name}"`,fecha:added,targetView:'planes',order:2,planId:plan.id,member:m.name});
       }
     });
   });
 
   notifs.sort((a,b)=>a.order-b.order);
-  notifications=notifs;
+  const dismissed=getDismissedNotifs();
+  notifications=notifs.filter(n=>!dismissed.includes(notifId(n)));
   renderNotifBadge();
   if(notifPanelOpen)renderNotifPanel();
-  return notifs;
+  return notifications;
 }
 window.buildNotifications=buildNotifications;
 
@@ -3999,6 +4054,9 @@ window.toggleNotifPanel=toggleNotifPanel;
 function goToNotification(i){
   const n=notifications[i];
   if(!n)return;
+  dismissNotif(notifId(n));
+  notifications=notifications.filter((_,idx)=>idx!==i);
+  renderNotifBadge();
   toggleNotifPanel();
   const btn=document.querySelector(`.tab-btn[onclick*="showView('${n.targetView}'"]`);
   if(btn)showView(n.targetView,btn);
