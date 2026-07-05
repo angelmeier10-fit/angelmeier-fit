@@ -120,6 +120,8 @@ textarea{resize:vertical;min-height:52px}
 .ex-cat-select{flex:1;font-size:.78rem;padding:6px 9px;border-radius:8px;border:1px solid var(--bd);color:var(--tx);background:var(--s2);cursor:pointer}
 .ex-dd-close{display:none;flex-shrink:0;margin-left:auto;background:var(--s2);border:1px solid var(--bd);color:var(--mu);border-radius:50%;width:26px;height:26px;align-items:center;justify-content:center;cursor:pointer;font-size:.85rem}
 .ex-add-new{color:var(--ac2);font-weight:600;border-top:1px dashed var(--bd)}
+.ex-vid-badge{position:absolute;right:8px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:.85rem;z-index:2;line-height:1}
+.ex-wrap:has(.ex-vid-badge[data-has="1"]) .ex-search{padding-right:30px}
 @media (max-width:640px){
   .ex-dd.open{position:fixed;left:8px;right:8px;top:56px;bottom:auto;max-height:none;height:calc(var(--vvh,100vh) - 64px);border-radius:12px;margin-top:0;box-shadow:0 8px 30px rgba(0,0,0,.6)}
   .ex-wrap:has(.ex-dd.open) .ex-search{position:fixed;top:8px;left:8px;right:8px;z-index:500;box-shadow:0 4px 16px rgba(0,0,0,.5)}
@@ -141,6 +143,10 @@ textarea{resize:vertical;min-height:52px}
 .cf-lbl{font-family:'Space Grotesk',sans-serif;font-size:.9rem;font-weight:700;display:flex;align-items:center;gap:7px}
 .cf-body{padding:13px 14px;display:flex;flex-direction:column;gap:9px}
 .cf-meta{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.cf-section{border:1.5px dashed var(--bd);border-radius:9px;padding:11px;margin-bottom:9px;display:flex;flex-direction:column;gap:9px}
+.cf-section-hdr{display:flex;align-items:center;justify-content:space-between}
+.cf-section-lbl{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--mu)}
+.cf-pause-fg input{border-style:dashed}
 .cf-ex-row{display:flex;gap:7px;align-items:flex-start}
 .cf-reps{width:105px;flex-shrink:0;font-size:.78rem;padding:6px 8px}
 .hero{background:linear-gradient(135deg,var(--s1),var(--s2));border:1px solid var(--bd);border-radius:var(--ra);padding:22px;margin-bottom:20px}
@@ -216,6 +222,7 @@ textarea{resize:vertical;min-height:52px}
 .cf-chip{padding:4px 11px;border-radius:20px;font-size:.74rem;font-weight:600}
 .cf-exlist{display:flex;flex-direction:column;gap:6px;margin-bottom:11px}
 .cf-exitem{display:flex;align-items:center;gap:9px;padding:7px 11px;background:var(--s2);border-radius:8px}
+.cf-section-view+.cf-section-view{border-top:1px dashed var(--bd);margin-top:2px;padding-top:11px}
 .cf-rbdg{border-radius:6px;padding:2px 8px;font-size:.76rem;font-weight:700;flex-shrink:0;color:#fff}
 .cf-enm{font-size:.83rem;font-weight:500;flex:1}
 .cf-wod{background:var(--s2);border-radius:9px;padding:12px;margin-bottom:11px;font-size:.83rem;line-height:1.7;white-space:pre-wrap}
@@ -1511,6 +1518,7 @@ function addFuncEx(cid,data=null){
       <input type="text" class="ex-search" value="${data?.name||''}" placeholder="Ejercicio..."
         oninput="filterEx(this,'${eid}-dd')" onfocus="showDd(this,'${eid}-dd')"
         data-name="${data?.name||''}" data-video="${data?.video||''}">
+      ${vidBadgeHtml(data?.video||'')}
       <div class="ex-dd" id="${eid}-dd"></div>
     </div>
     <button class="btn bd2 xs" style="flex-shrink:0" onclick="document.getElementById('${eid}').remove()">✕</button>
@@ -1583,6 +1591,7 @@ function addWarmupEx(body,data=null){
       <input type="text" class="ex-search" value="${data?.name||''}" placeholder="Ej: Trote suave, movilidad de cadera..."
         oninput="filterEx(this,'${eid}-dd')" onfocus="showDd(this,'${eid}-dd')"
         data-name="${data?.name||''}" data-video="${data?.video||''}">
+      ${vidBadgeHtml(data?.video||'')}
       <div class="ex-dd" id="${eid}-dd"></div>
     </div>
     <button class="btn bd2 xs" style="margin-top:18px;flex-shrink:0" onclick="document.getElementById('${eid}').remove()">✕</button>
@@ -1616,6 +1625,7 @@ function addExEntry(body,data=null){
       <input type="text" class="ex-search" value="${data?.name||''}" placeholder="Buscá ejercicio..."
         oninput="filterEx(this,'${eid}-dd');updateBlkNames(this)" onfocus="showDd(this,'${eid}-dd')"
         data-name="${data?.name||''}" data-video="${data?.video||''}">
+      ${vidBadgeHtml(data?.video||'')}
       <div class="ex-dd" id="${eid}-dd"></div>
     </div>
   </div>
@@ -1682,7 +1692,6 @@ function addCFBlock(bodyId,cftype,data=null){
   const cfg=CF_TYPES[cftype];
   const bid='cf'+Date.now()+Math.random().toString(36).slice(2,5);
   const div=document.createElement('div');div.className='cf-blk';div.id=bid;div.dataset.kind='cf';div.dataset.cftype=cftype;
-  const metaF=cfg.fields.map(f=>`<div class="fg"><label>${f.label}</label><input type="text" value="${data?.meta?.[f.id]||''}" class="cf-meta-${f.id}" placeholder="${f.placeholder||f.label}"></div>`).join('');
   div.innerHTML=`<div class="cf-hdr" style="background:${cfg.color}11;border-bottom:1px solid ${cfg.color}33" onclick="toggleBlk('${bid}',event)">
     <div class="cf-lbl">${cfg.icon} <span style="color:${cfg.color}">${cfg.label}</span> <span style="font-size:.72rem;color:var(--mu);font-weight:400">${cfg.desc}</span></div>
     <button class="btn bg2 xs" onclick="event.stopPropagation();moveBlk('${bid}',-1)" title="Mover arriba">↑</button>
@@ -1691,19 +1700,61 @@ function addCFBlock(bodyId,cftype,data=null){
     <span class="cf-toggle">▼</span>
   </div>
   <div class="cf-body">
-    <div class="cf-meta">${metaF}</div>
-    <div style="margin:8px 0 5px"><label>Ejercicios del WOD</label></div>
-    <div id="${bid}-exs"></div>
-    <button class="btn bg2 sm" style="margin-top:5px" onclick="addCFEx('${bid}-exs')">+ Ejercicio</button>
+    <div id="${bid}-sections"></div>
+    <button class="btn bg2 sm" style="margin-top:5px" onclick="addCFSection('${bid}',null,'${cftype}')">+ Sección</button>
     <div class="fg" style="margin-top:9px"><label>Notas / instrucciones</label>
       <textarea class="cf-notes" placeholder="Estrategia, escala, equipamiento...">${data?.notes||''}</textarea>
     </div>
   </div>`;
   c.appendChild(div);
-  if(data?.exercises?.length) data.exercises.forEach(ex=>addCFEx(bid+'-exs',ex));
-  else{addCFEx(bid+'-exs');addCFEx(bid+'-exs')}
+  const legacySections=(!data?.sections?.length&&(data?.exercises?.length||data?.meta))?[{meta:data.meta||{},exercises:data.exercises||[],pause:''}]:null;
+  const sections=data?.sections?.length?data.sections:legacySections;
+  if(sections?.length) sections.forEach(s=>addCFSection(bid,s,cftype));
+  else addCFSection(bid,null,cftype);
 }
 window.addCFBlock=addCFBlock;
+
+function addCFSection(bid,data,cftype){
+  const cfg=CF_TYPES[cftype];
+  const container=document.getElementById(bid+'-sections');
+  const sid='cfs'+Date.now()+Math.random().toString(36).slice(2,5);
+  const metaF=cfg.fields.map(f=>`<div class="fg"><label>${f.label}</label><input type="text" value="${data?.meta?.[f.id]||''}" class="cf-meta-${f.id}" placeholder="${f.placeholder||f.label}"></div>`).join('');
+  const div=document.createElement('div');div.className='cf-section';div.id=sid;
+  div.innerHTML=`<div class="cf-section-hdr">
+      <span class="cf-section-lbl"></span>
+      <button class="btn bd2 xs cf-section-rm" onclick="rmCFSection('${sid}','${bid}')">✕ Quitar sección</button>
+    </div>
+    <div class="cf-meta">${metaF}</div>
+    <div style="margin:8px 0 5px"><label>Ejercicios</label></div>
+    <div id="${sid}-exs"></div>
+    <button class="btn bg2 sm" style="margin-top:5px" onclick="addCFEx('${sid}-exs')">+ Ejercicio</button>
+    <div class="fg cf-pause-fg" style="margin-top:9px"><label>⏸ Pausa después de esta sección</label><input type="text" class="cf-pause" value="${data?.pause||''}" placeholder="Ej: 2 min descanso"></div>`;
+  container.appendChild(div);
+  const exData=data?.exercises||[];
+  if(exData.length) exData.forEach(ex=>addCFEx(sid+'-exs',ex));
+  else{addCFEx(sid+'-exs');addCFEx(sid+'-exs')}
+  refreshCFSections(bid);
+}
+window.addCFSection=addCFSection;
+
+function rmCFSection(sid,bid){
+  const container=document.getElementById(bid+'-sections');
+  if(container.querySelectorAll('.cf-section').length<=1){toast('Debe quedar al menos una sección');return}
+  document.getElementById(sid).remove();
+  refreshCFSections(bid);
+}
+window.rmCFSection=rmCFSection;
+
+function refreshCFSections(bid){
+  const container=document.getElementById(bid+'-sections');
+  const secs=[...container.querySelectorAll('.cf-section')];
+  secs.forEach((s,i)=>{
+    s.querySelector('.cf-section-lbl').textContent='Sección '+(i+1);
+    s.querySelector('.cf-section-rm').style.display=secs.length>1?'inline-flex':'none';
+    const pf=s.querySelector('.cf-pause-fg');if(pf)pf.style.display=i<secs.length-1?'block':'none';
+  });
+}
+window.refreshCFSections=refreshCFSections;
 
 function addCFEx(cid,data=null){
   const c=document.getElementById(cid);
@@ -1714,6 +1765,7 @@ function addCFEx(cid,data=null){
       <input type="text" class="ex-search" value="${data?.name||''}" placeholder="Ejercicio..."
         oninput="filterEx(this,'${eid}-dd')" onfocus="showDd(this,'${eid}-dd')"
         data-name="${data?.name||''}" data-video="${data?.video||''}">
+      ${vidBadgeHtml(data?.video||'')}
       <div class="ex-dd" id="${eid}-dd"></div>
     </div>
     <button class="btn bd2 xs" style="flex-shrink:0" onclick="document.getElementById('${eid}').remove()">✕</button>`;
@@ -1753,7 +1805,7 @@ function filterEx(input,ddId){
     const f=exs.filter(e=>norm(e.name).includes(q));if(!f.length)continue;has=true;
     const gl=document.createElement('div');gl.className='ex-gl';gl.textContent=cat;dd.appendChild(gl);
     f.forEach(ex=>{const opt=document.createElement('div');opt.className='ex-opt';
-      opt.innerHTML=`<span>${ex.name}</span><span class="ex-cat-lbl">${cat}</span>`;
+      opt.innerHTML=`<span>${ex.video?'🎬 ':''}${ex.name}</span><span class="ex-cat-lbl">${cat}</span>`;
       opt.onclick=()=>selEx(input,ddId,ex);dd.appendChild(opt)});
   }
   if(input.value.trim()){
@@ -1772,12 +1824,18 @@ function showDd(input,ddId){
     const gl=document.createElement('div');gl.className='ex-gl';gl.textContent=cat;dd.appendChild(gl);
     const list=activeCat?exs:exs.slice(0,3);
     list.forEach(ex=>{const opt=document.createElement('div');opt.className='ex-opt';
-      opt.innerHTML=`<span>${ex.name}</span><span class="ex-cat-lbl">${cat}</span>`;
+      opt.innerHTML=`<span>${ex.video?'🎬 ':''}${ex.name}</span><span class="ex-cat-lbl">${cat}</span>`;
       opt.onclick=()=>selEx(input,ddId,ex);dd.appendChild(opt)});
   }
   dd.classList.add('open');
 }
-function selEx(input,ddId,ex){input.value=ex.name;input.dataset.name=ex.name;input.dataset.video=ex.video||'';document.getElementById(ddId).classList.remove('open');updateBlkNames(input)}
+function vidBadgeHtml(video){return`<span class="ex-vid-badge" data-has="${video?'1':'0'}" style="display:${video?'block':'none'}" onmousedown="event.preventDefault();event.stopPropagation();window.open('${video}','_blank')" title="Ver video">🎬</span>`}
+function updateVidBadge(input,video){
+  const badge=input.parentElement.querySelector('.ex-vid-badge');if(!badge)return;
+  badge.dataset.has=video?'1':'0';badge.style.display=video?'block':'none';
+  badge.setAttribute('onmousedown',`event.preventDefault();event.stopPropagation();window.open('${video}','_blank')`);
+}
+function selEx(input,ddId,ex){input.value=ex.name;input.dataset.name=ex.name;input.dataset.video=ex.video||'';updateVidBadge(input,ex.video||'');document.getElementById(ddId).classList.remove('open');updateBlkNames(input)}
 function updateBlkNames(input){
   const blk=input.closest('.blk');if(!blk)return;
   const names=document.getElementById(blk.id+'-names');if(!names)return;
@@ -1789,6 +1847,16 @@ window.filterEx=filterEx;window.showDd=showDd;
 document.addEventListener('click',e=>{if(!e.target.closest('.ex-wrap'))document.querySelectorAll('.ex-dd').forEach(d=>d.classList.remove('open'))},true);
 
 // ══ COLLECT DATA ══
+function collectCFSections(blk,cfg){
+  return[...blk.querySelectorAll('.cf-section')].map(sec=>{
+    const meta={};cfg.fields.forEach(f=>{const el=sec.querySelector('.cf-meta-'+f.id);if(el)meta[f.id]=el.value});
+    const exercises=[...sec.querySelectorAll('.cf-ex-row')].map(row=>{
+      const inp=row.querySelector('.ex-search');
+      return{reps:row.querySelector('.cf-reps').value,name:inp.dataset.name||inp.value,video:inp.dataset.video||''};
+    }).filter(e=>e.name);
+    return{meta,exercises,pause:sec.querySelector('.cf-pause')?.value||''};
+  });
+}
 function collectDays(cid,count){
   const days=[];
   for(let i=0;i<count;i++){
@@ -1828,12 +1896,8 @@ function collectDays(cid,count){
         return{kind:'gym',type,rest,exercises};
       } else {
         const cftype=blk.dataset.cftype;const cfg=CF_TYPES[cftype];
-        const meta={};cfg.fields.forEach(f=>{const el=blk.querySelector('.cf-meta-'+f.id);if(el)meta[f.id]=el.value});
-        const exercises=[...blk.querySelectorAll('.cf-ex-row')].map(row=>{
-          const inp=row.querySelector('.ex-search');
-          return{reps:row.querySelector('.cf-reps').value,name:inp.dataset.name||inp.value,video:inp.dataset.video||''};
-        }).filter(e=>e.name);
-        return{kind:'cf',cftype,meta,exercises,notes:blk.querySelector('.cf-notes')?.value||''};
+        const sections=collectCFSections(blk,cfg);
+        return{kind:'cf',cftype,sections,notes:blk.querySelector('.cf-notes')?.value||''};
       }
     });
     days.push({name,blocks});
@@ -2342,27 +2406,37 @@ function renderGymBlock(c,bkey,blk,bi){
 
 function renderCFBlock(c,bkey,blk,bi){
   const cfg=CF_TYPES[blk.cftype]||{label:blk.cftype,icon:'🏋️',color:'var(--ac2)',fields:[],desc:''};
-  const chips=cfg.fields.map(f=>blk.meta?.[f.id]?`<span class="cf-chip" style="background:${cfg.color}22;color:${cfg.color}">${f.label}: ${blk.meta[f.id]}</span>`:'').join('');
-  const exList=blk.exercises.map((ex,exi)=>{
-    const exTimerId=`${c.id}-${bkey}-ex${exi}`;
-    const defaultTime=ex.reps||'';
-    // Only prefill if value looks like a duration (has min/s/seg/km)
-    const isTime=/\d+\s*(min|s$|seg|km)/i.test(defaultTime.trim());
-    const prefill=isTime?defaultTime:'';
-    return`<div class="cf-exitem" style="flex-direction:column;align-items:stretch;gap:8px">
-      <div style="display:flex;align-items:center;gap:9px">
-        <span class="cf-rbdg" style="background:${cfg.color}">${ex.reps||'—'}</span>
-        <span class="cf-enm">${ex.name}</span>
-        ${ex.video?`<a href="${ex.video}" target="_blank" style="font-size:.7rem;color:var(--ac2);text-decoration:none;flex-shrink:0">▶</a>`:''}
-      </div>
-      ${prefill?`<div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;padding-left:4px">
-        <button onclick="launchExTimer('${exTimerId}','${ex.name}','${prefill}')"
-          style="background:${cfg.color}22;color:${cfg.color};border:1px solid ${cfg.color}44;border-radius:7px;padding:5px 12px;font-size:.78rem;font-weight:700;font-family:inherit;cursor:pointer;display:flex;align-items:center;gap:5px">
-          ⏱ ${prefill}
-        </button>
-        <span style="font-size:.72rem;color:var(--mu)">Podés cambiar el tiempo en la barra del timer</span>
-      </div>`:``}
-    </div>`;
+  const sections=blk.sections?.length?blk.sections:[{meta:blk.meta||{},exercises:blk.exercises||[],pause:''}];
+  const allExercises=sections.flatMap(s=>s.exercises||[]);
+  const sectionsHtml=sections.map((sec,si)=>{
+    const chips=cfg.fields.map(f=>sec.meta?.[f.id]?`<span class="cf-chip" style="background:${cfg.color}22;color:${cfg.color}">${f.label}: ${sec.meta[f.id]}</span>`:'').join('');
+    const exList=(sec.exercises||[]).map((ex,exi)=>{
+      const exTimerId=`${c.id}-${bkey}-s${si}-ex${exi}`;
+      const defaultTime=ex.reps||'';
+      // Only prefill if value looks like a duration (has min/s/seg/km)
+      const isTime=/\d+\s*(min|s$|seg|km)/i.test(defaultTime.trim());
+      const prefill=isTime?defaultTime:'';
+      return`<div class="cf-exitem" style="flex-direction:column;align-items:stretch;gap:8px">
+        <div style="display:flex;align-items:center;gap:9px">
+          <span class="cf-rbdg" style="background:${cfg.color}">${ex.reps||'—'}</span>
+          <span class="cf-enm">${ex.name}</span>
+          ${ex.video?`<a href="${ex.video}" target="_blank" style="font-size:.7rem;color:var(--ac2);text-decoration:none;flex-shrink:0">▶</a>`:''}
+        </div>
+        ${prefill?`<div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;padding-left:4px">
+          <button onclick="launchExTimer('${exTimerId}','${ex.name}','${prefill}')"
+            style="background:${cfg.color}22;color:${cfg.color};border:1px solid ${cfg.color}44;border-radius:7px;padding:5px 12px;font-size:.78rem;font-weight:700;font-family:inherit;cursor:pointer;display:flex;align-items:center;gap:5px">
+            ⏱ ${prefill}
+          </button>
+          <span style="font-size:.72rem;color:var(--mu)">Podés cambiar el tiempo en la barra del timer</span>
+        </div>`:``}
+      </div>`;
+    }).join('');
+    const sectionLabel=sections.length>1?`<div style="font-size:.7rem;color:var(--mu);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Sección ${si+1}</div>`:'';
+    const timerBtn=`<button onclick="launchCFTimer('${blk.cftype}',${JSON.stringify(sec.meta||{}).replace(/"/g,"'")},'')" style="display:flex;align-items:center;gap:7px;background:${cfg.color}22;color:${cfg.color};border:1px solid ${cfg.color}44;border-radius:9px;padding:9px 16px;font-size:.85rem;font-weight:700;font-family:inherit;cursor:pointer;width:100%;justify-content:center;margin-bottom:${si<sections.length-1&&sec.pause?4:10}px">
+        ⏱ Iniciar timer${sections.length>1?' — Sección '+(si+1):' del WOD'}
+      </button>`;
+    const pauseHtml=(si<sections.length-1&&sec.pause)?`<div style="text-align:center;font-size:.78rem;color:var(--mu);font-weight:600;padding:6px 0 10px">⏸ Pausa: ${sec.pause}</div>`:'';
+    return`<div class="cf-section-view">${sectionLabel}<div class="cf-chips">${chips}</div><div class="cf-exlist">${exList}</div>${timerBtn}${pauseHtml}</div>`;
   }).join('');
   const rk=`${c.id}-${bkey}-cfresult`;
   const results=c.progress[rk]||[];
@@ -2370,18 +2444,14 @@ function renderCFBlock(c,bkey,blk,bi){
   return`<div class="cvg" id="cvg-${c.id}-${bkey}">
     <div class="cvg-hdr" onclick="toggleG('cvg-${c.id}-${bkey}')">
       <div class="cvg-left"><div class="cvg-num num-cf">${bi+1}</div>
-        <div><div class="cvg-title">${cfg.icon} <span style="color:${cfg.color}">${cfg.label}</span> ${blk.exercises.length?'— '+blk.exercises.map(e=>e.name).slice(0,2).join(', ')+(blk.exercises.length>2?'...':''):''}</div>
+        <div><div class="cvg-title">${cfg.icon} <span style="color:${cfg.color}">${cfg.label}</span> ${allExercises.length?'— '+allExercises.map(e=>e.name).slice(0,2).join(', ')+(allExercises.length>2?'...':''):''}</div>
           <div class="cvg-sub">${cfg.desc}</div></div>
       </div><div class="cvg-arr">▼</div>
     </div>
     <div class="cvg-body">
-      <div class="cf-chips">${chips}</div>
-      <div class="cf-exlist">${exList}</div>
+      ${sectionsHtml}
       ${blk.notes?`<div style="background:var(--s2);border-radius:9px;padding:10px 13px;margin-bottom:6px"><div style="font-size:.66rem;color:var(--mu);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px">📝 Instrucciones</div><div style="font-size:.84rem;line-height:1.6;white-space:pre-wrap">${blk.notes}</div></div>`:''}
       <div style="border-top:1px solid var(--bd);padding-top:11px;margin-top:4px">
-        <button onclick="launchCFTimer('${blk.cftype}',${JSON.stringify(blk.meta||{}).replace(/"/g,"'")},'')" style="display:flex;align-items:center;gap:7px;background:var(--or)22;color:var(--or);border:1px solid var(--or)44;border-radius:9px;padding:9px 16px;font-size:.85rem;font-weight:700;font-family:inherit;cursor:pointer;width:100%;justify-content:center;margin-bottom:10px">
-          ⏱ Iniciar timer del WOD
-        </button>
         <div style="font-size:.69rem;color:var(--mu);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px">📊 Registrar resultado</div>
         <div class="cfr-row">
           <input type="text" id="cfr-${c.id}-${bkey}" placeholder="Ej: 8 rondas + 5 / 12:34 min">
@@ -2848,9 +2918,8 @@ async function updatePlan(){
         return{kind:'gym',type,rest,exercises};
       } else {
         const cftype=blk.dataset.cftype;const cfg=CF_TYPES[cftype];
-        const meta={};cfg.fields.forEach(f=>{const el=blk.querySelector('.cf-meta-'+f.id);if(el)meta[f.id]=el.value});
-        const exercises=[...blk.querySelectorAll('.cf-ex-row')].map(row=>{const inp=row.querySelector('.ex-search');return{reps:row.querySelector('.cf-reps').value,name:inp.dataset.name||inp.value,video:inp.dataset.video||''};}).filter(e=>e.name);
-        return{kind:'cf',cftype,meta,exercises,notes:blk.querySelector('.cf-notes')?.value||''};
+        const sections=collectCFSections(blk,cfg);
+        return{kind:'cf',cftype,sections,notes:blk.querySelector('.cf-notes')?.value||''};
       }
     })
   }));
