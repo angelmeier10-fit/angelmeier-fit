@@ -1402,12 +1402,14 @@ function buildOneDay(cid,idx,data=null){
   <div class="day-body" id="${did}-body"></div>`;
   document.getElementById(cid).appendChild(div);
   refreshDayNav(cid);
-  if(data?.blocks) data.blocks.forEach(b=>{
+  if(data?.blocks){ data.blocks.forEach(b=>{
     if(b.kind==='warmup') addWarmupBlock(did+'-body',b);
     else if(b.kind==='gym') addGymBlock(did+'-body',b.type,b);
     else if(b.kind==='func') addFuncBlock(did+'-body',b);
     else addCFBlock(did+'-body',b.cftype,b);
   });
+  [...document.getElementById(did+'-body').children].forEach(el=>{if(el.dataset.kind||el.classList.contains('cf-blk'))el.classList.add('collapsed')});
+  }
 }
 
 window.toggleDayBlock=function(did,e){
