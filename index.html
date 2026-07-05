@@ -959,7 +959,7 @@ window.doForgotPassword=async function(){
 window.doLogout=async function(){localStorage.removeItem('amfit-had-session');await signOut(auth)};
 
 let appStarted=false;
-const isClientLink=new URLSearchParams(location.search).get('plan');
+const isClientLink=new URLSearchParams(location.search).get('plan')||new URLSearchParams(location.search).get('client');
 function startAppOnce(){if(!appStarted){appStarted=true;init();}}
 if(!isClientLink && localStorage.getItem('amfit-had-session')==='1'){
   // Ya hubo sesión antes: si Firebase Auth no confirma nada (p.ej. sin conexión),
