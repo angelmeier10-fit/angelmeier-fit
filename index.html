@@ -2442,8 +2442,9 @@ function renderGymBlock(c,bkey,blk,bi){
       inner+=`<table class="stbl"><thead><tr><th>#</th><th>Reps / Tiempo</th><th>Carga / RPE</th><th>✓</th></tr></thead><tbody>`;
       const isLastEx=(ei===blk.exercises.length-1);
       const restSecs=parseRestToSeconds(blk.rest);
+      const pauseSecs=isLastEx?0:parseRestToSeconds((blk.pauses||[])[ei]||'');
       ex.scheme.forEach((s,si)=>{const rk=`${c.id}-${ekey}-${si}`;const done=c.progress[rk]||false;
-        inner+=`<tr id="sr-${rk}" class="${done?'done-row':''}"><td>Serie ${si+1}</td><td>${s.reps||'—'}</td><td>${s.load||'—'}</td><td><button class="ckbtn ${done?'done':''}" onclick="toggleSerie('${c.id}','${ekey}',${si},'${rk}',${isLastEx},${restSecs})">✓</button></td></tr>`});
+        inner+=`<tr id="sr-${rk}" class="${done?'done-row':''}"><td>Serie ${si+1}</td><td>${s.reps||'—'}</td><td>${s.load||'—'}</td><td><button class="ckbtn ${done?'done':''}" onclick="toggleSerie('${c.id}','${ekey}',${si},'${rk}',${isLastEx},${restSecs},${pauseSecs})">✓</button></td></tr>`});
       inner+=`</tbody></table>`;
     }
     inner+=vidHtml;
@@ -2526,7 +2527,7 @@ function renderCFBlock(c,bkey,blk,bi){
 window.toggleG=function(id){document.getElementById(id).classList.toggle('open')};
 window.embedYT=function(th,ytId){const e=document.createElement('div');e.className='yt-em';e.innerHTML=`<iframe src="https://www.youtube.com/embed/${ytId}?autoplay=1" allow="autoplay;encrypted-media" allowfullscreen></iframe>`;th.replaceWith(e)};
 
-window.toggleSerie=async function(cId,ekey,si,rk,isLast,blockRest){
+window.toggleSerie=async function(cId,ekey,si,rk,isLast,blockRest,pauseSecs){
   const c=clients.find(cl=>cl.id===cId);
   c.progress[rk]=!c.progress[rk];
   await updateDoc(doc(db,'clients',cId),{progress:c.progress});
@@ -2538,6 +2539,10 @@ window.toggleSerie=async function(cId,ekey,si,rk,isLast,blockRest){
       const inp=document.getElementById('timer-custom');if(inp)inp.value=secs;
       toast('✅ ¡Bloque completo! Descansá '+secs+'s');
       startTimer(secs);
+    } else if(pauseSecs){
+      const inp=document.getElementById('timer-custom');if(inp)inp.value=pauseSecs;
+      toast('✅ Serie completada — pausa de '+pauseSecs+'s');
+      startTimer(pauseSecs);
     } else {
       toast('✅ Serie completada — seguí con el siguiente ejercicio');
     }
@@ -3450,7 +3455,7 @@ function renderGroupDay(plan,member,dIdx){
 
 // Override toggleSerie and logGym for group members
 const origToggleSerie=window.toggleSerie;
-window.toggleSerie=async function(cId,ekey,si,rk,isLast,blockRest){
+window.toggleSerie=async function(cId,ekey,si,rk,isLast,blockRest,pauseSecs){
   // Check if this is a group member (cId = planId-memberId)
   if(cId.includes('-m')){
     const [planId,...rest]=cId.split('-m');const memberId='m'+rest.join('-m');
@@ -3464,11 +3469,12 @@ window.toggleSerie=async function(cId,ekey,si,rk,isLast,blockRest){
     row.classList.toggle('done-row',member.progress[rk]);btn.classList.toggle('done',member.progress[rk]);
     if(member.progress[rk]){
       if(isLast){const secs=blockRest||parseInt(document.getElementById('timer-custom')?.value)||60;const inp=document.getElementById('timer-custom');if(inp)inp.value=secs;toast('✅ ¡Bloque completo!');startTimer(secs);}
+      else if(pauseSecs){const inp=document.getElementById('timer-custom');if(inp)inp.value=pauseSecs;toast('✅ Serie completada — pausa de '+pauseSecs+'s');startTimer(pauseSecs);}
       else toast('✅ Serie completada — seguí con el siguiente ejercicio');
     }
     return;
   }
-  origToggleSerie(cId,ekey,si,rk,isLast,blockRest);
+  origToggleSerie(cId,ekey,si,rk,isLast,blockRest,pauseSecs);
 };
 
 const origLogGym=window.logGym;
