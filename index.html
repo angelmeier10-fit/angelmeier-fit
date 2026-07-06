@@ -3351,16 +3351,37 @@ function renderStartWeekSelect(selectId,plan){
   if(wrap)wrap.style.display='flex';
 }
 
-// Arma la secuencia de días de un alumno rotando las semanas del plan a partir de su semana de inicio.
-// Cuando se completa la última semana de la secuencia, la lógica existente de "próximo día" vuelve a
-// empezar desde el día 0, generando el bucle indefinido pedido.
+// Semana del plan que le toca a este alumno HOY, según el tiempo transcurrido desde su inicio
+// (no según cuántos días completó). Al llegar a la última semana, vuelve a la primera (bucle).
+function getMemberCurrentWeekNum(plan,member){
+  const weekNums=planWeekNums(plan);
+  if(!weekNums.length)return null;
+  const startIdx=weekNums.includes(member?.startWeek)?weekNums.indexOf(member.startWeek):0;
+  let elapsedWeeks=0;
+  if(member?.startDate){
+    const start=new Date(member.startDate+'T00:00:00');
+    const diffDays=Math.floor((new Date()-start)/(1000*60*60*24));
+    elapsedWeeks=Math.max(0,Math.floor(diffDays/7));
+  }
+  return weekNums[(startIdx+elapsedWeeks)%weekNums.length];
+}
+
+// Info de semana/mesociclo actual del alumno, respetando su semana de inicio (no siempre arranca en la 1)
+function getMemberWeekMesoInfo(plan,member){
+  const weekNum=getMemberCurrentWeekNum(plan,member)||1;
+  const mesoWeeks=plan.mesoWeeks||4;
+  const totalWeeks=plan.totalWeeks||planWeekNums(plan).length||1;
+  const mesoNum=Math.ceil(weekNum/mesoWeeks);
+  const totalMesos=Math.ceil(totalWeeks/mesoWeeks);
+  return{currentWeek:weekNum,totalWeeks,mesoNum,totalMesos};
+}
+
+// Solo los días de la semana que le toca ahora al alumno (no todas las semanas juntas)
 function getMemberPlanDays(plan,member){
   const weekNums=planWeekNums(plan);
   if(!weekNums.length)return plan.days||[];
-  const start=weekNums.includes(member?.startWeek)?member.startWeek:weekNums[0];
-  const startIdx=weekNums.indexOf(start);
-  const rotated=[...weekNums.slice(startIdx),...weekNums.slice(0,startIdx)];
-  return rotated.flatMap(w=>plan.weeks[w]||[]);
+  const weekNum=getMemberCurrentWeekNum(plan,member);
+  return plan.weeks[weekNum]||[];
 }
 
 function renderMembersList(planId){
@@ -3376,7 +3397,7 @@ function renderMembersList(planId){
       return`<div class="member-row">
         <div class="member-av">${m.name.charAt(0).toUpperCase()}</div>
         <div style="flex:1;min-width:0">
-          <div style="font-weight:600;font-size:.86rem">${m.name} ${statusBadge}${(()=>{if(!plan.totalWeeks||!m.startDate)return'';const info=getMesoInfo({totalWeeks:plan.totalWeeks,mesoWeeks:plan.mesoWeeks,startDate:m.startDate,currentWeekManual:m.currentWeekManual});return` <span class="badge" style="background:var(--ac)22;color:var(--ac2)">🗓️ Sem ${info.currentWeek}/${info.totalWeeks} · Meso ${info.mesoNum}/${info.totalMesos}</span>`;})()}</div>
+          <div style="font-weight:600;font-size:.86rem">${m.name} ${statusBadge}${(()=>{if(!plan.weeks||!m.startDate)return'';const info=getMemberWeekMesoInfo(plan,m);return` <span class="badge" style="background:var(--ac)22;color:var(--ac2)">🗓️ Sem ${info.currentWeek}/${info.totalWeeks} · Meso ${info.mesoNum}/${info.totalMesos}</span>`;})()}</div>
           <div style="font-size:.72rem;color:var(--mu)">${m.email||''} ${m.expiry?'· Vence: '+new Date(m.expiry+'T00:00:00').toLocaleDateString('es-AR'):''}</div>
           <div style="font-size:.7rem;color:var(--ac2);word-break:break-all;margin-top:2px">${link}</div>
         </div>
@@ -3619,7 +3640,7 @@ function renderGroupCV(plan,member){
   const nextIdx=getNextDayIdx({days,...fakeC});
   const gkey=`${plan.id}-${member.id}`;
   const activeDayName=days[nextIdx]?.name||'Día '+(nextIdx+1);
-  const mesoBadge=(plan.totalWeeks&&member.startDate)?(()=>{const info=getMesoInfo({totalWeeks:plan.totalWeeks,mesoWeeks:plan.mesoWeeks,startDate:member.startDate,currentWeekManual:member.currentWeekManual});return`<span class="badge" style="background:var(--ac)22;color:var(--ac2)">🗓️ Semana ${info.currentWeek} de ${info.totalWeeks} — Meso ${info.mesoNum}/${info.totalMesos}</span>`;})():'';
+  const mesoBadge=(plan.weeks&&member.startDate)?(()=>{const info=getMemberWeekMesoInfo(plan,member);return`<span class="badge" style="background:var(--ac)22;color:var(--ac2)">🗓️ Semana ${info.currentWeek} de ${info.totalWeeks} — Meso ${info.mesoNum}/${info.totalMesos}</span>`;})():'';
   const dayListItems=(days||[]).map((d,i)=>{
     const isDone=(member.progress?.['snote-'+i]||[]).length>0||isDayDoneViaSeries(fakeC,days,i);
     const badge=i===nextIdx?`<span style="font-size:.68rem;padding:2px 8px;border-radius:20px;font-weight:600;background:var(--ac)33;color:var(--ac2)">Siguiente</span>`:isDone?`<span style="font-size:.68rem;padding:2px 8px;border-radius:20px;font-weight:600;background:var(--gr)22;color:var(--gr)">✓</span>`:'';
