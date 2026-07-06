@@ -2224,6 +2224,7 @@ async function renderCV(clientId){
         ${weekLabel||(()=>{const info=getMesoInfo(c);if(!c.totalWeeks&&!c.startDate)return'';return`<span class="badge" style="background:var(--ac)22;color:var(--ac2)">🗓️ Semana ${info.currentWeek} de ${info.totalWeeks} — Meso ${info.mesoNum}/${info.totalMesos}</span>`;})()}
       </div>
     </div>
+    ${programPickerHTML(clientId,findAllProgramsForPerson(c.name,c.email),'personal',null)}
     <div class="cv-day-picker">
       <div class="cv-day-picker-title">Seleccionar día</div>
       <div class="cv-day-picker-hdr" id="cv-day-picker-hdr-${clientId}" onclick="toggleCVDayPicker('${clientId}')">
@@ -2930,10 +2931,13 @@ function renderAlumnosConsolidado(){
   const groups=new Map();
   planes.forEach(p=>(p.members||[]).forEach(m=>{
     const key=(m.name+'|'+(m.email||'')).toLowerCase();
-    if(!groups.has(key))groups.set(key,{name:m.name,email:m.email||'',items:[]});
-    groups.get(key).items.push({planId:p.id,planName:p.name,member:m});
+    if(!groups.has(key))groups.set(key,{name:m.name,email:m.email||'',plansById:new Map()});
+    const g=groups.get(key);
+    // Un solo resultado por plan: si hay entradas duplicadas del mismo alumno, priorizar la activa
+    const existing=g.plansById.get(p.id);
+    if(!existing||(m.status==='active'&&existing.member.status!=='active'))g.plansById.set(p.id,{planId:p.id,planName:p.name,member:m});
   }));
-  const alumnos=[...groups.values()].sort((a,b)=>a.name.localeCompare(b.name));
+  const alumnos=[...groups.values()].map(g=>({name:g.name,email:g.email,items:[...g.plansById.values()]})).sort((a,b)=>a.name.localeCompare(b.name));
   if(!alumnos.length){el.innerHTML='<div class="card" style="text-align:center;padding:30px;color:var(--mu)">Sin alumnos todavía.</div>';return}
   el.innerHTML=alumnos.map(a=>{
     const rows=a.items.map(({planId,planName,member:m})=>{
@@ -2944,16 +2948,37 @@ function renderAlumnosConsolidado(){
         <button class="btn bd2 xs" onclick="removeMemberFromAlumnos('${planId}','${m.id}')">✕ Sacar</button>
       </div>`;
     }).join('');
+    const personalClient=clients.find(c=>(c.name+'|'+(c.email||'')).toLowerCase()===(a.name+'|'+a.email).toLowerCase());
+    const personalRow=personalClient?`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid var(--bd)">
+        <div style="font-size:.84rem"><b>🎯 Plan personalizado</b>${personalClient.routineName?' — '+personalClient.routineName:''}</div>
+        <button class="btn bcy xs" onclick="openEdit('${personalClient.id}')">✏️ Editar</button>
+      </div>`:'';
     return`<div class="card">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
-        <div class="member-av">${a.name.charAt(0).toUpperCase()}</div>
-        <div><div style="font-weight:700;font-size:.92rem">${a.name}</div><div style="font-size:.74rem;color:var(--mu)">${a.email||''}</div></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="member-av">${a.name.charAt(0).toUpperCase()}</div>
+          <div><div style="font-weight:700;font-size:.92rem">${a.name}</div><div style="font-size:.74rem;color:var(--mu)">${a.email||''}</div></div>
+        </div>
+        ${!personalClient?`<button class="btn bp xs" onclick="assignPersonalPlan('${a.name.replace(/'/g,"\\'")}','${a.email.replace(/'/g,"\\'")}')">🎯 Asignar plan personalizado</button>`:''}
       </div>
+      ${personalRow}
       ${rows}
     </div>`;
   }).join('');
 }
 window.renderAlumnosConsolidado=renderAlumnosConsolidado;
+
+// Crea (o abre si ya existe) el plan personalizado de un alumno ya cargado en planes grupales
+function assignPersonalPlan(name,email){
+  const existing=clients.find(c=>(c.name+'|'+(c.email||'')).toLowerCase()===(name+'|'+email).toLowerCase());
+  if(existing){openEdit(existing.id);return}
+  showPanel('new',document.getElementById('it-new'));
+  initNewClient();
+  document.getElementById('nc-name').value=name;
+  document.getElementById('nc-email').value=email;
+  toast('📝 Completá los datos del plan y guardá para crear el plan personalizado de '+name);
+}
+window.assignPersonalPlan=assignPersonalPlan;
 
 async function removeMemberFromAlumnos(planId,memberId){
   if(!confirm('¿Sacar a este alumno de este plan?'))return;
@@ -3376,6 +3401,11 @@ async function checkPlanURL(){
   await loadPlanes();
   let plan=planes.find(p=>p.id===planId);
   if(!plan)return false;
+  // Cargar clientes para poder ofrecer el plan personalizado (si tiene) en el selector del alumno
+  if(!clients.length){
+    const clientSnap=await getDocsSafe(collection(db,'clients'));
+    clients=clientSnap.docs.map(d=>d.data());
+  }
 
   // Hide nav, show client view
   document.getElementById('main-nav').style.display='none';
@@ -3453,33 +3483,58 @@ function renderPublicPlan(plan){
   hideLoading();
 }
 
-// Encuentra todos los planes en los que este alumno está agregado (mismo nombre+email)
-function findMemberAcrossPlans(member){
-  const key=(member.name+'|'+(member.email||'')).toLowerCase();
-  const matches=[];
+// Todos los programas (planes grupales + plan personalizado) de una misma persona, para el selector del alumno
+function findAllProgramsForPerson(name,email){
+  const key=(name+'|'+(email||'')).toLowerCase();
+  const byPlan=new Map();
   planes.forEach(p=>(p.members||[]).forEach(m=>{
-    if((m.name+'|'+(m.email||'')).toLowerCase()===key)matches.push({plan:p,member:m});
+    if((m.name+'|'+(m.email||'')).toLowerCase()!==key)return;
+    const existing=byPlan.get(p.id);
+    if(!existing||(m.status==='active'&&existing.member.status!=='active'))byPlan.set(p.id,{type:'group',plan:p,member:m});
   }));
-  return matches;
+  const progs=[...byPlan.values()];
+  const personalClient=(clients||[]).find(c=>(c.name+'|'+(c.email||'')).toLowerCase()===key);
+  if(personalClient)progs.push({type:'personal',client:personalClient});
+  return progs;
 }
-
-window.toggleGroupPlanPicker=function(gkey){
-  document.getElementById('gv-planpicker-hdr-'+gkey)?.classList.toggle('open');
-  document.getElementById('gv-planpicker-list-'+gkey)?.classList.toggle('open');
+function programPickerHTML(gkey,progs,activeType,activePlanId){
+  if(progs.length<2)return'';
+  const activeLabel=activeType==='personal'?'🎯 Plan personalizado':progs.find(p=>p.type==='group'&&p.plan.id===activePlanId)?.plan.name||'Plan';
+  const items=progs.map(p=>{
+    const isActive=p.type===activeType&&(p.type==='personal'||p.plan.id===activePlanId);
+    const label=p.type==='personal'?'🎯 Plan personalizado':p.plan.name;
+    const onclick=p.type==='personal'?`switchToPersonalProgram('${p.client.id}')`:`switchToGroupProgram('${p.plan.id}','${p.member.id}')`;
+    return`<div class="cv-day-item${isActive?' active':''}" onclick="${onclick}"><span class="cv-day-item-name">${label}</span></div>`;
+  }).join('');
+  return`<div class="cv-day-picker">
+    <div class="cv-day-picker-title">Elegir plan de entrenamiento</div>
+    <div class="cv-day-picker-hdr" id="prog-picker-hdr-${gkey}" onclick="toggleProgramPicker('${gkey}')">
+      <div class="cv-day-picker-label">📋 ${activeLabel}</div>
+      <div class="cv-day-picker-arr">▼</div>
+    </div>
+    <div class="cv-day-list" id="prog-picker-list-${gkey}">${items}</div>
+  </div>`;
+}
+window.toggleProgramPicker=function(gkey){
+  document.getElementById('prog-picker-hdr-'+gkey)?.classList.toggle('open');
+  document.getElementById('prog-picker-list-'+gkey)?.classList.toggle('open');
 };
-window.selectGroupCVPlan=function(planId,memberId){
+window.switchToGroupProgram=function(planId,memberId){
   const plan=planes.find(p=>p.id===planId);
   const member=plan?.members?.find(m=>m.id===memberId);
   if(!plan||!member)return;
   history.replaceState(null,'',`?plan=${planId}&member=${memberId}`);
   renderGroupCV(plan,member);
 };
+window.switchToPersonalProgram=function(clientId){
+  history.replaceState(null,'',`?client=${clientId}`);
+  renderCV(clientId);
+};
 
 function renderGroupCV(plan,member){
   const initials=member.name.charAt(0).toUpperCase();
   const expDate=member.expiry?new Date(member.expiry+'T00:00:00').toLocaleDateString('es-AR'):'—';
   const daysLeft=member.expiry?Math.max(0,Math.ceil((new Date(member.expiry+'T00:00:00')-new Date())/(1000*60*60*24))):null;
-  const myPlans=findMemberAcrossPlans(member);
   const days=getMemberPlanDays(plan,member);
   const fakeC={id:`${plan.id}-${member.id}`,progress:member.progress||{}};
   const nextIdx=getNextDayIdx({days,...fakeC});
@@ -3508,16 +3563,7 @@ function renderGroupCV(plan,member){
       </div>
       ${plan.mpLink&&daysLeft<=7?`<a href="${plan.mpLink}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:#009EE322;color:#009EE3;border:1px solid #009EE344;border-radius:8px;padding:6px 14px;font-size:.78rem;font-weight:600;text-decoration:none;margin-bottom:12px">💳 Renovar plan</a>`:''}
     </div>
-    ${myPlans.length>1?`<div class="cv-day-picker">
-      <div class="cv-day-picker-title">Elegir plan de entrenamiento</div>
-      <div class="cv-day-picker-hdr" id="gv-planpicker-hdr-${gkey}" onclick="toggleGroupPlanPicker('${gkey}')">
-        <div class="cv-day-picker-label">📋 ${plan.name}</div>
-        <div class="cv-day-picker-arr">▼</div>
-      </div>
-      <div class="cv-day-list" id="gv-planpicker-list-${gkey}">${myPlans.map(({plan:p,member:m})=>`<div class="cv-day-item${p.id===plan.id?' active':''}" onclick="selectGroupCVPlan('${p.id}','${m.id}')">
-        <span class="cv-day-item-name">${p.name}</span>
-      </div>`).join('')}</div>
-    </div>`:''}
+    ${programPickerHTML(gkey,findAllProgramsForPerson(member.name,member.email),'group',plan.id)}
     <div class="cv-day-picker">
       <div class="cv-day-picker-title">Seleccionar día</div>
       <div class="cv-day-picker-hdr" id="gv-picker-hdr-${gkey}" onclick="toggleGroupCVDayPicker('${gkey}')">
