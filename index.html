@@ -2938,13 +2938,16 @@ function renderAlumnosConsolidado(){
     if(!existing||(m.status==='active'&&existing.member.status!=='active'))g.plansById.set(p.id,{planId:p.id,planName:p.name,member:m});
   }));
   const alumnos=[...groups.values()].map(g=>({name:g.name,email:g.email,items:[...g.plansById.values()]})).sort((a,b)=>a.name.localeCompare(b.name));
+  alumnosCache=alumnos;
   if(!alumnos.length){el.innerHTML='<div class="card" style="text-align:center;padding:30px;color:var(--mu)">Sin alumnos todavía.</div>';return}
-  el.innerHTML=alumnos.map(a=>{
+  el.innerHTML=alumnos.map((a,ai)=>{
     const rows=a.items.map(({planId,planName,member:m})=>{
       const expired=m.expiry&&(new Date(m.expiry+'T00:00:00')<new Date());
       const statusBadge=m.status==='active'&&!expired?'<span class="badge bgr2">✅ Activo</span>':expired?'<span class="badge" style="background:#f8717122;color:var(--rd)">⏰ Vencido</span>':'<span class="badge byw2">⏳ Pendiente</span>';
-      return`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid var(--bd)">
-        <div style="font-size:.84rem"><b>${planName}</b> ${statusBadge}<div style="font-size:.7rem;color:var(--mu)">${m.expiry?'Vence: '+new Date(m.expiry+'T00:00:00').toLocaleDateString('es-AR'):''}</div></div>
+      return`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid var(--bd);flex-wrap:wrap">
+        <div style="font-size:.84rem;flex:1;min-width:140px"><b>${planName}</b> ${statusBadge}</div>
+        <input type="date" id="alu-exp-${planId}-${m.id}" value="${m.expiry||''}" style="font-size:.78rem;padding:4px 6px">
+        <button class="btn bcy xs" onclick="updateMemberExpiry('${planId}','${m.id}')">💾 Vencimiento</button>
         <button class="btn bd2 xs" onclick="removeMemberFromAlumnos('${planId}','${m.id}')">✕ Sacar</button>
       </div>`;
     }).join('');
@@ -2952,6 +2955,19 @@ function renderAlumnosConsolidado(){
     const personalRow=personalClient?`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid var(--bd)">
         <div style="font-size:.84rem"><b>🎯 Plan personalizado</b>${personalClient.routineName?' — '+personalClient.routineName:''}</div>
         <button class="btn bcy xs" onclick="openEdit('${personalClient.id}')">✏️ Editar</button>
+      </div>`:'';
+    const availablePlans=planes.filter(p=>!a.items.some(it=>it.planId===p.id));
+    const addPlanForm=availablePlans.length?`<div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--bd)">
+        <div style="font-size:.76rem;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">➕ Agregar a otro plan</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:end">
+          <select id="alu-addplan-${ai}" onchange="onAluAddPlanChange(${ai})" style="font-size:.8rem">
+            <option value="">Elegir plan…</option>
+            ${availablePlans.map(p=>`<option value="${p.id}">${p.name}</option>`).join('')}
+          </select>
+          <div class="fg" style="margin:0"><label style="font-size:.68rem">Vencimiento</label><input type="date" id="alu-addexp-${ai}" style="font-size:.8rem"></div>
+          <div class="fg" id="alu-addweek-wrap-${ai}" style="margin:0;display:none"><label style="font-size:.68rem">Empieza en semana</label><select id="alu-addweek-${ai}" style="font-size:.8rem"></select></div>
+          <button class="btn bp xs" onclick="addAlumnoToPlan(${ai})">Agregar</button>
+        </div>
       </div>`:'';
     return`<div class="card">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px;flex-wrap:wrap">
@@ -2963,10 +2979,52 @@ function renderAlumnosConsolidado(){
       </div>
       ${personalRow}
       ${rows}
+      ${addPlanForm}
     </div>`;
   }).join('');
 }
 window.renderAlumnosConsolidado=renderAlumnosConsolidado;
+
+let alumnosCache=[];
+
+function onAluAddPlanChange(ai){
+  const planId=document.getElementById(`alu-addplan-${ai}`).value;
+  const plan=planes.find(p=>p.id===planId);
+  const expInput=document.getElementById(`alu-addexp-${ai}`);
+  const weekWrap=document.getElementById(`alu-addweek-wrap-${ai}`);
+  const weekSel=document.getElementById(`alu-addweek-${ai}`);
+  if(!plan){expInput.value='';weekWrap.style.display='none';return}
+  const expDate=new Date();expDate.setDate(expDate.getDate()+(plan.durationDays||30));
+  expInput.value=expDate.toISOString().split('T')[0];
+  const weekNums=planWeekNums(plan);
+  if(weekNums.length>1){
+    weekSel.innerHTML=weekNums.map(w=>`<option value="${w}"${w===1?' selected':''}>Semana ${w}</option>`).join('');
+    weekWrap.style.display='flex';
+  } else {
+    weekWrap.style.display='none';
+  }
+}
+window.onAluAddPlanChange=onAluAddPlanChange;
+
+async function addAlumnoToPlan(ai){
+  const a=alumnosCache[ai];
+  if(!a)return;
+  const planId=document.getElementById(`alu-addplan-${ai}`).value;
+  const plan=planes.find(p=>p.id===planId);
+  if(!plan){alert('Elegí un plan.');return}
+  const expiry=document.getElementById(`alu-addexp-${ai}`).value;
+  if(!expiry){alert('Elegí la fecha de vencimiento.');return}
+  const weekSel=document.getElementById(`alu-addweek-${ai}`);
+  const startWeek=weekSel&&weekSel.value?parseInt(weekSel.value):1;
+  const member={id:'m'+Date.now()+Math.floor(Math.random()*1000),name:a.name,email:a.email,status:'active',expiry,addedAt:new Date().toLocaleDateString('es-AR'),startDate:new Date().toISOString().split('T')[0],startWeek};
+  if(!plan.members)plan.members=[];
+  plan.members.push(member);
+  await setDoc(doc(db,'planes',planId),plan);
+  toast('✅ Agregado a '+plan.name);
+  renderAlumnosConsolidado();
+  buildNotifications();
+}
+window.addAlumnoToPlan=addAlumnoToPlan;
 
 // Crea (o abre si ya existe) el plan personalizado de un alumno ya cargado en planes grupales
 function assignPersonalPlan(name,email){
@@ -2979,6 +3037,22 @@ function assignPersonalPlan(name,email){
   toast('📝 Completá los datos del plan y guardá para crear el plan personalizado de '+name);
 }
 window.assignPersonalPlan=assignPersonalPlan;
+
+// Deja que el entrenador ponga a mano el vencimiento de un alumno en un plan grupal (igual que en planes personalizados)
+async function updateMemberExpiry(planId,memberId){
+  const input=document.getElementById(`alu-exp-${planId}-${memberId}`);
+  if(!input||!input.value){alert('Elegí una fecha.');return}
+  const plan=planes.find(p=>p.id===planId);
+  const m=plan?.members?.find(m=>m.id===memberId);
+  if(!plan||!m)return;
+  m.expiry=input.value;
+  m.status='active';
+  await setDoc(doc(db,'planes',planId),plan);
+  toast('✅ Vencimiento actualizado');
+  renderAlumnosConsolidado();
+  buildNotifications();
+}
+window.updateMemberExpiry=updateMemberExpiry;
 
 async function removeMemberFromAlumnos(planId,memberId){
   if(!confirm('¿Sacar a este alumno de este plan?'))return;
