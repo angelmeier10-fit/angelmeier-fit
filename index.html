@@ -393,6 +393,10 @@ setTimeout(()=>{
     <button class="itab" id="it-new" onclick="showPanel('new',this)">➕ Nuevo cliente</button>
     <button class="itab" id="it-edit" style="display:none" onclick="showPanel('edit',this)">✏️ Editar</button>
     <button class="itab" id="it-macro" style="display:none" onclick="showPanel('macro',this)">📊 Macrociclo</button>
+    <button class="itab" id="it-alumnos" onclick="showPanel('alumnos',this)">🧑 Ver por alumno</button>
+  </div>
+  <div id="panel-alumnos" style="display:none">
+    <div id="alumnos-list"></div>
   </div>
   <div id="panel-clients">
     <input id="client-search" placeholder="🔍 Buscar cliente por nombre..." oninput="filterClients(this.value)" style="margin-bottom:12px;font-size:.88rem">
@@ -603,7 +607,6 @@ setTimeout(()=>{
     <button class="itab" id="itp-edit" style="display:none" onclick="showPlanesPanel('edit',this)">✏️ Editar plan</button>
     <button class="itab" id="itp-members" style="display:none" onclick="showPlanesPanel('members',this)">👤 Alumnos</button>
     <button class="itab" id="itp-seg" style="display:none" onclick="showPlanesPanel('seg',this)">📊 Seguimiento</button>
-    <button class="itab" id="itp-alumnos" onclick="showPlanesPanel('alumnos',this)">🧑 Ver por alumno</button>
   </div>
   <div id="planes-panel-list">
     <div id="planes-list"></div>
@@ -734,9 +737,6 @@ setTimeout(()=>{
       <button class="btn bp" onclick="addMember()" style="margin-top:10px">➕ Agregar y generar link</button>
     </div>
     <div id="members-list"></div>
-  </div>
-  <div id="planes-panel-alumnos" style="display:none">
-    <div id="alumnos-list"></div>
   </div>
 </div>
 
@@ -1268,12 +1268,13 @@ function compareDates(a,b){
 }
 
 function showPanel(p,btn){
-  ['clients','new','edit','macro'].forEach(id=>{const el=document.getElementById('panel-'+id);if(el)el.style.display='none';});
+  ['clients','new','edit','macro','alumnos'].forEach(id=>{const el=document.getElementById('panel-'+id);if(el)el.style.display='none';});
   document.getElementById('panel-'+p).style.display='block';
   document.querySelectorAll('.itab').forEach(t=>t.classList.remove('active'));
   if(btn)btn.classList.add('active');
   if(p==='clients')renderClientList();
   if(p==='new')initNewClient();
+  if(p==='alumnos')renderAlumnosConsolidado();
   if(p==='macro'&&editingId){
     const mc=document.getElementById('macro-content');
     if(mc){
@@ -1982,7 +1983,7 @@ async function saveClient(){
   await setDoc(doc(db,'clients',id),client);
   clients.push(client);
   toast('✅ Cliente guardado en la nube');
-  showPanel('clients',document.getElementById('it-clients'));
+  showPanel('alumnos',document.getElementById('it-alumnos'));
 }
 window.saveClient=saveClient;
 
@@ -2911,7 +2912,7 @@ async function loadPlanes(){
 }
 
 function showPlanesPanel(p,btn){
-  ['list','new','edit','members','seg','alumnos'].forEach(id=>{
+  ['list','new','edit','members','seg'].forEach(id=>{
     const el=document.getElementById('planes-panel-'+id);if(el)el.style.display='none';
   });
   document.getElementById('planes-panel-'+p).style.display='block';
@@ -2920,7 +2921,6 @@ function showPlanesPanel(p,btn){
   if(p==='list')renderPlanesList();
   if(p==='new')initNewPlan();
   if(p==='seg')renderPlanSeguimiento();
-  if(p==='alumnos')renderAlumnosConsolidado();
 }
 window.showPlanesPanel=showPlanesPanel;
 
@@ -2929,6 +2929,11 @@ function renderAlumnosConsolidado(){
   const el=document.getElementById('alumnos-list');
   if(!el)return;
   const groups=new Map();
+  // Arrancar por los clientes individuales, para que todo alumno cargado aparezca aunque no esté en ningún plan grupal
+  clients.forEach(c=>{
+    const key=(c.name+'|'+(c.email||'')).toLowerCase();
+    if(!groups.has(key))groups.set(key,{name:c.name,email:c.email||'',plansById:new Map()});
+  });
   planes.forEach(p=>(p.members||[]).forEach(m=>{
     const key=(m.name+'|'+(m.email||'')).toLowerCase();
     if(!groups.has(key))groups.set(key,{name:m.name,email:m.email||'',plansById:new Map()});
