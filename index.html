@@ -425,7 +425,12 @@ setTimeout(()=>{
         <div class="fg"><label>WhatsApp del alumno</label><input id="nc-whatsapp" type="tel" placeholder="Ej: 5491112345678"></div>
         <div class="fg"><label>Link de pago Mercado Pago (opcional)</label><input id="nc-mp" placeholder="https://mpago.la/..."></div>
         <div class="fg"><label>Estado de pago</label><select id="nc-paid"><option value="free">Sin restricción</option><option value="pending">Pendiente de pago</option><option value="paid">Pagado ✅</option></select></div>
-        <div class="fg"><label>Fecha de vencimiento (opcional)</label><input id="nc-expiry" type="date"></div>
+        <div class="fg"><label>Fecha de vencimiento (opcional)</label><input id="nc-expiry" type="date">
+          <div style="display:flex;gap:6px;align-items:center;margin-top:5px">
+            <input id="nc-expiry-days" type="number" min="1" placeholder="o días desde hoy" style="flex:1">
+            <button type="button" class="btn bcy xs" onclick="fillExpiryFromDays('nc-expiry','nc-expiry-days')">Calcular</button>
+          </div>
+        </div>
         <div class="fg"><label>Fecha de inicio del programa</label><input id="nc-startdate" type="date"></div>
         <div class="fg"><label>Total de semanas (macrociclo)</label><input id="nc-totalweeks" type="number" value="12" min="1" max="52"></div>
         <div class="fg"><label>Semanas por mesociclo</label><input id="nc-mesoweeks" type="number" value="4" min="1" max="12"></div>
@@ -473,7 +478,12 @@ setTimeout(()=>{
         <div class="fg"><label>WhatsApp del alumno</label><input id="ec-whatsapp" type="tel"></div>
         <div class="fg"><label>Link de pago Mercado Pago</label><input id="ec-mp" placeholder="https://mpago.la/..."></div>
         <div class="fg"><label>Estado de pago</label><select id="ec-paid"><option value="free">Sin restricción</option><option value="pending">Pendiente de pago</option><option value="paid">Pagado ✅</option></select></div>
-        <div class="fg"><label>Fecha de vencimiento (opcional)</label><input id="ec-expiry" type="date"></div>
+        <div class="fg"><label>Fecha de vencimiento (opcional)</label><input id="ec-expiry" type="date">
+          <div style="display:flex;gap:6px;align-items:center;margin-top:5px">
+            <input id="ec-expiry-days" type="number" min="1" placeholder="o días desde hoy" style="flex:1">
+            <button type="button" class="btn bcy xs" onclick="fillExpiryFromDays('ec-expiry','ec-expiry-days')">Calcular</button>
+          </div>
+        </div>
         <input type="hidden" id="ec-days">
         <div class="fg"><label>Fecha de inicio del programa</label><input id="ec-startdate" type="date"></div>
         <div class="fg"><label>Total de semanas (macrociclo)</label><input id="ec-totalweeks" type="number" value="12"></div>
@@ -731,7 +741,12 @@ setTimeout(()=>{
         <div class="fg"><label>Nombre</label><input id="nm-name" placeholder="Ej: Lucía Gómez"></div>
         <div class="fg"><label>Email o identificador</label><input id="nm-email" placeholder="Ej: lucia@gmail.com"></div>
         <div class="fg"><label>Estado</label><select id="nm-status"><option value="active">Activo ✅</option><option value="pending">Pendiente ⏳</option></select></div>
-        <div class="fg"><label>Fecha de vencimiento</label><input id="nm-expiry" type="date"></div>
+        <div class="fg"><label>Fecha de vencimiento</label><input id="nm-expiry" type="date">
+          <div style="display:flex;gap:6px;align-items:center;margin-top:5px">
+            <input id="nm-expiry-days" type="number" min="1" placeholder="o días desde hoy" style="flex:1">
+            <button type="button" class="btn bcy xs" onclick="fillExpiryFromDays('nm-expiry','nm-expiry-days')">Calcular</button>
+          </div>
+        </div>
         <div class="fg" id="nm-startweek-wrap" style="display:none"><label>¿En qué semana arranca?</label><select id="nm-startweek"></select></div>
       </div>
       <div class="fg full" style="margin-top:10px">
@@ -1265,6 +1280,16 @@ function renderTracking(){
   });
   el.innerHTML=html;
 }
+
+function fillExpiryFromDays(dateId,daysId){
+  const daysInput=document.getElementById(daysId);
+  const days=parseInt(daysInput.value);
+  if(!days||days<1){alert('Ingresá una cantidad de días válida.');return}
+  const d=new Date();d.setDate(d.getDate()+days);
+  document.getElementById(dateId).value=d.toISOString().split('T')[0];
+  daysInput.value='';
+}
+window.fillExpiryFromDays=fillExpiryFromDays;
 
 function compareDates(a,b){
   const p=s=>{const[d,m,y]=s.split('/').map(Number);return new Date(y,m-1,d)};
@@ -2963,6 +2988,8 @@ function renderAlumnosConsolidado(){
       return`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid var(--bd);flex-wrap:wrap">
         <div style="font-size:.84rem;flex:1;min-width:140px"><b>${planName}</b> ${statusBadge}</div>
         <input type="date" id="alu-exp-${planId}-${m.id}" value="${m.expiry||''}" style="font-size:.78rem;padding:4px 6px">
+        <input type="number" min="1" id="alu-expdays-${planId}-${m.id}" placeholder="días" style="font-size:.78rem;padding:4px 6px;width:70px">
+        <button class="btn bcy xs" onclick="fillExpiryFromDays('alu-exp-${planId}-${m.id}','alu-expdays-${planId}-${m.id}')">Calcular</button>
         <button class="btn bcy xs" onclick="updateMemberExpiry('${planId}','${m.id}')">💾 Vencimiento</button>
         <button class="btn bd2 xs" onclick="removeMemberFromAlumnos('${planId}','${m.id}')">✕ Sacar</button>
       </div>`;
