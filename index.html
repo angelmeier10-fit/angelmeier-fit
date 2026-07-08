@@ -3008,19 +3008,23 @@ function renderAlumnosConsolidado(searchTerm){
     const rows=a.items.map(({planId,planName,member:m})=>{
       const expired=m.expiry&&(new Date(m.expiry+'T00:00:00')<new Date());
       const statusBadge=m.status==='active'&&!expired?'<span class="badge bgr2">✅ Activo</span>':expired?'<span class="badge" style="background:#f8717122;color:var(--rd)">⏰ Vencido</span>':'<span class="badge byw2">⏳ Pendiente</span>';
+      const memberLink=`${location.origin}${location.pathname}?plan=${planId}&member=${m.id}`;
       return`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid var(--bd);flex-wrap:wrap">
         <div style="font-size:.84rem;flex:1;min-width:140px"><b>${planName}</b> ${statusBadge}</div>
         <input type="date" id="alu-exp-${planId}-${m.id}" value="${m.expiry||''}" style="font-size:.78rem;padding:4px 6px">
         <input type="number" min="1" id="alu-expdays-${planId}-${m.id}" placeholder="días" style="font-size:.78rem;padding:4px 6px;width:70px">
         <button class="btn bcy xs" onclick="fillExpiryFromDays('alu-exp-${planId}-${m.id}','alu-expdays-${planId}-${m.id}')">Calcular</button>
         <button class="btn bcy xs" onclick="updateMemberExpiry('${planId}','${m.id}')">💾 Vencimiento</button>
+        <button class="btn bgr xs" onclick="copyLink('${memberLink}')">🔗 Link</button>
         <button class="btn bd2 xs" onclick="removeMemberFromAlumnos('${planId}','${m.id}')">✕ Sacar</button>
       </div>`;
     }).join('');
     const personalClient=clients.find(c=>(c.name+'|'+(c.email||'')).toLowerCase()===(a.name+'|'+a.email).toLowerCase());
-    const personalRow=personalClient?`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid var(--bd)">
+    const personalLink=personalClient?`${location.origin}${location.pathname}?client=${personalClient.id}`:'';
+    const personalRow=personalClient?`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid var(--bd);flex-wrap:wrap">
         <div style="font-size:.84rem"><b>🎯 Plan personalizado</b>${personalClient.routineName?' — '+personalClient.routineName:''}</div>
         <button class="btn bcy xs" onclick="openEdit('${personalClient.id}')">✏️ Editar</button>
+        <button class="btn bgr xs" onclick="copyLink('${personalLink}')">🔗 Link</button>
       </div>`:'';
     const availablePlans=planes.filter(p=>!a.items.some(it=>it.planId===p.id));
     const addPlanForm=availablePlans.length?`<div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--bd)">
