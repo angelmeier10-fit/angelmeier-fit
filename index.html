@@ -4698,6 +4698,7 @@ function renderMacroPanel(clientId){
   });
   h+='</select>';
   h+='</div>';
+  h+='<button class="dup-macro-btn" data-cid="'+clientId+'" data-mcid="'+mc.id+'" style="background:var(--s2);border:1px solid var(--bd);color:var(--tx);border-radius:8px;padding:7px 14px;font-size:.82rem;font-weight:600;font-family:inherit;cursor:pointer">📋 Duplicar macrociclo</button>';
   h+='<button class="add-macro-btn" data-cid="'+clientId+'" style="background:var(--ac);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:.82rem;font-weight:600;font-family:inherit;cursor:pointer">＋ Nuevo macrociclo</button>';
   h+='</div>';
 
@@ -4831,6 +4832,22 @@ window.addMacrocycle=async function(cid){
   setupMacroListeners(cid);
 };
 
+window.duplicateMacrocycle=async function(cid,mcid){
+  var c=clients.find(function(cl){return cl.id===cid;});
+  if(!c||!c.macrocycles)return;
+  var src=c.macrocycles.find(function(m){return m.id===mcid;});
+  if(!src)return;
+  var copy=JSON.parse(JSON.stringify(src));
+  copy.id='mc'+Date.now();
+  copy.title=src.title+' (copia)';
+  c.macrocycles.push(copy);
+  c._activeMcId=copy.id;
+  await setDoc(doc(db,'clients',cid),c);
+  toast('📋 Macrociclo duplicado');
+  document.getElementById('macro-content').innerHTML=renderMacroPanel(cid);
+  setupMacroListeners(cid);
+};
+
 window.saveMacroField=async function(cid,mcid,fn,val){
   var c=clients.find(function(cl){return cl.id===cid;});
   if(!c)return;
@@ -4852,6 +4869,8 @@ function setupMacroListeners(cid){
     if(hdr)toggleMesoBody(hdr.getAttribute('data-bid'));
     var addBtn=e.target.closest('.add-macro-btn');
     if(addBtn)addMacrocycle(addBtn.dataset.cid);
+    var dupBtn=e.target.closest('.dup-macro-btn');
+    if(dupBtn)duplicateMacrocycle(dupBtn.dataset.cid,dupBtn.dataset.mcid);
   });
   mc.addEventListener('change',function(e){
     var d=e.target.dataset;
@@ -4900,6 +4919,7 @@ function renderPlanMacroPanel(planId){
   });
   h+='</select>';
   h+='</div>';
+  h+='<button class="dup-pmacro-btn" data-pid="'+planId+'" data-mcid="'+mc.id+'" style="background:var(--s2);border:1px solid var(--bd);color:var(--tx);border-radius:8px;padding:7px 14px;font-size:.82rem;font-weight:600;font-family:inherit;cursor:pointer">📋 Duplicar macrociclo</button>';
   h+='<button class="add-pmacro-btn" data-pid="'+planId+'" style="background:var(--ac);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:.82rem;font-weight:600;font-family:inherit;cursor:pointer">＋ Nuevo macrociclo</button>';
   h+='</div>';
 
@@ -5025,6 +5045,22 @@ window.addMacrocyclePlan=async function(pid){
   setupPlanMacroListeners(pid);
 };
 
+window.duplicateMacrocyclePlan=async function(pid,mcid){
+  var plan=planes.find(function(p){return p.id===pid;});
+  if(!plan||!plan.macrocycles)return;
+  var src=plan.macrocycles.find(function(m){return m.id===mcid;});
+  if(!src)return;
+  var copy=JSON.parse(JSON.stringify(src));
+  copy.id='mc'+Date.now();
+  copy.title=src.title+' (copia)';
+  plan.macrocycles.push(copy);
+  plan._activeMcId=copy.id;
+  await setDoc(doc(db,'planes',pid),plan);
+  toast('📋 Macrociclo duplicado');
+  document.getElementById('plan-macro-content').innerHTML=renderPlanMacroPanel(pid);
+  setupPlanMacroListeners(pid);
+};
+
 window.saveMacroFieldPlan=async function(pid,mcid,fn,val){
   var plan=planes.find(function(p){return p.id===pid;});
   if(!plan)return;
@@ -5046,6 +5082,8 @@ function setupPlanMacroListeners(pid){
     if(hdr)toggleMesoBody(hdr.getAttribute('data-bid'));
     var addBtn=e.target.closest('.add-pmacro-btn');
     if(addBtn)addMacrocyclePlan(addBtn.dataset.pid);
+    var dupBtn=e.target.closest('.dup-pmacro-btn');
+    if(dupBtn)duplicateMacrocyclePlan(dupBtn.dataset.pid,dupBtn.dataset.mcid);
   });
   mc.addEventListener('change',function(e){
     var d=e.target.dataset;
