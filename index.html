@@ -605,6 +605,7 @@ setTimeout(()=>{
     <button class="itab active" id="itp-list" onclick="showPlanesPanel('list',this)">📋 Mis planes</button>
     <button class="itab" id="itp-new" onclick="showPlanesPanel('new',this)">➕ Nuevo plan</button>
     <button class="itab" id="itp-edit" style="display:none" onclick="showPlanesPanel('edit',this)">✏️ Editar plan</button>
+    <button class="itab" id="itp-macro" style="display:none" onclick="showPlanesPanel('macro',this)">📊 Macrociclo</button>
     <button class="itab" id="itp-members" style="display:none" onclick="showPlanesPanel('members',this)">👤 Alumnos</button>
     <button class="itab" id="itp-seg" style="display:none" onclick="showPlanesPanel('seg',this)">📊 Seguimiento</button>
   </div>
@@ -712,6 +713,9 @@ setTimeout(()=>{
   </div>
   <div id="planes-panel-seg" style="display:none">
     <div id="plan-seg-content"></div>
+  </div>
+  <div id="planes-panel-macro" style="display:none">
+    <div id="plan-macro-content"></div>
   </div>
   <div id="planes-panel-members" style="display:none">
     <div class="card" id="members-plan-info"></div>
@@ -2912,7 +2916,7 @@ async function loadPlanes(){
 }
 
 function showPlanesPanel(p,btn){
-  ['list','new','edit','members','seg'].forEach(id=>{
+  ['list','new','edit','members','seg','macro'].forEach(id=>{
     const el=document.getElementById('planes-panel-'+id);if(el)el.style.display='none';
   });
   document.getElementById('planes-panel-'+p).style.display='block';
@@ -2921,6 +2925,13 @@ function showPlanesPanel(p,btn){
   if(p==='list')renderPlanesList();
   if(p==='new')initNewPlan();
   if(p==='seg')renderPlanSeguimiento();
+  if(p==='macro'&&editingPlanId){
+    const mc=document.getElementById('plan-macro-content');
+    if(mc){
+      mc.innerHTML=renderPlanMacroPanel(editingPlanId);
+      setupPlanMacroListeners(editingPlanId);
+    }
+  }
 }
 window.showPlanesPanel=showPlanesPanel;
 
@@ -3245,6 +3256,7 @@ function openEditPlan(id){
   document.getElementById('ep-days-container').innerHTML='';
   buildDays('ep-days-container',weekDays.length,weekDays);
   document.getElementById('itp-edit').style.display='inline-block';
+  document.getElementById('itp-macro').style.display='inline-block';
   showPlanesPanel('edit',document.getElementById('itp-edit'));
 }
 window.openEditPlan=openEditPlan;
@@ -3273,6 +3285,7 @@ window.duplicatePlan=duplicatePlan;
 // ── MEMBERS ──
 function openMembers(planId){
   activePlanId=planId;
+  editingPlanId=planId;
   const plan=planes.find(p=>p.id===planId);
   document.getElementById('members-plan-info').innerHTML=`
     <div style="display:flex;align-items:center;gap:12px">
@@ -3294,6 +3307,7 @@ function openMembers(planId){
   renderExistingMembersSelect();
   document.getElementById('itp-members').style.display='inline-block';
   document.getElementById('itp-seg').style.display='inline-block';
+  document.getElementById('itp-macro').style.display='inline-block';
   showPlanesPanel('members',document.getElementById('itp-members'));
   renderMembersList(planId);
 }
@@ -4851,6 +4865,200 @@ function setupMacroListeners(cid){
     }
     if(e.target.classList.contains('macro-field'))
       saveMacroField(d.cid,d.mcid,d.fn,e.target.value);
+  });
+}
+
+// ══ MACROCICLO DE PLAN GRUPAL (compartido por todos los alumnos del plan) ══
+function renderPlanMacroPanel(planId){
+  var plan=planes.find(function(p){return p.id===planId;});
+  if(!plan)return '<p style="color:var(--mu);padding:20px">Sin datos.</p>';
+
+  if(!plan.macrocycles||!plan.macrocycles.length){
+    plan.macrocycles=[{
+      id:'mc1',
+      title:'Macrociclo 1',
+      fechaInicio:'',
+      fechaFin:'',
+      totalWeeks:plan.totalWeeks||12,
+      mesoWeeks:plan.mesoWeeks||4,
+      data:{}
+    }];
+  }
+
+  var activeMcId=plan._activeMcId||plan.macrocycles[0].id;
+  var mc=plan.macrocycles.find(function(m){return m.id===activeMcId;})||plan.macrocycles[0];
+
+  var h='';
+
+  h+='<div style="background:var(--s1);border:1px solid var(--bd);border-radius:12px;padding:14px 16px;margin-bottom:14px">';
+  h+='<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">';
+  h+='<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">';
+  h+='<label style="font-size:.75rem;color:var(--mu);font-weight:600;text-transform:uppercase;letter-spacing:.05em">Macrociclo activo</label>';
+  h+='<select class="pmacro-selector" data-pid="'+planId+'" style="background:var(--s2);border:1px solid var(--bd);color:var(--tx);border-radius:8px;padding:6px 12px;font-size:.88rem;font-family:inherit">';
+  plan.macrocycles.forEach(function(m){
+    h+='<option value="'+m.id+'"'+(m.id===activeMcId?' selected':'')+'>'+m.title+'</option>';
+  });
+  h+='</select>';
+  h+='</div>';
+  h+='<button class="add-pmacro-btn" data-pid="'+planId+'" style="background:var(--ac);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:.82rem;font-weight:600;font-family:inherit;cursor:pointer">＋ Nuevo macrociclo</button>';
+  h+='</div>';
+
+  h+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-top:12px">';
+  h+='<div><label style="font-size:.68rem;color:var(--mu);font-weight:600;text-transform:uppercase;display:block;margin-bottom:3px">Título</label>';
+  h+='<input type="text" class="pmacro-field" data-pid="'+planId+'" data-mcid="'+mc.id+'" data-fn="title" value="'+mc.title+'" style="width:100%;background:var(--s2);border:1px solid var(--bd);color:var(--tx);border-radius:7px;padding:5px 9px;font-size:.82rem;font-family:inherit"></div>';
+  h+='<div><label style="font-size:.68rem;color:var(--mu);font-weight:600;text-transform:uppercase;display:block;margin-bottom:3px">Fecha inicio</label>';
+  h+='<input type="date" class="pmacro-field" data-pid="'+planId+'" data-mcid="'+mc.id+'" data-fn="fechaInicio" value="'+(mc.fechaInicio||'')+'" style="width:100%;background:var(--s2);border:1px solid var(--bd);color:var(--tx);border-radius:7px;padding:5px 9px;font-size:.82rem;font-family:inherit"></div>';
+  h+='<div><label style="font-size:.68rem;color:var(--mu);font-weight:600;text-transform:uppercase;display:block;margin-bottom:3px">Fecha fin</label>';
+  h+='<input type="date" class="pmacro-field" data-pid="'+planId+'" data-mcid="'+mc.id+'" data-fn="fechaFin" value="'+(mc.fechaFin||'')+'" style="width:100%;background:var(--s2);border:1px solid var(--bd);color:var(--tx);border-radius:7px;padding:5px 9px;font-size:.82rem;font-family:inherit"></div>';
+  h+='<div><label style="font-size:.68rem;color:var(--mu);font-weight:600;text-transform:uppercase;display:block;margin-bottom:3px">Total semanas</label>';
+  h+='<input type="number" class="pmacro-field" data-pid="'+planId+'" data-mcid="'+mc.id+'" data-fn="totalWeeks" value="'+(mc.totalWeeks||12)+'" min="1" max="52" style="width:100%;background:var(--s2);border:1px solid var(--bd);color:var(--tx);border-radius:7px;padding:5px 9px;font-size:.82rem;font-family:inherit"></div>';
+  h+='</div>';
+  h+='</div>';
+
+  var totalWeeks=mc.totalWeeks||12;
+  var mesoWeeks=mc.mesoWeeks||plan.mesoWeeks||4;
+  var totalMesos=Math.ceil(totalWeeks/mesoWeeks);
+  var currentWeek=calcCurrentWeek({startDate:mc.fechaInicio,currentWeekManual:mc.currentWeekManual});
+  currentWeek=Math.min(currentWeek,totalWeeks);
+  var pct=Math.min(100,Math.round((currentWeek/totalWeeks)*100));
+  var mesoNum=Math.ceil(currentWeek/mesoWeeks);
+
+  h+='<div style="background:var(--s1);border:1px solid var(--bd);border-radius:12px;padding:14px 16px;margin-bottom:14px">';
+  h+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px">';
+  h+='<div style="background:var(--s2);border-radius:9px;padding:11px;text-align:center"><b style="font-size:1.5rem;color:var(--ac2)">'+currentWeek+'</b><div style="font-size:.68rem;color:var(--mu);text-transform:uppercase;margin-top:2px">Semana actual</div></div>';
+  h+='<div style="background:var(--s2);border-radius:9px;padding:11px;text-align:center"><b style="font-size:1.5rem;color:var(--or)">'+mesoNum+'/'+totalMesos+'</b><div style="font-size:.68rem;color:var(--mu);text-transform:uppercase;margin-top:2px">Mesociclo</div></div>';
+  h+='<div style="background:var(--s2);border-radius:9px;padding:11px;text-align:center"><b style="font-size:1.5rem;color:var(--gr)">'+pct+'%</b><div style="font-size:.68rem;color:var(--mu);text-transform:uppercase;margin-top:2px">Completado</div></div>';
+  h+='</div>';
+  h+='<div style="background:var(--s2);border-radius:8px;height:8px;overflow:hidden"><div style="height:100%;background:linear-gradient(90deg,var(--ac),var(--ac2));border-radius:8px;width:'+pct+'%"></div></div>';
+  h+='</div>';
+
+  var tiposDefault=['Aeróbico','Fuerza','Potencia','Metabólico','Fuerza resistencia','Funcional','Movilidad','Recuperación'];
+  var mcData=mc.data||{};
+
+  for(var m=1;m<=totalMesos;m++){
+    var s0=(m-1)*mesoWeeks+1;
+    var s1=Math.min(m*mesoWeeks,totalWeeks);
+    var cur=m===mesoNum;
+    var mk='meso'+m;
+    var md=mcData[mk]||{};
+    var bid='pmb-'+planId+'-'+mc.id+'-'+m;
+
+    h+='<div style="border:1px solid '+(cur?'var(--or)':'var(--bd)')+';border-radius:12px;margin-bottom:10px;overflow:hidden">';
+    h+='<div class="meso-hdr" style="background:'+(cur?'rgba(251,146,60,.12)':'var(--s1)')+';padding:12px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer" data-bid="'+bid+'">';
+    h+='<div style="font-weight:700;font-size:.92rem'+(cur?';color:var(--or)':'')+'">Mesociclo '+m;
+    h+=' <small style="font-weight:400;color:var(--mu)">· Semanas '+s0+'–'+s1+'</small>';
+    if(cur) h+='<span style="background:rgba(251,146,60,.25);color:var(--or);border-radius:20px;padding:2px 9px;font-size:.65rem;font-weight:700;margin-left:8px">● ACTUAL</span>';
+    h+='</div><span style="color:var(--mu)">▼</span></div>';
+
+    h+='<div id="'+bid+'" style="display:'+(cur?'block':'none')+';padding:14px">';
+    h+='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.79rem;min-width:500px">';
+    h+='<thead><tr style="background:var(--s2)">';
+    ['Semana','Tipo de trabajo','% Intensidad','Volumen','Objetivo','Notas'].forEach(function(th){
+      h+='<th style="padding:8px 10px;border:1px solid var(--bd);color:var(--mu);text-align:left;white-space:nowrap">'+th+'</th>';
+    });
+    h+='</tr></thead><tbody>';
+
+    for(var wi=0;wi<(s1-s0+1);wi++){
+      var wn=s0+wi; var wk='w'+wn;
+      var wd=md[wk]||{};
+      var isCW=wn===currentWeek;
+      h+='<tr style="background:'+(isCW?'rgba(124,92,191,.08)':'')+'">';
+      h+='<td style="padding:7px 10px;border:1px solid var(--bd);font-weight:700;color:'+(isCW?'var(--ac2)':'var(--mu)')+';white-space:nowrap">Sem '+wn+(isCW?' ◀':'')+'</td>';
+
+      h+='<td style="padding:3px;border:1px solid var(--bd)"><select class="pmeso-inp" data-pid="'+planId+'" data-mcid="'+mc.id+'" data-mk="'+mk+'" data-wk="'+wk+'" data-fn="tipo" style="width:100%;background:var(--s2);border:none;color:var(--tx);font-size:.78rem;padding:4px 6px;border-radius:4px;font-family:inherit"><option value="">— Elegir —</option>';
+      tiposDefault.forEach(function(t){ h+='<option value="'+t+'"'+(wd.tipo===t?' selected':'')+'>'+t+'</option>'; });
+      h+='</select></td>';
+
+      h+='<td style="padding:3px;border:1px solid var(--bd)"><input type="text" class="pmeso-inp" data-pid="'+planId+'" data-mcid="'+mc.id+'" data-mk="'+mk+'" data-wk="'+wk+'" data-fn="intensidad" value="'+(wd.intensidad||'')+'" placeholder="70-80%" style="width:100%;min-width:75px;background:transparent;border:none;color:var(--tx);font-size:.78rem;padding:4px 6px"></td>';
+
+      h+='<td style="padding:3px;border:1px solid var(--bd)"><select class="pmeso-inp" data-pid="'+planId+'" data-mcid="'+mc.id+'" data-mk="'+mk+'" data-wk="'+wk+'" data-fn="volumen" style="width:100%;background:var(--s2);border:none;color:var(--tx);font-size:.78rem;padding:4px 6px;border-radius:4px;font-family:inherit"><option value="">—</option><option value="Bajo"'+(wd.volumen==='Bajo'?' selected':'')+'>Bajo</option><option value="Medio"'+(wd.volumen==='Medio'?' selected':'')+'>Medio</option><option value="Alto"'+(wd.volumen==='Alto'?' selected':'')+'>Alto</option><option value="Muy alto"'+(wd.volumen==='Muy alto'?' selected':'')+'>Muy alto</option></select></td>';
+
+      h+='<td style="padding:3px;border:1px solid var(--bd)"><input type="text" class="pmeso-inp" data-pid="'+planId+'" data-mcid="'+mc.id+'" data-mk="'+mk+'" data-wk="'+wk+'" data-fn="objetivo" value="'+(wd.objetivo||'')+'" placeholder="Objetivo..." style="width:100%;min-width:110px;background:transparent;border:none;color:var(--tx);font-size:.78rem;padding:4px 6px"></td>';
+
+      h+='<td style="padding:3px;border:1px solid var(--bd)"><input type="text" class="pmeso-inp" data-pid="'+planId+'" data-mcid="'+mc.id+'" data-mk="'+mk+'" data-wk="'+wk+'" data-fn="notas" value="'+(wd.notas||'')+'" placeholder="..." style="width:100%;min-width:80px;background:transparent;border:none;color:var(--tx);font-size:.78rem;padding:4px 6px"></td>';
+
+      h+='</tr>';
+    }
+    h+='</tbody></table></div>';
+
+    h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px">';
+    h+='<div><label style="font-size:.68rem;color:var(--mu);font-weight:600;text-transform:uppercase;display:block;margin-bottom:3px">Objetivo del mesociclo</label>';
+    h+='<input type="text" class="pmeso-inp" data-pid="'+planId+'" data-mcid="'+mc.id+'" data-mk="'+mk+'" data-wk="resumen" data-fn="objetivo_meso" value="'+(md.resumen&&md.resumen.objetivo_meso||'')+'" placeholder="Ej: Base aeróbica" style="width:100%;font-size:.82rem;padding:7px 10px;border-radius:8px;border:1px solid var(--bd);background:var(--s2);color:var(--tx);font-family:inherit"></div>';
+    h+='<div><label style="font-size:.68rem;color:var(--mu);font-weight:600;text-transform:uppercase;display:block;margin-bottom:3px">Observaciones</label>';
+    h+='<input type="text" class="pmeso-inp" data-pid="'+planId+'" data-mcid="'+mc.id+'" data-mk="'+mk+'" data-wk="resumen" data-fn="obs_meso" value="'+(md.resumen&&md.resumen.obs_meso||'')+'" placeholder="Notas generales..." style="width:100%;font-size:.82rem;padding:7px 10px;border-radius:8px;border:1px solid var(--bd);background:var(--s2);color:var(--tx);font-family:inherit"></div>';
+    h+='</div>';
+    h+='</div></div>';
+  }
+
+  return h;
+}
+
+window.saveMesoCellPlan=async function(pid,mcid,mk,wk,fn,val){
+  var plan=planes.find(function(p){return p.id===pid;});
+  if(!plan)return;
+  if(!plan.macrocycles)plan.macrocycles=[];
+  var mc=plan.macrocycles.find(function(m){return m.id===mcid;});
+  if(!mc)return;
+  if(!mc.data)mc.data={};
+  if(!mc.data[mk])mc.data[mk]={};
+  if(!mc.data[mk][wk])mc.data[mk][wk]={};
+  mc.data[mk][wk][fn]=val;
+  await setDoc(doc(db,'planes',pid),plan);
+};
+
+window.addMacrocyclePlan=async function(pid){
+  var plan=planes.find(function(p){return p.id===pid;});
+  if(!plan)return;
+  if(!plan.macrocycles)plan.macrocycles=[];
+  var n=plan.macrocycles.length+1;
+  var newMc={
+    id:'mc'+Date.now(),
+    title:'Macrociclo '+n,
+    fechaInicio:'',fechaFin:'',
+    totalWeeks:12,mesoWeeks:4,data:{}
+  };
+  plan.macrocycles.push(newMc);
+  plan._activeMcId=newMc.id;
+  await setDoc(doc(db,'planes',pid),plan);
+  toast('✅ Macrociclo '+n+' creado');
+  document.getElementById('plan-macro-content').innerHTML=renderPlanMacroPanel(pid);
+  setupPlanMacroListeners(pid);
+};
+
+window.saveMacroFieldPlan=async function(pid,mcid,fn,val){
+  var plan=planes.find(function(p){return p.id===pid;});
+  if(!plan)return;
+  var mc=plan.macrocycles&&plan.macrocycles.find(function(m){return m.id===mcid;});
+  if(!mc)return;
+  mc[fn]=fn==='totalWeeks'||fn==='mesoWeeks'?parseInt(val)||12:val;
+  await setDoc(doc(db,'planes',pid),plan);
+  if(fn==='totalWeeks'||fn==='title'){
+    document.getElementById('plan-macro-content').innerHTML=renderPlanMacroPanel(pid);
+    setupPlanMacroListeners(pid);
+  }
+};
+
+function setupPlanMacroListeners(pid){
+  var mc=document.getElementById('plan-macro-content');
+  if(!mc)return;
+  mc.addEventListener('click',function(e){
+    var hdr=e.target.closest('.meso-hdr');
+    if(hdr)toggleMesoBody(hdr.getAttribute('data-bid'));
+    var addBtn=e.target.closest('.add-pmacro-btn');
+    if(addBtn)addMacrocyclePlan(addBtn.dataset.pid);
+  });
+  mc.addEventListener('change',function(e){
+    var d=e.target.dataset;
+    if(e.target.classList.contains('pmeso-inp'))
+      saveMesoCellPlan(d.pid,d.mcid,d.mk,d.wk,d.fn,e.target.value);
+    if(e.target.classList.contains('pmacro-selector')){
+      var plan=planes.find(function(p){return p.id===d.pid;});
+      if(plan){plan._activeMcId=e.target.value;
+        mc.innerHTML=renderPlanMacroPanel(d.pid);
+        setupPlanMacroListeners(d.pid);}
+    }
+    if(e.target.classList.contains('pmacro-field'))
+      saveMacroFieldPlan(d.pid,d.mcid,d.fn,e.target.value);
   });
 }
 
