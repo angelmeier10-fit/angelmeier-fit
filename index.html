@@ -396,6 +396,7 @@ setTimeout(()=>{
     <button class="itab" id="it-alumnos" onclick="showPanel('alumnos',this)">🧑 Ver por alumno</button>
   </div>
   <div id="panel-alumnos" style="display:none">
+    <input id="alu-search" placeholder="🔍 Buscar alumno por nombre..." oninput="renderAlumnosConsolidado(this.value)" style="margin-bottom:12px;font-size:.88rem">
     <div id="alumnos-list"></div>
   </div>
   <div id="panel-clients">
@@ -490,6 +491,18 @@ setTimeout(()=>{
         <div class="fg"><label>Semanas por mesociclo</label><input id="ec-mesoweeks" type="number" value="4"></div>
         <div class="fg"><label>Semana actual (manual)</label><input id="ec-currentweek" type="number" min="1" placeholder="Ej: 3"></div>
       </div></div>
+    </div>
+    <div class="card" id="ec-addplan-card" style="margin-bottom:10px;padding:14px 16px">
+      <h2 style="margin-bottom:10px">➕ Agregar a un plan grupal</h2>
+      <div id="ec-addplan-noplans" style="display:none;font-size:.82rem;color:var(--mu)">Este alumno ya está en todos los planes grupales creados.</div>
+      <div id="ec-addplan-form" style="display:flex;gap:6px;flex-wrap:wrap;align-items:end">
+        <div class="fg" style="margin:0;flex:1;min-width:160px"><label>Plan</label>
+          <select id="ec-addplan" onchange="onEcAddPlanChange()"></select>
+        </div>
+        <div class="fg" style="margin:0"><label>Vencimiento</label><input type="date" id="ec-addplan-exp"></div>
+        <div class="fg" id="ec-addplan-week-wrap" style="margin:0;display:none"><label>Empieza en semana</label><select id="ec-addplan-week"></select></div>
+        <button class="btn bp" onclick="addClientToGroupPlan()">Agregar</button>
+      </div>
     </div>
     <div class="card" style="margin-bottom:10px;padding:14px 16px">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
@@ -2148,6 +2161,7 @@ function openEdit(id){
   document.getElementById('it-edit').style.display='inline-block';
   document.getElementById('it-macro').style.display='inline-block';
   showPanel('edit',document.getElementById('it-edit'));
+  renderEcAddPlanOptions();
 }
 window.openEdit=openEdit;
 
@@ -2968,9 +2982,10 @@ function showPlanesPanel(p,btn){
 window.showPlanesPanel=showPlanesPanel;
 
 // Vista consolidada: todos los alumnos (agrupados por nombre+email) con todos los planes en los que están, sacables desde acá
-function renderAlumnosConsolidado(){
+function renderAlumnosConsolidado(searchTerm){
   const el=document.getElementById('alumnos-list');
   if(!el)return;
+  const q=(searchTerm||'').trim().toLowerCase();
   const groups=new Map();
   // Arrancar por los clientes individuales, para que todo alumno cargado aparezca aunque no esté en ningún plan grupal
   clients.forEach(c=>{
@@ -2985,9 +3000,10 @@ function renderAlumnosConsolidado(){
     const existing=g.plansById.get(p.id);
     if(!existing||(m.status==='active'&&existing.member.status!=='active'))g.plansById.set(p.id,{planId:p.id,planName:p.name,member:m});
   }));
-  const alumnos=[...groups.values()].map(g=>({name:g.name,email:g.email,items:[...g.plansById.values()]})).sort((a,b)=>a.name.localeCompare(b.name));
+  let alumnos=[...groups.values()].map(g=>({name:g.name,email:g.email,items:[...g.plansById.values()]})).sort((a,b)=>a.name.localeCompare(b.name));
+  if(q)alumnos=alumnos.filter(a=>a.name.toLowerCase().includes(q));
   alumnosCache=alumnos;
-  if(!alumnos.length){el.innerHTML='<div class="card" style="text-align:center;padding:30px;color:var(--mu)">Sin alumnos todavía.</div>';return}
+  if(!alumnos.length){el.innerHTML=`<div class="card" style="text-align:center;padding:30px;color:var(--mu)">${q?'Ningún alumno coincide con la búsqueda.':'Sin alumnos todavía.'}</div>`;return}
   el.innerHTML=alumnos.map((a,ai)=>{
     const rows=a.items.map(({planId,planName,member:m})=>{
       const expired=m.expiry&&(new Date(m.expiry+'T00:00:00')<new Date());
@@ -3075,6 +3091,63 @@ async function addAlumnoToPlan(ai){
   buildNotifications();
 }
 window.addAlumnoToPlan=addAlumnoToPlan;
+
+// Tarjeta "Agregar a un plan grupal" dentro de la ficha de edición de un cliente individual
+function renderEcAddPlanOptions(){
+  const sel=document.getElementById('ec-addplan');
+  const form=document.getElementById('ec-addplan-form');
+  const none=document.getElementById('ec-addplan-noplans');
+  if(!sel)return;
+  const c=clients.find(cl=>cl.id===editingId);
+  if(!c)return;
+  const key=(c.name+'|'+(c.email||'')).toLowerCase();
+  const already=new Set(planes.filter(p=>(p.members||[]).some(m=>(m.name+'|'+(m.email||'')).toLowerCase()===key)).map(p=>p.id));
+  const available=planes.filter(p=>!already.has(p.id));
+  if(!available.length){form.style.display='none';none.style.display='block';return}
+  form.style.display='flex';none.style.display='none';
+  sel.innerHTML='<option value="">Elegir plan…</option>'+available.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+  document.getElementById('ec-addplan-exp').value='';
+  document.getElementById('ec-addplan-week-wrap').style.display='none';
+}
+
+function onEcAddPlanChange(){
+  const planId=document.getElementById('ec-addplan').value;
+  const plan=planes.find(p=>p.id===planId);
+  const expInput=document.getElementById('ec-addplan-exp');
+  const weekWrap=document.getElementById('ec-addplan-week-wrap');
+  const weekSel=document.getElementById('ec-addplan-week');
+  if(!plan){expInput.value='';weekWrap.style.display='none';return}
+  const expDate=new Date();expDate.setDate(expDate.getDate()+(plan.durationDays||30));
+  expInput.value=expDate.toISOString().split('T')[0];
+  const weekNums=planWeekNums(plan);
+  if(weekNums.length>1){
+    weekSel.innerHTML=weekNums.map(w=>`<option value="${w}"${w===1?' selected':''}>Semana ${w}</option>`).join('');
+    weekWrap.style.display='flex';
+  } else {
+    weekWrap.style.display='none';
+  }
+}
+window.onEcAddPlanChange=onEcAddPlanChange;
+
+async function addClientToGroupPlan(){
+  const c=clients.find(cl=>cl.id===editingId);
+  if(!c)return;
+  const planId=document.getElementById('ec-addplan').value;
+  const plan=planes.find(p=>p.id===planId);
+  if(!plan){alert('Elegí un plan.');return}
+  const expiry=document.getElementById('ec-addplan-exp').value;
+  if(!expiry){alert('Elegí la fecha de vencimiento.');return}
+  const weekSel=document.getElementById('ec-addplan-week');
+  const startWeek=weekSel&&weekSel.value?parseInt(weekSel.value):1;
+  const member={id:'m'+Date.now()+Math.floor(Math.random()*1000),name:c.name,email:c.email||'',status:'active',expiry,addedAt:new Date().toLocaleDateString('es-AR'),startDate:new Date().toISOString().split('T')[0],startWeek};
+  if(!plan.members)plan.members=[];
+  plan.members.push(member);
+  await setDoc(doc(db,'planes',planId),plan);
+  toast('✅ Agregado a '+plan.name);
+  renderEcAddPlanOptions();
+  buildNotifications();
+}
+window.addClientToGroupPlan=addClientToGroupPlan;
 
 // Crea (o abre si ya existe) el plan personalizado de un alumno ya cargado en planes grupales
 function assignPersonalPlan(name,email){
