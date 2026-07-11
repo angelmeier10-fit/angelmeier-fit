@@ -493,6 +493,12 @@ setTimeout(()=>{
         <div class="fg"><label>Semana actual (manual)</label><input id="ec-currentweek" type="number" min="1" placeholder="Ej: 3"></div>
       </div></div>
     </div>
+    <div class="card" id="ec-seg-card">
+      <div class="collapsible-card-hdr" onclick="document.getElementById('ec-seg-card').classList.toggle('collapsed');this.querySelector('.card-toggle').style.transform=document.getElementById('ec-seg-card').classList.contains('collapsed')?'rotate(-90deg)':''">
+        <h2>📊 Seguimiento del alumno</h2><span class="card-toggle">▼</span>
+      </div>
+      <div class="collapsible-card-body" id="ec-seg-content"></div>
+    </div>
     <div class="card" id="ec-addplan-card" style="margin-bottom:10px;padding:14px 16px">
       <h2 style="margin-bottom:10px">➕ Agregar a un plan grupal</h2>
       <div id="ec-addplan-noplans" style="display:none;font-size:.82rem;color:var(--mu)">Este alumno ya está en todos los planes grupales creados.</div>
@@ -1284,7 +1290,7 @@ function renderProgressDetailBlock(uid,exerciseLogs,days,allNotes){
       if(!isNaN(lastW)&&!isNaN(prevW)){
         trend=lastW>prevW?'<span style="color:var(--gr)">▲</span>':lastW<prevW?'<span style="color:var(--rd)">▼</span>':'<span style="color:var(--mu)">—</span>';
       }
-      const entries=last3.map(l=>`<div class="lent"><span>${l.date}</span><span class="lv">${l.weight?l.weight+'kg':'—'} × ${l.reps||'—'}</span></div>`).join('');
+      const entries=last3.map(l=>{const wTxt=(l.weights&&l.weights.length)?l.weights.map(w=>w||'—').join(' / ')+'kg':(l.weight?l.weight+'kg':'—');return`<div class="lent"><span>${l.date}</span><span class="lv">${wTxt} × ${l.reps||'—'}</span></div>`}).join('');
       return`<div style="background:var(--bg);border-radius:8px;padding:8px 11px;margin-bottom:6px">
         <div style="font-size:.8rem;font-weight:700;margin-bottom:4px">${name} ${trend}</div>
         ${entries}
@@ -2221,8 +2227,29 @@ function openEdit(id){
   document.getElementById('it-macro').style.display='inline-block';
   showPanel('edit',document.getElementById('it-edit'));
   renderEcAddPlanOptions();
+  renderEcSeguimiento(c);
 }
 window.openEdit=openEdit;
+
+function renderEcSeguimiento(c){
+  const el=document.getElementById('ec-seg-content');
+  if(!el)return;
+  const{lastDate,lastDay,notes:allNotes,exerciseLogs}=buildProgressSummary(c.progress||{},c.days,c.id);
+  const block=renderProgressDetailBlock(c.id,exerciseLogs,c.days,allNotes);
+  el.innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+      <div style="background:var(--s2);border-radius:9px;padding:11px">
+        <div style="font-size:.68rem;color:var(--mu);text-transform:uppercase;letter-spacing:.05em;font-weight:600;margin-bottom:4px">Último entrenamiento</div>
+        <div style="font-weight:700;font-size:.9rem">${lastDate}</div>
+        <div style="font-size:.76rem;color:var(--mu)">${lastDay}</div>
+      </div>
+      <div style="background:var(--s2);border-radius:9px;padding:11px">
+        <div style="font-size:.68rem;color:var(--mu);text-transform:uppercase;letter-spacing:.05em;font-weight:600;margin-bottom:4px">Notas de sesión</div>
+        <div style="font-weight:700;font-size:.9rem">${allNotes.length} nota${allNotes.length!==1?'s':''}</div>
+        <div style="font-size:.76rem;color:var(--mu)">${allNotes.length?'Última: '+allNotes[0].date:'Sin notas aún'}</div>
+      </div>
+    </div>
+    ${block||'<div style="font-size:.82rem;color:var(--mu)">Sin registros todavía.</div>'}`;
+}
 
 // ══ CLIENT VIEW ══
 function populateClientSelect(){
@@ -2566,22 +2593,26 @@ function renderGymBlock(c,bkey,blk,bi){
     inner+=`<div class="cv-ex">
       <div class="cv-ex-name">${ex.name}${ex.video?` <a href="${ex.video}" target="_blank" style="font-size:.7rem;color:var(--ac2);text-decoration:none">▶</a>`:''}</div>
       ${ex.obs?`<div class="cv-obs">📝 ${ex.obs}</div>`:''}`;
+    let setCount=0;
     if(ex.scheme?.length){
-      inner+=`<table class="stbl"><thead><tr><th>#</th><th>Reps / Tiempo</th><th>Carga / RPE</th><th>✓</th></tr></thead><tbody>`;
+      setCount=ex.scheme.length;
+      const lastLogPre=(c.progress[`${c.id}-${ekey}-logs`]||[]).slice(-1)[0];
+      const lastWeights=lastLogPre?.weights||[];
+      inner+=`<div style="overflow-x:auto"><table class="stbl"><thead><tr><th>#</th><th>Reps / Tiempo</th><th>Carga / RPE</th><th>Peso usado</th><th>✓</th></tr></thead><tbody>`;
       const isLastEx=(ei===blk.exercises.length-1);
       const restSecs=parseRestToSeconds(blk.rest);
       const pauseSecs=isLastEx?0:parseRestToSeconds((blk.pauses||[])[ei]||'');
       ex.scheme.forEach((s,si)=>{const rk=`${c.id}-${ekey}-${si}`;const done=c.progress[rk]||false;
-        inner+=`<tr id="sr-${rk}" class="${done?'done-row':''}"><td>Serie ${si+1}</td><td>${s.reps||'—'}</td><td>${s.load||'—'}</td><td><button class="ckbtn ${done?'done':''}" onclick="toggleSerie('${c.id}','${ekey}',${si},'${rk}',${isLastEx},${restSecs},${pauseSecs})">✓</button></td></tr>`});
-      inner+=`</tbody></table>`;
+        inner+=`<tr id="sr-${rk}" class="${done?'done-row':''}"><td>Serie ${si+1}</td><td>${s.reps||'—'}</td><td>${s.load||'—'}</td><td><input type="number" id="sw-${c.id}-${ekey}-${si}" placeholder="${lastWeights[si]?lastWeights[si]+'kg':'kg'}" step="0.5" style="width:62px;font-size:.78rem;padding:4px 6px"></td><td><button class="ckbtn ${done?'done':''}" onclick="toggleSerie('${c.id}','${ekey}',${si},'${rk}',${isLastEx},${restSecs},${pauseSecs})">✓</button></td></tr>`});
+      inner+=`</tbody></table></div>`;
     }
     inner+=vidHtml;
     const logs=c.progress[`${c.id}-${ekey}-logs`]||[];
-    const logsHtml=logs.slice(-5).reverse().map((l,ri)=>{const realIdx=logs.length-1-ri;return`<div class="lent"><span>${l.date}</span><span class="lv">${l.weight?l.weight+'kg':'—'} × ${l.reps||'—'}</span><button onclick="deleteLog('${c.id}','${ekey}',${realIdx})" style="background:none;border:none;color:var(--mu);cursor:pointer;font-size:.75rem;padding:0 4px;opacity:.6" title="Borrar">✕</button>${l.note?`<div style="font-size:.72rem;color:var(--mu);font-style:italic;margin-top:2px;grid-column:1/-1">📝 ${l.note}</div>`:''}</div>`;}).join('');
+    const logsHtml=logs.slice(-5).reverse().map((l,ri)=>{const realIdx=logs.length-1-ri;const wTxt=(l.weights&&l.weights.length)?l.weights.map(w=>w||'—').join(' / ')+'kg':(l.weight?l.weight+'kg':'—');return`<div class="lent"><span>${l.date}</span><span class="lv">${wTxt} × ${l.reps||'—'}</span><button onclick="deleteLog('${c.id}','${ekey}',${realIdx})" style="background:none;border:none;color:var(--mu);cursor:pointer;font-size:.75rem;padding:0 4px;opacity:.6" title="Borrar">✕</button>${l.note?`<div style="font-size:.72rem;color:var(--mu);font-style:italic;margin-top:2px;grid-column:1/-1">📝 ${l.note}</div>`:''}</div>`;}).join('');
     const lastLog=logs.length?logs[logs.length-1]:null;
     inner+=`<div class="plog">
-      <div style="font-size:.69rem;color:var(--mu);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">📊 Registrar</div>
-      <div class="lr"><input type="number" id="pw-${c.id}-${ekey}" placeholder="${lastLog&&lastLog.weight?'Último: '+lastLog.weight+'kg':'Peso (kg)'}" step="0.5"><input type="number" id="pr-${c.id}-${ekey}" placeholder="${lastLog&&lastLog.reps?'Último: '+lastLog.reps+'rep':'Reps'}"><button class="btn bgr sm" onclick="logGym('${c.id}','${ekey}')">✓</button></div>
+      <div style="font-size:.69rem;color:var(--mu);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">📊 Registrar sesión</div>
+      <div class="lr">${setCount?'':`<input type="number" id="pw-${c.id}-${ekey}" placeholder="${lastLog&&lastLog.weight?'Último: '+lastLog.weight+'kg':'Peso (kg)'}" step="0.5">`}<input type="number" id="pr-${c.id}-${ekey}" placeholder="${lastLog&&lastLog.reps?'Último: '+lastLog.reps+'rep':'Reps (opcional)'}"><input type="hidden" data-setcount="${setCount}" id="pwcount-${c.id}-${ekey}"><button class="btn bgr sm" onclick="logGym('${c.id}','${ekey}')">✓ Guardar pesos</button></div>
       <input type="text" id="pn-${c.id}-${ekey}" placeholder="Nota (opcional): ej. usé mancuernas..." style="margin-top:5px;font-size:.78rem;padding:6px 10px;border-radius:8px;border:1px solid var(--bd);background:var(--s2);color:var(--tx);width:100%;box-sizing:border-box">
       ${logsHtml}</div></div>`;
   });
@@ -2677,20 +2708,39 @@ window.toggleSerie=async function(cId,ekey,si,rk,isLast,blockRest,pauseSecs){
   }
 };
 
+function collectSetWeights(cId,ekey){
+  const countEl=document.getElementById('pwcount-'+cId+'-'+ekey);
+  const setCount=parseInt(countEl?.dataset.setcount)||0;
+  const weights=[];
+  for(let si=0;si<setCount;si++){
+    weights.push(document.getElementById(`sw-${cId}-${ekey}-${si}`)?.value||'');
+  }
+  return weights;
+}
+function clearSetWeights(cId,ekey,setCount){
+  for(let si=0;si<setCount;si++){
+    const inp=document.getElementById(`sw-${cId}-${ekey}-${si}`);if(inp)inp.value='';
+  }
+}
 window.logGym=async function(cId,ekey){
   const c=clients.find(cl=>cl.id===cId);
-  const w=document.getElementById('pw-'+cId+'-'+ekey).value;
+  const weights=collectSetWeights(cId,ekey);
+  const singleW=document.getElementById('pw-'+cId+'-'+ekey)?.value||'';
   const r=document.getElementById('pr-'+cId+'-'+ekey).value;
   const n=(document.getElementById('pn-'+cId+'-'+ekey)?.value||'').trim();
-  if(!w&&!r)return;const key=cId+'-'+ekey+'-logs';
+  const hasWeights=weights.some(w=>w)||singleW;
+  if(!hasWeights&&!r)return;const key=cId+'-'+ekey+'-logs';
   if(!c.progress[key])c.progress[key]=[];
-  const entry={date:new Date().toLocaleDateString('es-AR'),weight:w,reps:r};
+  const entry={date:new Date().toLocaleDateString('es-AR'),reps:r};
+  if(weights.length)entry.weights=weights;
+  entry.weight=singleW||weights.filter(w=>w).slice(-1)[0]||'';
   if(n)entry.note=n;
   c.progress[key].push(entry);
   await updateDoc(doc(db,'clients',cId),{progress:c.progress});
-  document.getElementById('pw-'+cId+'-'+ekey).value='';
+  if(document.getElementById('pw-'+cId+'-'+ekey))document.getElementById('pw-'+cId+'-'+ekey).value='';
   document.getElementById('pr-'+cId+'-'+ekey).value='';
   if(document.getElementById('pn-'+cId+'-'+ekey))document.getElementById('pn-'+cId+'-'+ekey).value='';
+  clearSetWeights(cId,ekey,weights.length);
   toast('📊 Guardado');const dIdx=parseInt(ekey.split('-')[0]);renderDay(cId,dIdx);
 };
 
@@ -3985,21 +4035,26 @@ window.logGym=async function(cId,ekey){
     const [planId,...rest]=cId.split('-m');const memberId='m'+rest.join('-m');
     const plan=planes.find(p=>p.id===planId);if(!plan)return;
     const member=plan.members.find(m=>m.id===memberId);if(!member)return;
-    const w=document.getElementById('pw-'+cId+'-'+ekey).value;
+    const weights=collectSetWeights(cId,ekey);
+    const singleW=document.getElementById('pw-'+cId+'-'+ekey)?.value||'';
     const r=document.getElementById('pr-'+cId+'-'+ekey).value;
     const n=(document.getElementById('pn-'+cId+'-'+ekey)?.value||'').trim();
-    if(!w&&!r)return;
+    const hasWeights=weights.some(w=>w)||singleW;
+    if(!hasWeights&&!r)return;
     if(!member.progress)member.progress={};
     const key=cId+'-'+ekey+'-logs';
     if(!member.progress[key])member.progress[key]=[];
-    const entry={date:new Date().toLocaleDateString('es-AR'),weight:w,reps:r};
+    const entry={date:new Date().toLocaleDateString('es-AR'),reps:r};
+    if(weights.length)entry.weights=weights;
+    entry.weight=singleW||weights.filter(w=>w).slice(-1)[0]||'';
     if(n)entry.note=n;
     member.progress[key].push(entry);
     plan.members=plan.members.map(m=>m.id===memberId?member:m);
     await setDoc(doc(db,'planes',planId),plan);
-    document.getElementById('pw-'+cId+'-'+ekey).value='';
+    if(document.getElementById('pw-'+cId+'-'+ekey))document.getElementById('pw-'+cId+'-'+ekey).value='';
     document.getElementById('pr-'+cId+'-'+ekey).value='';
     if(document.getElementById('pn-'+cId+'-'+ekey))document.getElementById('pn-'+cId+'-'+ekey).value='';
+    clearSetWeights(cId,ekey,weights.length);
     toast('📊 Guardado');const dIdx=parseInt(ekey.split('-')[0]);renderGroupDay(plan,member,dIdx);
     return;
   }
