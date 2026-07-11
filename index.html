@@ -1222,6 +1222,57 @@ function showView(v,btn){
 }
 window.showView=showView;
 
+// Recorre days->blocks->exercises y arma un resumen de progreso (último entrenamiento, notas, historial de cargas por ejercicio) leyendo `progress` con las mismas claves que usan toggleSerie/logGym/saveSessionNote
+function buildProgressSummary(progress,days,idPrefix){
+  let lastDate='—';let lastDay='—';
+  const exerciseLogs=[];
+  (days||[]).forEach((d,di)=>{
+    (d.blocks||[]).forEach((blk,bi)=>{
+      if(blk.kind==='gym'){
+        (blk.exercises||[]).forEach((ex,ei)=>{
+          const logKey=idPrefix+'-'+di+'-'+bi+'-e'+ei+'-logs';
+          const logs=progress[logKey]||[];
+          if(logs.length){
+            const last=logs[logs.length-1];
+            if(lastDate==='—'||compareDates(last.date,lastDate)>0){lastDate=last.date;lastDay=d.name||'Día '+(di+1);}
+            exerciseLogs.push({name:ex.name,dayName:d.name||'Día '+(di+1),logs});
+          }
+        });
+      }
+    });
+  });
+  let notes=[];
+  (days||[]).forEach((d,di)=>{
+    const snKey='snote-'+di;
+    (progress[snKey]||[]).forEach(n=>notes.push({date:n.date,text:n.text,day:d.name||'Día '+(di+1)}));
+  });
+  notes.sort((a,b)=>compareDates(b.date,a.date));
+  return{lastDate,lastDay,notes,exerciseLogs};
+}
+
+// Bloque colapsable "Ver progreso detallado" reusado por renderTracking y renderMemberTrackingCard
+function renderProgressDetailBlock(uid,exerciseLogs){
+  if(!exerciseLogs.length)return'';
+  const rows=exerciseLogs.map(({name,dayName,logs})=>{
+    const last3=logs.slice(-3).reverse();
+    const lastW=parseFloat(logs[logs.length-1]?.weight);
+    const prevW=logs.length>1?parseFloat(logs[logs.length-2]?.weight):NaN;
+    let trend='';
+    if(!isNaN(lastW)&&!isNaN(prevW)){
+      trend=lastW>prevW?'<span style="color:var(--gr)">▲</span>':lastW<prevW?'<span style="color:var(--rd)">▼</span>':'<span style="color:var(--mu)">—</span>';
+    }
+    const entries=last3.map(l=>`<div class="lent"><span>${l.date}</span><span class="lv">${l.weight?l.weight+'kg':'—'} × ${l.reps||'—'}</span></div>`).join('');
+    return`<div style="background:var(--s2);border-radius:8px;padding:8px 11px;margin-bottom:6px">
+      <div style="font-size:.8rem;font-weight:700;margin-bottom:4px">${name} ${trend}<span style="font-size:.68rem;color:var(--mu);font-weight:400"> — ${dayName}</span></div>
+      ${entries}
+    </div>`;
+  }).join('');
+  return`<div class="collapsible-card-hdr" onclick="document.getElementById('prog-detail-${uid}').classList.toggle('collapsed');this.querySelector('.card-toggle').style.transform=document.getElementById('prog-detail-${uid}').classList.contains('collapsed')?'rotate(-90deg)':''" style="margin-top:10px;cursor:pointer;font-size:.78rem;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.05em;display:flex;align-items:center;justify-content:space-between">
+    <span>📈 Ver progreso detallado</span><span class="card-toggle" style="transition:transform .2s">▼</span>
+  </div>
+  <div class="collapsible-card-body" id="prog-detail-${uid}">${rows}</div>`;
+}
+
 function renderTracking(){
   const el=document.getElementById('tracking-content');
   if(!clients.length){el.innerHTML='<div style="text-align:center;padding:40px;color:var(--mu)">No hay clientes todavía.</div>';return}
@@ -1231,33 +1282,7 @@ function renderTracking(){
   let html='';
   filtered.forEach(c=>{
     const initials=c.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
-    // Last training: find most recent log entry
-    let lastDate='—';let lastDay='—';
-    (c.days||[]).forEach((d,di)=>{
-      const snKey='snote-'+di;
-      const notes=c.progress[snKey]||[];
-      // Also check gym logs
-      (d.blocks||[]).forEach((blk,bi)=>{
-        if(blk.kind==='gym'){
-          (blk.exercises||[]).forEach((ex,ei)=>{
-            const logKey=c.id+'-'+di+'-'+bi+'-e'+ei+'-logs';
-            const logs=c.progress[logKey]||[];
-            if(logs.length){
-              const last=logs[logs.length-1];
-              if(lastDate==='—'||compareDates(last.date,lastDate)>0){lastDate=last.date;lastDay=d.name||'Día '+(di+1);}
-            }
-          });
-        }
-      });
-    });
-    // Collect all session notes
-    let allNotes=[];
-    (c.days||[]).forEach((d,di)=>{
-      const snKey='snote-'+di;
-      const notes=c.progress[snKey]||[];
-      notes.forEach(n=>allNotes.push({date:n.date,text:n.text,day:d.name||'Día '+(di+1)}));
-    });
-    allNotes.sort((a,b)=>compareDates(b.date,a.date));
+    const{lastDate,lastDay,notes:allNotes,exerciseLogs}=buildProgressSummary(c.progress,c.days,c.id);
     const notesHtml=allNotes.slice(0,3).map(n=>`
       <div style="background:var(--s2);border-radius:8px;padding:8px 11px;margin-bottom:5px">
         <div style="font-size:.68rem;color:var(--mu);margin-bottom:2px">${n.date} — ${n.day}</div>
@@ -1289,6 +1314,7 @@ function renderTracking(){
         </div>
       </div>
       ${allNotes.length?`<div><div style="font-size:.7rem;color:var(--mu);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Últimas notas</div>${notesHtml}</div>`:''}
+      ${renderProgressDetailBlock(c.id,exerciseLogs)}
     </div>`;
   });
   el.innerHTML=html;
@@ -3291,6 +3317,44 @@ async function updatePlan(){
   showPlanesPanel('list',document.getElementById('itp-list'));
 }
 window.updatePlan=updatePlan;
+
+function renderMemberTrackingCard(m,plan){
+  const initials=m.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+  const days=getMemberPlanDays(plan,m);
+  const progress=m.progress||{};
+  const uid=`${plan.id}-${m.id}`;
+  const{lastDate,lastDay,notes:allNotes,exerciseLogs}=buildProgressSummary(progress,days,uid);
+  const notesHtml=allNotes.slice(0,3).map(n=>`
+    <div style="background:var(--s2);border-radius:8px;padding:8px 11px;margin-bottom:5px">
+      <div style="font-size:.68rem;color:var(--mu);margin-bottom:2px">${n.date} — ${n.day}</div>
+      <div style="font-size:.8rem">${n.text}</div>
+    </div>`).join('');
+  const expired=m.expiry&&(new Date(m.expiry+'T00:00:00')<new Date());
+  const statusBadge=m.status==='active'&&!expired?'<span class="badge bgr2">✅ Activo</span>':expired?'<span class="badge" style="background:#f8717122;color:var(--rd)">⏰ Vencido</span>':'<span class="badge byw2">⏳ Pendiente</span>';
+  return`<div class="card" style="margin-bottom:14px">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+      <div class="cav">${initials}</div>
+      <div style="flex:1">
+        <div style="font-weight:700;font-size:.95rem">${m.name} ${statusBadge}</div>
+        <div style="font-size:.76rem;color:var(--mu);margin-top:2px">${m.email||''}</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+      <div style="background:var(--s2);border-radius:9px;padding:11px">
+        <div style="font-size:.68rem;color:var(--mu);text-transform:uppercase;letter-spacing:.05em;font-weight:600;margin-bottom:4px">Último entrenamiento</div>
+        <div style="font-weight:700;font-size:.9rem">${lastDate}</div>
+        <div style="font-size:.76rem;color:var(--mu)">${lastDay}</div>
+      </div>
+      <div style="background:var(--s2);border-radius:9px;padding:11px">
+        <div style="font-size:.68rem;color:var(--mu);text-transform:uppercase;letter-spacing:.05em;font-weight:600;margin-bottom:4px">Notas de sesión</div>
+        <div style="font-weight:700;font-size:.9rem">${allNotes.length} nota${allNotes.length!==1?'s':''}</div>
+        <div style="font-size:.76rem;color:var(--mu)">${allNotes.length?'Última: '+allNotes[0].date:'Sin notas aún'}</div>
+      </div>
+    </div>
+    ${allNotes.length?`<div><div style="font-size:.7rem;color:var(--mu);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Últimas notas</div>${notesHtml}</div>`:''}
+    ${renderProgressDetailBlock(uid,exerciseLogs)}
+  </div>`;
+}
 
 function renderPlanSeguimiento(){
   const el=document.getElementById('plan-seg-content');
