@@ -97,6 +97,7 @@ textarea{resize:vertical;min-height:52px}
 .collapsible-card-hdr h2{margin-bottom:0}
 .collapsible-card-body{margin-top:14px}
 .card.collapsed .collapsible-card-body{display:none}
+.collapsible-card-body.collapsed{display:none}
 .card-toggle{color:var(--mu);font-size:.85rem;transition:transform .2s}
 .card.collapsed .card-toggle{transform:rotate(-90deg)}
 .blk-type{font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.05em}
@@ -1250,27 +1251,61 @@ function buildProgressSummary(progress,days,idPrefix){
   return{lastDate,lastDay,notes,exerciseLogs};
 }
 
-// Bloque colapsable "Ver progreso detallado" reusado por renderTracking y renderMemberTrackingCard
-function renderProgressDetailBlock(uid,exerciseLogs){
-  if(!exerciseLogs.length)return'';
-  const rows=exerciseLogs.map(({name,dayName,logs})=>{
-    const last3=logs.slice(-3).reverse();
-    const lastW=parseFloat(logs[logs.length-1]?.weight);
-    const prevW=logs.length>1?parseFloat(logs[logs.length-2]?.weight):NaN;
-    let trend='';
-    if(!isNaN(lastW)&&!isNaN(prevW)){
-      trend=lastW>prevW?'<span style="color:var(--gr)">▲</span>':lastW<prevW?'<span style="color:var(--rd)">▼</span>':'<span style="color:var(--mu)">—</span>';
-    }
-    const entries=last3.map(l=>`<div class="lent"><span>${l.date}</span><span class="lv">${l.weight?l.weight+'kg':'—'} × ${l.reps||'—'}</span></div>`).join('');
-    return`<div style="background:var(--s2);border-radius:8px;padding:8px 11px;margin-bottom:6px">
-      <div style="font-size:.8rem;font-weight:700;margin-bottom:4px">${name} ${trend}<span style="font-size:.68rem;color:var(--mu);font-weight:400"> — ${dayName}</span></div>
-      ${entries}
+// Bloque de progreso agrupado por día (días colapsados), reusado por renderTracking y renderMemberTrackingCard
+function renderProgressDetailBlock(uid,exerciseLogs,days,allNotes){
+  if(!exerciseLogs.length&&!(allNotes&&allNotes.length))return'';
+  const dayMap={};
+  const order=[];
+  (days||[]).forEach((d,di)=>{
+    const dayName=d.name||'Día '+(di+1);
+    if(!dayMap[dayName]){dayMap[dayName]={exercises:[],notes:[],lastDate:'—'};order.push(dayName);}
+  });
+  exerciseLogs.forEach(e=>{
+    if(!dayMap[e.dayName]){dayMap[e.dayName]={exercises:[],notes:[],lastDate:'—'};order.push(e.dayName);}
+    dayMap[e.dayName].exercises.push(e);
+    const last=e.logs[e.logs.length-1];
+    if(last&&(dayMap[e.dayName].lastDate==='—'||compareDates(last.date,dayMap[e.dayName].lastDate)>0))dayMap[e.dayName].lastDate=last.date;
+  });
+  (allNotes||[]).forEach(n=>{
+    if(!dayMap[n.day]){dayMap[n.day]={exercises:[],notes:[],lastDate:'—'};order.push(n.day);}
+    dayMap[n.day].notes.push(n);
+    if(dayMap[n.day].lastDate==='—'||compareDates(n.date,dayMap[n.day].lastDate)>0)dayMap[n.day].lastDate=n.date;
+  });
+  const dayNames=order.filter(n=>dayMap[n].exercises.length||dayMap[n].notes.length);
+  if(!dayNames.length)return'';
+  const dayBlocks=dayNames.map((dayName,i)=>{
+    const info=dayMap[dayName];
+    const dayId=`prog-day-${uid}-${i}`;
+    const exHtml=info.exercises.map(({name,logs})=>{
+      const last3=logs.slice(-3).reverse();
+      const lastW=parseFloat(logs[logs.length-1]?.weight);
+      const prevW=logs.length>1?parseFloat(logs[logs.length-2]?.weight):NaN;
+      let trend='';
+      if(!isNaN(lastW)&&!isNaN(prevW)){
+        trend=lastW>prevW?'<span style="color:var(--gr)">▲</span>':lastW<prevW?'<span style="color:var(--rd)">▼</span>':'<span style="color:var(--mu)">—</span>';
+      }
+      const entries=last3.map(l=>`<div class="lent"><span>${l.date}</span><span class="lv">${l.weight?l.weight+'kg':'—'} × ${l.reps||'—'}</span></div>`).join('');
+      return`<div style="background:var(--bg);border-radius:8px;padding:8px 11px;margin-bottom:6px">
+        <div style="font-size:.8rem;font-weight:700;margin-bottom:4px">${name} ${trend}</div>
+        ${entries}
+      </div>`;
+    }).join('');
+    const notesHtml=info.notes.map(n=>`
+      <div style="background:var(--bg);border-radius:8px;padding:8px 11px;margin-bottom:6px">
+        <div style="font-size:.68rem;color:var(--mu);margin-bottom:2px">${n.date}</div>
+        <div style="font-size:.8rem">${n.text}</div>
+      </div>`).join('');
+    return`<div style="background:var(--s2);border-radius:9px;padding:10px 11px;margin-bottom:8px">
+      <div class="collapsible-card-hdr" onclick="document.getElementById('${dayId}').classList.toggle('collapsed');this.querySelector('.card-toggle').style.transform=document.getElementById('${dayId}').classList.contains('collapsed')?'rotate(-90deg)':''" style="cursor:pointer;font-size:.82rem;font-weight:700">
+        <span>${dayName}<span style="font-size:.68rem;color:var(--mu);font-weight:400"> — último: ${info.lastDate}</span></span><span class="card-toggle" style="transition:transform .2s">▼</span>
+      </div>
+      <div class="collapsible-card-body collapsed" id="${dayId}" style="margin-top:8px">
+        ${exHtml}${notesHtml?`<div style="font-size:.68rem;color:var(--mu);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin:6px 0 4px">Notas</div>${notesHtml}`:''}
+        ${!exHtml&&!notesHtml?'<div style="font-size:.78rem;color:var(--mu)">Sin registros todavía.</div>':''}
+      </div>
     </div>`;
   }).join('');
-  return`<div class="collapsible-card-hdr" onclick="document.getElementById('prog-detail-${uid}').classList.toggle('collapsed');this.querySelector('.card-toggle').style.transform=document.getElementById('prog-detail-${uid}').classList.contains('collapsed')?'rotate(-90deg)':''" style="margin-top:10px;cursor:pointer;font-size:.78rem;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.05em;display:flex;align-items:center;justify-content:space-between">
-    <span>📈 Ver progreso detallado</span><span class="card-toggle" style="transition:transform .2s">▼</span>
-  </div>
-  <div class="collapsible-card-body" id="prog-detail-${uid}">${rows}</div>`;
+  return`<div style="margin-top:10px;font-size:.78rem;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">📈 Progreso por día</div>${dayBlocks}`;
 }
 
 function renderTracking(){
@@ -1283,38 +1318,36 @@ function renderTracking(){
   filtered.forEach(c=>{
     const initials=c.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
     const{lastDate,lastDay,notes:allNotes,exerciseLogs}=buildProgressSummary(c.progress,c.days,c.id);
-    const notesHtml=allNotes.slice(0,3).map(n=>`
-      <div style="background:var(--s2);border-radius:8px;padding:8px 11px;margin-bottom:5px">
-        <div style="font-size:.68rem;color:var(--mu);margin-bottom:2px">${n.date} — ${n.day}</div>
-        <div style="font-size:.8rem">${n.text}</div>
-      </div>`).join('');
     const expiredT=c.expiry&&(new Date(c.expiry+'T00:00:00')<new Date());
     const expiryBadgeT=c.expiry?`<span class="badge" style="background:${expiredT?'#f8717122':'#fbbf2422'};color:${expiredT?'var(--rd)':'var(--yw)'}">${expiredT?'⏰ Vencido':'📅 Vence '+new Date(c.expiry+'T00:00:00').toLocaleDateString('es-AR')}</span>`:'';
     const payBadge=c.payStatus==='paid'?'<span class="badge" style="background:#4ade8022;color:var(--gr)">✅ Pagado</span>':c.payStatus==='pending'?'<span class="badge" style="background:#f8717122;color:var(--rd)">⏳ Pendiente</span>':'';
+    const bodyId=`track-body-${c.id}`;
     html+=`<div class="card" style="margin-bottom:14px">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+      <div style="display:flex;align-items:center;gap:12px;cursor:pointer" onclick="document.getElementById('${bodyId}').classList.toggle('collapsed');this.querySelector('.card-toggle').style.transform=document.getElementById('${bodyId}').classList.contains('collapsed')?'rotate(-90deg)':''">
         <div class="cav">${initials}</div>
         <div style="flex:1">
           <div style="font-weight:700;font-size:.95rem">${c.name} ${payBadge} ${expiryBadgeT}</div>
-          <div style="font-size:.76rem;color:var(--mu);margin-top:2px">🎯 ${c.goal||'—'} · 📊 ${c.level}</div>
-          ${c.mpLink?`<a href="${c.mpLink}" target="_blank" style="font-size:.72rem;color:#009EE3;text-decoration:none">💳 Ver link de pago</a>`:''}
+          <div style="font-size:.76rem;color:var(--mu);margin-top:2px">🎯 ${c.goal||'—'} · 📊 ${c.level} · último: ${lastDate}</div>
         </div>
-        <button class="btn bpu sm" onclick="openEdit('${c.id}')">✏️ Editar</button>
+        <span class="card-toggle" style="transition:transform .2s;transform:rotate(-90deg)">▼</span>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
-        <div style="background:var(--s2);border-radius:9px;padding:11px">
-          <div style="font-size:.68rem;color:var(--mu);text-transform:uppercase;letter-spacing:.05em;font-weight:600;margin-bottom:4px">Último entrenamiento</div>
-          <div style="font-weight:700;font-size:.9rem">${lastDate}</div>
-          <div style="font-size:.76rem;color:var(--mu)">${lastDay}</div>
+      <div class="collapsible-card-body collapsed" id="${bodyId}" style="margin-top:12px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+          <div style="background:var(--s2);border-radius:9px;padding:11px">
+            <div style="font-size:.68rem;color:var(--mu);text-transform:uppercase;letter-spacing:.05em;font-weight:600;margin-bottom:4px">Último entrenamiento</div>
+            <div style="font-weight:700;font-size:.9rem">${lastDate}</div>
+            <div style="font-size:.76rem;color:var(--mu)">${lastDay}</div>
+          </div>
+          <div style="background:var(--s2);border-radius:9px;padding:11px">
+            <div style="font-size:.68rem;color:var(--mu);text-transform:uppercase;letter-spacing:.05em;font-weight:600;margin-bottom:4px">Notas de sesión</div>
+            <div style="font-weight:700;font-size:.9rem">${allNotes.length} nota${allNotes.length!==1?'s':''}</div>
+            <div style="font-size:.76rem;color:var(--mu)">${allNotes.length?'Última: '+allNotes[0].date:'Sin notas aún'}</div>
+          </div>
+          ${c.mpLink?`<a href="${c.mpLink}" target="_blank" style="font-size:.72rem;color:#009EE3;text-decoration:none;grid-column:1/-1">💳 Ver link de pago</a>`:''}
         </div>
-        <div style="background:var(--s2);border-radius:9px;padding:11px">
-          <div style="font-size:.68rem;color:var(--mu);text-transform:uppercase;letter-spacing:.05em;font-weight:600;margin-bottom:4px">Notas de sesión</div>
-          <div style="font-weight:700;font-size:.9rem">${allNotes.length} nota${allNotes.length!==1?'s':''}</div>
-          <div style="font-size:.76rem;color:var(--mu)">${allNotes.length?'Última: '+allNotes[0].date:'Sin notas aún'}</div>
-        </div>
+        ${renderProgressDetailBlock(c.id,exerciseLogs,c.days,allNotes)}
+        <button class="btn bpu sm" style="margin-top:10px" onclick="event.stopPropagation();openEdit('${c.id}')">✏️ Editar</button>
       </div>
-      ${allNotes.length?`<div><div style="font-size:.7rem;color:var(--mu);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Últimas notas</div>${notesHtml}</div>`:''}
-      ${renderProgressDetailBlock(c.id,exerciseLogs)}
     </div>`;
   });
   el.innerHTML=html;
@@ -3324,35 +3357,33 @@ function renderMemberTrackingCard(m,plan){
   const progress=m.progress||{};
   const uid=`${plan.id}-${m.id}`;
   const{lastDate,lastDay,notes:allNotes,exerciseLogs}=buildProgressSummary(progress,days,uid);
-  const notesHtml=allNotes.slice(0,3).map(n=>`
-    <div style="background:var(--s2);border-radius:8px;padding:8px 11px;margin-bottom:5px">
-      <div style="font-size:.68rem;color:var(--mu);margin-bottom:2px">${n.date} — ${n.day}</div>
-      <div style="font-size:.8rem">${n.text}</div>
-    </div>`).join('');
   const expired=m.expiry&&(new Date(m.expiry+'T00:00:00')<new Date());
   const statusBadge=m.status==='active'&&!expired?'<span class="badge bgr2">✅ Activo</span>':expired?'<span class="badge" style="background:#f8717122;color:var(--rd)">⏰ Vencido</span>':'<span class="badge byw2">⏳ Pendiente</span>';
+  const bodyId=`member-body-${uid}`;
   return`<div class="card" style="margin-bottom:14px">
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+    <div style="display:flex;align-items:center;gap:12px;cursor:pointer" onclick="document.getElementById('${bodyId}').classList.toggle('collapsed');this.querySelector('.card-toggle').style.transform=document.getElementById('${bodyId}').classList.contains('collapsed')?'rotate(-90deg)':''">
       <div class="cav">${initials}</div>
       <div style="flex:1">
         <div style="font-weight:700;font-size:.95rem">${m.name} ${statusBadge}</div>
-        <div style="font-size:.76rem;color:var(--mu);margin-top:2px">${m.email||''}</div>
+        <div style="font-size:.76rem;color:var(--mu);margin-top:2px">${m.email||''} · último: ${lastDate}</div>
       </div>
+      <span class="card-toggle" style="transition:transform .2s;transform:rotate(-90deg)">▼</span>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
-      <div style="background:var(--s2);border-radius:9px;padding:11px">
-        <div style="font-size:.68rem;color:var(--mu);text-transform:uppercase;letter-spacing:.05em;font-weight:600;margin-bottom:4px">Último entrenamiento</div>
-        <div style="font-weight:700;font-size:.9rem">${lastDate}</div>
-        <div style="font-size:.76rem;color:var(--mu)">${lastDay}</div>
+    <div class="collapsible-card-body collapsed" id="${bodyId}" style="margin-top:12px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+        <div style="background:var(--s2);border-radius:9px;padding:11px">
+          <div style="font-size:.68rem;color:var(--mu);text-transform:uppercase;letter-spacing:.05em;font-weight:600;margin-bottom:4px">Último entrenamiento</div>
+          <div style="font-weight:700;font-size:.9rem">${lastDate}</div>
+          <div style="font-size:.76rem;color:var(--mu)">${lastDay}</div>
+        </div>
+        <div style="background:var(--s2);border-radius:9px;padding:11px">
+          <div style="font-size:.68rem;color:var(--mu);text-transform:uppercase;letter-spacing:.05em;font-weight:600;margin-bottom:4px">Notas de sesión</div>
+          <div style="font-weight:700;font-size:.9rem">${allNotes.length} nota${allNotes.length!==1?'s':''}</div>
+          <div style="font-size:.76rem;color:var(--mu)">${allNotes.length?'Última: '+allNotes[0].date:'Sin notas aún'}</div>
+        </div>
       </div>
-      <div style="background:var(--s2);border-radius:9px;padding:11px">
-        <div style="font-size:.68rem;color:var(--mu);text-transform:uppercase;letter-spacing:.05em;font-weight:600;margin-bottom:4px">Notas de sesión</div>
-        <div style="font-weight:700;font-size:.9rem">${allNotes.length} nota${allNotes.length!==1?'s':''}</div>
-        <div style="font-size:.76rem;color:var(--mu)">${allNotes.length?'Última: '+allNotes[0].date:'Sin notas aún'}</div>
-      </div>
+      ${renderProgressDetailBlock(uid,exerciseLogs,days,allNotes)}
     </div>
-    ${allNotes.length?`<div><div style="font-size:.7rem;color:var(--mu);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Últimas notas</div>${notesHtml}</div>`:''}
-    ${renderProgressDetailBlock(uid,exerciseLogs)}
   </div>`;
 }
 
