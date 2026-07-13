@@ -61,19 +61,62 @@ exports.mpWebhook = onRequest(async (req, res) => {
       return res.status(200).send("Not approved");
     }
 
-    // El plan ID viene en external_reference del pago.
-    // Se setea al crear la preferencia de Checkout Pro.
-    const planId = payment.external_reference;
+    // El plan ID (o "sub:"+uid para suscripciones individuales) viene en
+    // external_reference del pago. Se setea al crear la preferencia de Checkout Pro.
+    const externalRef = payment.external_reference;
     const payerEmail = payment.payer?.email;
     const payerName =
       `${payment.payer?.first_name || ""} ${payment.payer?.last_name || ""}`.trim() ||
       payerEmail ||
       "Sin nombre";
 
-    if (!planId) {
+    if (!externalRef) {
       console.error("No hay external_reference en el pago");
-      return res.status(200).send("No planId");
+      return res.status(200).send("No external_reference");
     }
+
+    if (externalRef.startsWith("sub:")) {
+      // Suscripción individual: actualiza subscribers/{uid} en vez de planes/{id}.members
+      const uid = externalRef.slice(4);
+      const subRef = db.collection("subscribers").doc(uid);
+      const subSnap = await subRef.get();
+
+      if (!subSnap.exists) {
+        console.error(`Subscriber ${uid} no encontrado`);
+        return res.status(200).send("Subscriber not found");
+      }
+
+      const categoria = subSnap.data().categoria;
+      let planId = null;
+      if (categoria && categoria !== "global") {
+        const fijoSnap = await db.collection("planesFijos").doc(categoria).get();
+        planId = fijoSnap.exists ? fijoSnap.data().planId || null : null;
+      }
+
+      const expDate = new Date();
+      expDate.setDate(expDate.getDate() + 30);
+      const expiry = expDate.toISOString().split("T")[0];
+
+      const updates = {
+        status: "active",
+        expiry,
+        lastPaymentId: String(paymentId),
+        planId,
+      };
+      // startDate/startWeek solo se setean en la primera activación: renovaciones
+      // no deben reiniciar la semana del plan en la que ya venía el alumno.
+      if (!subSnap.data().startDate) {
+        updates.startDate = new Date().toISOString().split("T")[0];
+        updates.startWeek = 1;
+      }
+
+      await subRef.update(updates);
+      console.log(`Suscripción activada: ${uid} (${categoria}) hasta ${expiry}`);
+
+      return res.status(200).send("OK");
+    }
+
+    const planId = externalRef;
 
     // Buscar el plan en Firestore
     const planRef = db.collection("planes").doc(planId);
@@ -146,38 +189,94 @@ exports.crearPago = onRequest(async (req, res) => {
   }
 
   try {
-    const { planId } = req.body;
-    if (!planId) return res.status(400).json({ error: "planId requerido" });
+    const { planId, subscriberId } = req.body;
+    if (!planId && !subscriberId) {
+      return res.status(400).json({ error: "planId o subscriberId requerido" });
+    }
 
     const MP_ACCESS_TOKEN = process.env.MP_ACCESS_TOKEN;
     if (!MP_ACCESS_TOKEN) {
       return res.status(500).json({ error: "Config missing" });
     }
 
-    const planSnap = await db.collection("planes").doc(planId).get();
-    if (!planSnap.exists) return res.status(404).json({ error: "Plan no encontrado" });
+    let preference;
 
-    const plan = planSnap.data();
+    if (subscriberId) {
+      // Suscripción individual: precio sale del plan fijo mapeado a la
+      // categoría del alumno (planesFijos/{categoria}.planId -> planes/{id}.price),
+      // salvo "global" que no tiene un único plan y usa planesFijos/global.price.
+      const subSnap = await db.collection("subscribers").doc(subscriberId).get();
+      if (!subSnap.exists) return res.status(404).json({ error: "Suscriptor no encontrado" });
 
-    const preference = {
-      items: [
-        {
-          title: plan.name,
-          description: plan.desc || plan.name,
-          quantity: 1,
-          currency_id: "ARS",
-          unit_price: Number(plan.price) || 1,
+      const categoria = subSnap.data().categoria;
+      if (!categoria) return res.status(400).json({ error: "El suscriptor no tiene categoría elegida" });
+
+      const fijoSnap = await db.collection("planesFijos").doc(categoria).get();
+      if (!fijoSnap.exists) return res.status(404).json({ error: `planesFijos/${categoria} no configurado` });
+
+      const fijo = fijoSnap.data();
+      let price;
+      let title = `Suscripción ${categoria}`;
+
+      if (categoria === "global") {
+        price = Number(fijo.price) || 0;
+      } else {
+        if (!fijo.planId) return res.status(404).json({ error: `planesFijos/${categoria} sin planId` });
+        const planSnap = await db.collection("planes").doc(fijo.planId).get();
+        if (!planSnap.exists) return res.status(404).json({ error: "Plan fijo no encontrado" });
+        const plan = planSnap.data();
+        price = Number(plan.price) || 0;
+        title = plan.name || title;
+      }
+
+      if (!price) return res.status(400).json({ error: "El plan fijo no tiene precio configurado" });
+
+      preference = {
+        items: [
+          {
+            title,
+            description: title,
+            quantity: 1,
+            currency_id: "ARS",
+            unit_price: price,
+          },
+        ],
+        // external_reference con prefijo "sub:" para que el webhook lo distinga
+        // del flujo de planes grupales y actualice subscribers/{uid}.
+        external_reference: `sub:${subscriberId}`,
+        back_urls: {
+          success: `https://angelmeier-fit.web.app/?alumno=1&pago=ok`,
+          failure: `https://angelmeier-fit.web.app/?alumno=1&pago=error`,
+          pending: `https://angelmeier-fit.web.app/?alumno=1&pago=pendiente`,
         },
-      ],
-      // external_reference vincula el pago al plan para que el webhook lo identifique
-      external_reference: planId,
-      back_urls: {
-        success: `https://angelmeier-fit.web.app/?plan=${planId}&pago=ok`,
-        failure: `https://angelmeier-fit.web.app/?plan=${planId}&pago=error`,
-        pending: `https://angelmeier-fit.web.app/?plan=${planId}&pago=pendiente`,
-      },
-      auto_return: "approved",
-    };
+        auto_return: "approved",
+      };
+    } else {
+      const planSnap = await db.collection("planes").doc(planId).get();
+      if (!planSnap.exists) return res.status(404).json({ error: "Plan no encontrado" });
+
+      const plan = planSnap.data();
+
+      preference = {
+        items: [
+          {
+            title: plan.name,
+            description: plan.desc || plan.name,
+            quantity: 1,
+            currency_id: "ARS",
+            unit_price: Number(plan.price) || 1,
+          },
+        ],
+        // external_reference vincula el pago al plan para que el webhook lo identifique
+        external_reference: planId,
+        back_urls: {
+          success: `https://angelmeier-fit.web.app/?plan=${planId}&pago=ok`,
+          failure: `https://angelmeier-fit.web.app/?plan=${planId}&pago=error`,
+          pending: `https://angelmeier-fit.web.app/?plan=${planId}&pago=pendiente`,
+        },
+        auto_return: "approved",
+      };
+    }
 
     const mpRes = await fetch("https://api.mercadopago.com/checkout/preferences", {
       method: "POST",

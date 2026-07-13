@@ -1,0 +1,82 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email == 'angelmeier10@gmail.com';
+    }
+
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    function subscriberActiveFor(planId) {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/subscribers/$(request.auth.uid))
+        && get(/databases/$(database)/documents/subscribers/$(request.auth.uid)).data.status == 'active'
+        && (get(/databases/$(database)/documents/subscribers/$(request.auth.uid)).data.planId == planId
+            // La suscripción "global" no tiene un único planId: da acceso a
+            // cualquier plan fijo marcado privado (los 4 mapeados en planesFijos).
+            || get(/databases/$(database)/documents/subscribers/$(request.auth.uid)).data.categoria == 'global');
+    }
+
+    // Datos operativos del entrenador: solo admin.
+    match /clients/{clientId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /exercises/{exerciseId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /solicitudes/{solicitudId} {
+      allow read, write: if isAdmin();
+    }
+
+    // Planes: admin gestiona todo. Planes grupales marcados public:true
+    // siguen accesibles sin login (link compartido). El plan fijo de
+    // suscripción exige login + suscripción activa para ese planId.
+    match /planes/{planId} {
+      // Planes existentes no tienen el campo "public" seteado: se tratan
+      // como públicos por defecto (compatibilidad con links ya compartidos).
+      // Solo un plan marcado explícitamente public:false requiere login +
+      // suscripción activa para ese planId.
+      allow read: if isAdmin()
+        || resource.data.public != false
+        || subscriberActiveFor(planId);
+      allow write: if isAdmin();
+    }
+
+    // Catálogo de planes fijos por categoría: público de solo lectura
+    // (no expone datos sensibles, solo el mapeo categoria -> planId).
+    match /planesFijos/{categoria} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Suscriptores (alumnos self-service).
+    match /subscribers/{uid} {
+      allow read: if isAdmin() || isOwner(uid);
+      allow create: if isAdmin()
+        || (isOwner(uid)
+            && request.resource.data.status == 'pending'
+            && !('expiry' in request.resource.data)
+            && !('lastPaymentId' in request.resource.data));
+      allow update: if isAdmin()
+        || (isOwner(uid)
+            && request.resource.data.status == resource.data.status
+            && request.resource.data.expiry == resource.data.expiry
+            && request.resource.data.lastPaymentId == resource.data.lastPaymentId
+            && request.resource.data.categoria == resource.data.categoria
+            && request.resource.data.planId == resource.data.planId);
+      allow delete: if isAdmin();
+    }
+
+    // Metadata de la app (ej. categorías de ejercicios).
+    match /meta/{docId} {
+      allow read, write: if isAdmin();
+    }
+  }
+}

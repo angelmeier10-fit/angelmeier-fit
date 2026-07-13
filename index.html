@@ -334,7 +334,7 @@ setTimeout(()=>{
   <div style="max-width:340px;width:100%;text-align:center">
     <div style="font-size:2.4rem;margin-bottom:10px">💪</div>
     <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.3rem;margin-bottom:4px">Angel Meier</div>
-    <div style="color:var(--mu);font-size:.85rem;margin-bottom:24px">Panel de entrenador</div>
+    <div id="login-subtitle" style="color:var(--mu);font-size:.85rem;margin-bottom:24px">Panel de entrenador</div>
     <input id="login-email" type="email" placeholder="Email" style="margin-bottom:10px" autocomplete="username">
     <div style="position:relative;margin-bottom:5px">
       <input id="login-pass" type="password" placeholder="Contraseña" style="padding-right:42px" autocomplete="current-password" oninput="checkPassReqs()" onkeydown="if(event.key==='Enter')doLogin()">
@@ -358,6 +358,48 @@ setTimeout(()=>{
       <span onclick="toggleSignupMode()" style="color:var(--ac2);cursor:pointer" id="login-mode-toggle">Crear cuenta</span>
       <span onclick="doForgotPassword()" style="color:var(--mu);cursor:pointer">Olvidé mi contraseña</span>
     </div>
+  </div>
+</div>
+
+<div id="view-alumno" style="display:none;position:fixed;inset:0;z-index:9998;background:var(--bg);overflow-y:auto">
+  <div id="alumno-narrow-wrap" style="display:none;max-width:420px;margin:0 auto;padding:24px 16px">
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="font-size:2.4rem;margin-bottom:6px">💪</div>
+      <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.25rem">Suscripción Angel Meier</div>
+    </div>
+
+    <div id="alumno-categoria-screen" style="display:none">
+      <p class="sub" style="text-align:center;margin-bottom:16px">Elegí tu categoría</p>
+      <div style="display:flex;flex-direction:column;gap:10px" id="alumno-categorias-list"></div>
+      <div id="alumno-categoria-error" style="color:var(--rd);font-size:.82rem;margin-top:10px;text-align:center"></div>
+    </div>
+
+    <div id="alumno-pending-screen" class="card" style="display:none;text-align:center;padding:30px 20px">
+      <div style="font-size:2rem;margin-bottom:10px">⏳</div>
+      <h3 style="margin-bottom:8px">Falta completar el pago</h3>
+      <p class="sub">Todavía no acreditamos tu pago. En cuanto se confirme, vas a poder acceder a tu plan acá mismo.</p>
+      <div id="alumno-pago-btn-wrap" style="margin-top:14px"></div>
+    </div>
+
+    <div id="alumno-expired-screen" class="card" style="display:none;text-align:center;padding:30px 20px">
+      <div style="font-size:2rem;margin-bottom:10px">⚠️</div>
+      <h3 style="margin-bottom:8px">Tu suscripción venció</h3>
+      <p class="sub">Renová tu pago para volver a acceder a tu plan.</p>
+      <div id="alumno-pago-btn-wrap-exp" style="margin-top:14px"></div>
+    </div>
+
+    <div style="text-align:center;margin-top:24px">
+      <span onclick="doLogout()" style="color:var(--mu);cursor:pointer;font-size:.82rem">🚪 Cerrar sesión</span>
+    </div>
+  </div>
+
+  <div id="alumno-active-wrap" style="display:none;max-width:980px;margin:0 auto;padding:20px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.1rem">💪 Angel Meier</div>
+      <span onclick="doLogout()" style="color:var(--mu);cursor:pointer;font-size:.82rem">🚪 Cerrar sesión</span>
+    </div>
+    <div id="alumno-cat-switcher"></div>
+    <div id="alumno-cv-content"></div>
   </div>
 </div>
 
@@ -395,10 +437,37 @@ setTimeout(()=>{
     <button class="itab" id="it-edit" style="display:none" onclick="showPanel('edit',this)">✏️ Editar</button>
     <button class="itab" id="it-macro" style="display:none" onclick="showPanel('macro',this)">📊 Macrociclo</button>
     <button class="itab" id="it-alumnos" onclick="showPanel('alumnos',this)">🧑 Ver por alumno</button>
+    <button class="itab" id="it-suscriptores" onclick="showPanel('suscriptores',this)">🔔 Suscriptores</button>
+    <button class="itab" id="it-alumnosuni" onclick="showPanel('alumnosuni',this)">👤 Alumnos (nuevo)</button>
+  </div>
+  <div id="panel-alumnosuni" style="display:none">
+    <div class="card" style="margin-bottom:16px;padding:16px">
+      <h3 style="margin-bottom:10px;font-size:.95rem">➕ Dar de alta un alumno vos mismo</h3>
+      <p class="sub" style="margin-bottom:10px">Para alguien que te paga en persona y no quiere/puede registrarse solo. Le creamos la cuenta y le mandamos un email para que defina su contraseña.</p>
+      <div class="fg full" style="margin-bottom:8px"><label>Nombre</label><input id="uni-new-name" placeholder="Nombre y apellido"></div>
+      <div class="fg full" style="margin-bottom:8px"><label>Email</label><input id="uni-new-email" type="email" placeholder="alumno@gmail.com"></div>
+      <div class="fg full" style="margin-bottom:10px"><label>Categoría</label><select id="uni-new-cat"></select></div>
+      <button class="btn bp" onclick="altaManualAlumno('uni-new-name','uni-new-email','uni-new-cat',renderAlumnosUnificado)" style="width:100%;justify-content:center">Crear alumno</button>
+    </div>
+    <input id="uni-search" placeholder="🔍 Buscar alumno por nombre o email..." oninput="renderAlumnosUnificado(this.value)" style="margin-bottom:12px;font-size:.88rem">
+    <div id="alumnosuni-list"></div>
   </div>
   <div id="panel-alumnos" style="display:none">
     <input id="alu-search" placeholder="🔍 Buscar alumno por nombre..." oninput="renderAlumnosConsolidado(this.value)" style="margin-bottom:12px;font-size:.88rem">
     <div id="alumnos-list"></div>
+  </div>
+  <div id="panel-suscriptores" style="display:none">
+    <p class="sub" style="margin-bottom:14px">Alumnos que se registraron desde el link de suscripción (<code>angelmeier-fit.web.app/suscripcion</code>). Activá manualmente a quien te pague por fuera de MercadoPago (efectivo, transferencia).</p>
+    <div class="card" style="margin-bottom:16px;padding:16px">
+      <h3 style="margin-bottom:10px;font-size:.95rem">➕ Dar de alta un alumno vos mismo</h3>
+      <p class="sub" style="margin-bottom:10px">Para alguien que te paga en persona y no quiere/puede registrarse solo. Le creamos la cuenta y le mandamos un email para que defina su contraseña.</p>
+      <div class="fg full" style="margin-bottom:8px"><label>Nombre</label><input id="susc-new-name" placeholder="Nombre y apellido"></div>
+      <div class="fg full" style="margin-bottom:8px"><label>Email</label><input id="susc-new-email" type="email" placeholder="alumno@gmail.com"></div>
+      <div class="fg full" style="margin-bottom:10px"><label>Categoría</label><select id="susc-new-cat"></select></div>
+      <button class="btn bp" onclick="altaManualAlumno()" style="width:100%;justify-content:center">Crear alumno</button>
+    </div>
+    <input id="susc-search" placeholder="🔍 Buscar suscriptor por nombre o email..." oninput="renderSuscriptoresPanel(this.value)" style="margin-bottom:12px;font-size:.88rem">
+    <div id="suscriptores-list"></div>
   </div>
   <div id="panel-clients">
     <input id="client-search" placeholder="🔍 Buscar cliente por nombre..." oninput="filterClients(this.value)" style="margin-bottom:12px;font-size:.88rem">
@@ -638,6 +707,7 @@ setTimeout(()=>{
     <button class="itab" id="itp-macro" style="display:none" onclick="showPlanesPanel('macro',this)">📊 Macrociclo</button>
     <button class="itab" id="itp-members" style="display:none" onclick="showPlanesPanel('members',this)">👤 Alumnos</button>
     <button class="itab" id="itp-seg" style="display:none" onclick="showPlanesPanel('seg',this)">📊 Seguimiento</button>
+    <button class="itab" id="itp-fijos" onclick="showPlanesPanel('fijos',this)">🔔 Planes fijos (suscripción)</button>
   </div>
   <div id="planes-panel-list">
     <div id="planes-list"></div>
@@ -669,6 +739,7 @@ setTimeout(()=>{
         <div class="fg"><label>Total de semanas (macrociclo)</label><input id="np-totalweeks" type="number" value="12" min="1" max="52"></div>
         <div class="fg"><label>Semanas por mesociclo</label><input id="np-mesoweeks" type="number" value="4" min="1" max="12"></div>
         <div class="fg full"><label>Cantidad de días de entrenamiento</label><input id="np-days" type="number" value="3" min="1" max="14"></div>
+        <div class="fg full"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="np-private" style="width:auto"> 🔒 Plan privado (solo alumnos con suscripción activa, no accesible por link público)</label></div>
       </div></div>
     </div>
     <div class="card" style="margin-bottom:10px;padding:14px 16px">
@@ -715,6 +786,7 @@ setTimeout(()=>{
         <div class="fg"><label>Categoría</label><input id="ep-cat"></div>
         <div class="fg"><label>Total de semanas (macrociclo)</label><input id="ep-totalweeks" type="number" min="1" max="52"></div>
         <div class="fg"><label>Semanas por mesociclo</label><input id="ep-mesoweeks" type="number" min="1" max="12"></div>
+        <div class="fg full"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="ep-private" style="width:auto"> 🔒 Plan privado (solo alumnos con suscripción activa, no accesible por link público)</label></div>
         <input type="hidden" id="ep-days">
       </div></div>
     </div>
@@ -776,6 +848,14 @@ setTimeout(()=>{
       <button class="btn bp" onclick="addMember()" style="margin-top:10px">➕ Agregar y generar link</button>
     </div>
     <div id="members-list"></div>
+  </div>
+  <div id="planes-panel-fijos" style="display:none">
+    <div class="card">
+      <h2>🔔 Planes fijos por categoría</h2>
+      <p class="sub" style="margin-bottom:14px">Elegí, para cada categoría de la suscripción, cuál de tus planes grupales es el plan fijo que reciben los alumnos que se suscriban. Marcá esos planes como "🔒 privados" en su edición para que solo se pueda acceder con una suscripción activa.</p>
+      <div id="planes-fijos-form"></div>
+      <button class="btn bp" onclick="savePlanesFijos()" style="width:100%;justify-content:center;padding:12px;font-size:.93rem;margin-top:12px">💾 Guardar mapeo</button>
+    </div>
   </div>
 </div>
 
@@ -1005,20 +1085,54 @@ window.doForgotPassword=async function(){
     errEl.textContent='No se pudo enviar el email. Revisá que esté bien escrito.';
   }
 };
-window.doLogout=async function(){localStorage.removeItem('amfit-had-session');await signOut(auth)};
+window.doLogout=async function(){localStorage.removeItem('amfit-had-session');await signOut(auth);location.reload();};
 
 let appStarted=false;
 const isClientLink=new URLSearchParams(location.search).get('plan')||new URLSearchParams(location.search).get('client');
+const isAlumnoSignup=new URLSearchParams(location.search).get('alumno')==='1'||location.pathname.replace(/\/+$/,'').endsWith('/suscripcion');
+const ADMIN_EMAIL='angelmeier10@gmail.com';
+// Categorías de la suscripción: se leen de planesFijos (colección pública de solo
+// lectura) en vez de estar fijas en el código, para que Angel pueda agregar/sacar
+// categorías desde la pestaña "Planes fijos" sin tocar código. Los ids legacy (creados
+// antes de que planesFijos guardara "label") usan este fallback si no tienen label.
+const LEGACY_CAT_LABELS={gap:'GAP',musculacion:'Musculación',casa_sin_elementos:'Casa sin elementos',adultos_mayores:'Adultos mayores'};
+async function getCategoriasSuscripcion(){
+  const snap=await getDocs(collection(db,'planesFijos'));
+  const cats=snap.docs.filter(d=>d.id!=='global'&&d.id!=='_config').map(d=>({id:d.id,label:d.data().label||LEGACY_CAT_LABELS[d.id]||d.id,desc:d.data().desc||''}));
+  cats.sort((a,b)=>a.label.localeCompare(b.label,undefined,{sensitivity:'base'}));
+  cats.push({id:'global',label:'Suscripción global',desc:'Acceso a todas las categorías a la vez'});
+  return cats;
+}
 function startAppOnce(){if(!appStarted){appStarted=true;init();}}
-if(!isClientLink && localStorage.getItem('amfit-had-session')==='1'){
+if(!isClientLink && !isAlumnoSignup && localStorage.getItem('amfit-had-session')==='1'){
   // Ya hubo sesión antes: si Firebase Auth no confirma nada (p.ej. sin conexión),
   // no dejamos al entrenador trabado en el login; arrancamos con lo que haya en caché.
   setTimeout(()=>{if(!appStarted){hideLoginScreen();startAppOnce();}},2500);
 }
-onAuthStateChanged(auth,(user)=>{
+if(isAlumnoSignup){
+  document.getElementById('login-subtitle').textContent='Registrate o ingresá a tu suscripción';
+}
+onAuthStateChanged(auth,async(user)=>{
   if(isClientLink){
     // Los links de plan para clientes no requieren login del entrenador
     startAppOnce();
+    return;
+  }
+  if(isAlumnoSignup){
+    if(user){
+      if(user.email===ADMIN_EMAIL){
+        // No usar location.pathname acá: si vino por /suscripcion, redirigir a
+        // esa misma ruta causaría un loop infinito (isAlumnoSignup seguiría en true).
+        location.href='/';
+        return;
+      }
+      hideLoginScreen();
+      hideLoading();
+      appStarted=true;
+      await initAlumno(user);
+    }else{
+      showLoginScreen();
+    }
     return;
   }
   if(user){
@@ -1029,6 +1143,70 @@ onAuthStateChanged(auth,(user)=>{
     showLoginScreen();
   }
 });
+
+async function initAlumno(user){
+  document.getElementById('view-alumno').style.display='block';
+  const ref=doc(db,'subscribers',user.uid);
+  const snap=await getDoc(ref);
+  if(!snap.exists()){
+    document.getElementById('alumno-narrow-wrap').style.display='block';
+    document.getElementById('alumno-categoria-screen').style.display='block';
+    const cats=await getCategoriasSuscripcion();
+    document.getElementById('alumno-categorias-list').innerHTML=cats.map(c=>`
+      <div class="card" style="cursor:pointer;padding:16px" onclick="elegirCategoriaAlumno('${c.id}')">
+        <div style="font-weight:600">${c.label}</div>
+        <div class="sub">${c.desc}</div>
+      </div>
+    `).join('');
+    return;
+  }
+  const data=snap.data();
+  // Corte de acceso también en frontend: si venció, se trata como expired aunque
+  // el status en Firestore todavía diga "active" (el webhook no corre proactivamente).
+  const vencido=data.status==='active' && data.expiry && new Date(data.expiry+'T00:00:00')<new Date();
+  if(data.status==='active' && !vencido){
+    document.getElementById('alumno-active-wrap').style.display='block';
+    await renderAlumnoPlanView(data,user.uid);
+    return;
+  }
+  document.getElementById('alumno-narrow-wrap').style.display='block';
+  const screens={pending:'alumno-pending-screen',expired:'alumno-expired-screen'};
+  const id=vencido?'alumno-expired-screen':(screens[data.status]||'alumno-pending-screen');
+  document.getElementById(id).style.display='block';
+
+  if(data.categoria){
+    const [fijoSnap,configSnap]=await Promise.all([
+      getDoc(doc(db,'planesFijos',data.categoria)),
+      getDoc(doc(db,'planesFijos','_config'))
+    ]);
+    const mpLink=fijoSnap.exists()?fijoSnap.data().mpLink:'';
+    const transferInfo=configSnap.exists()?configSnap.data().transferInfo:'';
+    let html='';
+    if(mpLink)html+=`<a href="${mpLink}" target="_blank" class="btn bp" style="justify-content:center;width:100%;margin-bottom:10px">💳 Pagar ahora</a>`;
+    if(transferInfo)html+=`<div style="text-align:left;font-size:.82rem;background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:10px 12px;white-space:pre-wrap">💵 O por transferencia:<br>${transferInfo}</div>`;
+    const wrapId=id==='alumno-expired-screen'?'alumno-pago-btn-wrap-exp':'alumno-pago-btn-wrap';
+    const wrapEl=document.getElementById(wrapId);
+    if(wrapEl)wrapEl.innerHTML=html;
+  }
+}
+
+window.elegirCategoriaAlumno=async function(categoria){
+  const user=auth.currentUser;
+  const errEl=document.getElementById('alumno-categoria-error');
+  try{
+    await setDoc(doc(db,'subscribers',user.uid),{
+      email:user.email,
+      name:user.displayName||'',
+      categoria,
+      status:'pending',
+      planId:null
+    });
+    document.getElementById('alumno-categoria-screen').style.display='none';
+    document.getElementById('alumno-pending-screen').style.display='block';
+  }catch(err){
+    errEl.textContent='No se pudo guardar tu categoría. Probá de nuevo.';
+  }
+};
 
 // ══ EXERCISE DB ══
 const DEFAULT_EX=[
@@ -1188,6 +1366,7 @@ async function init(){
 
   // Load planes
   await loadPlanes();
+  await loadPlanesFijos();
   // Load solicitudes
   await loadSolicitudes();
   buildNotifications();
@@ -1375,13 +1554,15 @@ function compareDates(a,b){
 }
 
 function showPanel(p,btn){
-  ['clients','new','edit','macro','alumnos'].forEach(id=>{const el=document.getElementById('panel-'+id);if(el)el.style.display='none';});
+  ['clients','new','edit','macro','alumnos','suscriptores','alumnosuni'].forEach(id=>{const el=document.getElementById('panel-'+id);if(el)el.style.display='none';});
   document.getElementById('panel-'+p).style.display='block';
   document.querySelectorAll('.itab').forEach(t=>t.classList.remove('active'));
   if(btn)btn.classList.add('active');
   if(p==='clients')renderClientList();
   if(p==='new')initNewClient();
   if(p==='alumnos')renderAlumnosConsolidado();
+  if(p==='suscriptores')renderSuscriptoresPanel();
+  if(p==='alumnosuni')renderAlumnosUnificado();
   if(p==='macro'&&editingId){
     const mc=document.getElementById('macro-content');
     if(mc){
@@ -1512,6 +1693,7 @@ function buildOneDay(cid,idx,data=null){
       <button class="btn bd2 sm" onclick="addGymBlock('${did}-body','giant')">+ Serie gigante</button>
       <button class="btn bor sm" onclick="showCFMenu('${did}-body',this)">🔥 + WOD</button>
       <button class="btn bpu sm" onclick="addFuncBlock('${did}-body')">🧓 + Actividad funcional</button>
+      <button class="btn bcy sm" onclick="abrirInsertarPlantilla('${did}-body')">📥 Insertar plantilla</button>
       <button class="btn bg2 sm" onclick="moveDayBlock('${did}',-1)" title="Mover arriba">↑</button>
       <button class="btn bg2 sm" onclick="moveDayBlock('${did}',1)" title="Mover abajo">↓</button>
       <button class="btn bd2 sm" onclick="deleteDayBlock('${did}')" title="Borrar día">🗑️</button>
@@ -1613,6 +1795,7 @@ function addFuncBlock(bodyId,data=null){
   const div=document.createElement('div');div.className='blk';div.id=gid;div.dataset.kind='func';
   div.innerHTML=`<div class="blk-hdr" onclick="toggleBlk('${gid}',event)">
     <span class="blk-type t-warmup">🧓 Actividad funcional</span>
+    <button class="btn bg2 xs" onclick="event.stopPropagation();guardarBloqueComoPlantilla('${gid}')" title="Guardar como plantilla">💾</button>
     <button class="btn bg2 xs" onclick="event.stopPropagation();moveBlk('${gid}',-1)" title="Mover arriba">↑</button>
     <button class="btn bg2 xs" onclick="event.stopPropagation();moveBlk('${gid}',1)" title="Mover abajo">↓</button>
     <button class="btn bd2 xs" onclick="event.stopPropagation();document.getElementById('${gid}').remove()">✕</button>
@@ -1670,6 +1853,7 @@ function addGymBlock(bodyId,type,data=null){
       <label style="font-size:.7rem;color:var(--mu);white-space:nowrap">Descanso:</label>
       <input type="text" value="${data?.rest||(type==='simple'?'60s':'90s')}" class="sg-rest" style="max-width:70px;font-size:.78rem;padding:4px 8px">
     </div>
+    <button class="btn bg2 xs" onclick="event.stopPropagation();guardarBloqueComoPlantilla('${gid}')" title="Guardar como plantilla">💾</button>
     <button class="btn bg2 xs" onclick="event.stopPropagation();moveBlk('${gid}',-1)" title="Mover arriba">↑</button>
     <button class="btn bg2 xs" onclick="event.stopPropagation();moveBlk('${gid}',1)" title="Mover abajo">↓</button>
     <button class="btn bd2 xs" onclick="event.stopPropagation();document.getElementById('${gid}').remove()">✕</button>
@@ -1739,6 +1923,7 @@ function addWarmupBlock(bodyId,data=null){
       <label style="font-size:.7rem;color:var(--mu);white-space:nowrap">Series del circuito:</label>
       <input type="number" min="1" value="${data?.series||''}" placeholder="Ej: 2" class="wu-series" style="max-width:60px;font-size:.78rem;padding:4px 8px">
     </div>
+    <button class="btn bg2 xs" onclick="event.stopPropagation();guardarBloqueComoPlantilla('${gid}')" title="Guardar como plantilla">💾</button>
     <button class="btn bg2 xs" onclick="event.stopPropagation();moveBlk('${gid}',-1)" title="Mover arriba">↑</button>
     <button class="btn bg2 xs" onclick="event.stopPropagation();moveBlk('${gid}',1)" title="Mover abajo">↓</button>
     <button class="btn bd2 xs" onclick="event.stopPropagation();document.getElementById('${gid}').remove()">✕</button>
@@ -1869,6 +2054,7 @@ function addCFBlock(bodyId,cftype,data=null){
   const div=document.createElement('div');div.className='cf-blk';div.id=bid;div.dataset.kind='cf';div.dataset.cftype=cftype;
   div.innerHTML=`<div class="cf-hdr" style="background:${cfg.color}11;border-bottom:1px solid ${cfg.color}33" onclick="toggleBlk('${bid}',event)">
     <div class="cf-lbl">${cfg.icon} <span style="color:${cfg.color}">${cfg.label}</span> <span style="font-size:.72rem;color:var(--mu);font-weight:400">${cfg.desc}</span></div>
+    <button class="btn bg2 xs" onclick="event.stopPropagation();guardarBloqueComoPlantilla('${bid}')" title="Guardar como plantilla">💾</button>
     <button class="btn bg2 xs" onclick="event.stopPropagation();moveBlk('${bid}',-1)" title="Mover arriba">↑</button>
     <button class="btn bg2 xs" onclick="event.stopPropagation();moveBlk('${bid}',1)" title="Mover abajo">↓</button>
     <button class="btn bd2 xs" onclick="event.stopPropagation();document.getElementById('${bid}').remove()">✕</button>
@@ -2032,55 +2218,129 @@ function collectCFSections(blk,cfg){
     return{meta,exercises,pause:sec.querySelector('.cf-pause')?.value||''};
   });
 }
+function collectBlockData(blk){
+  if(blk.dataset.kind==='func'){
+    const exercises=[...blk.querySelectorAll('.ex-entry')].map(en=>{
+      const inp=en.querySelector('.ex-search');
+      return{name:inp.dataset.name||inp.value,video:inp.dataset.video||'',reps:en.querySelector('.func-ex-reps')?.value||''};
+    }).filter(e=>e.name);
+    return{
+      kind:'func',
+      title:blk.querySelector('.func-title').value,
+      desc:blk.querySelector('.func-desc').value,
+      reps:blk.querySelector('.func-reps').value,
+      rest:blk.querySelector('.func-rest').value,
+      sets:blk.querySelector('.func-sets').value,
+      exercises,
+    };
+  }
+  if(blk.dataset.kind==='warmup'){
+    const duration=blk.querySelector('.wu-duration')?.value||'10 min';
+    const series=blk.querySelector('.wu-series')?.value||'';
+    const exercises=[...blk.querySelectorAll('.ex-entry')].map(en=>{
+      const inp=en.querySelector('.ex-search');
+      const scheme=[...en.querySelectorAll('.sc-row')].map(r=>({reps:r.querySelector('.sr-reps').value,load:r.querySelector('.sr-load').value}));
+      return{name:inp.dataset.name||inp.value,video:inp.dataset.video||'',obs:en.querySelector('.ex-obs')?.value||'',scheme};
+    }).filter(e=>e.name);
+    return{kind:'warmup',duration,series,exercises};
+  } else if(blk.dataset.kind==='gym'){
+    const type=blk.dataset.type;const rest=blk.querySelector('.sg-rest').value;
+    const exercises=[...blk.querySelectorAll('.ex-entry')].map(en=>{
+      const inp=en.querySelector('.ex-search');
+      const scheme=[...en.querySelectorAll('.sc-row')].map(r=>({reps:r.querySelector('.sr-reps').value,load:r.querySelector('.sr-load').value}));
+      return{name:inp.dataset.name||inp.value,video:inp.dataset.video||'',obs:en.querySelector('.ex-obs').value,scheme};
+    }).filter(e=>e.name);
+    const pauses=[...blk.querySelectorAll('.ex-sep-pause-inp')].map(i=>i.value);
+    return{kind:'gym',type,rest,exercises,pauses};
+  } else {
+    const cftype=blk.dataset.cftype;const cfg=CF_TYPES[cftype];
+    const sections=collectCFSections(blk,cfg);
+    return{kind:'cf',cftype,sections,notes:blk.querySelector('.cf-notes')?.value||''};
+  }
+}
+
 function collectDays(cid,count){
   const days=[];
   for(let i=0;i<count;i++){
     const did=cid+'-d'+i;const dblock=document.getElementById(did);if(!dblock)continue;
     const name=dblock.querySelector('.day-name-input').value;
-    const blocks=[...document.getElementById(did+'-body').children].filter(el=>el.dataset.kind).map(blk=>{
-      if(blk.dataset.kind==='func'){
-        const exercises=[...blk.querySelectorAll('.ex-entry')].map(en=>{
-          const inp=en.querySelector('.ex-search');
-          return{name:inp.dataset.name||inp.value,video:inp.dataset.video||'',reps:en.querySelector('.func-ex-reps')?.value||''};
-        }).filter(e=>e.name);
-        return{
-          kind:'func',
-          title:blk.querySelector('.func-title').value,
-          desc:blk.querySelector('.func-desc').value,
-          reps:blk.querySelector('.func-reps').value,
-          rest:blk.querySelector('.func-rest').value,
-          sets:blk.querySelector('.func-sets').value,
-          exercises,
-        };
-      }
-      if(blk.dataset.kind==='warmup'){
-        const duration=blk.querySelector('.wu-duration')?.value||'10 min';
-        const series=blk.querySelector('.wu-series')?.value||'';
-        const exercises=[...blk.querySelectorAll('.ex-entry')].map(en=>{
-          const inp=en.querySelector('.ex-search');
-          const scheme=[...en.querySelectorAll('.sc-row')].map(r=>({reps:r.querySelector('.sr-reps').value,load:r.querySelector('.sr-load').value}));
-          return{name:inp.dataset.name||inp.value,video:inp.dataset.video||'',obs:en.querySelector('.ex-obs')?.value||'',scheme};
-        }).filter(e=>e.name);
-        return{kind:'warmup',duration,series,exercises};
-      } else if(blk.dataset.kind==='gym'){
-        const type=blk.dataset.type;const rest=blk.querySelector('.sg-rest').value;
-        const exercises=[...blk.querySelectorAll('.ex-entry')].map(en=>{
-          const inp=en.querySelector('.ex-search');
-          const scheme=[...en.querySelectorAll('.sc-row')].map(r=>({reps:r.querySelector('.sr-reps').value,load:r.querySelector('.sr-load').value}));
-          return{name:inp.dataset.name||inp.value,video:inp.dataset.video||'',obs:en.querySelector('.ex-obs').value,scheme};
-        }).filter(e=>e.name);
-        const pauses=[...blk.querySelectorAll('.ex-sep-pause-inp')].map(i=>i.value);
-        return{kind:'gym',type,rest,exercises,pauses};
-      } else {
-        const cftype=blk.dataset.cftype;const cfg=CF_TYPES[cftype];
-        const sections=collectCFSections(blk,cfg);
-        return{kind:'cf',cftype,sections,notes:blk.querySelector('.cf-notes')?.value||''};
-      }
-    });
+    const blocks=[...document.getElementById(did+'-body').children].filter(el=>el.dataset.kind).map(collectBlockData);
     days.push({name,blocks});
   }
   return days;
 }
+
+// ══ PLANTILLAS DE BLOQUE (reusar un calentamiento/ejercicio/WOD ya armado en otro plan) ══
+let bloqueTemplatesCache=null;
+async function loadBloqueTemplates(){
+  if(bloqueTemplatesCache)return bloqueTemplatesCache;
+  const snap=await getDocSafe(doc(db,'meta','bloqueTemplates'));
+  bloqueTemplatesCache=snap.exists()?(snap.data().list||[]):[];
+  return bloqueTemplatesCache;
+}
+
+window.guardarBloqueComoPlantilla=async function(blockId){
+  const blk=document.getElementById(blockId);
+  if(!blk)return;
+  const name=prompt('Nombre para esta plantilla (ej: "Calentamiento estándar"):');
+  if(!name||!name.trim())return;
+  const data=collectBlockData(blk);
+  const list=await loadBloqueTemplates();
+  list.push({id:'tpl'+Date.now(),name:name.trim(),data});
+  await setDoc(doc(db,'meta','bloqueTemplates'),{list});
+  bloqueTemplatesCache=list;
+  toast('💾 Plantilla guardada');
+};
+
+const BLOCK_KIND_ICON={warmup:'🔥',gym:'🏋️',func:'🧓',cf:'🔥'};
+window.abrirInsertarPlantilla=async function(bodyId){
+  const list=await loadBloqueTemplates();
+  const modal=document.getElementById('modal-bg');
+  modal.style.display='flex';
+  if(!list.length){
+    modal.innerHTML=`<div style="background:var(--s1);border-radius:16px;padding:24px;width:100%;max-width:400px">
+      <h2 style="margin-bottom:10px">📥 Insertar plantilla</h2>
+      <p style="color:var(--mu);font-size:.85rem;margin-bottom:16px">Todavía no guardaste ninguna plantilla. Guardá un bloque con el botón 💾 en cualquier día para poder reusarlo acá.</p>
+      <button class="btn bg2" style="width:100%;justify-content:center" onclick="document.getElementById('modal-bg').style.display='none'">Cerrar</button>
+    </div>`;
+    return;
+  }
+  modal.innerHTML=`<div style="background:var(--s1);border-radius:16px;padding:24px;width:100%;max-width:420px;max-height:80vh;overflow-y:auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <h2>📥 Insertar plantilla</h2>
+      <button onclick="document.getElementById('modal-bg').style.display='none'" style="background:none;border:none;color:var(--mu);font-size:1.4rem;cursor:pointer">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      ${list.map((t,i)=>`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--s2);border-radius:8px;padding:9px 12px">
+        <span style="font-size:.86rem">${BLOCK_KIND_ICON[t.data.kind]||'📋'} ${t.name}</span>
+        <div style="display:flex;gap:6px">
+          <button class="btn bp xs" onclick="insertarPlantilla('${bodyId}',${i})">Insertar</button>
+          <button class="btn bd2 xs" onclick="eliminarPlantilla(${i})">🗑️</button>
+        </div>
+      </div>`).join('')}
+    </div>
+  </div>`;
+};
+
+window.insertarPlantilla=function(bodyId,idx){
+  const t=bloqueTemplatesCache?.[idx];
+  if(!t)return;
+  const data=t.data;
+  if(data.kind==='warmup')addWarmupBlock(bodyId,data);
+  else if(data.kind==='gym')addGymBlock(bodyId,data.type,data);
+  else if(data.kind==='func')addFuncBlock(bodyId,data);
+  else if(data.kind==='cf')addCFBlock(bodyId,data.cftype,data);
+  document.getElementById('modal-bg').style.display='none';
+  toast('✅ Plantilla insertada');
+};
+
+window.eliminarPlantilla=async function(idx){
+  if(!confirm('¿Eliminar esta plantilla?'))return;
+  bloqueTemplatesCache.splice(idx,1);
+  await setDoc(doc(db,'meta','bloqueTemplates'),{list:bloqueTemplatesCache});
+  toast('🗑️ Plantilla eliminada');
+  document.getElementById('modal-bg').style.display='none';
+};
 
 // ══ SAVE CLIENT ══
 async function saveClient(){
@@ -3076,7 +3336,7 @@ async function loadPlanes(){
 }
 
 function showPlanesPanel(p,btn){
-  ['list','new','edit','members','seg','macro'].forEach(id=>{
+  ['list','new','edit','members','seg','macro','fijos'].forEach(id=>{
     const el=document.getElementById('planes-panel-'+id);if(el)el.style.display='none';
   });
   document.getElementById('planes-panel-'+p).style.display='block';
@@ -3085,6 +3345,7 @@ function showPlanesPanel(p,btn){
   if(p==='list')renderPlanesList();
   if(p==='new')initNewPlan();
   if(p==='seg')renderPlanSeguimiento();
+  if(p==='fijos')renderPlanesFijosPanel();
   if(p==='macro'&&editingPlanId){
     const mc=document.getElementById('plan-macro-content');
     if(mc){
@@ -3170,6 +3431,177 @@ function renderAlumnosConsolidado(searchTerm){
 window.renderAlumnosConsolidado=renderAlumnosConsolidado;
 
 let alumnosCache=[];
+
+// ══ VISTA UNIFICADA "👤 Alumnos (nuevo)" — junta clientes + planes grupales + suscriptores ══
+// (Paso A del plan de unificación: convive con las 4 pantallas viejas, reusa sus mismas
+// funciones de acción para no duplicar lógica — solo agrega la capa de presentación.)
+let alumnosUniCache=[];
+
+async function buildAlumnosUnificadoGroups(){
+  const groups=new Map();
+  const keyOf=(name,email)=>((name||'')+'|'+(email||'')).toLowerCase();
+  clients.forEach(c=>{
+    const key=keyOf(c.name,c.email);
+    if(!groups.has(key))groups.set(key,{name:c.name,email:c.email||'',programs:[]});
+    groups.get(key).programs.push({type:'personal',client:c});
+  });
+  const groupByPlan=new Map(); // key -> Map(planId -> {plan,member}) para no duplicar si hay entradas repetidas del mismo alumno en el mismo plan
+  planes.forEach(p=>(p.members||[]).forEach(m=>{
+    const key=keyOf(m.name,m.email);
+    if(!groups.has(key))groups.set(key,{name:m.name,email:m.email||'',programs:[]});
+    if(!groupByPlan.has(key))groupByPlan.set(key,new Map());
+    const byPlan=groupByPlan.get(key);
+    const existing=byPlan.get(p.id);
+    if(!existing||(m.status==='active'&&existing.member.status!=='active'))byPlan.set(p.id,{plan:p,member:m});
+  }));
+  groupByPlan.forEach((byPlan,key)=>{
+    byPlan.forEach(({plan,member})=>groups.get(key).programs.push({type:'group',plan,member}));
+  });
+  const subSnap=await getDocs(collection(db,'subscribers'));
+  subSnap.docs.forEach(d=>{
+    const s={id:d.id,...d.data()};
+    const key=keyOf(s.name||s.email,s.email);
+    if(!groups.has(key))groups.set(key,{name:s.name||s.email||'(sin nombre)',email:s.email||'',programs:[]});
+    groups.get(key).programs.push({type:'subscription',sub:s,uid:s.id});
+  });
+  return groups;
+}
+
+async function renderProgramaUnificadoHtml(prog,catLabel){
+  if(prog.type==='personal'){
+    const c=prog.client;
+    const{exerciseLogs,notes}=buildProgressSummary(c.progress||{},c.days,c.id);
+    const link=`${location.origin}${location.pathname}?client=${c.id}`;
+    const progressHtml=renderProgressDetailBlock(c.id,exerciseLogs,c.days,notes)||'<div style="font-size:.78rem;color:var(--mu)">Sin registros todavía.</div>';
+    return`<div style="padding:8px 0;border-bottom:1px solid var(--bd)">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
+        <div style="font-size:.84rem"><b>🎯 Plan personalizado</b>${c.routineName?' — '+c.routineName:''}</div>
+        <div style="display:flex;gap:6px">
+          <button class="btn bcy xs" onclick="openEdit('${c.id}')">✏️ Editar</button>
+          <button class="btn bgr xs" onclick="copyLink('${link}')">🔗 Link</button>
+        </div>
+      </div>
+      ${progressHtml}
+    </div>`;
+  }
+  if(prog.type==='group'){
+    const{plan,member:m}=prog;
+    const days=getMemberPlanDays(plan,m);
+    const{exerciseLogs,notes}=buildProgressSummary(m.progress||{},days,`${plan.id}-${m.id}`);
+    const expired=m.expiry&&(new Date(m.expiry+'T00:00:00')<new Date());
+    const statusBadge=m.status==='active'&&!expired?'<span class="badge bgr2">✅ Activo</span>':expired?'<span class="badge" style="background:#f8717122;color:var(--rd)">⏰ Vencido</span>':'<span class="badge byw2">⏳ Pendiente</span>';
+    const memberLink=`${location.origin}${location.pathname}?plan=${plan.id}&member=${m.id}`;
+    const progressHtml=renderProgressDetailBlock(`${plan.id}-${m.id}`,exerciseLogs,days,notes)||'<div style="font-size:.78rem;color:var(--mu)">Sin registros todavía.</div>';
+    return`<div style="padding:8px 0;border-bottom:1px solid var(--bd)">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
+        <div style="font-size:.84rem"><b>${plan.name}</b> ${statusBadge}</div>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+          <input type="date" id="alu-exp-${plan.id}-${m.id}" value="${m.expiry||''}" style="font-size:.78rem;padding:4px 6px">
+          <button class="btn bcy xs" onclick="updateMemberExpiry('${plan.id}','${m.id}')">💾 Vencimiento</button>
+          <button class="btn bgr xs" onclick="copyLink('${memberLink}')">🔗 Link</button>
+          <button class="btn bd2 xs" onclick="removeMemberFromAlumnos('${plan.id}','${m.id}')">✕ Sacar</button>
+        </div>
+      </div>
+      ${progressHtml}
+    </div>`;
+  }
+  // subscription
+  const s=prog.sub,uid=prog.uid;
+  let planData=null,days=[];
+  let planId=s.planId;
+  if(s.categoria==='global'&&!planId){
+    const cats=await getCategoriasSuscripcion();
+    const firstCat=cats.filter(c=>c.id!=='global')[0];
+    if(firstCat){
+      const fijoSnap=await getDoc(doc(db,'planesFijos',firstCat.id));
+      planId=fijoSnap.exists()?fijoSnap.data().planId:null;
+    }
+  }
+  if(planId){
+    const planSnap=await getDoc(doc(db,'planes',planId));
+    if(planSnap.exists()){planData={id:planId,...planSnap.data()};days=getMemberPlanDays(planData,{startWeek:s.startWeek||1,startDate:s.startDate||''});}
+  }
+  const{exerciseLogs,notes}=buildProgressSummary(s.progress||{},days,`alu-${uid}`);
+  const vencido=s.status==='active'&&s.expiry&&new Date(s.expiry+'T00:00:00')<new Date();
+  const statusLabel=vencido?SUSCRIPTOR_STATUS_LABEL.expired:(SUSCRIPTOR_STATUS_LABEL[s.status]||s.status);
+  const expTxt=s.expiry?new Date(s.expiry+'T00:00:00').toLocaleDateString('es-AR'):'—';
+  const defaultExp=new Date();defaultExp.setDate(defaultExp.getDate()+30);
+  const cats=await getCategoriasSuscripcion();
+  const catOptions=cats.map(c=>`<option value="${c.id}"${c.id===s.categoria?' selected':''}>${c.label}</option>`).join('');
+  let startWeekHtml='';
+  if((s.status!=='active'||vencido)&&s.categoria&&s.categoria!=='global'&&planData){
+    const weekNums=planWeekNums(planData);
+    if(weekNums.length>1)startWeekHtml=`<select id="susc-week-${uid}" style="width:auto">${weekNums.map(w=>`<option value="${w}"${w===s.startWeek?' selected':''}>Empieza semana ${w}</option>`).join('')}</select>`;
+  }
+  const accionBtn=(s.status!=='active'||vencido)?`
+    <input type="date" id="susc-exp-${uid}" value="${defaultExp.toISOString().split('T')[0]}" style="width:auto;font-size:.78rem">
+    ${startWeekHtml}
+    <button class="btn bgr xs" onclick="activarSuscriptorManual('${uid}')">✅ Activar</button>`:
+    `<button class="btn bg2 xs" onclick="desactivarSuscriptorManual('${uid}')">⛔ Desactivar</button>`;
+  const progressHtml=renderProgressDetailBlock(`alu-${uid}`,exerciseLogs,days,notes)||'<div style="font-size:.78rem;color:var(--mu)">Sin registros todavía.</div>';
+  return`<div style="padding:8px 0;border-bottom:1px solid var(--bd)">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
+      <div style="font-size:.84rem"><b>🔔 Suscripción — ${catLabel[s.categoria]||s.categoria||'—'}</b> · ${statusLabel}${s.expiry?' · vence '+expTxt:''}</div>
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+        <select id="susc-cat-${uid}" style="width:auto;font-size:.78rem">${catOptions}</select>
+        <button class="btn bg2 xs" onclick="cambiarCategoriaSuscriptorManual('${uid}')">💾</button>
+        ${accionBtn}
+      </div>
+    </div>
+    ${progressHtml}
+  </div>`;
+}
+
+async function renderAlumnosUnificado(searchTerm){
+  const el=document.getElementById('alumnosuni-list');
+  if(!el)return;
+  await poblarCategoriaSelect('uni-new-cat');
+  el.innerHTML='<div style="text-align:center;padding:20px;color:var(--mu)">Cargando...</div>';
+  const q=(searchTerm||'').trim().toLowerCase();
+  const groups=await buildAlumnosUnificadoGroups();
+  let alumnos=[...groups.values()].sort((a,b)=>a.name.localeCompare(b.name,undefined,{sensitivity:'base'}));
+  if(q)alumnos=alumnos.filter(a=>a.name.toLowerCase().includes(q)||(a.email||'').toLowerCase().includes(q));
+  alumnosUniCache=alumnos;
+  if(!alumnos.length){
+    el.innerHTML=`<div class="card" style="text-align:center;padding:30px;color:var(--mu)">${q?'Ningún alumno coincide con la búsqueda.':'Sin alumnos todavía.'}</div>`;
+    return;
+  }
+  const cats=await getCategoriasSuscripcion();
+  const catLabel=Object.fromEntries(cats.map(c=>[c.id,c.label]));
+  const cardsArr=[];
+  for(let ai=0;ai<alumnos.length;ai++){
+    const a=alumnos[ai];
+    const progRows=[];
+    for(const prog of a.programs){
+      progRows.push(await renderProgramaUnificadoHtml(prog,catLabel));
+    }
+    const bodyId=`uni-body-${ai}`;
+    const hasSubscription=a.programs.some(p=>p.type==='subscription');
+    const convertBtn=hasSubscription?'':`<button class="btn bcy xs" onclick="event.stopPropagation();precargarAltaSuscriptor(${ai})">🔔 Convertir en suscriptor</button>`;
+    cardsArr.push(`<div class="card">
+      <div style="display:flex;align-items:center;gap:10px;cursor:pointer" onclick="document.getElementById('${bodyId}').classList.toggle('collapsed');this.querySelector('.card-toggle').style.transform=document.getElementById('${bodyId}').classList.contains('collapsed')?'rotate(-90deg)':''">
+        <div class="member-av">${a.name.charAt(0).toUpperCase()}</div>
+        <div style="flex:1"><div style="font-weight:700;font-size:.92rem">${a.name}</div><div style="font-size:.74rem;color:var(--mu)">${a.email||''} · ${a.programs.length} programa${a.programs.length!==1?'s':''}</div></div>
+        ${convertBtn}
+        <span class="card-toggle" style="transition:transform .2s;transform:rotate(-90deg)">▼</span>
+      </div>
+      <div class="collapsible-card-body collapsed" id="${bodyId}" style="margin-top:10px">
+        ${progRows.join('')}
+      </div>
+    </div>`);
+  }
+  el.innerHTML=cardsArr.join('');
+}
+window.precargarAltaSuscriptor=function(ai){
+  const a=alumnosUniCache[ai];
+  if(!a)return;
+  if(!a.email){toast('⚠️ Esta persona no tiene email cargado, necesario para crear la cuenta');return}
+  document.getElementById('uni-new-name').value=a.name||'';
+  document.getElementById('uni-new-email').value=a.email||'';
+  document.getElementById('uni-new-name').scrollIntoView({behavior:'smooth',block:'start'});
+  toast('📝 Datos precargados arriba — elegí la categoría y creá el alumno');
+};
+window.renderAlumnosUnificado=renderAlumnosUnificado;
 
 function onAluAddPlanChange(ai){
   const planId=document.getElementById(`alu-addplan-${ai}`).value;
@@ -3343,6 +3775,7 @@ async function savePlan(){
     weeks:npWeeklyData,activeWeek:npCurrentWeek,
     days:npWeeklyData[npCurrentWeek],
     members:[],
+    public:!document.getElementById('np-private').checked,
     createdAt:new Date().toLocaleDateString('es-AR')
   };
   await setDoc(doc(db,'planes',id),plan);
@@ -3364,6 +3797,7 @@ async function updatePlan(){
   plan.durationDays=parseInt(document.getElementById('ep-duration').value)||30;
   plan.totalWeeks=parseInt(document.getElementById('ep-totalweeks').value)||12;
   plan.mesoWeeks=parseInt(document.getElementById('ep-mesoweeks').value)||4;
+  plan.public=!document.getElementById('ep-private').checked;
   const blocks=[...document.getElementById('ep-days-container').querySelectorAll('.day-block')];
   epWeeklyData[epCurrentWeek]=blocks.map(db2=>({
     name:db2.querySelector('.day-name-input').value,
@@ -3463,6 +3897,109 @@ function renderPlanSeguimiento(){
   el.innerHTML=html;
 }
 
+let planesFijosCache={};
+
+async function loadPlanesFijos(){
+  const snap=await getDocsSafe(collection(db,'planesFijos'));
+  planesFijosCache={};
+  snap.docs.forEach(d=>{planesFijosCache[d.id]=d.data()});
+}
+
+function renderPlanesFijosPanel(){
+  const el=document.getElementById('planes-fijos-form');
+  if(!el)return;
+  const catIds=Object.keys(planesFijosCache).filter(id=>id!=='global'&&id!=='_config').sort((a,b)=>{
+    const la=planesFijosCache[a].label||LEGACY_CAT_LABELS[a]||a;
+    const lb=planesFijosCache[b].label||LEGACY_CAT_LABELS[b]||b;
+    return la.localeCompare(lb,undefined,{sensitivity:'base'});
+  });
+  el.innerHTML=catIds.map(id=>{
+    const label=planesFijosCache[id].label||LEGACY_CAT_LABELS[id]||id;
+    const current=planesFijosCache[id]?.planId||'';
+    const options=planes.map(p=>`<option value="${p.id}"${p.id===current?' selected':''}>${p.name}${p.public===false?' 🔒':''}</option>`).join('');
+    return`<div class="fg full" style="margin-bottom:10px;display:flex;gap:8px;align-items:end;flex-wrap:wrap">
+      <div style="flex:1;min-width:180px">
+        <label>${label}</label>
+        <select id="pf-${id}">
+          <option value="">— Sin asignar —</option>
+          ${options}
+        </select>
+      </div>
+      <div style="flex:1;min-width:180px">
+        <label>Link de pago (MercadoPago)</label>
+        <input id="pf-mplink-${id}" placeholder="https://mpago.la/..." value="${planesFijosCache[id]?.mpLink||''}">
+      </div>
+      <button class="btn bg2 sm" title="Eliminar categoría" onclick="eliminarCategoriaSuscripcion('${id}')">🗑️</button>
+    </div>`;
+  }).join('')
+  +`<div class="fg full" style="margin-bottom:14px;margin-top:6px;display:flex;gap:8px;align-items:end">
+      <div style="flex:1"><label>➕ Nueva categoría</label><input id="pf-new-cat-name" placeholder="Ej: Yoga"></div>
+      <button class="btn bg2" onclick="agregarCategoriaSuscripcion()">Agregar</button>
+    </div>`
+  +`<div class="fg full" style="margin-bottom:10px;display:flex;gap:8px;align-items:end;flex-wrap:wrap">
+      <div style="flex:1;min-width:180px">
+        <label>Suscripción global (acceso a todas las categorías)</label>
+        <input id="pf-global-price" type="number" min="0" step="1" placeholder="Precio en ARS" value="${planesFijosCache.global?.price||''}">
+      </div>
+      <div style="flex:1;min-width:180px">
+        <label>Link de pago global (MercadoPago)</label>
+        <input id="pf-mplink-global" placeholder="https://mpago.la/..." value="${planesFijosCache.global?.mpLink||''}">
+      </div>
+    </div>`
+  +`<div class="fg full" style="margin-bottom:10px">
+      <label>Datos para pagar por transferencia (alias, CBU, titular)</label>
+      <textarea id="pf-transfer-info" placeholder="Ej: Alias: angel.meier.mp — Titular: Angel Meier" style="min-height:60px">${planesFijosCache._config?.transferInfo||''}</textarea>
+    </div>`;
+}
+window.renderPlanesFijosPanel=renderPlanesFijosPanel;
+
+window.agregarCategoriaSuscripcion=async function(){
+  const input=document.getElementById('pf-new-cat-name');
+  const label=input.value.trim();
+  if(!label){toast('⚠️ Escribí un nombre para la categoría');return}
+  const id=label.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'');
+  if(!id||id==='global'){toast('⚠️ Nombre inválido');return}
+  if(planesFijosCache[id]){toast('⚠️ Ya existe una categoría con ese nombre');return}
+  await setDoc(doc(db,'planesFijos',id),{label,planId:''});
+  planesFijosCache[id]={label,planId:''};
+  input.value='';
+  toast('✅ Categoría agregada — asignale un plan y guardá el mapeo');
+  renderPlanesFijosPanel();
+};
+
+window.eliminarCategoriaSuscripcion=async function(id){
+  const label=planesFijosCache[id]?.label||LEGACY_CAT_LABELS[id]||id;
+  if(!confirm(`¿Eliminar la categoría "${label}"? Los alumnos ya suscriptos a esta categoría no van a poder acceder a su plan hasta que les cambies la categoría manualmente en Suscriptores.`))return;
+  await deleteDoc(doc(db,'planesFijos',id));
+  delete planesFijosCache[id];
+  toast('🗑️ Categoría eliminada');
+  renderPlanesFijosPanel();
+};
+
+async function savePlanesFijos(){
+  const catIds=Object.keys(planesFijosCache).filter(id=>id!=='global'&&id!=='_config');
+  for(const id of catIds){
+    const sel=document.getElementById('pf-'+id);
+    if(!sel)continue;
+    const planId=sel.value;
+    const label=planesFijosCache[id].label||LEGACY_CAT_LABELS[id]||id;
+    const mpLink=document.getElementById('pf-mplink-'+id)?.value.trim()||'';
+    await setDoc(doc(db,'planesFijos',id),{planId,label,mpLink});
+    planesFijosCache[id]={planId,label,mpLink};
+  }
+  const globalPrice=Number(document.getElementById('pf-global-price').value);
+  const globalMpLink=document.getElementById('pf-mplink-global')?.value.trim()||'';
+  if(globalPrice>0||globalMpLink){
+    await setDoc(doc(db,'planesFijos','global'),{price:globalPrice||planesFijosCache.global?.price||0,mpLink:globalMpLink});
+    planesFijosCache.global={price:globalPrice||planesFijosCache.global?.price||0,mpLink:globalMpLink};
+  }
+  const transferInfo=document.getElementById('pf-transfer-info')?.value.trim()||'';
+  await setDoc(doc(db,'planesFijos','_config'),{transferInfo});
+  planesFijosCache._config={transferInfo};
+  toast('✅ Mapeo de planes fijos guardado');
+}
+window.savePlanesFijos=savePlanesFijos;
+
 function renderPlanesList(){
   const el=document.getElementById('planes-list');
   const none=document.getElementById('no-planes');
@@ -3513,6 +4050,7 @@ function openEditPlan(id){
   document.getElementById('ep-cat').value=plan.cat||'';
   document.getElementById('ep-totalweeks').value=plan.totalWeeks||12;
   document.getElementById('ep-mesoweeks').value=plan.mesoWeeks||4;
+  document.getElementById('ep-private').checked=plan.public===false;
   // Migrar planes viejos de una sola semana (plan.days) a plan.weeks
   epWeeklyData=plan.weeks&&Object.keys(plan.weeks).length?JSON.parse(JSON.stringify(plan.weeks)):{1:plan.days||[]};
   epCurrentWeek=plan.activeWeek&&epWeeklyData[plan.activeWeek]?plan.activeWeek:Object.keys(epWeeklyData).map(Number)[0]||1;
@@ -4005,9 +4543,22 @@ function renderGroupDay(plan,member,dIdx){
   container.innerHTML=html;
 }
 
-// Override toggleSerie and logGym for group members
+// Override toggleSerie and logGym for group members y para el alumno de suscripción
 const origToggleSerie=window.toggleSerie;
 window.toggleSerie=async function(cId,ekey,si,rk,isLast,blockRest,pauseSecs){
+  if(cId.startsWith('alu-')){
+    if(!alumnoState.sub.progress)alumnoState.sub.progress={};
+    alumnoState.sub.progress[rk]=!alumnoState.sub.progress[rk];
+    await persistAlumnoProgress();
+    const row=document.getElementById('sr-'+rk);const btn=row.querySelector('.ckbtn');
+    row.classList.toggle('done-row',alumnoState.sub.progress[rk]);btn.classList.toggle('done',alumnoState.sub.progress[rk]);
+    if(alumnoState.sub.progress[rk]){
+      if(isLast){const secs=blockRest||parseInt(document.getElementById('timer-custom')?.value)||60;const inp=document.getElementById('timer-custom');if(inp)inp.value=secs;toast('✅ ¡Bloque completo!');startTimer(secs);}
+      else if(pauseSecs){const inp=document.getElementById('timer-custom');if(inp)inp.value=pauseSecs;toast('✅ Serie completada — pausa de '+pauseSecs+'s');startTimer(pauseSecs);}
+      else toast('✅ Serie completada — seguí con el siguiente ejercicio');
+    }
+    return;
+  }
   // Check if this is a group member (cId = planId-memberId)
   if(cId.includes('-m')){
     const [planId,...rest]=cId.split('-m');const memberId='m'+rest.join('-m');
@@ -4031,6 +4582,33 @@ window.toggleSerie=async function(cId,ekey,si,rk,isLast,blockRest,pauseSecs){
 
 const origLogGym=window.logGym;
 window.logGym=async function(cId,ekey){
+  if(cId.startsWith('alu-')){
+    const weights=collectSetWeights(cId,ekey);
+    const singleW=document.getElementById('pw-'+cId+'-'+ekey)?.value||'';
+    const r=document.getElementById('pr-'+cId+'-'+ekey).value;
+    const n=(document.getElementById('pn-'+cId+'-'+ekey)?.value||'').trim();
+    const hasWeights=weights.some(w=>w)||singleW;
+    if(!hasWeights&&!r)return;
+    if(!alumnoState.sub.progress)alumnoState.sub.progress={};
+    const key=cId+'-'+ekey+'-logs';
+    if(!alumnoState.sub.progress[key])alumnoState.sub.progress[key]=[];
+    const entry={date:new Date().toLocaleDateString('es-AR'),reps:r};
+    if(weights.length)entry.weights=weights;
+    entry.weight=singleW||weights.filter(w=>w).slice(-1)[0]||'';
+    if(n)entry.note=n;
+    alumnoState.sub.progress[key].push(entry);
+    await persistAlumnoProgress();
+    if(document.getElementById('pw-'+cId+'-'+ekey))document.getElementById('pw-'+cId+'-'+ekey).value='';
+    document.getElementById('pr-'+cId+'-'+ekey).value='';
+    if(document.getElementById('pn-'+cId+'-'+ekey))document.getElementById('pn-'+cId+'-'+ekey).value='';
+    clearSetWeights(cId,ekey,weights.length);
+    toast('📊 Guardado');
+    const dIdx=parseInt(ekey.split('-')[0]);
+    const uid=alumnoState.uid;
+    const member={id:'sub',name:alumnoState.sub.name,email:alumnoState.sub.email,status:alumnoState.sub.status,expiry:alumnoState.sub.expiry,startDate:alumnoState.sub.startDate||'',startWeek:alumnoState.sub.startWeek||1,progress:alumnoState.sub.progress};
+    renderAlumnoDay(alumnoState.plan,member,dIdx,uid);
+    return;
+  }
   if(cId.includes('-m')){
     const [planId,...rest]=cId.split('-m');const memberId='m'+rest.join('-m');
     const plan=planes.find(p=>p.id===planId);if(!plan)return;
@@ -4085,6 +4663,381 @@ window.deleteGroupNote=async function(planId,memberId,dIdx,noteIdx){
   plan.members=plan.members.map(m=>m.id===memberId?member:m);
   await setDoc(doc(db,'planes',planId),plan);
   toast('🗑️ Nota eliminada');renderGroupDay(plan,member,dIdx);
+};
+
+// ══ VISTA DE ALUMNO (suscripción) — reusa el mismo motor de render que los planes grupales ══
+// El "cliente falso" para estos helpers es la suscripción del alumno: id="alu-{uid}",
+// progress guardado en subscribers/{uid}.progress (en vez de plan.members[].progress).
+let alumnoState={uid:null,sub:null,plan:null,categoria:null};
+
+async function renderAlumnoPlanView(sub,uid){
+  let categoria=sub.categoria;
+  let planId=sub.planId;
+  let cats=null;
+  if(categoria==='global'){
+    cats=await getCategoriasSuscripcion();
+    categoria=alumnoState.categoria||cats.filter(c=>c.id!=='global')[0]?.id;
+    if(categoria){
+      const fijoSnap=await getDoc(doc(db,'planesFijos',categoria));
+      planId=fijoSnap.exists()?fijoSnap.data().planId:null;
+    }else{
+      planId=null;
+    }
+  }
+  alumnoState.uid=uid;
+  alumnoState.sub=sub;
+  alumnoState.categoria=categoria;
+
+  const switcherEl=document.getElementById('alumno-cat-switcher');
+  if(sub.categoria==='global'){
+    switcherEl.innerHTML=`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">${
+      cats.filter(c=>c.id!=='global').map(c=>
+        `<button class="btn ${c.id===categoria?'bp':'bg2'} sm" onclick="cambiarCategoriaGlobalAlumno('${c.id}')">${c.label}</button>`
+      ).join('')
+    }</div>`;
+  }else{
+    switcherEl.innerHTML='';
+  }
+
+  const contentEl=document.getElementById('alumno-cv-content');
+  if(!planId){
+    contentEl.innerHTML=`<div class="card" style="text-align:center;padding:30px 20px">
+      <div style="font-size:2rem;margin-bottom:10px">🚧</div>
+      <h3 style="margin-bottom:8px">Tu plan todavía no está listo</h3>
+      <p class="sub">Angel está terminando de armarlo. Volvé a entrar en un rato.</p>
+    </div>`;
+    return;
+  }
+  const planSnap=await getDoc(doc(db,'planes',planId));
+  if(!planSnap.exists()){
+    contentEl.innerHTML=`<div class="card" style="text-align:center;padding:30px 20px"><h3>No se encontró tu plan</h3></div>`;
+    return;
+  }
+  alumnoState.plan={id:planId,...planSnap.data()};
+  const pseudoMember={
+    id:'sub',
+    name:sub.name||sub.email||'Alumno',
+    email:sub.email||'',
+    status:sub.status,
+    expiry:sub.expiry,
+    startDate:sub.startDate||'',
+    startWeek:sub.startWeek||1,
+    progress:sub.progress||{}
+  };
+  renderAlumnoCV(alumnoState.plan,pseudoMember,uid);
+}
+
+window.cambiarCategoriaGlobalAlumno=async function(categoria){
+  alumnoState.categoria=categoria;
+  await renderAlumnoPlanView(alumnoState.sub,alumnoState.uid);
+};
+
+function renderAlumnoCV(plan,member,uid){
+  const akey='alu-'+uid;
+  const expDate=member.expiry?new Date(member.expiry+'T00:00:00').toLocaleDateString('es-AR'):'—';
+  const daysLeft=member.expiry?Math.max(0,Math.ceil((new Date(member.expiry+'T00:00:00')-new Date())/(1000*60*60*24))):null;
+  const days=getMemberPlanDays(plan,member);
+  const fakeC={id:akey,progress:member.progress||{}};
+  const nextIdx=getNextDayIdx({days,...fakeC});
+  const activeDayName=days[nextIdx]?.name||'Día '+(nextIdx+1);
+  const mesoBadge=(plan.weeks&&member.startDate)?(()=>{const info=getMemberWeekMesoInfo(plan,member);return`<span class="badge" style="background:var(--ac)22;color:var(--ac2)">🗓️ Semana ${info.currentWeek} de ${info.totalWeeks} — Meso ${info.mesoNum}/${info.totalMesos}</span>`;})():'';
+  const dayListItems=(days||[]).map((d,i)=>{
+    const isDone=(member.progress?.['snote-'+i]||[]).length>0||isDayDoneViaSeries(fakeC,days,i);
+    const badge=i===nextIdx?`<span style="font-size:.68rem;padding:2px 8px;border-radius:20px;font-weight:600;background:var(--ac)33;color:var(--ac2)">Siguiente</span>`:isDone?`<span style="font-size:.68rem;padding:2px 8px;border-radius:20px;font-weight:600;background:var(--gr)22;color:var(--gr)">✓</span>`:'';
+    return`<div class="cv-day-item${i===nextIdx?' active':''}" id="av-ditem-${akey}-${i}" onclick="selectAlumnoCVDay(${i})">
+      <span class="cv-day-item-name">${d.name||'Día '+(i+1)}</span>${badge}
+    </div>`;
+  }).join('');
+  document.getElementById('alumno-cv-content').innerHTML=`
+    <div class="hero">
+      <div class="hero-top">
+        <div class="hav">${member.name.charAt(0).toUpperCase()}</div>
+        <div><div class="hn">Hola, ${member.name.split(' ')[0]}! 💪</div>
+          <div class="hm">📋 ${plan.name}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+        <span class="badge bgr2">✅ Acceso activo</span>
+        ${daysLeft!==null?`<span class="badge ${daysLeft<=7?'brd2':'byw2'}">📅 Vence en ${daysLeft} día${daysLeft!==1?'s':''} (${expDate})</span>`:''}
+        ${mesoBadge}
+      </div>
+    </div>
+    <div class="cv-day-picker">
+      <div class="cv-day-picker-title">Seleccionar día</div>
+      <div class="cv-day-picker-hdr" id="av-picker-hdr-${akey}" onclick="toggleAlumnoCVDayPicker('${akey}')">
+        <div class="cv-day-picker-label" id="av-picker-label-${akey}">📅 ${activeDayName}</div>
+        <div class="cv-day-picker-arr">▼</div>
+      </div>
+      <div class="cv-day-list" id="av-day-list-${akey}">${dayListItems}</div>
+    </div>
+    <div id="aday-view-${akey}"></div>`;
+  renderAlumnoDay(plan,member,nextIdx,uid);
+}
+
+window.toggleAlumnoCVDayPicker=function(akey){
+  document.getElementById('av-picker-hdr-'+akey)?.classList.toggle('open');
+  document.getElementById('av-day-list-'+akey)?.classList.toggle('open');
+};
+window.selectAlumnoCVDay=function(idx){
+  const {plan,sub,uid}=alumnoState;
+  const member={id:'sub',name:sub.name||sub.email||'Alumno',email:sub.email||'',status:sub.status,expiry:sub.expiry,startDate:sub.startDate||'',startWeek:sub.startWeek||1,progress:sub.progress||{}};
+  const akey='alu-'+uid;
+  document.querySelectorAll(`[id^="av-ditem-${akey}-"]`).forEach(el=>el.classList.remove('active'));
+  document.getElementById(`av-ditem-${akey}-${idx}`)?.classList.add('active');
+  const label=document.getElementById('av-picker-label-'+akey);
+  const days=getMemberPlanDays(plan,member);
+  if(label)label.textContent='📅 '+(days[idx]?.name||'Día '+(idx+1));
+  document.getElementById('av-picker-hdr-'+akey)?.classList.remove('open');
+  document.getElementById('av-day-list-'+akey)?.classList.remove('open');
+  renderAlumnoDay(plan,member,idx,uid);
+};
+
+function renderAlumnoDay(plan,member,dIdx,uid){
+  const days=getMemberPlanDays(plan,member);
+  const day=days[dIdx];
+  const akey='alu-'+uid;
+  const container=document.getElementById('aday-view-'+akey);
+  if(!container)return;
+  if(!day||!day.blocks?.length){container.innerHTML='<div style="text-align:center;padding:40px;color:var(--mu)">Sin bloques en este día.</div>';return}
+  const fakeClient={id:akey,progress:member.progress||{},days};
+  let html='';
+  day.blocks.forEach((blk,bi)=>{
+    const bkey=`${dIdx}-${bi}`;
+    if(blk.kind==='warmup') html+=renderWarmupBlock(fakeClient,bkey,blk,bi);
+    else if(blk.kind==='gym') html+=renderGymBlock(fakeClient,bkey,blk,bi);
+    else if(blk.kind==='func') html+=renderFuncBlock(fakeClient,bkey,blk,bi);
+    else html+=renderCFBlock(fakeClient,bkey,blk,bi);
+  });
+  const snKey='snote-'+dIdx;
+  const notes=member.progress?.[snKey]||[];
+  const notesHtml=notes.slice(-5).reverse().map((n,ri)=>{const realIdx=notes.length-1-ri;return`<div class="note-entry" style="display:flex;align-items:flex-start;gap:8px"><div style="flex:1"><div class="note-date">${n.date}</div><div class="note-text">${n.text}</div></div><button onclick="deleteAlumnoNote(${dIdx},${realIdx})" style="background:none;border:none;color:var(--mu);cursor:pointer;font-size:.85rem;padding:2px 4px">🗑️</button></div>`}).join('');
+  html+=`<div style="border:1px solid var(--bd);border-radius:var(--ra);padding:16px;margin-top:6px;background:var(--s1)">
+    <div style="font-size:.78rem;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">📝 Notas de sesión (opcional)</div>
+    <textarea id="asnote-${akey}-${dIdx}" placeholder="¿Cómo te sentiste hoy?..." style="min-height:70px;margin-bottom:8px;font-size:.83rem"></textarea>
+    <button class="btn bgr sm" onclick="saveAlumnoNote(${dIdx})">💾 Guardar nota</button>
+    ${notesHtml}
+  </div><div style="height:90px"></div>`;
+  container.innerHTML=html;
+}
+
+async function persistAlumnoProgress(){
+  await updateDoc(doc(db,'subscribers',alumnoState.uid),{progress:alumnoState.sub.progress||{}});
+}
+
+window.saveAlumnoNote=async function(dIdx){
+  const uid=alumnoState.uid;
+  const akey='alu-'+uid;
+  const txt=document.getElementById(`asnote-${akey}-${dIdx}`).value.trim();
+  if(!txt)return;
+  if(!alumnoState.sub.progress)alumnoState.sub.progress={};
+  const key='snote-'+dIdx;
+  if(!alumnoState.sub.progress[key])alumnoState.sub.progress[key]=[];
+  alumnoState.sub.progress[key].push({date:new Date().toLocaleDateString('es-AR'),text:txt});
+  await persistAlumnoProgress();
+  toast('📝 Nota guardada');
+  const member={id:'sub',name:alumnoState.sub.name,email:alumnoState.sub.email,status:alumnoState.sub.status,expiry:alumnoState.sub.expiry,startDate:alumnoState.sub.startDate||'',startWeek:alumnoState.sub.startWeek||1,progress:alumnoState.sub.progress};
+  renderAlumnoDay(alumnoState.plan,member,dIdx,uid);
+};
+
+window.deleteAlumnoNote=async function(dIdx,noteIdx){
+  if(!confirm('¿Borrar esta nota?'))return;
+  const key='snote-'+dIdx;
+  alumnoState.sub.progress[key].splice(noteIdx,1);
+  await persistAlumnoProgress();
+  toast('🗑️ Nota eliminada');
+  const uid=alumnoState.uid;
+  const member={id:'sub',name:alumnoState.sub.name,email:alumnoState.sub.email,status:alumnoState.sub.status,expiry:alumnoState.sub.expiry,startDate:alumnoState.sub.startDate||'',startWeek:alumnoState.sub.startWeek||1,progress:alumnoState.sub.progress};
+  renderAlumnoDay(alumnoState.plan,member,dIdx,uid);
+};
+
+// ══ PANEL DE SUSCRIPTORES (admin) — activación manual para pagos fuera de MercadoPago ══
+const SUSCRIPTOR_STATUS_LABEL={pending:'⏳ Pendiente de pago',active:'✅ Activo',expired:'⚠️ Vencido'};
+let suscriptoresCache=null;
+
+async function poblarCategoriaSelect(id){
+  const sel=document.getElementById(id);
+  if(!sel||sel.dataset.loaded)return;
+  const cats=await getCategoriasSuscripcion();
+  sel.innerHTML=cats.map(c=>`<option value="${c.id}">${c.label}</option>`).join('');
+  sel.dataset.loaded='1';
+}
+
+async function renderSuscriptoresPanel(query){
+  await poblarCategoriaSelect('susc-new-cat');
+  const el=document.getElementById('suscriptores-list');
+  if(!suscriptoresCache){
+    el.innerHTML='<div style="text-align:center;padding:20px;color:var(--mu)">Cargando...</div>';
+    const snap=await getDocs(collection(db,'subscribers'));
+    suscriptoresCache=snap.docs.map(d=>({id:d.id,...d.data()}));
+  }
+  if(!suscriptoresCache.length){
+    el.innerHTML='<div class="card" style="text-align:center;padding:30px;color:var(--mu)">Todavía no hay ningún suscriptor registrado.</div>';
+    return;
+  }
+  const q=(query||'').trim().toLowerCase();
+  const filtered=suscriptoresCache
+    .filter(s=>!q||(s.name||'').toLowerCase().includes(q)||(s.email||'').toLowerCase().includes(q))
+    .sort((a,b)=>(a.name||a.email||'').localeCompare(b.name||b.email||'',undefined,{sensitivity:'base'}));
+  if(!filtered.length){
+    el.innerHTML='<div class="card" style="text-align:center;padding:30px;color:var(--mu)">Ningún suscriptor coincide con la búsqueda.</div>';
+    return;
+  }
+  const cats=await getCategoriasSuscripcion();
+  const catLabel=Object.fromEntries(cats.map(c=>[c.id,c.label]));
+  const rowsArr=[];
+  for(const s of filtered){
+    const d={id:s.id};
+    const vencido=s.status==='active'&&s.expiry&&new Date(s.expiry+'T00:00:00')<new Date();
+    const statusLabel=vencido?SUSCRIPTOR_STATUS_LABEL.expired:(SUSCRIPTOR_STATUS_LABEL[s.status]||s.status);
+    const expTxt=s.expiry?new Date(s.expiry+'T00:00:00').toLocaleDateString('es-AR'):'—';
+    const defaultExp=new Date();defaultExp.setDate(defaultExp.getDate()+30);
+    // Semana de inicio: editable en cada activación (no solo la primera), para
+    // poder reiniciar en qué semana arranca alguien que vuelve después de un parate.
+    let startWeekHtml='';
+    if((s.status!=='active'||vencido)&&s.categoria&&s.categoria!=='global'){
+      const fijoSnap=await getDoc(doc(db,'planesFijos',s.categoria));
+      const planId=fijoSnap.exists()?fijoSnap.data().planId:null;
+      if(planId){
+        const planSnap=await getDoc(doc(db,'planes',planId));
+        if(planSnap.exists()){
+          const weekNums=planWeekNums(planSnap.data());
+          if(weekNums.length>1){
+            startWeekHtml=`<select id="susc-week-${d.id}" style="width:auto">${weekNums.map(w=>`<option value="${w}"${w===s.startWeek?' selected':''}>Empieza semana ${w}</option>`).join('')}</select>`;
+          }
+        }
+      }
+    }
+    const accionBtn=(s.status!=='active'||vencido)?`
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <input type="date" id="susc-exp-${d.id}" value="${defaultExp.toISOString().split('T')[0]}" style="width:auto">
+        ${startWeekHtml}
+        <button class="btn bgr sm" onclick="activarSuscriptorManual('${d.id}')">✅ Activar hasta esa fecha</button>
+      </div>`:`<button class="btn bg2 sm" onclick="desactivarSuscriptorManual('${d.id}')">⛔ Desactivar</button>`;
+    const catOptions=cats.map(c=>`<option value="${c.id}"${c.id===s.categoria?' selected':''}>${c.label}</option>`).join('');
+    rowsArr.push(`<div class="card" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:14px 16px">
+      <div>
+        <div style="font-weight:600">${s.name||s.email||'(sin nombre)'}</div>
+        <div class="sub">${s.email||''} · ${catLabel[s.categoria]||s.categoria||'—'}</div>
+        <div style="font-size:.78rem;margin-top:4px">${statusLabel}${s.expiry?' · vence '+expTxt:''}</div>
+        <div style="display:flex;gap:6px;align-items:center;margin-top:8px;flex-wrap:wrap">
+          <select id="susc-cat-${d.id}" style="width:auto;font-size:.8rem">${catOptions}</select>
+          <button class="btn bg2 sm" onclick="cambiarCategoriaSuscriptorManual('${d.id}')">💾 Cambiar categoría</button>
+        </div>
+      </div>
+      ${accionBtn}
+    </div>`);
+  }
+  const rows=rowsArr.join('');
+  el.innerHTML=rows;
+}
+window.renderSuscriptoresPanel=renderSuscriptoresPanel;
+
+window.activarSuscriptorManual=async function(uid){
+  const expiry=document.getElementById('susc-exp-'+uid).value;
+  if(!expiry){toast('⚠️ Elegí una fecha de vencimiento');return}
+  if(!confirm('¿Activar acceso hasta el '+new Date(expiry+'T00:00:00').toLocaleDateString('es-AR')+'?'))return;
+  const subRef=doc(db,'subscribers',uid);
+  const subSnap=await getDoc(subRef);
+  if(!subSnap.exists())return;
+  const sub=subSnap.data();
+  let planId=null;
+  if(sub.categoria&&sub.categoria!=='global'){
+    const fijoSnap=await getDoc(doc(db,'planesFijos',sub.categoria));
+    planId=fijoSnap.exists()?fijoSnap.data().planId||null:null;
+  }
+  const updates={status:'active',expiry,lastPaymentId:'manual',planId};
+  const weekSel=document.getElementById('susc-week-'+uid);
+  if(weekSel){
+    // El selector de semana está siempre editable: cada vez que se usa,
+    // reinicia el punto de partida (startDate) para que el cálculo de
+    // "semana actual" arranque bien desde la semana elegida.
+    updates.startDate=new Date().toISOString().split('T')[0];
+    updates.startWeek=parseInt(weekSel.value);
+  }else if(!sub.startDate){
+    updates.startDate=new Date().toISOString().split('T')[0];
+    updates.startWeek=1;
+  }
+  await updateDoc(subRef,updates);
+  toast('✅ Suscripción activada');
+  suscriptoresCache=null;
+  refreshSuscriptorPanels();
+};
+
+window.cambiarCategoriaSuscriptorManual=async function(uid){
+  const categoria=document.getElementById('susc-cat-'+uid).value;
+  let planId=null;
+  if(categoria!=='global'){
+    const fijoSnap=await getDoc(doc(db,'planesFijos',categoria));
+    planId=fijoSnap.exists()?fijoSnap.data().planId||null:null;
+  }
+  await updateDoc(doc(db,'subscribers',uid),{categoria,planId});
+  toast('✅ Categoría actualizada');
+  suscriptoresCache=null;
+  refreshSuscriptorPanels();
+};
+
+window.desactivarSuscriptorManual=async function(uid){
+  if(!confirm('¿Desactivar el acceso de este suscriptor? Su progreso no se borra, puede reactivarse después.'))return;
+  await updateDoc(doc(db,'subscribers',uid),{status:'expired'});
+  toast('⛔ Suscripción desactivada');
+  suscriptoresCache=null;
+  refreshSuscriptorPanels();
+};
+
+// Refresca el/los paneles de suscriptores que estén visibles (viejo "Suscriptores"
+// y/o el nuevo "Alumnos (nuevo)" unificado — conviven mientras dure el Paso A).
+function refreshSuscriptorPanels(){
+  const suscPanel=document.getElementById('panel-suscriptores');
+  if(suscPanel&&suscPanel.style.display!=='none')renderSuscriptoresPanel(document.getElementById('susc-search')?.value);
+  const uniPanel=document.getElementById('panel-alumnosuni');
+  if(uniPanel&&uniPanel.style.display!=='none')renderAlumnosUnificado(document.getElementById('uni-search')?.value);
+}
+
+// Instancia secundaria de Firebase Auth: crear la cuenta del alumno sin pisar
+// la sesión de admin en esta pestaña (createUserWithEmailAndPassword firma
+// automáticamente al usuario nuevo en el Auth que se use).
+let secondaryAuthInstance=null;
+function getSecondaryAuth(){
+  if(!secondaryAuthInstance){
+    const secondaryApp=initializeApp(firebaseConfig,'alta-manual-'+Date.now());
+    secondaryAuthInstance=getAuth(secondaryApp);
+  }
+  return secondaryAuthInstance;
+}
+
+window.altaManualAlumno=async function(nameId,emailId,catId,refreshFn){
+  nameId=nameId||'susc-new-name';emailId=emailId||'susc-new-email';catId=catId||'susc-new-cat';
+  refreshFn=refreshFn||(()=>renderSuscriptoresPanel(document.getElementById('susc-search')?.value));
+  const name=document.getElementById(nameId).value.trim();
+  const email=document.getElementById(emailId).value.trim();
+  const categoria=document.getElementById(catId).value;
+  if(!name||!email||!categoria){toast('⚠️ Completá nombre, email y categoría');return}
+  const tempPass=Math.random().toString(36).slice(-10)+'Aa1!';
+  try{
+    const sAuth=getSecondaryAuth();
+    const cred=await createUserWithEmailAndPassword(sAuth,email,tempPass);
+    const uid=cred.user.uid;
+    await signOut(sAuth);
+    let planId=null;
+    if(categoria!=='global'){
+      const fijoSnap=await getDoc(doc(db,'planesFijos',categoria));
+      planId=fijoSnap.exists()?fijoSnap.data().planId||null:null;
+    }
+    await setDoc(doc(db,'subscribers',uid),{email,name,categoria,status:'pending',planId});
+    await sendPasswordResetEmail(auth,email);
+    document.getElementById(nameId).value='';
+    document.getElementById(emailId).value='';
+    toast('✅ Alumno creado — le llegó un email para definir su contraseña. Activalo abajo cuando pague.');
+    suscriptoresCache=null;
+    refreshFn();
+  }catch(err){
+    const msgs={
+      'auth/email-already-in-use':'Ese email ya tiene una cuenta creada.',
+      'auth/invalid-email':'El email no es válido.',
+      'auth/network-request-failed':'Sin conexión. Revisá tu internet e intentá de nuevo.'
+    };
+    toast('⚠️ '+(msgs[err.code]||('No se pudo crear la cuenta ('+err.code+').')));
+  }
 };
 
 // ══ CF TIMER SYSTEM ══
@@ -4643,6 +5596,7 @@ function buildSolCard(s,isNew){
         ${waNum?`<a href="https://wa.me/${waNum}" target="_blank" class="btn bgr sm">💬 WhatsApp</a>`:''}
         <button class="btn bp sm" onclick="convertirEnCliente('${s._docId}')">✅ ${isNew?'Convertir en cliente':'Re-convertir'}</button>
         <button class="btn bpu sm" onclick="asignarAPlanGrupal('${s._docId}')">👥 Asignar a plan grupal</button>
+        <button class="btn bcy sm" onclick="convertirEnSuscriptor('${s._docId}')">🔔 Dar de alta como suscriptor</button>
         <button class="btn bd2 sm" onclick="eliminarSolicitud('${s._docId}')">🗑️</button>
       </div>
     </div>
@@ -4788,6 +5742,22 @@ window.convertirEnCliente=async function(docId){
     updateDoc(doc(db,'solicitudes',docId),{status:'convertida'});
   },300);
 }
+
+window.convertirEnSuscriptor=function(docId){
+  const s=solicitudes.find(x=>x._docId===docId);
+  if(!s)return;
+  if(!s.email){toast('⚠️ Esta solicitud no tiene email cargado, necesario para crear la cuenta');return}
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('view-trainer').classList.add('active');
+  document.querySelectorAll('.tab-btn')[0].classList.add('active');
+  showPanel('suscriptores',document.getElementById('it-suscriptores'));
+  setTimeout(()=>{
+    document.getElementById('susc-new-name').value=s.nombre||'';
+    document.getElementById('susc-new-email').value=s.email||'';
+    toast('📝 Datos precargados — elegí la categoría y creá el alumno');
+  },100);
+};
 
 window.asignarAPlanGrupal=function(docId){
   const s=solicitudes.find(x=>x._docId===docId);
