@@ -931,6 +931,28 @@ setTimeout(()=>{
   </div>
 </div>
 
+<!-- MODAL USAR PLAN COMO BASE PARA UN ALUMNO -->
+<div class="modal-bg" id="usebase-modal">
+  <div class="modal">
+    <h2>🎯 Usar plan como base</h2>
+    <input type="hidden" id="ub-plan-id">
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div class="fg"><label>Alumno</label>
+        <select id="ub-client-select" onchange="document.getElementById('ub-new-fields').style.display=this.value?'none':'flex'"></select>
+      </div>
+      <div id="ub-new-fields" style="display:flex;flex-direction:column;gap:10px">
+        <div class="fg"><label>Nombre del alumno nuevo</label><input id="ub-new-name" placeholder="Nombre y apellido"></div>
+        <div class="fg"><label>Email (opcional)</label><input id="ub-new-email" placeholder="email@ejemplo.com"></div>
+      </div>
+      <p style="font-size:.73rem;color:var(--mu)">Se copian las 12 semanas del plan a la ficha del alumno. Si elegís uno existente, se sobreescribe su plan actual. Después podés editar libremente lo que necesites.</p>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <button class="btn bp" onclick="confirmUseAsBase()" style="flex:1;justify-content:center">✅ Confirmar</button>
+      <button class="btn bg2" onclick="closeUseAsBaseModal()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <!-- FIREBASE -->
@@ -4158,6 +4180,7 @@ function renderPlanesList(){
           <button class="btn bpu sm" onclick="openEditPlan('${plan.id}')">✏️ Editar rutina</button>
           <button class="btn bcy sm" onclick="openMembers('${plan.id}')">👤 Alumnos</button>
           <button class="btn bcy sm" onclick="duplicatePlan('${plan.id}')">📋 Duplicar</button>
+          <button class="btn bcy sm" onclick="openUseAsBaseModal('${plan.id}')">🎯 Usar como base para un alumno</button>
           <button class="btn bgr sm" onclick="copyLink('${pubLink}')">🌐 Link público</button>
           <button class="btn bd2 sm" onclick="deletePlan('${plan.id}')">🗑️</button>
         </div>
@@ -4217,6 +4240,50 @@ async function duplicatePlan(id){
   renderPlanesList();toast('📋 Plan duplicado');
 }
 window.duplicatePlan=duplicatePlan;
+
+window.openUseAsBaseModal=function(planId){
+  document.getElementById('ub-plan-id').value=planId;
+  const sel=document.getElementById('ub-client-select');
+  sel.innerHTML='<option value="">➕ Alumno nuevo</option>'+clients.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+  document.getElementById('ub-new-name').value='';
+  document.getElementById('ub-new-email').value='';
+  document.getElementById('ub-new-fields').style.display='flex';
+  document.getElementById('usebase-modal').classList.add('open');
+};
+window.closeUseAsBaseModal=function(){document.getElementById('usebase-modal').classList.remove('open')};
+
+window.confirmUseAsBase=async function(){
+  const planId=document.getElementById('ub-plan-id').value;
+  const plan=planes.find(p=>p.id===planId);
+  if(!plan)return;
+  const selId=document.getElementById('ub-client-select').value;
+  let clientId=selId;
+  if(!clientId){
+    const name=document.getElementById('ub-new-name').value.trim();
+    if(!name){alert('Ingresá el nombre del alumno.');return}
+    const email=document.getElementById('ub-new-email').value.trim();
+    clientId='c'+Date.now();
+    const newClient={id:clientId,name,age:'',weight:'',level:plan.level||'',goal:'',routineName:plan.name,notes:'',email,whatsapp:'',
+      mpLink:'',payStatus:'pending',expiry:'',startDate:'',totalWeeks:plan.totalWeeks||12,mesoWeeks:plan.mesoWeeks||4,currentWeekManual:null,
+      weeks:JSON.parse(JSON.stringify(plan.weeks||{})),activeWeek:plan.activeWeek||1,
+      days:JSON.parse(JSON.stringify(plan.days||plan.weeks?.[String(plan.activeWeek||1)]||[])),progress:{},createdAt:new Date().toLocaleDateString('es-AR')};
+    await setDoc(doc(db,'clients',clientId),newClient);
+    clients.push(newClient);
+  }else{
+    const c=clients.find(x=>x.id===clientId);if(!c)return;
+    if(!confirm(`¿Sobreescribir el plan de ${c.name} con "${plan.name}"? Se reemplazan sus semanas actuales.`))return;
+    c.weeks=JSON.parse(JSON.stringify(plan.weeks||{}));
+    c.totalWeeks=plan.totalWeeks||12;
+    c.mesoWeeks=plan.mesoWeeks||4;
+    c.activeWeek=plan.activeWeek||1;
+    c.days=JSON.parse(JSON.stringify(plan.days||plan.weeks?.[String(plan.activeWeek||1)]||[]));
+    if(!c.routineName)c.routineName=plan.name;
+    await setDoc(doc(db,'clients',clientId),c);
+  }
+  document.getElementById('usebase-modal').classList.remove('open');
+  toast('✅ Plan copiado, abriendo ficha del alumno...');
+  openEdit(clientId);
+};
 
 // ── MEMBERS ──
 function openMembers(planId){
