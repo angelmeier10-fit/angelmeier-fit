@@ -885,7 +885,8 @@ setTimeout(()=>{
     <button class="btn bg2" onclick="openCatModal()">⚙️ Categorías</button>
     <label class="btn bg2" style="cursor:pointer">📥 Importar CSV<input type="file" accept=".csv" style="display:none" onchange="importExercises(this)"></label>
     <button class="btn bg2" onclick="exportExercisesCSV()">📤 Exportar CSV</button>
-    <button class="btn bg2" onclick="rearmarPlanSinElementos()">🔄 Rearmar plan Sin Elementos</button>
+    <button class="btn bg2" onclick="seedGluteosPlan()">🏗️ Cargar plan Glúteos Gym</button>
+    <button class="btn bg2" onclick="seedAdultosMayoresPlanes()">🏗️ Cargar planes Adultos Mayores</button>
     <input type="text" id="ex-search-db" placeholder="Buscar ejercicio..." style="flex:1;min-width:150px" oninput="renderExDB()">
     <select id="ex-cat-filter" style="width:180px" onchange="renderExDB()"><option value="">Todas las categorías</option></select>
   </div>
@@ -3210,68 +3211,83 @@ window.importExercises=async function(input){
   reader.readAsText(file,'UTF-8');
 };
 
-window.rearmarPlanSinElementos=async function(){
-  const target=planes.find(p=>p.name==='ENTRENAMIENTO SIN ELEMENTOS EN CASA');
-  if(!target){toast('❌ No se encontró el plan "ENTRENAMIENTO SIN ELEMENTOS EN CASA"');return}
-  if(!confirm('¿Rearmar el plan "ENTRENAMIENTO SIN ELEMENTOS EN CASA" con calentamientos + EMOM/AMRAP/TABATA/circuito, igual que el de Abdominales? Esto reemplaza sus semanas actuales.'))return;
-
-  const newEx=["Sentadilla con salto","Zancada con salto","Sentadilla isométrica en pared","Flexión diamante","Puente de glúteo a una pierna","Rodillas altas","Plancha con elevación de pierna"];
-  for(const name of newEx){
-    if(!exDB.find(e=>e.name.toLowerCase()===name.toLowerCase())){
-      const id='ex'+Date.now()+Math.random().toString(36).slice(2,5);
-      const exDoc={id,name,cat:'CrossFit / Funcional',video:''};
-      await setDoc(doc(db,'exercises',id),exDoc);
-      exDB.push(exDoc);
-    }
-  }
+window.seedGluteosPlan=async function(){
+  if(!confirm('¿Crear el plan "GLÚTEOS DE IMPACTO 🍑🔥 — Macrociclo 12 Semanas"? Se crea como plan nuevo.'))return;
 
   function findVideo(name){const e=exDB.find(x=>x.name.toLowerCase()===name.toLowerCase());return e?e.video||'':'';}
-  function gymBlock(name,rest,scheme){return {kind:'gym',type:'simple',rest,exercises:[{name,video:findVideo(name),obs:'',scheme}]};}
+  function gymBlock(name,rest,scheme,obs){return {kind:'gym',type:'simple',rest,exercises:[{name,video:findVideo(name),obs:obs||'',scheme}]};}
   function cfBlock(cftype,meta,exList){return {kind:'cf',cftype,sections:[{meta,exercises:exList.map(e=>({name:e.name,video:findVideo(e.name),reps:e.reps})),pause:''}],notes:''};}
-  function warmupBlock(){return {kind:'warmup',duration:'5 min',series:'',exercises:[
-    {name:'Jumping jacks',video:findVideo('Jumping jacks'),obs:'ritmo suave para elevar pulsaciones',scheme:[{reps:'40s',load:''}]},
-    {name:'Rotación de brazos',video:findVideo('Rotación de brazos'),obs:'',scheme:[{reps:'10',load:''}]},
-    {name:'Cadera 90/90',video:findVideo('Cadera 90/90'),obs:'movilidad de cadera',scheme:[{reps:'8/lado',load:''}]}
+  function warmupBlock(){return {kind:'warmup',duration:'8 min',series:'',exercises:[
+    {name:'Cadera 90/90',video:findVideo('Cadera 90/90'),obs:'movilidad de cadera',scheme:[{reps:'8/lado',load:''}]},
+    {name:'Puente de glúteos',video:findVideo('Puente de glúteos'),obs:'activación previa, ritmo lento',scheme:[{reps:'15',load:'peso corporal'}]},
+    {name:'Sentadilla libre',video:findVideo('Sentadilla libre'),obs:'sin carga, foco en técnica',scheme:[{reps:'10',load:'peso corporal'}]}
   ]};}
-  function repScheme(base,inc){return (w,deload)=>{let reps=base+inc*(w-1);if(deload)reps=Math.round(reps*0.6);return [{reps:String(reps),load:'peso corporal'},{reps:String(reps),load:'peso corporal'},{reps:String(reps),load:'peso corporal'}];};}
-  function holdScheme(base,inc){return (w,deload)=>{let sec=base+inc*(w-1);if(deload)sec=Math.round(sec*0.6);return [{reps:sec+'s',load:'—'},{reps:sec+'s',load:'—'},{reps:sec+'s',load:'—'}];};}
+  function repScheme(base,inc){return (w,deload)=>{let reps=base+inc*(w-1);if(deload)reps=Math.round(reps*0.6);return [{reps:String(reps),load:''},{reps:String(reps),load:''},{reps:String(reps),load:''},{reps:String(reps),load:''}];};}
+  function holdScheme(base,inc){return (w,deload)=>{let sec=base+inc*(w-1);if(deload)sec=Math.round(sec*0.6);return [{reps:sec+'s',load:'peso corporal'},{reps:sec+'s',load:'peso corporal'},{reps:sec+'s',load:'peso corporal'}];};}
 
   const mesos=[
-    { // Meso 1 (sem 1-4): base y técnica
+    { // Meso 1 (sem 1-4): base y técnica, cargas moderadas
       day1:[
-        {name:'Sentadilla libre',fn:repScheme(12,2)},
-        {name:'Flexiones de brazos con rodilla',fn:repScheme(8,1)},
-        {name:'Puente de glúteos',fn:repScheme(12,2)},
-        {name:'Plancha',fn:holdScheme(20,5)}
+        {name:'Peso muerto rumano con barra',fn:repScheme(10,1)},
+        {name:'Hip thrust con barra',fn:repScheme(12,1)},
+        {name:'Abducción de cadera en polea',fn:repScheme(15,2)},
+        {name:'Curl de piernas acostado',fn:repScheme(10,1)}
       ],
-      day2:{cftype:'circuit',metaFn:()=>({rounds:'3',rest:'60s'}),
-        exList:(w)=>[{name:'Jumping jacks',reps:(30+5*(w-1))+'s'},{name:'Mountain climbers',reps:(30+5*(w-1))+'s'},{name:'Sentadilla libre',reps:(30+5*(w-1))+'s'},{name:'Superman extensión lumbar',reps:'12'}]},
-      day3:{cftype:'amrap',metaFn:(w)=>({duration:(8+(w-1))+' min'}),
-        exList:()=>[{name:'Sentadilla libre',reps:'10'},{name:'Flexiones de brazos con rodilla',reps:'8'},{name:'Puente de glúteos',reps:'10'},{name:'Plancha',reps:'20s'}]}
+      day2gym:[
+        {name:'Zancada con mancuernas',fn:repScheme(10,1)},
+        {name:'Sentadilla búlgara con mancuernas',fn:repScheme(8,1)},
+        {name:'Máquina de abducción de cadera',fn:repScheme(15,2)}
+      ],
+      day2cf:{cftype:'circuit',metaFn:()=>({rounds:'3',rest:'60s'}),
+        exList:()=>[{name:'Puente de glúteos',reps:'20'},{name:'Patada de glúteo kickback',reps:'15/lado'},{name:'Clamshell con banda',reps:'15/lado'}]},
+      day3gym:[
+        {name:'Peso muerto sumo',fn:repScheme(8,1)},
+        {name:'Elevación pélvica unilateral',fn:repScheme(10,1)}
+      ],
+      day3cf:{cftype:'emom',metaFn:(w)=>({duration:(8+(w-1))+' min',interval:'1 min'}),
+        exList:()=>[{name:'Kettlebell swing',reps:'15 — min impar'},{name:'Puente de glúteos',reps:'30s hold — min par'}]}
     },
-    { // Meso 2 (sem 5-8): acumulación, más dinámico
+    { // Meso 2 (sem 5-8): acumulación, más carga/densidad
       day1:[
-        {name:'Estocadas libres caminadas',fn:repScheme(8,1)},
-        {name:'Flexiones en el suelo',fn:repScheme(8,2)},
-        {name:'Sentadilla búlgara en pared',fn:repScheme(8,2)},
-        {name:'Superman extensión lumbar',fn:repScheme(12,2)}
+        {name:'Peso muerto rumano con barra',fn:repScheme(10,1)},
+        {name:'Hip thrust avanzado',fn:repScheme(12,1)},
+        {name:'Extensión de cadera en máquina (glúteo)',fn:repScheme(12,2)},
+        {name:'Peso muerto rumano unilateral con mancuerna',fn:repScheme(8,1)}
       ],
-      day2:{cftype:'emom',metaFn:(w)=>({duration:(10+(w-1))+' min',interval:'1 min'}),
-        exList:(w)=>[{name:'Sentadilla con salto',reps:'12 — min impar'},{name:'Plancha lateral',reps:(20+5*(w-1))+'s c/lado — min par'}]},
-      day3:{cftype:'amrap',metaFn:(w)=>({duration:(12+(w-1))+' min'}),
-        exList:()=>[{name:'Burpees',reps:'8'},{name:'Sentadilla con salto',reps:'12'},{name:'Flexiones en el suelo',reps:'10'},{name:'Abdominal en bicicleta',reps:'20'}]}
+      day2gym:[
+        {name:'Sentadilla búlgara en máquina Smith',fn:repScheme(10,1)},
+        {name:'Zancada en máquina Smith',fn:repScheme(10,1)},
+        {name:'Máquina de abducción de cadera inclinada',fn:repScheme(15,2)}
+      ],
+      day2cf:{cftype:'circuit',metaFn:()=>({rounds:'4',rest:'50s'}),
+        exList:()=>[{name:'Patada de glúteo kickback',reps:'15/lado'},{name:'Clamshell con banda',reps:'15/lado'},{name:'Monster walk con banda',reps:'12 pasos/lado'}]},
+      day3gym:[
+        {name:'Peso muerto rumano en polea',fn:repScheme(10,1)},
+        {name:'Elevación pélvica con mancuerna',fn:repScheme(12,1)}
+      ],
+      day3cf:{cftype:'amrap',metaFn:(w)=>({duration:(12+(w-1))+' min'}),
+        exList:()=>[{name:'Kettlebell swing',reps:'15'},{name:'Puente de glúteos',reps:'20'},{name:'Zancada con mancuernas',reps:'10/pierna'}]}
     },
     { // Meso 3 (sem 9-12): intensificación, semana 12 = deload
       day1:[
-        {name:'Flexión diamante',fn:repScheme(6,1)},
-        {name:'Zancada con salto',fn:repScheme(8,1)},
-        {name:'Sentadilla isométrica en pared',fn:holdScheme(20,5)},
-        {name:'Puente de glúteo a una pierna',fn:repScheme(8,2)}
+        {name:'Buenos días con barra',fn:repScheme(8,1)},
+        {name:'Hip thrust avanzado',fn:repScheme(12,1)},
+        {name:'Peso muerto rumano en máquina Smith',fn:repScheme(10,1)},
+        {name:'Abducción de cadera en polea',fn:repScheme(15,2)}
       ],
-      day2:{cftype:'tabata',metaFn:(w,deload)=>({rounds:String(deload?5:5+w),work:'20s',rest:'10s'}),
-        exList:()=>[{name:'Burpees',reps:'20s'},{name:'Mountain climbers',reps:'20s'},{name:'Sentadilla con salto',reps:'20s'},{name:'Rodillas altas',reps:'20s'}]},
-      day3:{cftype:'amrap',metaFn:(w,deload)=>({duration:deload?'10 min':(14+(w-1))+' min'}),
-        exList:()=>[{name:'Burpees',reps:'10'},{name:'Flexiones en el suelo',reps:'12'},{name:'Sentadilla con salto',reps:'15'},{name:'Plancha con elevación de pierna',reps:'30s'}]}
+      day2gym:[
+        {name:'Sentadilla sumo con barra',fn:repScheme(8,1)},
+        {name:'Sentadilla búlgara en máquina Smith',fn:repScheme(10,1)},
+        {name:'Máquina de abducción de cadera de pie',fn:repScheme(15,2)}
+      ],
+      day2cf:{cftype:'circuit',metaFn:(w,deload)=>({rounds:String(deload?3:4+w),rest:'45s'}),
+        exList:()=>[{name:'Patada de glúteo kickback',reps:'15/lado'},{name:'Monster walk con banda',reps:'12 pasos/lado'},{name:'Elevación pélvica unilateral',reps:'12/pierna'}]},
+      day3gym:[
+        {name:'Peso muerto sumo',fn:repScheme(8,1)},
+        {name:'Elevación pélvica en máquina Smith',fn:repScheme(12,1)}
+      ],
+      day3cf:{cftype:'emom',metaFn:(w,deload)=>({duration:deload?'8 min':(10+(w-1))+' min',interval:'1 min'}),
+        exList:()=>[{name:'Kettlebell swing',reps:'20 — min impar'},{name:'Puente de glúteos',reps:'40s hold — min par'}]}
     }
   ];
 
@@ -3283,27 +3299,255 @@ window.rearmarPlanSinElementos=async function(){
       weekNum++;
       const deload=(mesoIdx===2&&w===4);
       const day1Blocks=[warmupBlock()];
-      for(const ex of meso.day1)day1Blocks.push(gymBlock(ex.name,'45s',ex.fn(w,deload)));
-      const day2Blocks=[warmupBlock(),cfBlock(meso.day2.cftype,meso.day2.metaFn(w,deload),meso.day2.exList(w))];
-      const day3Blocks=[warmupBlock(),cfBlock(meso.day3.cftype,meso.day3.metaFn(w,deload),meso.day3.exList(w))];
+      for(const ex of meso.day1)day1Blocks.push(gymBlock(ex.name,'90s',ex.fn(w,deload)));
+      const day2Blocks=[warmupBlock()];
+      for(const ex of meso.day2gym)day2Blocks.push(gymBlock(ex.name,'75s',ex.fn(w,deload)));
+      day2Blocks.push(cfBlock(meso.day2cf.cftype,meso.day2cf.metaFn(w,deload),meso.day2cf.exList(w)));
+      const day3Blocks=[warmupBlock()];
+      for(const ex of meso.day3gym)day3Blocks.push(gymBlock(ex.name,'90s',ex.fn(w,deload)));
+      day3Blocks.push(cfBlock(meso.day3cf.cftype,meso.day3cf.metaFn(w,deload),meso.day3cf.exList(w)));
       weeks[String(weekNum)]=[
-        {name:'Día 1 - Control/Fuerza',blocks:day1Blocks},
-        {name:'Día 2 - Metabólico',blocks:day2Blocks},
-        {name:'Día 3 - Explosivo/Resistencia',blocks:day3Blocks}
+        {name:'Día 1 - Fuerza Glútea',blocks:day1Blocks},
+        {name:'Día 2 - Hipertrofia + Metabólico',blocks:day2Blocks},
+        {name:'Día 3 - Potencia + Finisher',blocks:day3Blocks}
       ];
     }
   }
 
-  const updated={
-    ...target,
-    desc:'Programa de 3 días semanales para hacer en casa sin elementos. Sesiones de 20-30 min. 3 mesociclos de 4 semanas (12 semanas / 1 macrociclo), combinando series de control, EMOM, circuitos, AMRAP y TABATA para no caer en la monotonía.',
+  const id='plan'+Date.now();
+  const plan={
+    id,name:'GLÚTEOS DE IMPACTO 🍑🔥 — Macrociclo 12 Semanas',
+    desc:'Programa de gimnasio de 3 días/semana, sesiones de 40-60 min. 3 mesociclos de 4 semanas (12 semanas / 1 macrociclo): fuerza en bisagra de cadera, hipertrofia con máquinas/mancuernas y finishers metabólicos (circuito, EMOM, AMRAP) para esculpir glúteos sin caer en la rutina.',
+    price:'',mpLink:'',img:'',level:'intermedio',cat:'Otra',durationDays:84,
     totalWeeks:12,mesoWeeks:4,activeWeek:1,
-    weeks,days:weeks['1']
+    weeks,days:weeks['1'],members:[],public:true,
+    createdAt:new Date().toLocaleDateString('es-AR')
   };
-  await setDoc(doc(db,'planes',target.id),updated);
-  const idx=planes.findIndex(p=>p.id===target.id);
-  if(idx>-1)planes[idx]=updated;
-  toast('✅ Plan "Sin Elementos" rearmado (12 semanas)');
+  await setDoc(doc(db,'planes',id),plan);
+  planes.push(plan);
+  toast('✅ Plan "Glúteos de Impacto" creado (12 semanas)');
+};
+
+window.seedAdultosMayoresPlanes=async function(){
+  if(!confirm('¿Crear los planes "Autonomía en Movimiento" y "Equilibrio y Seguridad" para Adultos Mayores? Se crean como planes nuevos.'))return;
+
+  const newEx=["Sentadilla parcial con apoyo en pared","Elevación de talones con apoyo","Remo con banda sentado","Marcha en tándem","Marcha lateral con banda","Reloj de equilibrio","Transferencia de peso lateral","Paso atrás con apoyo","Apoyo unipodal con silla","Flexión de hombro con banda","Cruce de brazo-pierna contralateral","Marcha con paso alto","Rotación de tronco sentado","Extensión de rodilla sentado","Movilidad de tobillo sentado","Flexión de cadera sentado"];
+  for(const name of newEx){
+    if(!exDB.find(e=>e.name.toLowerCase()===name.toLowerCase())){
+      const id='ex'+Date.now()+Math.random().toString(36).slice(2,5);
+      const exDoc={id,name,cat:'Adultos Mayores',video:''};
+      await setDoc(doc(db,'exercises',id),exDoc);
+      exDB.push(exDoc);
+    }
+  }
+
+  function findVideo(name){const e=exDB.find(x=>x.name.toLowerCase()===name.toLowerCase());return e?e.video||'':'';}
+  function gymBlock(name,rest,scheme,obs){return {kind:'gym',type:'simple',rest,exercises:[{name,video:findVideo(name),obs:obs||'',scheme}]};}
+  function cfCircuit(rounds,rest,exList){return {kind:'cf',cftype:'circuit',sections:[{meta:{rounds:String(rounds),rest},exercises:exList.map(e=>({name:e.name,video:findVideo(e.name),reps:e.reps})),pause:''}],notes:'Ritmo propio, sin apuro. Detener si hay dolor o mareo.'};}
+  function repScheme(base,inc){return (w,deload)=>{let reps=base+inc*(w-1);if(deload)reps=Math.round(reps*0.7);return [{reps:String(reps),load:''},{reps:String(reps),load:''}];};}
+  function holdScheme(base,inc){return (w,deload)=>{let sec=base+inc*(w-1);if(deload)sec=Math.round(sec*0.7);return [{reps:sec+'s',load:''},{reps:sec+'s',load:''}];};}
+
+  // ══ PLAN A: Independiente / sedentario (de pie, apoyo leve) ══
+  function warmupA(){return {kind:'warmup',duration:'5 min',series:'',exercises:[
+    {name:'Marcha en el sitio',video:findVideo('Marcha en el sitio'),obs:'ritmo cómodo',scheme:[{reps:'1 min',load:''}]},
+    {name:'Rotación de tronco sentado',video:findVideo('Rotación de tronco sentado'),obs:'movilidad suave',scheme:[{reps:'8/lado',load:''}]}
+  ]};}
+  const mesosA=[
+    { // Meso 1: adaptación, apoyo con una mano en la silla
+      day1:[
+        {name:'Sentarse y levantarse de la silla',fn:repScheme(8,1),obs:'apoyo de una mano si hace falta'},
+        {name:'Sentadilla parcial con apoyo en pared',fn:repScheme(8,1),obs:'espalda apoyada, bajar poco'},
+        {name:'Elevación de talones con apoyo',fn:repScheme(10,1),obs:'una mano en la silla'},
+        {name:'Remo con banda sentado',fn:repScheme(10,1),obs:'espalda recta'}
+      ],
+      day2:[
+        {name:'Equilibrio y marcha adultos mayores',fn:repScheme(1,0),obs:'según indicación del ejercicio'},
+        {name:'Marcha en tándem',fn:repScheme(6,1),obs:'apoyo de una mano en la pared'},
+        {name:'Marcha lateral con banda',fn:repScheme(8,1),obs:'pasos cortos y controlados'},
+        {name:'Reloj de equilibrio',fn:repScheme(4,0),obs:'apoyo cercano de silla'}
+      ],
+      day2circuit:()=>[{name:'Transferencia de peso lateral',reps:'8/lado'},{name:'Paso atrás con apoyo',reps:'8'},{name:'Apoyo unipodal con silla',reps:'10s/lado'}],
+      day3:[
+        {name:'Flexión de hombro con banda',fn:repScheme(10,1),obs:'movimiento controlado'},
+        {name:'Cruce de brazo-pierna contralateral',fn:repScheme(8,1),obs:'de pie, apoyo cercano'},
+        {name:'Marcha con paso alto',fn:repScheme(8,1),obs:'rodilla a la altura de la cadera'},
+        {name:'Rotación de tronco sentado',fn:repScheme(8,1),obs:''}
+      ],
+      day3circuit:()=>[{name:'Marcha en el sitio',reps:'1 min'},{name:'Sentadilla parcial con apoyo en pared',reps:'8'},{name:'Apoyo unipodal con silla',reps:'10s/lado'}]
+    },
+    { // Meso 2: acumulación, apoyo se reduce a roce de dedos
+      day1:[
+        {name:'Sentarse y levantarse de la silla',fn:repScheme(10,1),obs:'apoyo mínimo, roce de dedos'},
+        {name:'Sentadilla parcial con apoyo en pared',fn:repScheme(10,1),obs:''},
+        {name:'Elevación de talones con apoyo',fn:repScheme(12,1),obs:'sostener 2s arriba'},
+        {name:'Remo con banda sentado',fn:repScheme(12,1),obs:''}
+      ],
+      day2:[
+        {name:'Marcha en tándem',fn:repScheme(8,1),obs:'roce de dedos en la pared'},
+        {name:'Marcha lateral con banda',fn:repScheme(10,1),obs:''},
+        {name:'Reloj de equilibrio',fn:repScheme(5,0),obs:''},
+        {name:'Apoyo unipodal con silla',fn:holdScheme(10,3),obs:'roce de dedos'}
+      ],
+      day2circuit:()=>[{name:'Transferencia de peso lateral',reps:'10/lado'},{name:'Paso atrás con apoyo',reps:'10'},{name:'Marcha con paso alto',reps:'10'}],
+      day3:[
+        {name:'Flexión de hombro con banda',fn:repScheme(12,1),obs:''},
+        {name:'Cruce de brazo-pierna contralateral',fn:repScheme(10,1),obs:'sumar velocidad leve'},
+        {name:'Marcha con paso alto',fn:repScheme(10,1),obs:''},
+        {name:'Rotación de tronco sentado',fn:repScheme(10,1),obs:''}
+      ],
+      day3circuit:()=>[{name:'Marcha en el sitio',reps:'1:30 min'},{name:'Sentadilla parcial con apoyo en pared',reps:'10'},{name:'Apoyo unipodal con silla',reps:'15s/lado'}]
+    },
+    { // Meso 3: intensificación, semana 12 = deload
+      day1:[
+        {name:'Sentarse y levantarse de la silla',fn:repScheme(12,1),obs:'sin apoyo de manos si es seguro'},
+        {name:'Sentadilla parcial con apoyo en pared',fn:repScheme(12,1),obs:''},
+        {name:'Elevación de talones con apoyo',fn:repScheme(14,1),obs:''},
+        {name:'Remo con banda sentado',fn:repScheme(14,1),obs:''}
+      ],
+      day2:[
+        {name:'Marcha en tándem',fn:repScheme(10,1),obs:'sin apoyo si es seguro'},
+        {name:'Marcha lateral con banda',fn:repScheme(12,1),obs:''},
+        {name:'Reloj de equilibrio',fn:repScheme(6,0),obs:''},
+        {name:'Apoyo unipodal con silla',fn:holdScheme(15,3),obs:''}
+      ],
+      day2circuit:(w,deload)=>[{name:'Transferencia de peso lateral',reps:(deload?'8':'12')+'/lado'},{name:'Paso atrás con apoyo',reps:deload?'8':'12'},{name:'Marcha con paso alto',reps:deload?'8':'12'}],
+      day3:[
+        {name:'Flexión de hombro con banda',fn:repScheme(14,1),obs:''},
+        {name:'Cruce de brazo-pierna contralateral',fn:repScheme(12,1),obs:''},
+        {name:'Marcha con paso alto',fn:repScheme(12,1),obs:''},
+        {name:'Rotación de tronco sentado',fn:repScheme(12,1),obs:''}
+      ],
+      day3circuit:(w,deload)=>[{name:'Marcha en el sitio',reps:deload?'1 min':'2 min'},{name:'Sentadilla parcial con apoyo en pared',reps:deload?'8':'12'},{name:'Apoyo unipodal con silla',reps:(deload?'15':'20')+'s/lado'}]
+    }
+  ];
+
+  const weeksA={};
+  let wn=0;
+  for(let mi=0;mi<3;mi++){
+    const meso=mesosA[mi];
+    for(let w=1;w<=4;w++){
+      wn++;
+      const deload=(mi===2&&w===4);
+      const d1=[warmupA()];for(const ex of meso.day1)d1.push(gymBlock(ex.name,'45s',ex.fn(w,deload),ex.obs));
+      const d2=[warmupA()];for(const ex of meso.day2)d2.push(gymBlock(ex.name,'45s',ex.fn(w,deload),ex.obs));
+      d2.push(cfCircuit(mi===2?(deload?2:3):2,'45s',meso.day2circuit(w,deload)));
+      const d3=[warmupA()];for(const ex of meso.day3)d3.push(gymBlock(ex.name,'45s',ex.fn(w,deload),ex.obs));
+      d3.push(cfCircuit(mi===2?(deload?2:3):2,'45s',meso.day3circuit(w,deload)));
+      weeksA[String(wn)]=[
+        {name:'Día 1 - Fuerza funcional',blocks:d1},
+        {name:'Día 2 - Equilibrio y marcha',blocks:d2},
+        {name:'Día 3 - Funcional y coordinación',blocks:d3}
+      ];
+    }
+  }
+  const idA='plan'+Date.now()+'a';
+  const planA={
+    id:idA,name:'Autonomía en Movimiento — Adultos Mayores (Independiente)',
+    desc:'Programa funcional de 3 días/semana, 20-30 min, para adultos mayores sedentarios que caminan sin ayuda. Ejercicios de kinefilaxia orientados a fuerza funcional, equilibrio y prevención de caídas, con apoyo decreciente en silla/pared a lo largo de las 12 semanas.',
+    price:'',mpLink:'',img:'',level:'básico',cat:'Otra',durationDays:84,
+    totalWeeks:12,mesoWeeks:4,activeWeek:1,
+    weeks:weeksA,days:weeksA['1'],members:[],public:true,
+    createdAt:new Date().toLocaleDateString('es-AR')
+  };
+  await setDoc(doc(db,'planes',idA),planA);
+  planes.push(planA);
+
+  // ══ PLAN B: Riesgo de caídas / frágil (apoyo bilateral constante, mayoría sentado) ══
+  function warmupB(){return {kind:'warmup',duration:'5 min',series:'',exercises:[
+    {name:'Movilidad de tobillo sentado',video:findVideo('Movilidad de tobillo sentado'),obs:'sentado, cómodo',scheme:[{reps:'10',load:''}]},
+    {name:'Rotación de tronco sentado',video:findVideo('Rotación de tronco sentado'),obs:'suave',scheme:[{reps:'6/lado',load:''}]}
+  ]};}
+  const mesosB=[
+    { day1:[
+        {name:'Sentarse y levantarse de la silla',fn:repScheme(5,1),obs:'con apoyo de ambas manos'},
+        {name:'Extensión de rodilla sentado',fn:repScheme(8,1),obs:'sentado, espalda apoyada'},
+        {name:'Flexión de hombro con banda',fn:repScheme(8,1),obs:'sentado'},
+        {name:'Elevación de talones con apoyo',fn:repScheme(8,1),obs:'ambas manos en la silla'}
+      ],
+      day2:[
+        {name:'Marcha en el sitio',fn:repScheme(1,0),obs:'con apoyo de silla/pared, 30-45s'},
+        {name:'Transferencia de peso lateral',fn:repScheme(6,1),obs:'apoyo bilateral'},
+        {name:'Apoyo unipodal con silla',fn:holdScheme(5,1),obs:'apoyo total de ambas manos'}
+      ],
+      day2circuit:()=>[{name:'Rotación de tronco sentado',reps:'8/lado'},{name:'Movilidad de tobillo sentado',reps:'10'},{name:'Marcha en el sitio',reps:'30s'}],
+      day3:[
+        {name:'Sentarse y levantarse de la silla',fn:repScheme(6,1),obs:'foco en control, sin apuro'},
+        {name:'Remo con banda sentado',fn:repScheme(8,1),obs:''},
+        {name:'Flexión de cadera sentado',fn:repScheme(8,1),obs:'marcha sentado, alternando piernas'},
+        {name:'Cruce de brazo-pierna contralateral',fn:repScheme(6,1),obs:'sentado, versión simple'}
+      ]
+    },
+    { day1:[
+        {name:'Sentarse y levantarse de la silla',fn:repScheme(7,1),obs:''},
+        {name:'Extensión de rodilla sentado',fn:repScheme(10,1),obs:''},
+        {name:'Flexión de hombro con banda',fn:repScheme(10,1),obs:''},
+        {name:'Elevación de talones con apoyo',fn:repScheme(10,1),obs:''}
+      ],
+      day2:[
+        {name:'Marcha en el sitio',fn:repScheme(1,0),obs:'45-60s con apoyo'},
+        {name:'Transferencia de peso lateral',fn:repScheme(8,1),obs:''},
+        {name:'Apoyo unipodal con silla',fn:holdScheme(8,1),obs:''}
+      ],
+      day2circuit:()=>[{name:'Rotación de tronco sentado',reps:'10/lado'},{name:'Movilidad de tobillo sentado',reps:'12'},{name:'Marcha en el sitio',reps:'45s'}],
+      day3:[
+        {name:'Sentarse y levantarse de la silla',fn:repScheme(8,1),obs:''},
+        {name:'Remo con banda sentado',fn:repScheme(10,1),obs:''},
+        {name:'Flexión de cadera sentado',fn:repScheme(10,1),obs:''},
+        {name:'Cruce de brazo-pierna contralateral',fn:repScheme(8,1),obs:''}
+      ]
+    },
+    { day1:[
+        {name:'Sentarse y levantarse de la silla',fn:repScheme(9,1),obs:''},
+        {name:'Extensión de rodilla sentado',fn:repScheme(12,1),obs:''},
+        {name:'Flexión de hombro con banda',fn:repScheme(12,1),obs:''},
+        {name:'Elevación de talones con apoyo',fn:repScheme(12,1),obs:''}
+      ],
+      day2:[
+        {name:'Marcha en el sitio',fn:repScheme(1,0),obs:'60-90s con apoyo'},
+        {name:'Transferencia de peso lateral',fn:repScheme(10,1),obs:''},
+        {name:'Apoyo unipodal con silla',fn:holdScheme(10,1),obs:''}
+      ],
+      day2circuit:(w,deload)=>[{name:'Rotación de tronco sentado',reps:(deload?'8':'12')+'/lado'},{name:'Movilidad de tobillo sentado',reps:deload?'8':'14'},{name:'Marcha en el sitio',reps:deload?'30s':'60s'}],
+      day3:[
+        {name:'Sentarse y levantarse de la silla',fn:repScheme(10,1),obs:''},
+        {name:'Remo con banda sentado',fn:repScheme(12,1),obs:''},
+        {name:'Flexión de cadera sentado',fn:repScheme(12,1),obs:''},
+        {name:'Cruce de brazo-pierna contralateral',fn:repScheme(10,1),obs:''}
+      ]
+    }
+  ];
+
+  const weeksB={};
+  wn=0;
+  for(let mi=0;mi<3;mi++){
+    const meso=mesosB[mi];
+    for(let w=1;w<=4;w++){
+      wn++;
+      const deload=(mi===2&&w===4);
+      const d1=[warmupB()];for(const ex of meso.day1)d1.push(gymBlock(ex.name,'60s',ex.fn(w,deload),ex.obs));
+      const d2=[warmupB()];for(const ex of meso.day2)d2.push(gymBlock(ex.name,'60s',ex.fn(w,deload),ex.obs));
+      d2.push(cfCircuit(2,'45s',meso.day2circuit(w,deload)));
+      const d3=[warmupB()];for(const ex of meso.day3)d3.push(gymBlock(ex.name,'60s',ex.fn(w,deload),ex.obs));
+      weeksB[String(wn)]=[
+        {name:'Día 1 - Fuerza en silla',blocks:d1},
+        {name:'Día 2 - Equilibrio asistido',blocks:d2},
+        {name:'Día 3 - Movilidad funcional',blocks:d3}
+      ];
+    }
+  }
+  const idB='plan'+Date.now()+'b';
+  const planB={
+    id:idB,name:'Equilibrio y Seguridad — Adultos Mayores (Preventivo/Frágil)',
+    desc:'Programa funcional de 3 días/semana, 20-30 min, para adultos mayores con riesgo de caídas o mayor fragilidad. Ejercicios de kinefilaxia con apoyo bilateral constante (silla/pared) y mayoría sentado, foco en fuerza básica, equilibrio asistido y movilidad segura.',
+    price:'',mpLink:'',img:'',level:'básico',cat:'Otra',durationDays:84,
+    totalWeeks:12,mesoWeeks:4,activeWeek:1,
+    weeks:weeksB,days:weeksB['1'],members:[],public:true,
+    createdAt:new Date().toLocaleDateString('es-AR')
+  };
+  await setDoc(doc(db,'planes',idB),planB);
+  planes.push(planB);
+
+  toast('✅ Planes de Adultos Mayores creados (Independiente + Frágil)');
 };
 
 // ══ REST PARSER ══
