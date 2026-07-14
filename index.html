@@ -885,6 +885,8 @@ setTimeout(()=>{
     <button class="btn bg2" onclick="openCatModal()">⚙️ Categorías</button>
     <label class="btn bg2" style="cursor:pointer">📥 Importar CSV<input type="file" accept=".csv" style="display:none" onchange="importExercises(this)"></label>
     <button class="btn bg2" onclick="exportExercisesCSV()">📤 Exportar CSV</button>
+    <button class="btn bg2" onclick="seedHiitGymPlan()">🏗️ Cargar plan HIIT Gym</button>
+    <button class="btn bg2" onclick="seedHiitCasaPlan()">🏗️ Cargar plan HIIT Casa</button>
     <input type="text" id="ex-search-db" placeholder="Buscar ejercicio..." style="flex:1;min-width:150px" oninput="renderExDB()">
     <select id="ex-cat-filter" style="width:180px" onchange="renderExDB()"><option value="">Todas las categorías</option></select>
   </div>
@@ -3207,6 +3209,148 @@ window.importExercises=async function(input){
     input.value='';
   };
   reader.readAsText(file,'UTF-8');
+};
+
+window.seedHiitGymPlan=async function(){
+  if(!confirm('¿Crear el plan "HIIT QUEMA GRASA GYM 🔥⚡ — Macrociclo 12 Semanas"? Se crea como plan nuevo.'))return;
+
+  function findVideo(name){const e=exDB.find(x=>x.name.toLowerCase()===name.toLowerCase());return e?e.video||'':'';}
+  function gymBlock(name,rest,scheme){return {kind:'gym',type:'simple',rest,exercises:[{name,video:findVideo(name),obs:'',scheme}]};}
+  function cfBlock(cftype,meta,exList,notes){return {kind:'cf',cftype,sections:[{meta,exercises:exList.map(e=>({name:e.name,video:findVideo(e.name),reps:e.reps})),pause:''}],notes:notes||''};}
+  function warmupBlock(){return {kind:'warmup',duration:'6 min',series:'',exercises:[
+    {name:'Jumping jacks',video:findVideo('Jumping jacks'),obs:'ritmo suave para elevar pulsaciones',scheme:[{reps:'40s',load:''}]},
+    {name:'Air squat',video:findVideo('Air squat'),obs:'movilidad de rodilla y cadera',scheme:[{reps:'12',load:''}]},
+    {name:'Rotación de brazos',video:findVideo('Rotación de brazos'),obs:'',scheme:[{reps:'10',load:''}]}
+  ]};}
+  function actBlock(name){return gymBlock(name,'30s',[{reps:'10',load:'liviano'},{reps:'10',load:'liviano'}]);}
+
+  const mesos=[
+    { // Meso 1 (sem 1-4): adaptación metabólica
+      day1:{cftype:'emom',metaFn:(w)=>({duration:(16+(w-1))+' min',interval:'1 min'}),
+        exList:()=>[{name:'Kettlebell swing',reps:'15'},{name:'Thruster',reps:'10'},{name:'Box jump',reps:'8'},{name:'Row (remo ergómetro)',reps:'15 cal'}]},
+      day2:{cftype:'amrap',metaFn:(w)=>({duration:(15+(w-1))+' min'}),
+        exList:()=>[{name:'Wall ball',reps:'12'},{name:'Kettlebell swing',reps:'15'},{name:'Box jump',reps:'10'},{name:'Farmers carry',reps:'20m'}]},
+      day3:{cftype:'tabata',metaFn:(w)=>({rounds:String(6+w),work:'20s',rest:'10s'}),
+        exList:()=>[{name:'Battle rope',reps:'20s'},{name:'Assault bike',reps:'20s'},{name:'Burpees',reps:'20s'},{name:'Dumbbell snatch',reps:'20s'}]}
+    },
+    { // Meso 2 (sem 5-8): acumulación
+      day1:{cftype:'emom',metaFn:(w)=>({duration:(18+(w-1))+' min',interval:'1 min'}),
+        exList:()=>[{name:'Kettlebell swing',reps:'18'},{name:'Thruster',reps:'12'},{name:'Sled push',reps:'15m'},{name:'Row (remo ergómetro)',reps:'18 cal'}]},
+      day2:{cftype:'amrap',metaFn:(w)=>({duration:(18+(w-1))+' min'}),
+        exList:()=>[{name:'Wall ball',reps:'15'},{name:'Box jump',reps:'12'},{name:'Dumbbell snatch',reps:'10/lado'},{name:'Assault bike',reps:'15 cal'}]},
+      day3:{cftype:'tabata',metaFn:(w)=>({rounds:String(7+w),work:'25s',rest:'10s'}),
+        exList:()=>[{name:'Battle rope',reps:'25s'},{name:'Burpees',reps:'25s'},{name:'Kettlebell swing',reps:'25s'},{name:'Air squat',reps:'25s'}]}
+    },
+    { // Meso 3 (sem 9-12): intensificación, semana 12 = deload
+      day1:{cftype:'emom',metaFn:(w,deload)=>({duration:deload?'12 min':(20+(w-1))+' min',interval:'1 min'}),
+        exList:()=>[{name:'Kettlebell swing',reps:'20'},{name:'Thruster',reps:'14'},{name:'Sled push',reps:'20m'},{name:'Burpees',reps:'10'}]},
+      day2:{cftype:'amrap',metaFn:(w,deload)=>({duration:deload?'12 min':(20+(w-1))+' min'}),
+        exList:()=>[{name:'Wall ball',reps:'18'},{name:'Box jump',reps:'14'},{name:'Dumbbell snatch',reps:'12/lado'},{name:'Assault bike',reps:'18 cal'}]},
+      day3:{cftype:'tabata',metaFn:(w,deload)=>({rounds:String(deload?5:8+w),work:'25s',rest:'10s'}),
+        exList:()=>[{name:'Battle rope',reps:'25s'},{name:'Burpees',reps:'25s'},{name:'Kettlebell swing',reps:'25s'},{name:'Sled push',reps:'25s'}]}
+    }
+  ];
+
+  const weeks={};
+  let weekNum=0;
+  for(let mesoIdx=0;mesoIdx<3;mesoIdx++){
+    const meso=mesos[mesoIdx];
+    for(let w=1;w<=4;w++){
+      weekNum++;
+      const deload=(mesoIdx===2&&w===4);
+      const day1Blocks=[warmupBlock(),actBlock('Sentadilla libre'),cfBlock(meso.day1.cftype,meso.day1.metaFn(w,deload),meso.day1.exList(w))];
+      const day2Blocks=[warmupBlock(),actBlock('Flexiones en el suelo'),cfBlock(meso.day2.cftype,meso.day2.metaFn(w,deload),meso.day2.exList(w))];
+      const day3Blocks=[warmupBlock(),cfBlock(meso.day3.cftype,meso.day3.metaFn(w,deload),meso.day3.exList(w),'Ritmo sostenido, técnica antes que velocidad.')];
+      weeks[String(weekNum)]=[
+        {name:'Día 1 - EMOM Fuerza-Metabólico',blocks:day1Blocks},
+        {name:'Día 2 - AMRAP Full Body',blocks:day2Blocks},
+        {name:'Día 3 - TABATA Intervals',blocks:day3Blocks}
+      ];
+    }
+  }
+
+  const id='plan'+Date.now();
+  const plan={
+    id,name:'HIIT QUEMA GRASA GYM 🔥⚡ — Macrociclo 12 Semanas',
+    desc:'Programa de gimnasio de 3 días/semana, sesiones de 30-45 min, orientado a descenso de peso. 3 mesociclos de 4 semanas (12 semanas / 1 macrociclo) combinando EMOM, AMRAP y TABATA con ejercicios full body de alta demanda metabólica.',
+    price:'',mpLink:'',img:'',level:'intermedio',cat:'Otra',durationDays:84,
+    totalWeeks:12,mesoWeeks:4,activeWeek:1,
+    weeks,days:weeks['1'],members:[],public:true,
+    createdAt:new Date().toLocaleDateString('es-AR')
+  };
+  await setDoc(doc(db,'planes',id),plan);
+  planes.push(plan);
+  toast('✅ Plan "HIIT Gym" creado (12 semanas)');
+};
+
+window.seedHiitCasaPlan=async function(){
+  if(!confirm('¿Crear el plan "HIIT QUEMA GRASA EN CASA 🔥🏠 — Macrociclo 12 Semanas"? Se crea como plan nuevo.'))return;
+
+  function findVideo(name){const e=exDB.find(x=>x.name.toLowerCase()===name.toLowerCase());return e?e.video||'':'';}
+  function cfBlock(cftype,meta,exList,notes){return {kind:'cf',cftype,sections:[{meta,exercises:exList.map(e=>({name:e.name,video:findVideo(e.name),reps:e.reps})),pause:''}],notes:notes||''};}
+  function warmupBlock(){return {kind:'warmup',duration:'6 min',series:'',exercises:[
+    {name:'Jumping jacks',video:findVideo('Jumping jacks'),obs:'ritmo suave para elevar pulsaciones',scheme:[{reps:'40s',load:''}]},
+    {name:'Air squat',video:findVideo('Air squat'),obs:'movilidad de rodilla y cadera',scheme:[{reps:'12',load:''}]},
+    {name:'Rotación de brazos',video:findVideo('Rotación de brazos'),obs:'',scheme:[{reps:'10',load:''}]}
+  ]};}
+
+  const mesos=[
+    { // Meso 1 (sem 1-4): adaptación metabólica
+      day1:{cftype:'emom',metaFn:(w)=>({duration:(14+(w-1))+' min',interval:'1 min'}),
+        exList:()=>[{name:'Burpees',reps:'8'},{name:'Jumping jacks',reps:'30s'},{name:'Air squat',reps:'15'},{name:'Mountain climbers',reps:'30s'}]},
+      day2:{cftype:'amrap',metaFn:(w)=>({duration:(14+(w-1))+' min'}),
+        exList:()=>[{name:'Sentadilla con salto',reps:'12'},{name:'Flexiones en el suelo',reps:'10'},{name:'Plancha',reps:'20s'},{name:'Abdominal en bicicleta',reps:'20'}]},
+      day3:{cftype:'tabata',metaFn:(w)=>({rounds:String(6+w),work:'20s',rest:'10s'}),
+        exList:()=>[{name:'Burpees',reps:'20s'},{name:'Mountain climbers',reps:'20s'},{name:'Rodillas altas',reps:'20s'},{name:'Jumping jacks',reps:'20s'}]}
+    },
+    { // Meso 2 (sem 5-8): acumulación
+      day1:{cftype:'emom',metaFn:(w)=>({duration:(16+(w-1))+' min',interval:'1 min'}),
+        exList:()=>[{name:'Burpees',reps:'10'},{name:'Sentadilla con salto',reps:'15'},{name:'Mountain climbers',reps:'35s'},{name:'Flexiones en el suelo',reps:'12'}]},
+      day2:{cftype:'amrap',metaFn:(w)=>({duration:(16+(w-1))+' min'}),
+        exList:()=>[{name:'Sentadilla con salto',reps:'15'},{name:'Flexión diamante',reps:'8'},{name:'Plancha con elevación de pierna',reps:'25s'},{name:'Abdominal en bicicleta',reps:'25'}]},
+      day3:{cftype:'tabata',metaFn:(w)=>({rounds:String(7+w),work:'25s',rest:'10s'}),
+        exList:()=>[{name:'Burpees',reps:'25s'},{name:'Sentadilla con salto',reps:'25s'},{name:'Mountain climbers',reps:'25s'},{name:'Rodillas altas',reps:'25s'}]}
+    },
+    { // Meso 3 (sem 9-12): intensificación, semana 12 = deload
+      day1:{cftype:'emom',metaFn:(w,deload)=>({duration:deload?'10 min':(18+(w-1))+' min',interval:'1 min'}),
+        exList:()=>[{name:'Burpees',reps:'12'},{name:'Sentadilla con salto',reps:'18'},{name:'Mountain climbers',reps:'40s'},{name:'Flexión diamante',reps:'10'}]},
+      day2:{cftype:'amrap',metaFn:(w,deload)=>({duration:deload?'10 min':(18+(w-1))+' min'}),
+        exList:()=>[{name:'Sentadilla con salto',reps:'18'},{name:'Flexión diamante',reps:'10'},{name:'Plancha con elevación de pierna',reps:'30s'},{name:'Burpees',reps:'10'}]},
+      day3:{cftype:'tabata',metaFn:(w,deload)=>({rounds:String(deload?5:8+w),work:'25s',rest:'10s'}),
+        exList:()=>[{name:'Burpees',reps:'25s'},{name:'Sentadilla con salto',reps:'25s'},{name:'Mountain climbers',reps:'25s'},{name:'Flexión diamante',reps:'25s'}]}
+    }
+  ];
+
+  const weeks={};
+  let weekNum=0;
+  for(let mesoIdx=0;mesoIdx<3;mesoIdx++){
+    const meso=mesos[mesoIdx];
+    for(let w=1;w<=4;w++){
+      weekNum++;
+      const deload=(mesoIdx===2&&w===4);
+      const day1Blocks=[warmupBlock(),cfBlock(meso.day1.cftype,meso.day1.metaFn(w,deload),meso.day1.exList(w))];
+      const day2Blocks=[warmupBlock(),cfBlock(meso.day2.cftype,meso.day2.metaFn(w,deload),meso.day2.exList(w))];
+      const day3Blocks=[warmupBlock(),cfBlock(meso.day3.cftype,meso.day3.metaFn(w,deload),meso.day3.exList(w),'Ritmo sostenido, técnica antes que velocidad.')];
+      weeks[String(weekNum)]=[
+        {name:'Día 1 - EMOM Full Body',blocks:day1Blocks},
+        {name:'Día 2 - AMRAP Metabólico',blocks:day2Blocks},
+        {name:'Día 3 - TABATA Intervals',blocks:day3Blocks}
+      ];
+    }
+  }
+
+  const id='plan'+Date.now();
+  const plan={
+    id,name:'HIIT QUEMA GRASA EN CASA 🔥🏠 — Macrociclo 12 Semanas',
+    desc:'Programa para hacer en casa sin elementos, 3 días/semana, sesiones de 30-45 min, orientado a descenso de peso. 3 mesociclos de 4 semanas (12 semanas / 1 macrociclo) combinando EMOM, AMRAP y TABATA con ejercicios de peso corporal de alta demanda metabólica.',
+    price:'',mpLink:'',img:'',level:'intermedio',cat:'Otra',durationDays:84,
+    totalWeeks:12,mesoWeeks:4,activeWeek:1,
+    weeks,days:weeks['1'],members:[],public:true,
+    createdAt:new Date().toLocaleDateString('es-AR')
+  };
+  await setDoc(doc(db,'planes',id),plan);
+  planes.push(plan);
+  toast('✅ Plan "HIIT Casa" creado (12 semanas)');
 };
 
 // ══ REST PARSER ══
