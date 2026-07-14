@@ -885,6 +885,7 @@ setTimeout(()=>{
     <button class="btn bg2" onclick="openCatModal()">⚙️ Categorías</button>
     <label class="btn bg2" style="cursor:pointer">📥 Importar CSV<input type="file" accept=".csv" style="display:none" onchange="importExercises(this)"></label>
     <button class="btn bg2" onclick="exportExercisesCSV()">📤 Exportar CSV</button>
+    <button class="btn bg2" onclick="rearmarPlanSinElementos()">🔄 Rearmar plan Sin Elementos</button>
     <input type="text" id="ex-search-db" placeholder="Buscar ejercicio..." style="flex:1;min-width:150px" oninput="renderExDB()">
     <select id="ex-cat-filter" style="width:180px" onchange="renderExDB()"><option value="">Todas las categorías</option></select>
   </div>
@@ -3207,6 +3208,102 @@ window.importExercises=async function(input){
     input.value='';
   };
   reader.readAsText(file,'UTF-8');
+};
+
+window.rearmarPlanSinElementos=async function(){
+  const target=planes.find(p=>p.name==='ENTRENAMIENTO SIN ELEMENTOS EN CASA');
+  if(!target){toast('❌ No se encontró el plan "ENTRENAMIENTO SIN ELEMENTOS EN CASA"');return}
+  if(!confirm('¿Rearmar el plan "ENTRENAMIENTO SIN ELEMENTOS EN CASA" con calentamientos + EMOM/AMRAP/TABATA/circuito, igual que el de Abdominales? Esto reemplaza sus semanas actuales.'))return;
+
+  const newEx=["Sentadilla con salto","Zancada con salto","Sentadilla isométrica en pared","Flexión diamante","Puente de glúteo a una pierna","Rodillas altas","Plancha con elevación de pierna"];
+  for(const name of newEx){
+    if(!exDB.find(e=>e.name.toLowerCase()===name.toLowerCase())){
+      const id='ex'+Date.now()+Math.random().toString(36).slice(2,5);
+      const exDoc={id,name,cat:'CrossFit / Funcional',video:''};
+      await setDoc(doc(db,'exercises',id),exDoc);
+      exDB.push(exDoc);
+    }
+  }
+
+  function findVideo(name){const e=exDB.find(x=>x.name.toLowerCase()===name.toLowerCase());return e?e.video||'':'';}
+  function gymBlock(name,rest,scheme){return {kind:'gym',type:'simple',rest,exercises:[{name,video:findVideo(name),obs:'',scheme}]};}
+  function cfBlock(cftype,meta,exList){return {kind:'cf',cftype,sections:[{meta,exercises:exList.map(e=>({name:e.name,video:findVideo(e.name),reps:e.reps})),pause:''}],notes:''};}
+  function warmupBlock(){return {kind:'warmup',duration:'5 min',series:'',exercises:[
+    {name:'Jumping jacks',video:findVideo('Jumping jacks'),obs:'ritmo suave para elevar pulsaciones',scheme:[{reps:'40s',load:''}]},
+    {name:'Rotación de brazos',video:findVideo('Rotación de brazos'),obs:'',scheme:[{reps:'10',load:''}]},
+    {name:'Cadera 90/90',video:findVideo('Cadera 90/90'),obs:'movilidad de cadera',scheme:[{reps:'8/lado',load:''}]}
+  ]};}
+  function repScheme(base,inc){return (w,deload)=>{let reps=base+inc*(w-1);if(deload)reps=Math.round(reps*0.6);return [{reps:String(reps),load:'peso corporal'},{reps:String(reps),load:'peso corporal'},{reps:String(reps),load:'peso corporal'}];};}
+  function holdScheme(base,inc){return (w,deload)=>{let sec=base+inc*(w-1);if(deload)sec=Math.round(sec*0.6);return [{reps:sec+'s',load:'—'},{reps:sec+'s',load:'—'},{reps:sec+'s',load:'—'}];};}
+
+  const mesos=[
+    { // Meso 1 (sem 1-4): base y técnica
+      day1:[
+        {name:'Sentadilla libre',fn:repScheme(12,2)},
+        {name:'Flexiones de brazos con rodilla',fn:repScheme(8,1)},
+        {name:'Puente de glúteos',fn:repScheme(12,2)},
+        {name:'Plancha',fn:holdScheme(20,5)}
+      ],
+      day2:{cftype:'circuit',metaFn:()=>({rounds:'3',rest:'60s'}),
+        exList:(w)=>[{name:'Jumping jacks',reps:(30+5*(w-1))+'s'},{name:'Mountain climbers',reps:(30+5*(w-1))+'s'},{name:'Sentadilla libre',reps:(30+5*(w-1))+'s'},{name:'Superman extensión lumbar',reps:'12'}]},
+      day3:{cftype:'amrap',metaFn:(w)=>({duration:(8+(w-1))+' min'}),
+        exList:()=>[{name:'Sentadilla libre',reps:'10'},{name:'Flexiones de brazos con rodilla',reps:'8'},{name:'Puente de glúteos',reps:'10'},{name:'Plancha',reps:'20s'}]}
+    },
+    { // Meso 2 (sem 5-8): acumulación, más dinámico
+      day1:[
+        {name:'Estocadas libres caminadas',fn:repScheme(8,1)},
+        {name:'Flexiones en el suelo',fn:repScheme(8,2)},
+        {name:'Sentadilla búlgara en pared',fn:repScheme(8,2)},
+        {name:'Superman extensión lumbar',fn:repScheme(12,2)}
+      ],
+      day2:{cftype:'emom',metaFn:(w)=>({duration:(10+(w-1))+' min',interval:'1 min'}),
+        exList:(w)=>[{name:'Sentadilla con salto',reps:'12 — min impar'},{name:'Plancha lateral',reps:(20+5*(w-1))+'s c/lado — min par'}]},
+      day3:{cftype:'amrap',metaFn:(w)=>({duration:(12+(w-1))+' min'}),
+        exList:()=>[{name:'Burpees',reps:'8'},{name:'Sentadilla con salto',reps:'12'},{name:'Flexiones en el suelo',reps:'10'},{name:'Abdominal en bicicleta',reps:'20'}]}
+    },
+    { // Meso 3 (sem 9-12): intensificación, semana 12 = deload
+      day1:[
+        {name:'Flexión diamante',fn:repScheme(6,1)},
+        {name:'Zancada con salto',fn:repScheme(8,1)},
+        {name:'Sentadilla isométrica en pared',fn:holdScheme(20,5)},
+        {name:'Puente de glúteo a una pierna',fn:repScheme(8,2)}
+      ],
+      day2:{cftype:'tabata',metaFn:(w,deload)=>({rounds:String(deload?5:5+w),work:'20s',rest:'10s'}),
+        exList:()=>[{name:'Burpees',reps:'20s'},{name:'Mountain climbers',reps:'20s'},{name:'Sentadilla con salto',reps:'20s'},{name:'Rodillas altas',reps:'20s'}]},
+      day3:{cftype:'amrap',metaFn:(w,deload)=>({duration:deload?'10 min':(14+(w-1))+' min'}),
+        exList:()=>[{name:'Burpees',reps:'10'},{name:'Flexiones en el suelo',reps:'12'},{name:'Sentadilla con salto',reps:'15'},{name:'Plancha con elevación de pierna',reps:'30s'}]}
+    }
+  ];
+
+  const weeks={};
+  let weekNum=0;
+  for(let mesoIdx=0;mesoIdx<3;mesoIdx++){
+    const meso=mesos[mesoIdx];
+    for(let w=1;w<=4;w++){
+      weekNum++;
+      const deload=(mesoIdx===2&&w===4);
+      const day1Blocks=[warmupBlock()];
+      for(const ex of meso.day1)day1Blocks.push(gymBlock(ex.name,'45s',ex.fn(w,deload)));
+      const day2Blocks=[warmupBlock(),cfBlock(meso.day2.cftype,meso.day2.metaFn(w,deload),meso.day2.exList(w))];
+      const day3Blocks=[warmupBlock(),cfBlock(meso.day3.cftype,meso.day3.metaFn(w,deload),meso.day3.exList(w))];
+      weeks[String(weekNum)]=[
+        {name:'Día 1 - Control/Fuerza',blocks:day1Blocks},
+        {name:'Día 2 - Metabólico',blocks:day2Blocks},
+        {name:'Día 3 - Explosivo/Resistencia',blocks:day3Blocks}
+      ];
+    }
+  }
+
+  const updated={
+    ...target,
+    desc:'Programa de 3 días semanales para hacer en casa sin elementos. Sesiones de 20-30 min. 3 mesociclos de 4 semanas (12 semanas / 1 macrociclo), combinando series de control, EMOM, circuitos, AMRAP y TABATA para no caer en la monotonía.',
+    totalWeeks:12,mesoWeeks:4,activeWeek:1,
+    weeks,days:weeks['1']
+  };
+  await setDoc(doc(db,'planes',target.id),updated);
+  const idx=planes.findIndex(p=>p.id===target.id);
+  if(idx>-1)planes[idx]=updated;
+  toast('✅ Plan "Sin Elementos" rearmado (12 semanas)');
 };
 
 // ══ REST PARSER ══
