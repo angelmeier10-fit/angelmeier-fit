@@ -885,6 +885,7 @@ setTimeout(()=>{
     <button class="btn bg2" onclick="openCatModal()">⚙️ Categorías</button>
     <label class="btn bg2" style="cursor:pointer">📥 Importar CSV<input type="file" accept=".csv" style="display:none" onchange="importExercises(this)"></label>
     <button class="btn bg2" onclick="exportExercisesCSV()">📤 Exportar CSV</button>
+    <button class="btn bg2" onclick="seedMuscGeneralPlan()">🏗️ Cargar plan Musculación General</button>
     <input type="text" id="ex-search-db" placeholder="Buscar ejercicio..." style="flex:1;min-width:150px" oninput="renderExDB()">
     <select id="ex-cat-filter" style="width:180px" onchange="renderExDB()"><option value="">Todas las categorías</option></select>
   </div>
@@ -3207,6 +3208,137 @@ window.importExercises=async function(input){
     input.value='';
   };
   reader.readAsText(file,'UTF-8');
+};
+
+window.seedMuscGeneralPlan=async function(){
+  if(!confirm('¿Crear el plan "TONIFICACIÓN TOTAL 💪✨ — Musculación General (12 Semanas)"? Se crea como plan nuevo.'))return;
+
+  function findVideo(name){const e=exDB.find(x=>x.name.toLowerCase()===name.toLowerCase());return e?e.video||'':'';}
+  function gymBlock(name,rest,scheme){return {kind:'gym',type:'simple',rest,exercises:[{name,video:findVideo(name),obs:'',scheme}]};}
+  function cfBlock(cftype,meta,exList){return {kind:'cf',cftype,sections:[{meta,exercises:exList.map(e=>({name:e.name,video:findVideo(e.name),reps:e.reps})),pause:''}],notes:''};}
+  function warmupBlock(){return {kind:'warmup',duration:'6 min',series:'',exercises:[
+    {name:'Rotación de brazos',video:findVideo('Rotación de brazos'),obs:'movilidad de hombro',scheme:[{reps:'10',load:''}]},
+    {name:'Cadera 90/90',video:findVideo('Cadera 90/90'),obs:'movilidad de cadera',scheme:[{reps:'8/lado',load:''}]},
+    {name:'Sentadilla libre',video:findVideo('Sentadilla libre'),obs:'sin carga, activación',scheme:[{reps:'10',load:'peso corporal'}]}
+  ]};}
+  function repScheme(base,inc){return (w,deload)=>{let reps=base+inc*(w-1);if(deload)reps=Math.round(reps*0.7);return [{reps:String(reps),load:''},{reps:String(reps),load:''},{reps:String(reps),load:''}];};}
+
+  const mesos=[
+    { // Meso 1 (sem 1-4): adaptación técnica, cargas moderadas
+      day1:[
+        {name:'Press de banca plano con mancuernas',fn:repScheme(10,1)},
+        {name:'Jalón al pecho polea',fn:repScheme(10,1)},
+        {name:'Elevaciones laterales',fn:repScheme(12,1)},
+        {name:'Curl bíceps mancuernas',fn:repScheme(10,1)},
+        {name:'Extensión tríceps polea',fn:repScheme(10,1)}
+      ],
+      day2gym:[
+        {name:'Sentadilla',fn:repScheme(10,1)},
+        {name:'Prensa de piernas 45 grados',fn:repScheme(12,1)},
+        {name:'Peso muerto rumano con barra',fn:repScheme(10,1)},
+        {name:'Extensión de piernas en máquina',fn:repScheme(12,1)},
+        {name:'Curl de piernas acostado',fn:repScheme(10,1)}
+      ],
+      day2cf:{cftype:'circuit',metaFn:()=>({rounds:'2',rest:'50s'}),
+        exList:()=>[{name:'Elevación de talones de pie',reps:'20'},{name:'Hip thrust con barra',reps:'15'},{name:'Plancha',reps:'20s'}]},
+      day3gym:[
+        {name:'Zancada con mancuernas',fn:repScheme(10,1)},
+        {name:'Press militar con mancuernas',fn:repScheme(10,1)},
+        {name:'Remo inclinado con agarre prono',fn:repScheme(10,1)},
+        {name:'Press inclinado con mancuernas',fn:repScheme(10,1)}
+      ],
+      day3cf:{cftype:'circuit',metaFn:()=>({rounds:'2',rest:'45s'}),
+        exList:()=>[{name:'Abdominal en polea con cuerda',reps:'15'},{name:'Plancha',reps:'20s'}]}
+    },
+    { // Meso 2 (sem 5-8): acumulación, sube volumen
+      day1:[
+        {name:'Press de banca plano con mancuernas',fn:repScheme(12,1)},
+        {name:'Jalón al pecho polea',fn:repScheme(12,1)},
+        {name:'Elevaciones laterales',fn:repScheme(14,1)},
+        {name:'Curl bíceps mancuernas',fn:repScheme(12,1)},
+        {name:'Extensión tríceps polea',fn:repScheme(12,1)}
+      ],
+      day2gym:[
+        {name:'Sentadilla',fn:repScheme(12,1)},
+        {name:'Prensa de piernas 45 grados',fn:repScheme(14,1)},
+        {name:'Peso muerto rumano con barra',fn:repScheme(12,1)},
+        {name:'Extensión de piernas en máquina',fn:repScheme(14,1)},
+        {name:'Curl de piernas acostado',fn:repScheme(12,1)}
+      ],
+      day2cf:{cftype:'circuit',metaFn:()=>({rounds:'3',rest:'45s'}),
+        exList:()=>[{name:'Elevación de talones de pie',reps:'22'},{name:'Hip thrust con barra',reps:'18'},{name:'Plancha',reps:'25s'}]},
+      day3gym:[
+        {name:'Zancada con mancuernas',fn:repScheme(12,1)},
+        {name:'Press militar con mancuernas',fn:repScheme(12,1)},
+        {name:'Remo inclinado con agarre prono',fn:repScheme(12,1)},
+        {name:'Press inclinado con mancuernas',fn:repScheme(12,1)}
+      ],
+      day3cf:{cftype:'circuit',metaFn:()=>({rounds:'3',rest:'40s'}),
+        exList:()=>[{name:'Abdominal en polea con cuerda',reps:'18'},{name:'Plancha',reps:'25s'}]}
+    },
+    { // Meso 3 (sem 9-12): intensificación, semana 12 = deload
+      day1:[
+        {name:'Press de banca plano con mancuernas',fn:repScheme(14,1)},
+        {name:'Jalón al pecho polea',fn:repScheme(14,1)},
+        {name:'Elevaciones laterales',fn:repScheme(16,1)},
+        {name:'Curl bíceps mancuernas',fn:repScheme(14,1)},
+        {name:'Extensión tríceps polea',fn:repScheme(14,1)}
+      ],
+      day2gym:[
+        {name:'Sentadilla',fn:repScheme(14,1)},
+        {name:'Prensa de piernas 45 grados',fn:repScheme(16,1)},
+        {name:'Peso muerto rumano con barra',fn:repScheme(14,1)},
+        {name:'Extensión de piernas en máquina',fn:repScheme(16,1)},
+        {name:'Curl de piernas acostado',fn:repScheme(14,1)}
+      ],
+      day2cf:{cftype:'circuit',metaFn:(w,deload)=>({rounds:String(deload?2:4),rest:'40s'}),
+        exList:()=>[{name:'Elevación de talones de pie',reps:'25'},{name:'Hip thrust con barra',reps:'20'},{name:'Plancha',reps:'30s'}]},
+      day3gym:[
+        {name:'Zancada con mancuernas',fn:repScheme(14,1)},
+        {name:'Press militar con mancuernas',fn:repScheme(14,1)},
+        {name:'Remo inclinado con agarre prono',fn:repScheme(14,1)},
+        {name:'Press inclinado con mancuernas',fn:repScheme(14,1)}
+      ],
+      day3cf:{cftype:'circuit',metaFn:(w,deload)=>({rounds:String(deload?2:4),rest:'35s'}),
+        exList:()=>[{name:'Abdominal en polea con cuerda',reps:'20'},{name:'Plancha',reps:'30s'}]}
+    }
+  ];
+
+  const weeks={};
+  let weekNum=0;
+  for(let mesoIdx=0;mesoIdx<3;mesoIdx++){
+    const meso=mesos[mesoIdx];
+    for(let w=1;w<=4;w++){
+      weekNum++;
+      const deload=(mesoIdx===2&&w===4);
+      const day1Blocks=[warmupBlock()];
+      for(const ex of meso.day1)day1Blocks.push(gymBlock(ex.name,'75s',ex.fn(w,deload)));
+      const day2Blocks=[warmupBlock()];
+      for(const ex of meso.day2gym)day2Blocks.push(gymBlock(ex.name,'75s',ex.fn(w,deload)));
+      day2Blocks.push(cfBlock(meso.day2cf.cftype,meso.day2cf.metaFn(w,deload),meso.day2cf.exList(w)));
+      const day3Blocks=[warmupBlock()];
+      for(const ex of meso.day3gym)day3Blocks.push(gymBlock(ex.name,'75s',ex.fn(w,deload)));
+      day3Blocks.push(cfBlock(meso.day3cf.cftype,meso.day3cf.metaFn(w,deload),meso.day3cf.exList(w)));
+      weeks[String(weekNum)]=[
+        {name:'Día 1 - Tren Superior',blocks:day1Blocks},
+        {name:'Día 2 - Pierna Completa',blocks:day2Blocks},
+        {name:'Día 3 - Full Body',blocks:day3Blocks}
+      ];
+    }
+  }
+
+  const id='plan'+Date.now();
+  const plan={
+    id,name:'TONIFICACIÓN TOTAL 💪✨ — Musculación General (12 Semanas)',
+    desc:'Programa de gimnasio de 3 días/semana, sesiones de 40-60 min, orientado a musculación general femenina (full body equilibrado). 3 mesociclos de 4 semanas (12 semanas / 1 macrociclo): tren superior, pierna completa y full body, con finishers de core/circuito. Plan independiente, pensado para quien no combina en la misma semana con el de Glúteos.',
+    price:'',mpLink:'',img:'',level:'intermedio',cat:'Otra',durationDays:84,
+    totalWeeks:12,mesoWeeks:4,activeWeek:1,
+    weeks,days:weeks['1'],members:[],public:true,
+    createdAt:new Date().toLocaleDateString('es-AR')
+  };
+  await setDoc(doc(db,'planes',id),plan);
+  planes.push(plan);
+  toast('✅ Plan "Tonificación Total" creado (12 semanas)');
 };
 
 // ══ REST PARSER ══
