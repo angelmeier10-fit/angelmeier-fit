@@ -1,3 +1,42 @@
+# Plan: Macrociclo de Abdominales (3 mesociclos x 4 semanas) — EN CURSO
+
+## Estructura general
+- 12 semanas totales, `totalWeeks:12`, `mesoWeeks:4`.
+- 3 días/semana, 20-30 min por sesión (5' entrada en calor + 15-20' bloque principal).
+- Cada día tiene un rol fijo para dar variedad sin perder continuidad:
+  - **Día 1 – Control/Fuerza**: bloque `gym` (series rectas, isométricos, tempo).
+  - **Día 2 – Metabólico**: bloque `cf` tipo EMOM o CIRCUITO.
+  - **Día 3 – Explosivo/Resistencia**: bloque `cf` tipo AMRAP o TABATA/HIIT.
+
+## Mesociclos
+1. **Semanas 1-4 (Adaptación)**: activación y control motor, volumen moderado, isométricos, RPE bajo-medio. Formatos: straight sets + circuito suave.
+2. **Semanas 5-8 (Acumulación)**: sube densidad y dificultad (ejercicios dinámicos/unilaterales), aparecen EMOM y AMRAP.
+3. **Semanas 9-12 (Intensificación)**: mayor intensidad, TABATA/HIIT, combinaciones, semana 12 = deload (-40% volumen).
+
+Dentro de cada mesociclo, semana a semana sube reps/rondas/tiempo (progresión lineal), manteniendo los mismos ejercicios base la mayor parte del mesociclo para permitir progresión real, y cambiando de mesociclo para variar estímulo.
+
+## Ejercicios a usar del banco existente (categoría Abdomen/Core)
+Plancha, Plancha lateral, Abdominal superior, Abdominal inferior, Abdominal tijera, Abdominal en bicicleta, Oblícuos con mancuerna, Abdominal tipo remo, Abdominal inferior en paralelas, Press palloff en polea, Bird dog, Superman extensión lumbar, toes to bar estricto, Crunch abdominal, GHD situp, Mountain climbers.
+
+## Ejercicios nuevos a agregar al banco (sin duplicar, video vacío para completar después)
+Dead bug, Hollow hold, Hollow rocks, V-ups, Elevación de piernas colgado, Flutter kicks, Ab wheel rollout, Russian twist, Reverse crunch, Plancha con toque de hombro, Plancha lateral con rotación, Windshield wipers, Sit-up con disco.
+
+## Implementación técnica
+- Agregar botón temporal "🏗️ Cargar plan Abdominales" en Banco de Ejercicios (mismo patrón que `dedupeExercises`).
+- La función:
+  1. Crea (si no existen) los ejercicios nuevos en `exercises` con `cat:"Abdomen"`.
+  2. Arma `weeks["1"]`..`weeks["12"]`, 3 días cada una, con bloques `gym`/`cf` según el rol del día y la progresión del mesociclo.
+  3. Crea el documento en `planes` vía `setDoc(doc(db,'planes',id), plan)` con `name:"Abdominales — Macrociclo 12 semanas"`, `cat:"Abdomen"`, `totalWeeks:12`, `mesoWeeks:4`.
+- Después de cargarlo, se puede sacar el botón temporal (queda como plan fijo reutilizable en la app).
+
+## Confirmación pendiente
+Esperando OK del usuario para escribir el código con esta estructura.
+
+## Revisión
+Código escrito en `index.html`: botón "🏗️ Cargar plan Abdominales" + función `seedAbsPlan()`. Falta: probar en la app (crea ejercicios nuevos + plan en Firestore), y commitear/pushear si funciona bien.
+
+---
+
 # Suscripción mensual de pago — MVP
 
 ## Contexto
