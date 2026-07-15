@@ -52,8 +52,9 @@ textarea{resize:vertical;min-height:52px}
 .itabs{display:flex;gap:4px;margin-bottom:16px;border-bottom:1px solid var(--bd);padding-bottom:9px;flex-wrap:wrap}
 .itab{background:none;border:none;color:var(--mu);padding:5px 12px;cursor:pointer;font-size:.83rem;font-family:inherit;border-radius:7px;transition:all .2s}
 .itab.active{background:var(--s2);color:var(--tx);font-weight:600}
-.ccrd{background:var(--s1);border:1px solid var(--bd);border-radius:var(--ra);padding:14px;display:flex;align-items:flex-start;gap:11px;margin-bottom:10px;transition:border-color .2s}
+.ccrd{background:var(--s1);border:1px solid var(--bd);border-radius:var(--ra);padding:14px;display:block;margin-bottom:10px;transition:border-color .2s}
 .ccrd:hover{border-color:var(--ac2)}
+.ccrd-summary::-webkit-details-marker{display:none}
 .cav{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--ac),var(--ac2));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.95rem;color:#fff;flex-shrink:0}
 .ci{flex:1}
 .cn{font-weight:600;font-size:.9rem}
@@ -2420,18 +2421,22 @@ function renderClientList(){
   clients.forEach(c=>{
     const initials=c.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
     const link=`${location.origin}${location.pathname}?client=${c.id}`;
-    const div=document.createElement('div');div.className='ccrd';
+    const div=document.createElement('details');div.className='ccrd';
     function isExpiredBadge(expiry){if(!expiry)return false;const today=new Date();today.setHours(0,0,0,0);return new Date(expiry+'T00:00:00')<today;}
     const expiredNow=isExpiredBadge(c.expiry);
     const expiryBadge=c.expiry?`<span class="badge" style="background:${expiredNow?'#f8717122':'#fbbf2422'};color:${expiredNow?'var(--rd)':'var(--yw)'}">${expiredNow?'⏰ Vencido':'📅 Vence: '+new Date(c.expiry+'T00:00:00').toLocaleDateString('es-AR')}</span>`:'';
     const payBadge=c.payStatus==='paid'?'<span class="badge" style="background:#4ade8022;color:var(--gr)">✅ Pagado</span>':c.payStatus==='pending'?'<span class="badge" style="background:#f8717122;color:var(--rd)">⏳ Pendiente de pago</span>':'';
-    div.innerHTML=`<div class="cav">${initials}</div>
-      <div class="ci"><div class="cn">${c.name} ${payBadge} ${expiryBadge}</div>
+    div.innerHTML=`<summary class="ccrd-summary" style="cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none">
+        <div class="cav">${initials}</div>
+        <div class="cn">${c.name}</div>
+      </summary>
+      <div class="ci" style="margin-top:10px">
+        <div class="cn">${c.name} ${payBadge} ${expiryBadge}</div>
         <div class="cm"><span class="badge bpu2">${c.level}</span><span>🎯 ${c.goal||'—'}</span><span>📅 ${(c.days||[]).length} días</span>${c.email?`<span>✉️ ${c.email}</span>`:''} ${c.whatsapp?`<a href="https://wa.me/${c.whatsapp}" target="_blank" style="font-size:.72rem;color:#25D366;text-decoration:none">💬 ${c.whatsapp}</a>`:''}</div>
         ${c.mpLink?`<div style="margin-top:6px"><a href="${c.mpLink}" target="_blank" class="btn sm" style="background:#009EE322;color:#009EE3;border:1px solid #009EE344;font-size:.72rem">💳 Link MP</a></div>`:''}
         <div class="lbox"><span class="ltxt">${link}</span><button class="btn bg2 sm" onclick="copyLink('${link}')">📋 Copiar</button></div>
       </div>
-      <div class="ca">
+      <div class="ca" style="margin-top:10px">
         <button class="btn bpu sm" onclick="openEdit('${c.id}')">✏️ Editar</button>
         <button class="btn bcy sm" onclick="duplicateClient('${c.id}')">📋 Duplicar</button>
         <button class="btn bd2 sm" onclick="delClient('${c.id}')">🗑️</button>
