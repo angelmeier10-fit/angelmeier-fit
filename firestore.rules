@@ -32,7 +32,11 @@ service cloud.firestore {
     }
 
     match /solicitudes/{solicitudId} {
-      allow read, write: if isAdmin();
+      // El formulario público de anamnesis (anamnesis_digital.html) escribe
+      // sin login: se permite crear a cualquiera, pero leer/editar/borrar
+      // solo el admin.
+      allow create: if true;
+      allow read, update, delete: if isAdmin();
     }
 
     // Planes: admin gestiona todo. Planes grupales marcados public:true
