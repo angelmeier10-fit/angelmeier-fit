@@ -2636,7 +2636,7 @@ async function renderCV(clientId){
         ${c.email||c.whatsapp?`<button onclick="clientLogout('${clientId}')" style="background:var(--s2);border:1px solid var(--bd);color:var(--tx);border-radius:9px;padding:6px 12px;cursor:pointer;font-size:.8rem;flex-shrink:0" title="Cerrar sesión">🚪 Salir</button>`:''}
       </div>
       ${c.routineName?`<div style="font-family:'Space Grotesk',sans-serif;font-size:.9rem;font-weight:700;color:var(--ac2);margin-bottom:11px;letter-spacing:.05em">${c.routineName}</div>`:''}
-      ${c.notes?`<div style="font-size:.78rem;color:var(--mu);background:var(--s2);border-radius:8px;padding:8px 11px;margin-bottom:12px">${c.notes}</div>`:''}
+      ${c.notes?`<details style="margin-bottom:12px"><summary style="cursor:pointer;font-size:.78rem;color:var(--mu);background:var(--s2);border-radius:8px;padding:8px 11px">📋 Anamnesis / notas</summary><div style="font-size:.78rem;color:var(--mu);background:var(--s2);border-radius:8px;padding:8px 11px;margin-top:6px">${c.notes}</div></details>`:''}
       ${mpReminder}
       <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px">
         ${(()=>{if(!c.expiry)return'';const exp=new Date(c.expiry+'T00:00:00');const daysLeft=Math.ceil((exp-new Date())/(1000*60*60*24));const isNear=daysLeft<=7;return`<span class="badge" style="background:${isNear?'#f8717122':'#fbbf2422'};color:${isNear?'var(--rd)':'var(--yw)'}">📅 Vence ${exp.toLocaleDateString('es-AR')} ${daysLeft>0?'('+daysLeft+' días)':'(vencido)'}</span>`;})()}
