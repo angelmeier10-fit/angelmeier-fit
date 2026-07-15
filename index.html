@@ -5637,8 +5637,11 @@ function renderSolicitudes(){
     let html='';
     if(pending.length) html+='<div style="font-family:Space Grotesk,sans-serif;font-size:.85rem;font-weight:700;color:var(--gr);margin-bottom:10px">🟢 Nuevas ('+pending.length+')</div>';
     pending.forEach(s=>{ html+=buildSolCard(s,true); });
-    if(done.length) html+='<div style="font-family:Space Grotesk,sans-serif;font-size:.85rem;font-weight:700;color:var(--mu);margin:16px 0 10px">✅ Procesadas ('+done.length+')</div>';
-    done.forEach(s=>{ html+=buildSolCard(s,false); });
+    if(done.length){
+      html+='<details style="margin-top:16px"><summary style="cursor:pointer;font-family:Space Grotesk,sans-serif;font-size:.85rem;font-weight:700;color:var(--mu);margin-bottom:10px">✅ Procesadas ('+done.length+')</summary><div style="margin-top:10px">';
+      done.forEach(s=>{ html+=buildSolCard(s,false); });
+      html+='</div></details>';
+    }
     el.innerHTML=html;
   });
 }
