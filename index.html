@@ -14,8 +14,8 @@
 
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
-:root{--bg:#0f1117;--s1:#1a1d27;--s2:#22263a;--bd:#2e3248;--ac:#7c5cbf;--ac2:#c084fc;--gr:#4ade80;--yw:#fbbf24;--or:#fb923c;--rd:#f87171;--cy:#22d3ee;--tx:#e8eaf6;--mu:#8b92b5;--ra:14px}
-body.day{--bg:#f4f5f9;--s1:#ffffff;--s2:#eef0f6;--bd:#d0d4e8;--ac:#7c5cbf;--ac2:#6d3fba;--gr:#16a34a;--yw:#d97706;--or:#ea6d1e;--rd:#dc2626;--cy:#0891b2;--tx:#1a1d27;--mu:#5a6080}
+:root{--bg:#1c1a22;--s1:#242230;--s2:#2e2a3d;--bd:#3a3650;--ac:#b5a8f0;--ac2:#c8befa;--gr:#6fc79a;--yw:#e3b978;--or:#e0966f;--rd:#e08977;--cy:#7fc9d6;--tx:#ede9f5;--mu:#9b94ae;--ra:14px;--warmup-bg:#3a2e1c;--warmup-ink:#e3b978;--fuerza-bg:#2e2a45;--fuerza-ink:#c3b8f5;--funcional-bg:#20362a;--funcional-ink:#8fd6ac;--cf-bg:#3a2621;--cf-ink:#e0a894}
+body.day{--bg:#faf8f4;--s1:#ffffff;--s2:#f3efe6;--bd:#e8e1d2;--ac:#8b7fd1;--ac2:#6656a8;--gr:#4c9a72;--yw:#c9932e;--or:#c97a4a;--rd:#c0654f;--cy:#3f93a3;--tx:#2b2721;--mu:#8d8577;--warmup-bg:#fbeeda;--warmup-ink:#9c6a22;--fuerza-bg:#ede8fb;--fuerza-ink:#6656a8;--funcional-bg:#e2f2e7;--funcional-ink:#3d8760;--cf-bg:#fbe9e4;--cf-ink:#a44a34}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh}
 nav{display:flex;align-items:center;justify-content:space-between;padding:13px 22px;background:var(--s1);border-bottom:1px solid var(--bd);position:sticky;top:0;z-index:100;gap:10px;flex-wrap:wrap}
@@ -83,8 +83,8 @@ textarea{resize:vertical;min-height:52px}
 .day-body{padding:14px 16px}
 .day-block.collapsed .day-body{display:none}
 .blk{border:1px solid var(--bd);border-radius:11px;margin-bottom:10px;overflow:hidden}
-.blk:not(.collapsed){border-color:rgba(181,101,74,.6);background:rgba(181,101,74,.08)}
-.blk:not(.collapsed) .blk-hdr{background:rgba(181,101,74,.15)}
+.blk:not(.collapsed){border-color:var(--fuerza-ink);background:var(--fuerza-bg)}
+.blk:not(.collapsed) .blk-hdr{background:var(--fuerza-bg)}
 .blk-hdr{display:flex;align-items:center;justify-content:space-between;padding:9px 13px;background:var(--s2);gap:7px;flex-wrap:wrap;cursor:pointer;user-select:none}
 .blk-hdr:hover{background:var(--bd)22}
 .blk.collapsed .blk-body{display:none}
@@ -204,14 +204,21 @@ textarea{resize:vertical;min-height:52px}
 .cvg.open .cvg-arr{transform:rotate(180deg)}
 .cvg-body{display:none;border-top:1px solid var(--bd);padding:14px 15px}
 .cvg.open .cvg-body{display:block}
-.cvg.open{border-color:rgba(181,101,74,.6);background:rgba(181,101,74,.08)}
-.cvg.open .cvg-hdr{background:rgba(181,101,74,.15)}
+.cvg.open{border-color:var(--fuerza-ink);background:var(--fuerza-bg)}
+.cvg.open .cvg-hdr{background:var(--fuerza-bg)}
+.cvg.cvg-warmup.open{border-color:var(--warmup-ink);background:var(--warmup-bg)}
+.cvg.cvg-warmup.open .cvg-hdr{background:var(--warmup-bg)}
+.cvg.cvg-func.open{border-color:var(--funcional-ink);background:var(--funcional-bg)}
+.cvg.cvg-func.open .cvg-hdr{background:var(--funcional-bg)}
+.cvg.cvg-cf.open{border-color:var(--cf-ink);background:var(--cf-bg)}
+.cvg.cvg-cf.open .cvg-hdr{background:var(--cf-bg)}
 .stbl{width:100%;border-collapse:collapse;margin-bottom:11px}
 .stbl th,.stbl td{padding:6px 9px;font-size:.76rem;text-align:left;border-bottom:1px solid var(--bd)}
 .stbl th{color:var(--mu);font-weight:600;text-transform:uppercase;font-size:.65rem;letter-spacing:.05em}
 .stbl tr:last-child td{border-bottom:none}
 .stbl .done-row td{color:var(--bg);font-weight:700;background:var(--tx)}
-.ckbtn{background:none;border:1px solid var(--bd);border-radius:6px;width:24px;height:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.75rem;transition:all .2s;flex-shrink:0}
+.ckbtn{background:none;border:1px solid var(--bd);border-radius:8px;width:44px;height:44px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1rem;transition:all .2s;flex-shrink:0}
+.ckbtn.saving{opacity:.5;cursor:wait}
 .ckbtn.done{background:var(--gr);border-color:var(--gr);color:#0f1117}
 .cv-ex{margin-bottom:13px}
 .cv-ex-name{font-weight:600;font-size:.86rem;margin-bottom:4px;display:flex;align-items:center;gap:6px}
@@ -2784,7 +2791,7 @@ function renderWarmupBlock(c,bkey,blk,bi){
       ${vidHtml}
     </div>`;
   }).join('');
-  return`<div class="cvg" id="cvg-${c.id}-${bkey}">
+  return`<div class="cvg cvg-warmup" id="cvg-${c.id}-${bkey}">
     <div class="cvg-hdr" onclick="toggleG('cvg-${c.id}-${bkey}')">
       <div class="cvg-left">
         <div class="cvg-num" style="background:linear-gradient(135deg,var(--cy),#0ea5e9)">${bi+1}</div>
@@ -2847,7 +2854,7 @@ function renderFuncBlock(c,bkey,blk,bi){
       </div>`;
     });
   }
-  return`<div class="cvg" id="cvg-${c.id}-${bkey}">
+  return`<div class="cvg cvg-func" id="cvg-${c.id}-${bkey}">
     <div class="cvg-hdr" onclick="toggleG('cvg-${c.id}-${bkey}')">
       <div class="cvg-left">
         <div class="cvg-num" style="background:linear-gradient(135deg,var(--ac),var(--ac2))">${bi+1}</div>
@@ -2950,7 +2957,7 @@ function renderCFBlock(c,bkey,blk,bi){
   const rk=`${c.id}-${bkey}-cfresult`;
   const results=c.progress[rk]||[];
   const resultsHtml=results.slice(-3).reverse().map(r=>`<div class="lent"><span>${r.date}</span><span class="lv">${r.result}</span></div>`).join('');
-  return`<div class="cvg" id="cvg-${c.id}-${bkey}">
+  return`<div class="cvg cvg-cf" id="cvg-${c.id}-${bkey}">
     <div class="cvg-hdr" onclick="toggleG('cvg-${c.id}-${bkey}')">
       <div class="cvg-left"><div class="cvg-num num-cf">${bi+1}</div>
         <div><div class="cvg-title">${cfg.icon} <span style="color:${cfg.color}">${cfg.label}</span> ${allExercises.length?'— '+allExercises.map(e=>e.name).slice(0,2).join(', ')+(allExercises.length>2?'...':''):''}</div>
@@ -2975,9 +2982,19 @@ window.embedYT=function(th,ytId){const e=document.createElement('div');e.classNa
 
 window.toggleSerie=async function(cId,ekey,si,rk,isLast,blockRest,pauseSecs){
   const c=clients.find(cl=>cl.id===cId);
-  c.progress[rk]=!c.progress[rk];
-  await updateDoc(doc(db,'clients',cId),{progress:c.progress});
   const row=document.getElementById('sr-'+rk);const btn=row.querySelector('.ckbtn');
+  const prev=c.progress[rk];
+  c.progress[rk]=!c.progress[rk];
+  btn.classList.add('saving');
+  try{
+    await updateDoc(doc(db,'clients',cId),{progress:c.progress});
+  }catch(e){
+    c.progress[rk]=prev;
+    btn.classList.remove('saving');
+    toast('⚠️ No se pudo guardar, probá de nuevo');
+    return;
+  }
+  btn.classList.remove('saving');
   row.classList.toggle('done-row',c.progress[rk]);btn.classList.toggle('done',c.progress[rk]);
   if(c.progress[rk]){
     if(isLast){
@@ -4620,9 +4637,19 @@ const origToggleSerie=window.toggleSerie;
 window.toggleSerie=async function(cId,ekey,si,rk,isLast,blockRest,pauseSecs){
   if(cId.startsWith('alu-')){
     if(!alumnoState.sub.progress)alumnoState.sub.progress={};
-    alumnoState.sub.progress[rk]=!alumnoState.sub.progress[rk];
-    await persistAlumnoProgress();
     const row=document.getElementById('sr-'+rk);const btn=row.querySelector('.ckbtn');
+    const prev=alumnoState.sub.progress[rk];
+    alumnoState.sub.progress[rk]=!alumnoState.sub.progress[rk];
+    btn.classList.add('saving');
+    try{
+      await persistAlumnoProgress();
+    }catch(e){
+      alumnoState.sub.progress[rk]=prev;
+      btn.classList.remove('saving');
+      toast('⚠️ No se pudo guardar, probá de nuevo');
+      return;
+    }
+    btn.classList.remove('saving');
     row.classList.toggle('done-row',alumnoState.sub.progress[rk]);btn.classList.toggle('done',alumnoState.sub.progress[rk]);
     if(alumnoState.sub.progress[rk]){
       if(isLast){const secs=blockRest||parseInt(document.getElementById('timer-custom')?.value)||60;const inp=document.getElementById('timer-custom');if(inp)inp.value=secs;toast('✅ ¡Bloque completo!');startTimer(secs);}
@@ -4637,10 +4664,21 @@ window.toggleSerie=async function(cId,ekey,si,rk,isLast,blockRest,pauseSecs){
     const plan=planes.find(p=>p.id===planId);if(!plan)return;
     const member=plan.members.find(m=>m.id===memberId);if(!member)return;
     if(!member.progress)member.progress={};
+    const row=document.getElementById('sr-'+rk);const btn=row.querySelector('.ckbtn');
+    const prev=member.progress[rk];
     member.progress[rk]=!member.progress[rk];
     plan.members=plan.members.map(m=>m.id===memberId?member:m);
-    await setDoc(doc(db,'planes',planId),plan);
-    const row=document.getElementById('sr-'+rk);const btn=row.querySelector('.ckbtn');
+    btn.classList.add('saving');
+    try{
+      await setDoc(doc(db,'planes',planId),plan);
+    }catch(e){
+      member.progress[rk]=prev;
+      plan.members=plan.members.map(m=>m.id===memberId?member:m);
+      btn.classList.remove('saving');
+      toast('⚠️ No se pudo guardar, probá de nuevo');
+      return;
+    }
+    btn.classList.remove('saving');
     row.classList.toggle('done-row',member.progress[rk]);btn.classList.toggle('done',member.progress[rk]);
     if(member.progress[rk]){
       if(isLast){const secs=blockRest||parseInt(document.getElementById('timer-custom')?.value)||60;const inp=document.getElementById('timer-custom');if(inp)inp.value=secs;toast('✅ ¡Bloque completo!');startTimer(secs);}
@@ -4669,7 +4707,13 @@ window.logGym=async function(cId,ekey){
     entry.weight=singleW||weights.filter(w=>w).slice(-1)[0]||'';
     if(n)entry.note=n;
     alumnoState.sub.progress[key].push(entry);
-    await persistAlumnoProgress();
+    try{
+      await persistAlumnoProgress();
+    }catch(e){
+      alumnoState.sub.progress[key].pop();
+      toast('⚠️ No se pudo guardar, probá de nuevo');
+      return;
+    }
     if(document.getElementById('pw-'+cId+'-'+ekey))document.getElementById('pw-'+cId+'-'+ekey).value='';
     document.getElementById('pr-'+cId+'-'+ekey).value='';
     if(document.getElementById('pn-'+cId+'-'+ekey))document.getElementById('pn-'+cId+'-'+ekey).value='';
@@ -4905,7 +4949,13 @@ window.saveAlumnoNote=async function(dIdx){
   const key='snote-'+dIdx;
   if(!alumnoState.sub.progress[key])alumnoState.sub.progress[key]=[];
   alumnoState.sub.progress[key].push({date:new Date().toLocaleDateString('es-AR'),text:txt});
-  await persistAlumnoProgress();
+  try{
+    await persistAlumnoProgress();
+  }catch(e){
+    alumnoState.sub.progress[key].pop();
+    toast('⚠️ No se pudo guardar, probá de nuevo');
+    return;
+  }
   toast('📝 Nota guardada');
   const member={id:'sub',name:alumnoState.sub.name,email:alumnoState.sub.email,status:alumnoState.sub.status,expiry:alumnoState.sub.expiry,startDate:alumnoState.sub.startDate||'',startWeek:alumnoState.sub.startWeek||1,progress:alumnoState.sub.progress};
   renderAlumnoDay(alumnoState.plan,member,dIdx,uid);
