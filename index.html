@@ -3658,7 +3658,7 @@ function renderAlumnosConsolidado(searchTerm){
         <button class="btn bcy xs" onclick="openEdit('${personalClient.id}')">✏️ Editar</button>
         <button class="btn bgr xs" onclick="copyLink('${personalLink}')">🔗 Link</button>
       </div>`:'';
-    const availablePlans=planes.filter(p=>!a.items.some(it=>it.planId===p.id));
+    const availablePlans=planes.filter(p=>p.kind!=='personal'&&!a.items.some(it=>it.planId===p.id));
     const addPlanForm=availablePlans.length?`<div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--bd)">
         <div style="font-size:.76rem;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">➕ Agregar a otro plan</div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:end">
@@ -4201,7 +4201,7 @@ function renderPlanesFijosPanel(){
   el.innerHTML=catIds.map(id=>{
     const label=planesFijosCache[id].label||LEGACY_CAT_LABELS[id]||id;
     const current=planesFijosCache[id]?.planId||'';
-    const options=planes.map(p=>`<option value="${p.id}"${p.id===current?' selected':''}>${p.name}${p.public===false?' 🔒':''}</option>`).join('');
+    const options=planes.filter(p=>p.kind!=='personal').map(p=>`<option value="${p.id}"${p.id===current?' selected':''}>${p.name}${p.public===false?' 🔒':''}</option>`).join('');
     return`<div class="fg full" style="margin-bottom:10px;display:flex;gap:8px;align-items:end;flex-wrap:wrap">
       <div style="flex:1;min-width:180px">
         <label>${label}</label>
@@ -4289,9 +4289,10 @@ function renderPlanesList(){
   const el=document.getElementById('planes-list');
   const none=document.getElementById('no-planes');
   el.innerHTML='';
-  if(!planes.length){none.style.display='block';return}
+  const standardPlanes=planes.filter(p=>p.kind!=='personal');
+  if(!standardPlanes.length){none.style.display='block';return}
   none.style.display='none';
-  planes.forEach(plan=>{
+  standardPlanes.forEach(plan=>{
     const activeMembers=(plan.members||[]).filter(m=>m.status==='active').length;
     const div=document.createElement('div');div.className='plan-card';
     const pubLink=`${location.origin}${location.pathname}?plan=${plan.id}`;
@@ -4371,6 +4372,7 @@ async function duplicatePlan(id){
   copy.name=plan.name+' (copia)';
   copy.members=[];
   delete copy.id;
+  delete copy.kind;
   const ref=await addDoc(collection(db,'planes'),copy);
   await setDoc(doc(db,'planes',ref.id),{...copy,id:ref.id});
   planes.push({...copy,id:ref.id});
@@ -4439,7 +4441,7 @@ function openMembers(planId){
   document.getElementById('nm-expiry').value=expDate.toISOString().split('T')[0];
   // Renderizar checkboxes de planes adicionales (todos excepto el actual)
   const extraEl=document.getElementById('nm-extra-plans');
-  extraEl.innerHTML=planes.filter(p=>p.id!==planId).map(p=>`
+  extraEl.innerHTML=planes.filter(p=>p.id!==planId&&p.kind!=='personal').map(p=>`
     <label style="display:flex;align-items:center;gap:6px;background:var(--s2);border-radius:8px;padding:6px 10px;cursor:pointer;font-size:.82rem">
       <input type="checkbox" value="${p.id}" style="accent-color:var(--ac)"> ${p.name}
     </label>`).join('');
@@ -5395,7 +5397,7 @@ window.altaManualAlumno=async function(nameId,emailId,catId,refreshFn){
     if(categoria==='__personal__'){
       planId='plan'+Date.now();
       const personalPlan={
-        id:planId,name:'Plan personalizado — '+name,
+        id:planId,name:'Plan personalizado — '+name,kind:'personal',
         desc:'',price:'',durationDays:365,mpLink:'',img:'',level:'',cat:'',
         totalWeeks:12,mesoWeeks:4,weeks:{1:[]},activeWeek:1,days:[],
         members:[],public:false,createdAt:new Date().toLocaleDateString('es-AR')
@@ -6148,7 +6150,8 @@ window.convertirEnSuscriptor=function(docId){
 window.asignarAPlanGrupal=function(docId){
   const s=solicitudes.find(x=>x._docId===docId);
   if(!s)return;
-  if(!planes.length){alert('Todavía no creaste ningún plan grupal.');return}
+  const gruposPlanes=planes.filter(p=>p.kind!=='personal');
+  if(!gruposPlanes.length){alert('Todavía no creaste ningún plan grupal.');return}
   const modal=document.getElementById('modal-bg');
   modal.style.display='flex';
   modal.innerHTML=`<div style="background:var(--s1);border-radius:16px;padding:24px;width:100%;max-width:420px;max-height:90vh;overflow-y:auto;position:relative">
@@ -6158,7 +6161,7 @@ window.asignarAPlanGrupal=function(docId){
     </div>
     <div style="font-size:.82rem;color:var(--mu);margin-bottom:12px">${s.nombre||'Sin nombre'} · elegí uno o varios planes</div>
     <div id="asig-plan-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:18px">
-      ${planes.map(p=>{
+      ${gruposPlanes.map(p=>{
         const weekNums=planWeekNums(p);
         const weekSel=weekNums.length>1?`<select data-startweek-for="${p.id}" style="background:var(--s1);border:1px solid var(--bd);color:var(--tx);border-radius:6px;padding:4px 8px;font-size:.78rem;font-family:inherit" onclick="event.stopPropagation()">${weekNums.map(w=>`<option value="${w}">Semana ${w}</option>`).join('')}</select>`:'';
         return`<label style="display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--s2);border-radius:8px;padding:8px 11px;cursor:pointer;font-size:.86rem">
