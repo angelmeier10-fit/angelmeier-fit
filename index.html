@@ -3784,7 +3784,8 @@ async function renderProgramaUnificadoHtml(prog,catLabel){
   const expTxt=s.expiry?new Date(s.expiry+'T00:00:00').toLocaleDateString('es-AR'):'—';
   const defaultExp=new Date();defaultExp.setDate(defaultExp.getDate()+30);
   const cats=await getCategoriasSuscripcion();
-  const catOptions=cats.map(c=>`<option value="${c.id}"${c.id===s.categoria?' selected':''}>${c.label}</option>`).join('');
+  const catOptions=cats.map(c=>`<option value="${c.id}"${c.id===s.categoria?' selected':''}>${c.label}</option>`).join('')
+    +`<option value="__personal__"${s.categoria==='__personal__'?' selected':''}>🎯 Plan personalizado</option>`;
   let startWeekHtml='';
   if((s.status!=='active'||vencido)&&s.categoria&&s.categoria!=='global'&&planData){
     const weekNums=planWeekNums(planData);
@@ -5285,7 +5286,8 @@ async function renderSuscriptoresPanel(query){
         ${startWeekHtml}
         <button class="btn bgr sm" onclick="activarSuscriptorManual('${d.id}')">✅ Activar hasta esa fecha</button>
       </div>`:`<button class="btn bg2 sm" onclick="desactivarSuscriptorManual('${d.id}')">⛔ Desactivar</button>`;
-    const catOptions=cats.map(c=>`<option value="${c.id}"${c.id===s.categoria?' selected':''}>${c.label}</option>`).join('');
+    const catOptions=cats.map(c=>`<option value="${c.id}"${c.id===s.categoria?' selected':''}>${c.label}</option>`).join('')
+    +`<option value="__personal__"${s.categoria==='__personal__'?' selected':''}>🎯 Plan personalizado</option>`;
     const catTxt=s.categoria==='__personal__'?'🎯 Plan personalizado':(catLabel[s.categoria]||s.categoria||'—');
     const editarPlanBtn=(s.categoria==='__personal__'&&s.planId)?`<button class="btn bpu sm" onclick="irAEditarPlanPersonal('${s.planId}')">✏️ Editar su plan</button>`:'';
     rowsArr.push(`<div class="card" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:14px 16px">
@@ -5340,13 +5342,22 @@ window.activarSuscriptorManual=async function(uid){
 
 window.cambiarCategoriaSuscriptorManual=async function(uid){
   const categoria=document.getElementById('susc-cat-'+uid).value;
-  let planId=null;
-  if(categoria!=='global'){
-    const fijoSnap=await getDoc(doc(db,'planesFijos',categoria));
-    planId=fijoSnap.exists()?fijoSnap.data().planId||null:null;
+  if(categoria==='__personal__'){
+    const subSnap=await getDoc(doc(db,'subscribers',uid));
+    const sub=subSnap.data();
+    if(sub.categoria==='__personal__'){toast('Ya tiene un plan personalizado asignado.');return}
+    const planId=await crearPlanPersonalVacio(sub.name||sub.email);
+    await updateDoc(doc(db,'subscribers',uid),{categoria,planId});
+    toast('✅ Plan personalizado creado y asignado');
+  } else {
+    let planId=null;
+    if(categoria!=='global'){
+      const fijoSnap=await getDoc(doc(db,'planesFijos',categoria));
+      planId=fijoSnap.exists()?fijoSnap.data().planId||null:null;
+    }
+    await updateDoc(doc(db,'subscribers',uid),{categoria,planId});
+    toast('✅ Categoría actualizada');
   }
-  await updateDoc(doc(db,'subscribers',uid),{categoria,planId});
-  toast('✅ Categoría actualizada');
   suscriptoresCache=null;
   refreshSuscriptorPanels();
 };
@@ -5380,6 +5391,19 @@ function getSecondaryAuth(){
   return secondaryAuthInstance;
 }
 
+async function crearPlanPersonalVacio(nombreAlumno){
+  const planId='plan'+Date.now();
+  const personalPlan={
+    id:planId,name:'Plan personalizado — '+nombreAlumno,kind:'personal',
+    desc:'',price:'',durationDays:365,mpLink:'',img:'',level:'',cat:'',
+    totalWeeks:12,mesoWeeks:4,weeks:{1:[]},activeWeek:1,days:[],
+    members:[],public:false,createdAt:new Date().toLocaleDateString('es-AR')
+  };
+  await setDoc(doc(db,'planes',planId),personalPlan);
+  planes.push(personalPlan);
+  return planId;
+}
+
 window.altaManualAlumno=async function(nameId,emailId,catId,refreshFn){
   nameId=nameId||'susc-new-name';emailId=emailId||'susc-new-email';catId=catId||'susc-new-cat';
   refreshFn=refreshFn||(()=>renderSuscriptoresPanel(document.getElementById('susc-search')?.value));
@@ -5395,15 +5419,7 @@ window.altaManualAlumno=async function(nameId,emailId,catId,refreshFn){
     await signOut(sAuth);
     let planId=null;
     if(categoria==='__personal__'){
-      planId='plan'+Date.now();
-      const personalPlan={
-        id:planId,name:'Plan personalizado — '+name,kind:'personal',
-        desc:'',price:'',durationDays:365,mpLink:'',img:'',level:'',cat:'',
-        totalWeeks:12,mesoWeeks:4,weeks:{1:[]},activeWeek:1,days:[],
-        members:[],public:false,createdAt:new Date().toLocaleDateString('es-AR')
-      };
-      await setDoc(doc(db,'planes',planId),personalPlan);
-      planes.push(personalPlan);
+      planId=await crearPlanPersonalVacio(name);
     } else if(categoria!=='global'){
       const fijoSnap=await getDoc(doc(db,'planesFijos',categoria));
       planId=fijoSnap.exists()?fijoSnap.data().planId||null:null;
