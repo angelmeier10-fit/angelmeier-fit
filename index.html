@@ -3795,11 +3795,14 @@ async function renderProgramaUnificadoHtml(prog,catLabel){
     ${startWeekHtml}
     <button class="btn bgr xs" onclick="activarSuscriptorManual('${uid}')">✅ Activar</button>`:
     `<button class="btn bg2 xs" onclick="desactivarSuscriptorManual('${uid}')">⛔ Desactivar</button>`;
+  const editarPlanBtn=(s.categoria==='__personal__'&&s.planId)?`<button class="btn bpu xs" onclick="irAEditarPlanPersonal('${s.planId}')">✏️ Editar su plan</button>`:'';
+  const catTxt=s.categoria==='__personal__'?'🎯 Plan personalizado':(catLabel[s.categoria]||s.categoria||'—');
   const progressHtml=renderProgressDetailBlock(`alu-${uid}`,exerciseLogs,days,notes)||'<div style="font-size:.78rem;color:var(--mu)">Sin registros todavía.</div>';
   return`<div style="padding:8px 0;border-bottom:1px solid var(--bd)">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
-      <div style="font-size:.84rem"><b>🔔 Suscripción — ${catLabel[s.categoria]||s.categoria||'—'}</b> · ${statusLabel}${s.expiry?' · vence '+expTxt:''}</div>
+      <div style="font-size:.84rem"><b>🔔 Suscripción — ${catTxt}</b> · ${statusLabel}${s.expiry?' · vence '+expTxt:''}</div>
       <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+        ${editarPlanBtn}
         <select id="susc-cat-${uid}" style="width:auto;font-size:.78rem">${catOptions}</select>
         <button class="btn bg2 xs" onclick="cambiarCategoriaSuscriptorManual('${uid}')">💾</button>
         ${accionBtn}
@@ -4347,6 +4350,12 @@ function openEditPlan(id){
   showPlanesPanel('edit',document.getElementById('itp-edit'));
 }
 window.openEditPlan=openEditPlan;
+
+window.irAEditarPlanPersonal=function(planId){
+  const btn=document.querySelector(".tab-btn[onclick*=\"'planes'\"]");
+  if(btn)showView('planes',btn);
+  openEditPlan(planId);
+};
 
 async function deletePlan(id){
   if(!confirm('¿Eliminar este plan?'))return;
@@ -5218,7 +5227,8 @@ async function poblarCategoriaSelect(id){
   const sel=document.getElementById(id);
   if(!sel||sel.dataset.loaded)return;
   const cats=await getCategoriasSuscripcion();
-  sel.innerHTML=cats.map(c=>`<option value="${c.id}">${c.label}</option>`).join('');
+  sel.innerHTML=cats.map(c=>`<option value="${c.id}">${c.label}</option>`).join('')
+    +'<option value="__personal__">🎯 Plan personalizado</option>';
   sel.dataset.loaded='1';
 }
 
@@ -5274,12 +5284,15 @@ async function renderSuscriptoresPanel(query){
         <button class="btn bgr sm" onclick="activarSuscriptorManual('${d.id}')">✅ Activar hasta esa fecha</button>
       </div>`:`<button class="btn bg2 sm" onclick="desactivarSuscriptorManual('${d.id}')">⛔ Desactivar</button>`;
     const catOptions=cats.map(c=>`<option value="${c.id}"${c.id===s.categoria?' selected':''}>${c.label}</option>`).join('');
+    const catTxt=s.categoria==='__personal__'?'🎯 Plan personalizado':(catLabel[s.categoria]||s.categoria||'—');
+    const editarPlanBtn=(s.categoria==='__personal__'&&s.planId)?`<button class="btn bpu sm" onclick="irAEditarPlanPersonal('${s.planId}')">✏️ Editar su plan</button>`:'';
     rowsArr.push(`<div class="card" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:14px 16px">
       <div>
         <div style="font-weight:600">${s.name||s.email||'(sin nombre)'}</div>
-        <div class="sub">${s.email||''} · ${catLabel[s.categoria]||s.categoria||'—'}</div>
+        <div class="sub">${s.email||''} · ${catTxt}</div>
         <div style="font-size:.78rem;margin-top:4px">${statusLabel}${s.expiry?' · vence '+expTxt:''}</div>
         <div style="display:flex;gap:6px;align-items:center;margin-top:8px;flex-wrap:wrap">
+          ${editarPlanBtn}
           <select id="susc-cat-${d.id}" style="width:auto;font-size:.8rem">${catOptions}</select>
           <button class="btn bg2 sm" onclick="cambiarCategoriaSuscriptorManual('${d.id}')">💾 Cambiar categoría</button>
         </div>
@@ -5379,7 +5392,17 @@ window.altaManualAlumno=async function(nameId,emailId,catId,refreshFn){
     const uid=cred.user.uid;
     await signOut(sAuth);
     let planId=null;
-    if(categoria!=='global'){
+    if(categoria==='__personal__'){
+      planId='plan'+Date.now();
+      const personalPlan={
+        id:planId,name:'Plan personalizado — '+name,
+        desc:'',price:'',durationDays:365,mpLink:'',img:'',level:'',cat:'',
+        totalWeeks:12,mesoWeeks:4,weeks:{1:[]},activeWeek:1,days:[],
+        members:[],public:false,createdAt:new Date().toLocaleDateString('es-AR')
+      };
+      await setDoc(doc(db,'planes',planId),personalPlan);
+      planes.push(personalPlan);
+    } else if(categoria!=='global'){
       const fijoSnap=await getDoc(doc(db,'planesFijos',categoria));
       planId=fijoSnap.exists()?fijoSnap.data().planId||null:null;
     }
