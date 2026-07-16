@@ -12,6 +12,7 @@
   --bg: #faf8f5; --tx: #141414; --mu: #6b6258; --border: #e5e0d8;
   --green: #4a7c59; --green-soft: #4a7c5912;
   --orange: #ff5a1f; --orange-soft: #ff5a1f12;
+  --rose: #b5654a; --rose-soft: #b5654a12;
   --wa: #25d366; --wa2: #1da851;
 }
 body {
@@ -44,6 +45,8 @@ h1 { font-family: 'Oswald', sans-serif; font-size: 1.3rem; text-transform: upper
 .card.mayores:hover { border-color: var(--green); }
 .card.fuerza { background: var(--orange-soft); border-color: #ff5a1f40; }
 .card.fuerza:hover { border-color: var(--orange); }
+.card.masaje { background: var(--rose-soft); border-color: #b5654a40; }
+.card.masaje:hover { border-color: var(--rose); }
 
 .wa-btn {
   display: flex; align-items: center; justify-content: center; gap: 10px;
@@ -60,7 +63,15 @@ footer { margin-top: 36px; font-size: .78rem; color: var(--mu); }
 <div class="wrap">
   <div class="avatar">AM</div>
   <h1>Angel Meier</h1>
-  <p class="sub">Entrenador y masajista terapéutico.<br>Elegí el programa que buscás:</p>
+  <p class="sub">Masajista terapéutico y entrenador.<br>Elegí lo que buscás:</p>
+
+  <a class="card masaje" href="https://angelmeier10-fit.github.io/mano-a-mano-turnos/mano-a-mano-reservas/" target="_blank">
+    <div class="icon">💆</div>
+    <div>
+      <div class="title">Reservar masaje</div>
+      <div class="desc">Sacá tu turno de masoterapia online</div>
+    </div>
+  </a>
 
   <a class="card mayores" href="landing.html">
     <div class="icon">🧘</div>
