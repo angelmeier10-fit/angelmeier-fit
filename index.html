@@ -789,7 +789,9 @@ setTimeout(()=>{
   <div id="planes-panel-edit" style="display:none">
     <div class="card" id="ep-data-card">
       <div class="collapsible-card-hdr" onclick="document.getElementById('ep-data-card').classList.toggle('collapsed');this.querySelector('.card-toggle').style.transform=document.getElementById('ep-data-card').classList.contains('collapsed')?'rotate(-90deg)':''">
-        <h2 id="edit-plan-title">Editando plan</h2><span class="card-toggle">▼</span>
+        <h2 id="edit-plan-title">Editando plan</h2>
+        <button class="btn bg2 sm" onclick="event.stopPropagation();abrirCargarComoBaseEnEdicion()">🎯 Usar otro plan como base</button>
+        <span class="card-toggle">▼</span>
       </div>
       <div class="collapsible-card-body"><div class="grid2">
         <div class="fg full"><label>Nombre del plan</label><input id="ep-name"></div>
@@ -4352,6 +4354,49 @@ function openEditPlan(id){
   showPlanesPanel('edit',document.getElementById('itp-edit'));
 }
 window.openEditPlan=openEditPlan;
+
+window.abrirCargarComoBaseEnEdicion=function(){
+  const list=planes.filter(p=>p.id!==editingPlanId);
+  const modal=document.getElementById('modal-bg');
+  modal.style.display='flex';
+  modal.innerHTML=`<div style="background:var(--s1);border-radius:16px;padding:24px;width:100%;max-width:460px;max-height:80vh;overflow-y:auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <h2>🎯 Usar como base</h2>
+      <button onclick="document.getElementById('modal-bg').style.display='none'" style="background:none;border:none;color:var(--mu);font-size:1.4rem;cursor:pointer">✕</button>
+    </div>
+    <input type="text" id="cb-search" placeholder="Buscar plan..." oninput="filtrarCargarComoBase()" style="margin-bottom:10px">
+    <div id="cb-list" style="display:flex;flex-direction:column;gap:6px"></div>
+  </div>`;
+  window.__cbList=list;
+  filtrarCargarComoBase();
+};
+
+window.filtrarCargarComoBase=function(){
+  const q=norm(document.getElementById('cb-search')?.value||'');
+  const el=document.getElementById('cb-list');
+  const filtered=window.__cbList.filter(p=>!q||norm(p.name).includes(q));
+  el.innerHTML=filtered.map(p=>`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--s2);border-radius:8px;padding:9px 12px">
+    <span style="font-size:.86rem">${p.kind==='personal'?'🎯':'📋'} ${p.name}</span>
+    <button class="btn bp xs" onclick="aplicarBaseEnEdicion('${p.id}')">Usar esta</button>
+  </div>`).join('')||'<p style="color:var(--mu);font-size:.85rem">Sin resultados.</p>';
+};
+
+window.aplicarBaseEnEdicion=function(sourcePlanId){
+  const src=planes.find(p=>p.id===sourcePlanId);
+  if(!src)return;
+  if(!confirm(`¿Reemplazar los días actuales por los de "${src.name}"? No se guarda hasta que apretés "Guardar cambios".`))return;
+  epWeeklyData=src.weeks&&Object.keys(src.weeks).length?JSON.parse(JSON.stringify(src.weeks)):{1:JSON.parse(JSON.stringify(src.days||[]))};
+  epCurrentWeek=src.activeWeek&&epWeeklyData[src.activeWeek]?src.activeWeek:Object.keys(epWeeklyData).map(Number)[0]||1;
+  document.getElementById('ep-totalweeks').value=src.totalWeeks||12;
+  document.getElementById('ep-mesoweeks').value=src.mesoWeeks||4;
+  setupWeekSelector('ep');
+  const weekDays=epWeeklyData[epCurrentWeek]||[];
+  document.getElementById('ep-days').value=weekDays.length||4;
+  document.getElementById('ep-days-container').innerHTML='';
+  buildDays('ep-days-container',weekDays.length,weekDays);
+  document.getElementById('modal-bg').style.display='none';
+  toast('✅ Base cargada — revisá y guardá los cambios');
+};
 
 window.irAEditarPlanPersonal=function(planId){
   const btn=document.querySelector(".tab-btn[onclick*=\"'planes'\"]");
