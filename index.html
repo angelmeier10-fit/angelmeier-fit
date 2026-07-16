@@ -5267,7 +5267,7 @@ async function renderSuscriptoresPanel(query){
     // Semana de inicio: editable en cada activación (no solo la primera), para
     // poder reiniciar en qué semana arranca alguien que vuelve después de un parate.
     let startWeekHtml='';
-    if((s.status!=='active'||vencido)&&s.categoria&&s.categoria!=='global'){
+    if((s.status!=='active'||vencido)&&s.categoria&&s.categoria!=='global'&&s.categoria!=='__personal__'){
       const fijoSnap=await getDoc(doc(db,'planesFijos',s.categoria));
       const planId=fijoSnap.exists()?fijoSnap.data().planId:null;
       if(planId){
