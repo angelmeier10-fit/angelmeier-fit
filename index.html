@@ -2196,21 +2196,10 @@ function addCFEx(cid,data=null){
       ${vidBadgeHtml(data?.video||'')}
       <div class="ex-dd" id="${eid}-dd"></div>
     </div>
-    <button class="btn bg2 xs" style="flex-shrink:0" onclick="promptCFExVideo('${eid}')" title="Agregar/editar link de video">🎬</button>
     <button class="btn bd2 xs" style="flex-shrink:0" onclick="document.getElementById('${eid}').remove()">✕</button>`;
   c.appendChild(div);
 }
 window.addCFEx=addCFEx;
-
-window.promptCFExVideo=function(eid){
-  const input=document.querySelector('#'+eid+' .ex-search');
-  if(!input)return;
-  const current=input.dataset.video||'';
-  const url=prompt('Link del video del ejercicio (YouTube, etc.):',current);
-  if(url===null)return;
-  input.dataset.video=url.trim();
-  updateVidBadge(input,url.trim());
-};
 
 // ══ EXERCISE SEARCH ══
 if(window.visualViewport){
