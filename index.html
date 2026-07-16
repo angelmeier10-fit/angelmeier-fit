@@ -425,7 +425,6 @@ setTimeout(()=>{
     <button class="tab-btn" onclick="showView('client',this)">👤 Cliente</button>
     <button class="tab-btn" onclick="showView('exdb',this)">📚 Ejercicios</button>
     <button class="tab-btn" onclick="showView('templates',this)">🧩 Plantillas</button>
-    <button class="tab-btn" onclick="showView('tracking',this)">📊 Seguimiento</button>
     <button class="tab-btn" onclick="showView('planes',this)">👥 Planes Grupales</button>
     <button class="tab-btn" onclick="showView('solicitudes',this)" id="tab-solicitudes">📬 Solicitudes</button>
 
@@ -449,9 +448,7 @@ setTimeout(()=>{
     <button class="itab" id="it-new" onclick="showPanel('new',this)">➕ Nuevo cliente</button>
     <button class="itab" id="it-edit" style="display:none" onclick="showPanel('edit',this)">✏️ Editar</button>
     <button class="itab" id="it-macro" style="display:none" onclick="showPanel('macro',this)">📊 Macrociclo</button>
-    <button class="itab" id="it-alumnos" onclick="showPanel('alumnos',this)">🧑 Ver por alumno</button>
-    <button class="itab" id="it-suscriptores" onclick="showPanel('suscriptores',this)">🔔 Suscriptores</button>
-    <button class="itab" id="it-alumnosuni" onclick="showPanel('alumnosuni',this)">👤 Alumnos (nuevo)</button>
+    <button class="itab" id="it-alumnosuni" onclick="showPanel('alumnosuni',this)">👤 Alumnos</button>
   </div>
   <div id="panel-alumnosuni" style="display:none">
     <div class="card" style="margin-bottom:16px;padding:16px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
@@ -468,27 +465,6 @@ setTimeout(()=>{
     </div>
     <input id="uni-search" placeholder="🔍 Buscar alumno por nombre o email..." oninput="renderAlumnosUnificado(this.value)" style="margin-bottom:12px;font-size:.88rem">
     <div id="alumnosuni-list"></div>
-  </div>
-  <div id="panel-alumnos" style="display:none">
-    <input id="alu-search" placeholder="🔍 Buscar alumno por nombre..." oninput="renderAlumnosConsolidado(this.value)" style="margin-bottom:12px;font-size:.88rem">
-    <div id="alumnos-list"></div>
-  </div>
-  <div id="panel-suscriptores" style="display:none">
-    <p class="sub" style="margin-bottom:14px">Alumnos que se registraron desde el link de suscripción (<code>angelmeier-fit.web.app/suscripcion</code>). Activá manualmente a quien te pague por fuera de MercadoPago (efectivo, transferencia).</p>
-    <div class="card" style="margin-bottom:16px;padding:16px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
-      <div style="font-weight:700;font-size:.9rem">🔗 Link de suscripción</div>
-      <button class="btn bcy sm" onclick="copyLink('https://angelmeier-fit.web.app/suscripcion')">📋 Copiar link</button>
-    </div>
-    <div class="card" style="margin-bottom:16px;padding:16px">
-      <h3 style="margin-bottom:10px;font-size:.95rem">➕ Dar de alta un alumno vos mismo</h3>
-      <p class="sub" style="margin-bottom:10px">Para alguien que te paga en persona y no quiere/puede registrarse solo. Le creamos la cuenta y le mandamos un email para que defina su contraseña.</p>
-      <div class="fg full" style="margin-bottom:8px"><label>Nombre</label><input id="susc-new-name" placeholder="Nombre y apellido"></div>
-      <div class="fg full" style="margin-bottom:8px"><label>Email</label><input id="susc-new-email" type="email" placeholder="alumno@gmail.com"></div>
-      <div class="fg full" style="margin-bottom:10px"><label>Categoría</label><select id="susc-new-cat"></select></div>
-      <button class="btn bp" onclick="altaManualAlumno()" style="width:100%;justify-content:center">Crear alumno</button>
-    </div>
-    <input id="susc-search" placeholder="🔍 Buscar suscriptor por nombre o email..." oninput="renderSuscriptoresPanel(this.value)" style="margin-bottom:12px;font-size:.88rem">
-    <div id="suscriptores-list"></div>
   </div>
   <div id="panel-clients">
     <input id="client-search" placeholder="🔍 Buscar cliente por nombre..." oninput="filterClients(this.value)" style="margin-bottom:12px;font-size:.88rem">
@@ -710,13 +686,6 @@ setTimeout(()=>{
 </div>
 
 <!-- TRACKING -->
-<div id="view-tracking" class="view">
-  <h1>📊 Panel de Seguimiento</h1>
-  <p class="sub">Último entrenamiento y notas de sesión de todos tus clientes.</p>
-  <input id="tracking-search" type="text" placeholder="Buscar cliente..." oninput="renderTracking()" style="width:100%;box-sizing:border-box;padding:10px 14px;border-radius:10px;border:1.5px solid var(--s3);background:var(--s2);color:var(--tx);font-size:.9rem;margin-bottom:14px">
-  <div id="tracking-content"></div>
-</div>
-
 <!-- PLANES GRUPALES -->
 <div id="view-planes" class="view">
   <h1>👥 Planes Grupales</h1>
@@ -727,7 +696,6 @@ setTimeout(()=>{
     <button class="itab" id="itp-edit" style="display:none" onclick="showPlanesPanel('edit',this)">✏️ Editar plan</button>
     <button class="itab" id="itp-macro" style="display:none" onclick="showPlanesPanel('macro',this)">📊 Macrociclo</button>
     <button class="itab" id="itp-members" style="display:none" onclick="showPlanesPanel('members',this)">👤 Alumnos</button>
-    <button class="itab" id="itp-seg" style="display:none" onclick="showPlanesPanel('seg',this)">📊 Seguimiento</button>
     <button class="itab" id="itp-fijos" onclick="showPlanesPanel('fijos',this)">🔔 Planes fijos (suscripción)</button>
   </div>
   <div id="planes-panel-list">
@@ -835,9 +803,6 @@ setTimeout(()=>{
     <div id="ep-days-container"></div>
     <button class="btn bg2" onclick="addExtraDay('ep-days-container')" style="width:100%;justify-content:center;padding:10px;font-size:.88rem;margin-top:4px;margin-bottom:4px">＋ Agregar día</button>
     <button class="btn bp" onclick="updatePlan()" style="width:100%;justify-content:center;padding:12px;font-size:.93rem;margin-top:4px">💾 Guardar cambios</button>
-  </div>
-  <div id="planes-panel-seg" style="display:none">
-    <div id="plan-seg-content"></div>
   </div>
   <div id="planes-panel-macro" style="display:none">
     <div id="plan-macro-content"></div>
@@ -1472,7 +1437,6 @@ function showView(v,btn){
   if(v==='client')populateClientSelect();
   if(v==='exdb'){renderExDB();populateCatFilter();}
   if(v==='templates')renderTemplatesView();
-  if(v==='tracking')renderTracking();
   if(v==='planes')renderPlanesList();
   if(v==='solicitudes')renderSolicitudes();
 }
@@ -1506,7 +1470,7 @@ function buildProgressSummary(progress,days,idPrefix){
   return{lastDate,lastDay,notes,exerciseLogs};
 }
 
-// Bloque de progreso agrupado por día (días colapsados), reusado por renderTracking y renderMemberTrackingCard
+// Bloque de progreso agrupado por día (días colapsados), reusado en varias vistas de alumno
 function renderProgressDetailBlock(uid,exerciseLogs,days,allNotes){
   if(!exerciseLogs.length&&!(allNotes&&allNotes.length))return'';
   const dayMap={};
@@ -1563,51 +1527,6 @@ function renderProgressDetailBlock(uid,exerciseLogs,days,allNotes){
   return`<div style="margin-top:10px;font-size:.78rem;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">📈 Progreso por día</div>${dayBlocks}`;
 }
 
-function renderTracking(){
-  const el=document.getElementById('tracking-content');
-  if(!clients.length){el.innerHTML='<div style="text-align:center;padding:40px;color:var(--mu)">No hay clientes todavía.</div>';return}
-  const q=(document.getElementById('tracking-search')?.value||'').toLowerCase().trim();
-  const filtered=q?clients.filter(c=>c.name.toLowerCase().includes(q)):clients;
-  if(!filtered.length){el.innerHTML='<div style="text-align:center;padding:40px;color:var(--mu)">Sin resultados para "'+q+'".</div>';return}
-  let html='';
-  filtered.forEach(c=>{
-    const initials=c.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
-    const{lastDate,lastDay,notes:allNotes,exerciseLogs}=buildProgressSummary(c.progress,c.days,c.id);
-    const expiredT=c.expiry&&(new Date(c.expiry+'T00:00:00')<new Date());
-    const expiryBadgeT=c.expiry?`<span class="badge" style="background:${expiredT?'#f8717122':'#fbbf2422'};color:${expiredT?'var(--rd)':'var(--yw)'}">${expiredT?'⏰ Vencido':'📅 Vence '+new Date(c.expiry+'T00:00:00').toLocaleDateString('es-AR')}</span>`:'';
-    const payBadge=c.payStatus==='paid'?'<span class="badge" style="background:#4ade8022;color:var(--gr)">✅ Pagado</span>':c.payStatus==='pending'?'<span class="badge" style="background:#f8717122;color:var(--rd)">⏳ Pendiente</span>':'';
-    const bodyId=`track-body-${c.id}`;
-    html+=`<div class="card" style="margin-bottom:14px">
-      <div style="display:flex;align-items:center;gap:12px;cursor:pointer" onclick="document.getElementById('${bodyId}').classList.toggle('collapsed');this.querySelector('.card-toggle').style.transform=document.getElementById('${bodyId}').classList.contains('collapsed')?'rotate(-90deg)':''">
-        <div class="cav">${initials}</div>
-        <div style="flex:1">
-          <div style="font-weight:700;font-size:.95rem">${c.name} ${payBadge} ${expiryBadgeT}</div>
-          <div style="font-size:.76rem;color:var(--mu);margin-top:2px">🎯 ${c.goal||'—'} · 📊 ${c.level} · último: ${lastDate}</div>
-        </div>
-        <span class="card-toggle" style="transition:transform .2s;transform:rotate(-90deg)">▼</span>
-      </div>
-      <div class="collapsible-card-body collapsed" id="${bodyId}" style="margin-top:12px">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
-          <div style="background:var(--s2);border-radius:9px;padding:11px">
-            <div style="font-size:.68rem;color:var(--mu);text-transform:uppercase;letter-spacing:.05em;font-weight:600;margin-bottom:4px">Último entrenamiento</div>
-            <div style="font-weight:700;font-size:.9rem">${lastDate}</div>
-            <div style="font-size:.76rem;color:var(--mu)">${lastDay}</div>
-          </div>
-          <div style="background:var(--s2);border-radius:9px;padding:11px">
-            <div style="font-size:.68rem;color:var(--mu);text-transform:uppercase;letter-spacing:.05em;font-weight:600;margin-bottom:4px">Notas de sesión</div>
-            <div style="font-weight:700;font-size:.9rem">${allNotes.length} nota${allNotes.length!==1?'s':''}</div>
-            <div style="font-size:.76rem;color:var(--mu)">${allNotes.length?'Última: '+allNotes[0].date:'Sin notas aún'}</div>
-          </div>
-          ${c.mpLink?`<a href="${c.mpLink}" target="_blank" style="font-size:.72rem;color:#009EE3;text-decoration:none;grid-column:1/-1">💳 Ver link de pago</a>`:''}
-        </div>
-        ${renderProgressDetailBlock(c.id,exerciseLogs,c.days,allNotes)}
-        <button class="btn bpu sm" style="margin-top:10px" onclick="event.stopPropagation();openEdit('${c.id}')">✏️ Editar</button>
-      </div>
-    </div>`;
-  });
-  el.innerHTML=html;
-}
-
 function fillExpiryFromDays(dateId,daysId){
   const daysInput=document.getElementById(daysId);
   const days=parseInt(daysInput.value);
@@ -1624,14 +1543,12 @@ function compareDates(a,b){
 }
 
 function showPanel(p,btn){
-  ['clients','new','edit','macro','alumnos','suscriptores','alumnosuni'].forEach(id=>{const el=document.getElementById('panel-'+id);if(el)el.style.display='none';});
+  ['clients','new','edit','macro','alumnosuni'].forEach(id=>{const el=document.getElementById('panel-'+id);if(el)el.style.display='none';});
   document.getElementById('panel-'+p).style.display='block';
   document.querySelectorAll('.itab').forEach(t=>t.classList.remove('active'));
   if(btn)btn.classList.add('active');
   if(p==='clients')renderClientList();
   if(p==='new')initNewClient();
-  if(p==='alumnos')renderAlumnosConsolidado();
-  if(p==='suscriptores')renderSuscriptoresPanel();
   if(p==='alumnosuni')renderAlumnosUnificado();
   if(p==='macro'&&editingId){
     const mc=document.getElementById('macro-content');
@@ -2602,7 +2519,7 @@ async function saveClient(){
   await setDoc(doc(db,'clients',id),client);
   clients.push(client);
   toast('✅ Cliente guardado en la nube');
-  showPanel('alumnos',document.getElementById('it-alumnos'));
+  showPanel('alumnosuni',document.getElementById('it-alumnosuni'));
 }
 window.saveClient=saveClient;
 
@@ -3595,7 +3512,7 @@ async function loadPlanes(){
 }
 
 function showPlanesPanel(p,btn){
-  ['list','new','edit','members','seg','macro','fijos'].forEach(id=>{
+  ['list','new','edit','members','macro','fijos'].forEach(id=>{
     const el=document.getElementById('planes-panel-'+id);if(el)el.style.display='none';
   });
   document.getElementById('planes-panel-'+p).style.display='block';
@@ -3603,7 +3520,6 @@ function showPlanesPanel(p,btn){
   if(btn)btn.classList.add('active');
   if(p==='list')renderPlanesList();
   if(p==='new')initNewPlan();
-  if(p==='seg')renderPlanSeguimiento();
   if(p==='fijos')renderPlanesFijosPanel();
   if(p==='macro'&&editingPlanId){
     const mc=document.getElementById('plan-macro-content');
@@ -3616,84 +3532,8 @@ function showPlanesPanel(p,btn){
 window.showPlanesPanel=showPlanesPanel;
 
 // Vista consolidada: todos los alumnos (agrupados por nombre+email) con todos los planes en los que están, sacables desde acá
-function renderAlumnosConsolidado(searchTerm){
-  const el=document.getElementById('alumnos-list');
-  if(!el)return;
-  const q=(searchTerm||'').trim().toLowerCase();
-  const groups=new Map();
-  // Arrancar por los clientes individuales, para que todo alumno cargado aparezca aunque no esté en ningún plan grupal
-  clients.forEach(c=>{
-    const key=(c.name+'|'+(c.email||'')).toLowerCase();
-    if(!groups.has(key))groups.set(key,{name:c.name,email:c.email||'',plansById:new Map()});
-  });
-  planes.forEach(p=>(p.members||[]).forEach(m=>{
-    const key=(m.name+'|'+(m.email||'')).toLowerCase();
-    if(!groups.has(key))groups.set(key,{name:m.name,email:m.email||'',plansById:new Map()});
-    const g=groups.get(key);
-    // Un solo resultado por plan: si hay entradas duplicadas del mismo alumno, priorizar la activa
-    const existing=g.plansById.get(p.id);
-    if(!existing||(m.status==='active'&&existing.member.status!=='active'))g.plansById.set(p.id,{planId:p.id,planName:p.name,member:m});
-  }));
-  let alumnos=[...groups.values()].map(g=>({name:g.name,email:g.email,items:[...g.plansById.values()]})).sort((a,b)=>a.name.localeCompare(b.name));
-  if(q)alumnos=alumnos.filter(a=>a.name.toLowerCase().includes(q));
-  alumnosCache=alumnos;
-  if(!alumnos.length){el.innerHTML=`<div class="card" style="text-align:center;padding:30px;color:var(--mu)">${q?'Ningún alumno coincide con la búsqueda.':'Sin alumnos todavía.'}</div>`;return}
-  el.innerHTML=alumnos.map((a,ai)=>{
-    const rows=a.items.map(({planId,planName,member:m})=>{
-      const expired=m.expiry&&(new Date(m.expiry+'T00:00:00')<new Date());
-      const statusBadge=m.status==='active'&&!expired?'<span class="badge bgr2">✅ Activo</span>':expired?'<span class="badge" style="background:#f8717122;color:var(--rd)">⏰ Vencido</span>':'<span class="badge byw2">⏳ Pendiente</span>';
-      const memberLink=`${location.origin}${location.pathname}?plan=${planId}&member=${m.id}`;
-      return`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid var(--bd);flex-wrap:wrap">
-        <div style="font-size:.84rem;flex:1;min-width:140px"><b>${planName}</b> ${statusBadge}</div>
-        <input type="date" id="alu-exp-${planId}-${m.id}" value="${m.expiry||''}" style="font-size:.78rem;padding:4px 6px">
-        <input type="number" min="1" id="alu-expdays-${planId}-${m.id}" placeholder="días" style="font-size:.78rem;padding:4px 6px;width:70px">
-        <button class="btn bcy xs" onclick="fillExpiryFromDays('alu-exp-${planId}-${m.id}','alu-expdays-${planId}-${m.id}')">Calcular</button>
-        <button class="btn bcy xs" onclick="updateMemberExpiry('${planId}','${m.id}')">💾 Vencimiento</button>
-        <button class="btn bgr xs" onclick="copyLink('${memberLink}')">🔗 Link</button>
-        <button class="btn bd2 xs" onclick="removeMemberFromAlumnos('${planId}','${m.id}')">✕ Sacar</button>
-      </div>`;
-    }).join('');
-    const personalClient=clients.find(c=>(c.name+'|'+(c.email||'')).toLowerCase()===(a.name+'|'+a.email).toLowerCase());
-    const personalLink=personalClient?`${location.origin}${location.pathname}?client=${personalClient.id}`:'';
-    const personalRow=personalClient?`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid var(--bd);flex-wrap:wrap">
-        <div style="font-size:.84rem"><b>🎯 Plan personalizado</b>${personalClient.routineName?' — '+personalClient.routineName:''}</div>
-        <button class="btn bcy xs" onclick="openEdit('${personalClient.id}')">✏️ Editar</button>
-        <button class="btn bgr xs" onclick="copyLink('${personalLink}')">🔗 Link</button>
-      </div>`:'';
-    const availablePlans=planes.filter(p=>p.kind!=='personal'&&!a.items.some(it=>it.planId===p.id));
-    const addPlanForm=availablePlans.length?`<div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--bd)">
-        <div style="font-size:.76rem;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">➕ Agregar a otro plan</div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:end">
-          <select id="alu-addplan-${ai}" onchange="onAluAddPlanChange(${ai})" style="font-size:.8rem">
-            <option value="">Elegir plan…</option>
-            ${availablePlans.map(p=>`<option value="${p.id}">${p.name}</option>`).join('')}
-          </select>
-          <div class="fg" style="margin:0"><label style="font-size:.68rem">Vencimiento</label><input type="date" id="alu-addexp-${ai}" style="font-size:.8rem"></div>
-          <div class="fg" id="alu-addweek-wrap-${ai}" style="margin:0;display:none"><label style="font-size:.68rem">Empieza en semana</label><select id="alu-addweek-${ai}" style="font-size:.8rem"></select></div>
-          <button class="btn bp xs" onclick="addAlumnoToPlan(${ai})">Agregar</button>
-        </div>
-      </div>`:'';
-    return`<div class="card">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px;flex-wrap:wrap">
-        <div style="display:flex;align-items:center;gap:10px">
-          <div class="member-av">${a.name.charAt(0).toUpperCase()}</div>
-          <div><div style="font-weight:700;font-size:.92rem">${a.name}</div><div style="font-size:.74rem;color:var(--mu)">${a.email||''}</div></div>
-        </div>
-        ${!personalClient?`<button class="btn bp xs" onclick="assignPersonalPlan('${a.name.replace(/'/g,"\\'")}','${a.email.replace(/'/g,"\\'")}')">🎯 Asignar plan personalizado</button>`:''}
-      </div>
-      ${personalRow}
-      ${rows}
-      ${addPlanForm}
-    </div>`;
-  }).join('');
-}
-window.renderAlumnosConsolidado=renderAlumnosConsolidado;
-
-let alumnosCache=[];
-
-// ══ VISTA UNIFICADA "👤 Alumnos (nuevo)" — junta clientes + planes grupales + suscriptores ══
-// (Paso A del plan de unificación: convive con las 4 pantallas viejas, reusa sus mismas
-// funciones de acción para no duplicar lógica — solo agrega la capa de presentación.)
+// ══ VISTA UNIFICADA "👤 Alumnos" — junta clientes + planes grupales + suscriptores ══
+// (Paso B completo: las 4 pantallas viejas que convivían con esta se borraron.)
 let alumnosUniCache=[];
 
 async function buildAlumnosUnificadoGroups(){
@@ -3867,45 +3707,6 @@ window.precargarAltaSuscriptor=function(ai){
 };
 window.renderAlumnosUnificado=renderAlumnosUnificado;
 
-function onAluAddPlanChange(ai){
-  const planId=document.getElementById(`alu-addplan-${ai}`).value;
-  const plan=planes.find(p=>p.id===planId);
-  const expInput=document.getElementById(`alu-addexp-${ai}`);
-  const weekWrap=document.getElementById(`alu-addweek-wrap-${ai}`);
-  const weekSel=document.getElementById(`alu-addweek-${ai}`);
-  if(!plan){expInput.value='';weekWrap.style.display='none';return}
-  const expDate=new Date();expDate.setDate(expDate.getDate()+(plan.durationDays||30));
-  expInput.value=expDate.toISOString().split('T')[0];
-  const weekNums=planWeekNums(plan);
-  if(weekNums.length>1){
-    weekSel.innerHTML=weekNums.map(w=>`<option value="${w}"${w===1?' selected':''}>Semana ${w}</option>`).join('');
-    weekWrap.style.display='flex';
-  } else {
-    weekWrap.style.display='none';
-  }
-}
-window.onAluAddPlanChange=onAluAddPlanChange;
-
-async function addAlumnoToPlan(ai){
-  const a=alumnosCache[ai];
-  if(!a)return;
-  const planId=document.getElementById(`alu-addplan-${ai}`).value;
-  const plan=planes.find(p=>p.id===planId);
-  if(!plan){alert('Elegí un plan.');return}
-  const expiry=document.getElementById(`alu-addexp-${ai}`).value;
-  if(!expiry){alert('Elegí la fecha de vencimiento.');return}
-  const weekSel=document.getElementById(`alu-addweek-${ai}`);
-  const startWeek=weekSel&&weekSel.value?parseInt(weekSel.value):1;
-  const member={id:'m'+Date.now()+Math.floor(Math.random()*1000),name:a.name,email:a.email,status:'active',expiry,addedAt:new Date().toLocaleDateString('es-AR'),startDate:new Date().toISOString().split('T')[0],startWeek};
-  if(!plan.members)plan.members=[];
-  plan.members.push(member);
-  await setDoc(doc(db,'planes',planId),plan);
-  toast('✅ Agregado a '+plan.name);
-  renderAlumnosConsolidado();
-  buildNotifications();
-}
-window.addAlumnoToPlan=addAlumnoToPlan;
-
 // Tarjeta "Agregar a un plan grupal" dentro de la ficha de edición de un cliente individual
 function renderEcAddPlanOptions(){
   const sel=document.getElementById('ec-addplan');
@@ -3963,18 +3764,6 @@ async function addClientToGroupPlan(){
 }
 window.addClientToGroupPlan=addClientToGroupPlan;
 
-// Crea (o abre si ya existe) el plan personalizado de un alumno ya cargado en planes grupales
-function assignPersonalPlan(name,email){
-  const existing=clients.find(c=>(c.name+'|'+(c.email||'')).toLowerCase()===(name+'|'+email).toLowerCase());
-  if(existing){openEdit(existing.id);return}
-  showPanel('new',document.getElementById('it-new'));
-  initNewClient();
-  document.getElementById('nc-name').value=name;
-  document.getElementById('nc-email').value=email;
-  toast('📝 Completá los datos del plan y guardá para crear el plan personalizado de '+name);
-}
-window.assignPersonalPlan=assignPersonalPlan;
-
 // Deja que el entrenador ponga a mano el vencimiento de un alumno en un plan grupal (igual que en planes personalizados)
 async function updateMemberExpiry(planId,memberId){
   const input=document.getElementById(`alu-exp-${planId}-${memberId}`);
@@ -3986,7 +3775,7 @@ async function updateMemberExpiry(planId,memberId){
   m.status='active';
   await setDoc(doc(db,'planes',planId),plan);
   toast('✅ Vencimiento actualizado');
-  renderAlumnosConsolidado();
+  renderAlumnosUnificado(document.getElementById('uni-search')?.value);
   buildNotifications();
 }
 window.updateMemberExpiry=updateMemberExpiry;
@@ -3997,7 +3786,7 @@ async function removeMemberFromAlumnos(planId,memberId){
   plan.members=plan.members.filter(m=>m.id!==memberId);
   await setDoc(doc(db,'planes',planId),plan);
   toast('🗑️ Alumno sacado del plan');
-  renderAlumnosConsolidado();
+  renderAlumnosUnificado(document.getElementById('uni-search')?.value);
   buildNotifications();
 }
 window.removeMemberFromAlumnos=removeMemberFromAlumnos;
@@ -4122,68 +3911,6 @@ async function updatePlan(){
   showPlanesPanel('list',document.getElementById('itp-list'));
 }
 window.updatePlan=updatePlan;
-
-function renderMemberTrackingCard(m,plan){
-  const initials=m.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
-  const days=getMemberPlanDays(plan,m);
-  const progress=m.progress||{};
-  const uid=`${plan.id}-${m.id}`;
-  const{lastDate,lastDay,notes:allNotes,exerciseLogs}=buildProgressSummary(progress,days,uid);
-  const expired=m.expiry&&(new Date(m.expiry+'T00:00:00')<new Date());
-  const statusBadge=m.status==='active'&&!expired?'<span class="badge bgr2">✅ Activo</span>':expired?'<span class="badge" style="background:#f8717122;color:var(--rd)">⏰ Vencido</span>':'<span class="badge byw2">⏳ Pendiente</span>';
-  const bodyId=`member-body-${uid}`;
-  return`<div class="card" style="margin-bottom:14px">
-    <div style="display:flex;align-items:center;gap:12px;cursor:pointer" onclick="document.getElementById('${bodyId}').classList.toggle('collapsed');this.querySelector('.card-toggle').style.transform=document.getElementById('${bodyId}').classList.contains('collapsed')?'rotate(-90deg)':''">
-      <div class="cav">${initials}</div>
-      <div style="flex:1">
-        <div style="font-weight:700;font-size:.95rem">${m.name} ${statusBadge}</div>
-        <div style="font-size:.76rem;color:var(--mu);margin-top:2px">${m.email||''} · último: ${lastDate}</div>
-      </div>
-      <span class="card-toggle" style="transition:transform .2s;transform:rotate(-90deg)">▼</span>
-    </div>
-    <div class="collapsible-card-body collapsed" id="${bodyId}" style="margin-top:12px">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
-        <div style="background:var(--s2);border-radius:9px;padding:11px">
-          <div style="font-size:.68rem;color:var(--mu);text-transform:uppercase;letter-spacing:.05em;font-weight:600;margin-bottom:4px">Último entrenamiento</div>
-          <div style="font-weight:700;font-size:.9rem">${lastDate}</div>
-          <div style="font-size:.76rem;color:var(--mu)">${lastDay}</div>
-        </div>
-        <div style="background:var(--s2);border-radius:9px;padding:11px">
-          <div style="font-size:.68rem;color:var(--mu);text-transform:uppercase;letter-spacing:.05em;font-weight:600;margin-bottom:4px">Notas de sesión</div>
-          <div style="font-weight:700;font-size:.9rem">${allNotes.length} nota${allNotes.length!==1?'s':''}</div>
-          <div style="font-size:.76rem;color:var(--mu)">${allNotes.length?'Última: '+allNotes[0].date:'Sin notas aún'}</div>
-        </div>
-      </div>
-      ${renderProgressDetailBlock(uid,exerciseLogs,days,allNotes)}
-    </div>
-  </div>`;
-}
-
-function renderPlanSeguimiento(){
-  const el=document.getElementById('plan-seg-content');
-  if(!activePlanId){el.innerHTML='<div style="color:var(--mu);padding:20px">Seleccioná un plan primero.</div>';return}
-  const plan=planes.find(p=>p.id===activePlanId);
-  if(!plan){return}
-  const members=plan.members||[];
-  if(!members.length){el.innerHTML='<div style="text-align:center;padding:30px;color:var(--mu)">Sin alumnos en este plan todavía.</div>';return}
-  const activeCount=members.filter(m=>m.status==='active'&&!(m.expiry&&new Date(m.expiry+'T00:00:00')<new Date())).length;
-  let html=`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:18px">
-    <div style="background:var(--s2);border-radius:10px;padding:13px;text-align:center">
-      <div style="font-size:1.5rem;font-weight:700;color:var(--gr)">${activeCount}</div>
-      <div style="font-size:.72rem;color:var(--mu);text-transform:uppercase;letter-spacing:.05em">Activos</div>
-    </div>
-    <div style="background:var(--s2);border-radius:10px;padding:13px;text-align:center">
-      <div style="font-size:1.5rem;font-weight:700;color:var(--rd)">${members.filter(m=>m.expiry&&new Date(m.expiry+'T00:00:00')<new Date()).length}</div>
-      <div style="font-size:.72rem;color:var(--mu);text-transform:uppercase;letter-spacing:.05em">Vencidos</div>
-    </div>
-    <div style="background:var(--s2);border-radius:10px;padding:13px;text-align:center">
-      <div style="font-size:1.5rem;font-weight:700;color:var(--yw)">${members.filter(m=>m.status==='pending').length}</div>
-      <div style="font-size:.72rem;color:var(--mu);text-transform:uppercase;letter-spacing:.05em">Pendientes</div>
-    </div>
-  </div>`;
-  members.forEach(m=>{ html+=renderMemberTrackingCard(m,plan); });
-  el.innerHTML=html;
-}
 
 let planesFijosCache={};
 
@@ -4494,7 +4221,6 @@ function openMembers(planId){
   renderStartWeekSelect('nm-startweek',plan);
   renderExistingMembersSelect();
   document.getElementById('itp-members').style.display='inline-block';
-  document.getElementById('itp-seg').style.display='inline-block';
   document.getElementById('itp-macro').style.display='inline-block';
   showPlanesPanel('members',document.getElementById('itp-members'));
   renderMembersList(planId);
@@ -4671,7 +4397,6 @@ async function renewMember(planId,memberId){
   toast('✅ Acceso renovado por '+plan.durationDays+' días');
   renderMembersList(planId);
   buildNotifications();
-  if(document.getElementById('view-tracking')?.classList.contains('active')) renderTracking();
   // WhatsApp notification to member
   const link=`${location.origin}${location.pathname}?plan=${planId}&member=${memberId}`;
   const newExpiry=new Date(m.expiry+'T00:00:00').toLocaleDateString('es-AR');
@@ -5280,80 +5005,6 @@ async function poblarCategoriaSelect(id){
   sel.dataset.loaded='1';
 }
 
-async function renderSuscriptoresPanel(query){
-  await poblarCategoriaSelect('susc-new-cat');
-  const el=document.getElementById('suscriptores-list');
-  if(!suscriptoresCache){
-    el.innerHTML='<div style="text-align:center;padding:20px;color:var(--mu)">Cargando...</div>';
-    const snap=await getDocs(collection(db,'subscribers'));
-    suscriptoresCache=snap.docs.map(d=>({id:d.id,...d.data()}));
-  }
-  if(!suscriptoresCache.length){
-    el.innerHTML='<div class="card" style="text-align:center;padding:30px;color:var(--mu)">Todavía no hay ningún suscriptor registrado.</div>';
-    return;
-  }
-  const q=(query||'').trim().toLowerCase();
-  const filtered=suscriptoresCache
-    .filter(s=>!q||(s.name||'').toLowerCase().includes(q)||(s.email||'').toLowerCase().includes(q))
-    .sort((a,b)=>(a.name||a.email||'').localeCompare(b.name||b.email||'',undefined,{sensitivity:'base'}));
-  if(!filtered.length){
-    el.innerHTML='<div class="card" style="text-align:center;padding:30px;color:var(--mu)">Ningún suscriptor coincide con la búsqueda.</div>';
-    return;
-  }
-  const cats=await getCategoriasSuscripcion();
-  const catLabel=Object.fromEntries(cats.map(c=>[c.id,c.label]));
-  const rowsArr=[];
-  for(const s of filtered){
-    const d={id:s.id};
-    const vencido=s.status==='active'&&s.expiry&&new Date(s.expiry+'T00:00:00')<new Date();
-    const statusLabel=vencido?SUSCRIPTOR_STATUS_LABEL.expired:(SUSCRIPTOR_STATUS_LABEL[s.status]||s.status);
-    const expTxt=s.expiry?new Date(s.expiry+'T00:00:00').toLocaleDateString('es-AR'):'—';
-    const defaultExp=new Date();defaultExp.setDate(defaultExp.getDate()+30);
-    // Semana de inicio: editable en cada activación (no solo la primera), para
-    // poder reiniciar en qué semana arranca alguien que vuelve después de un parate.
-    let startWeekHtml='';
-    if((s.status!=='active'||vencido)&&s.categoria&&s.categoria!=='global'&&s.categoria!=='__personal__'){
-      const fijoSnap=await getDoc(doc(db,'planesFijos',s.categoria));
-      const planId=fijoSnap.exists()?fijoSnap.data().planId:null;
-      if(planId){
-        const planSnap=await getDoc(doc(db,'planes',planId));
-        if(planSnap.exists()){
-          const weekNums=planWeekNums(planSnap.data());
-          if(weekNums.length>1){
-            startWeekHtml=`<select id="susc-week-${d.id}" style="width:auto">${weekNums.map(w=>`<option value="${w}"${w===s.startWeek?' selected':''}>Empieza semana ${w}</option>`).join('')}</select>`;
-          }
-        }
-      }
-    }
-    const accionBtn=(s.status!=='active'||vencido)?`
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <input type="date" id="susc-exp-${d.id}" value="${defaultExp.toISOString().split('T')[0]}" style="width:auto">
-        ${startWeekHtml}
-        <button class="btn bgr sm" onclick="activarSuscriptorManual('${d.id}')">✅ Activar hasta esa fecha</button>
-      </div>`:`<button class="btn bg2 sm" onclick="desactivarSuscriptorManual('${d.id}')">⛔ Desactivar</button>`;
-    const catOptions=cats.map(c=>`<option value="${c.id}"${c.id===s.categoria?' selected':''}>${c.label}</option>`).join('')
-    +`<option value="__personal__"${s.categoria==='__personal__'?' selected':''}>🎯 Plan personalizado</option>`;
-    const catTxt=s.categoria==='__personal__'?'🎯 Plan personalizado':(catLabel[s.categoria]||s.categoria||'—');
-    const editarPlanBtn=(s.categoria==='__personal__'&&s.planId)?`<button class="btn bpu sm" onclick="irAEditarPlanPersonal('${s.planId}')">✏️ Editar su plan</button>`:'';
-    rowsArr.push(`<div class="card" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:14px 16px">
-      <div>
-        <div style="font-weight:600">${s.name||s.email||'(sin nombre)'}</div>
-        <div class="sub">${s.email||''} · ${catTxt}</div>
-        <div style="font-size:.78rem;margin-top:4px">${statusLabel}${s.expiry?' · vence '+expTxt:''}</div>
-        <div style="display:flex;gap:6px;align-items:center;margin-top:8px;flex-wrap:wrap">
-          ${editarPlanBtn}
-          <select id="susc-cat-${d.id}" style="width:auto;font-size:.8rem">${catOptions}</select>
-          <button class="btn bg2 sm" onclick="cambiarCategoriaSuscriptorManual('${d.id}')">💾 Cambiar categoría</button>
-        </div>
-      </div>
-      ${accionBtn}
-    </div>`);
-  }
-  const rows=rowsArr.join('');
-  el.innerHTML=rows;
-}
-window.renderSuscriptoresPanel=renderSuscriptoresPanel;
-
 window.activarSuscriptorManual=async function(uid){
   const expiry=document.getElementById('susc-exp-'+uid).value;
   if(!expiry){toast('⚠️ Elegí una fecha de vencimiento');return}
@@ -5415,11 +5066,8 @@ window.desactivarSuscriptorManual=async function(uid){
   refreshSuscriptorPanels();
 };
 
-// Refresca el/los paneles de suscriptores que estén visibles (viejo "Suscriptores"
-// y/o el nuevo "Alumnos (nuevo)" unificado — conviven mientras dure el Paso A).
+// Refresca el panel "Alumnos" si está visible.
 function refreshSuscriptorPanels(){
-  const suscPanel=document.getElementById('panel-suscriptores');
-  if(suscPanel&&suscPanel.style.display!=='none')renderSuscriptoresPanel(document.getElementById('susc-search')?.value);
   const uniPanel=document.getElementById('panel-alumnosuni');
   if(uniPanel&&uniPanel.style.display!=='none')renderAlumnosUnificado(document.getElementById('uni-search')?.value);
 }
@@ -5450,8 +5098,8 @@ async function crearPlanPersonalVacio(nombreAlumno){
 }
 
 window.altaManualAlumno=async function(nameId,emailId,catId,refreshFn){
-  nameId=nameId||'susc-new-name';emailId=emailId||'susc-new-email';catId=catId||'susc-new-cat';
-  refreshFn=refreshFn||(()=>renderSuscriptoresPanel(document.getElementById('susc-search')?.value));
+  nameId=nameId||'uni-new-name';emailId=emailId||'uni-new-email';catId=catId||'uni-new-cat';
+  refreshFn=refreshFn||(()=>renderAlumnosUnificado(document.getElementById('uni-search')?.value));
   const name=document.getElementById(nameId).value.trim();
   const email=document.getElementById(emailId).value.trim();
   const categoria=document.getElementById(catId).value;
@@ -6200,10 +5848,10 @@ window.convertirEnSuscriptor=function(docId){
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('view-trainer').classList.add('active');
   document.querySelectorAll('.tab-btn')[0].classList.add('active');
-  showPanel('suscriptores',document.getElementById('it-suscriptores'));
+  showPanel('alumnosuni',document.getElementById('it-alumnosuni'));
   setTimeout(()=>{
-    document.getElementById('susc-new-name').value=s.nombre||'';
-    document.getElementById('susc-new-email').value=s.email||'';
+    document.getElementById('uni-new-name').value=s.nombre||'';
+    document.getElementById('uni-new-email').value=s.email||'';
     toast('📝 Datos precargados — elegí la categoría y creá el alumno');
   },100);
 };
