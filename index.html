@@ -402,9 +402,12 @@ setTimeout(()=>{
   </div>
 
   <div id="alumno-active-wrap" style="display:none;max-width:980px;margin:0 auto;padding:20px">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:10px">
       <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.1rem">💪 Angel Meier</div>
-      <span onclick="doLogout()" style="color:var(--mu);cursor:pointer;font-size:.82rem">🚪 Cerrar sesión</span>
+      <div style="display:flex;align-items:center;gap:12px">
+        <button id="theme-btn-alumno" onclick="toggleTheme()" style="background:var(--s2);border:1px solid var(--bd);color:var(--tx);border-radius:9px;padding:6px 12px;cursor:pointer;font-size:1rem;transition:all .2s;flex-shrink:0" title="Cambiar tema">🌙</button>
+        <span onclick="doLogout()" style="color:var(--mu);cursor:pointer;font-size:.82rem">🚪 Cerrar sesión</span>
+      </div>
     </div>
     <div id="alumno-cat-switcher"></div>
     <div id="alumno-cv-content"></div>
@@ -982,6 +985,8 @@ function updateThemeIcons(){
   document.getElementById('theme-btn').textContent=isDay?'☀️':'🌙';
   const cb=document.getElementById('theme-btn-client');
   if(cb) cb.textContent=isDay?'☀️ Tema':'🌙 Tema';
+  const ab=document.getElementById('theme-btn-alumno');
+  if(ab) ab.textContent=isDay?'☀️':'🌙';
 }
 function toggleTheme(){
   document.body.classList.toggle('day');
@@ -1204,6 +1209,7 @@ async function initAlumno(user){
   const vencido=data.status==='active' && data.expiry && new Date(data.expiry+'T00:00:00')<new Date();
   if(data.status==='active' && !vencido){
     document.getElementById('alumno-active-wrap').style.display='block';
+    updateThemeIcons();
     await renderAlumnoPlanView(data,user.uid);
     return;
   }
