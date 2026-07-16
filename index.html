@@ -314,6 +314,7 @@ textarea{resize:vertical;min-height:52px}
 .modal-bg.open{display:flex}
 .modal{background:var(--s1);border:1px solid var(--bd);border-radius:var(--ra);padding:22px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto}
 .modal h2{margin-bottom:16px}
+.tpl-editor-body .blk-hdr>button,.tpl-editor-body .cf-hdr>button{display:none}
 @media(max-width:600px){.grid2{grid-template-columns:1fr}nav{padding:10px 13px}.view{padding:13px}.ccrd{flex-direction:column}.ca{flex-direction:row;align-self:flex-end}.cf-meta{grid-template-columns:1fr 1fr}.exdb-row,.exdb-hdr{grid-template-columns:1fr 1fr auto}#notif-panel{position:fixed!important;top:56px!important;right:8px!important;left:8px!important;width:auto!important}}
 
 
@@ -423,6 +424,7 @@ setTimeout(()=>{
     <button class="tab-btn active" onclick="showView('trainer',this)">🏋️ Entrenador</button>
     <button class="tab-btn" onclick="showView('client',this)">👤 Cliente</button>
     <button class="tab-btn" onclick="showView('exdb',this)">📚 Ejercicios</button>
+    <button class="tab-btn" onclick="showView('templates',this)">🧩 Plantillas</button>
     <button class="tab-btn" onclick="showView('tracking',this)">📊 Seguimiento</button>
     <button class="tab-btn" onclick="showView('planes',this)">👥 Planes Grupales</button>
     <button class="tab-btn" onclick="showView('solicitudes',this)" id="tab-solicitudes">📬 Solicitudes</button>
@@ -904,7 +906,6 @@ setTimeout(()=>{
     <button class="btn bg2" onclick="openCatModal()">⚙️ Categorías</button>
     <label class="btn bg2" style="cursor:pointer">📥 Importar CSV<input type="file" accept=".csv" style="display:none" onchange="importExercises(this)"></label>
     <button class="btn bg2" onclick="exportExercisesCSV()">📤 Exportar CSV</button>
-    <button class="btn bg2" onclick="importWodTemplates()">📦 Importar 300 WOD CrossFit</button>
     <input type="text" id="ex-search-db" placeholder="Buscar ejercicio..." style="flex:1;min-width:150px" oninput="renderExDB()">
     <select id="ex-cat-filter" style="width:180px" onchange="renderExDB()"><option value="">Todas las categorías</option></select>
   </div>
@@ -913,6 +914,26 @@ setTimeout(()=>{
     <div id="exdb-list"></div>
   </div>
   <p style="font-size:.73rem;color:var(--mu);margin-top:10px">Para importar: CSV con columnas <b>nombre, categoria, video</b>. Exportá primero para ver el formato.</p>
+</div>
+
+<!-- BLOCK TEMPLATES (WOD y otras plantillas) -->
+<div id="view-templates" class="view">
+  <h1>🧩 Plantillas</h1>
+  <p class="sub">Calentamientos, WOD, bloques de gym y funcionales guardados para reusar en cualquier planificación.</p>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+    <button class="btn bp" onclick="abrirEditorPlantilla()">➕ Nueva plantilla</button>
+    <button class="btn bg2" onclick="importWodTemplates()">📦 Importar 300 WOD CrossFit</button>
+    <input type="text" id="tpl-search" placeholder="Buscar plantilla..." style="flex:1;min-width:150px" oninput="renderTemplatesView()">
+    <select id="tpl-kind-filter" style="width:190px" onchange="renderTemplatesView()">
+      <option value="">Todas</option>
+      <option value="warmup">🔥 Calentamiento</option>
+      <option value="gym">🏋️ Gym</option>
+      <option value="func">🧓 Funcional</option>
+      <option value="cf">🔥 CF / WOD</option>
+    </select>
+  </div>
+  <div id="tpl-list" style="display:flex;flex-direction:column;gap:8px"></div>
+</div>
 </div>
 
 <!-- MODAL EJERCICIO -->
@@ -1447,6 +1468,7 @@ function showView(v,btn){
   document.getElementById('view-'+v).classList.add('active');btn.classList.add('active');
   if(v==='client')populateClientSelect();
   if(v==='exdb'){renderExDB();populateCatFilter();}
+  if(v==='templates')renderTemplatesView();
   if(v==='tracking')renderTracking();
   if(v==='planes')renderPlanesList();
   if(v==='solicitudes')renderSolicitudes();
@@ -2401,12 +2423,136 @@ window.insertarPlantilla=function(bodyId,idx){
   toast('✅ Plantilla insertada');
 };
 
+async function borrarPlantillaPorId(id){
+  const list=(await loadBloqueTemplates()).filter(t=>t.id!==id);
+  await setDoc(doc(db,'meta','bloqueTemplates'),{list});
+  bloqueTemplatesCache=list;
+}
+
 window.eliminarPlantilla=async function(idx){
+  const t=bloqueTemplatesCache?.[idx];
+  if(!t)return;
   if(!confirm('¿Eliminar esta plantilla?'))return;
-  bloqueTemplatesCache.splice(idx,1);
-  await setDoc(doc(db,'meta','bloqueTemplates'),{list:bloqueTemplatesCache});
+  await borrarPlantillaPorId(t.id);
   toast('🗑️ Plantilla eliminada');
   document.getElementById('modal-bg').style.display='none';
+};
+
+// ══ GESTIÓN DE PLANTILLAS (vista dedicada) ══
+const TPL_KIND_LABEL={warmup:'🔥 Calentamiento',gym:'🏋️ Gym',func:'🧓 Funcional',cf:'🔥 CF / WOD'};
+function templateSummary(t){
+  const d=t.data;
+  if(d.kind==='cf'){
+    const cfg=CF_TYPES[d.cftype];
+    const nEx=(d.sections||[]).reduce((n,s)=>n+(s.exercises?.length||0),0);
+    return `${cfg?.label||d.cftype} · ${nEx} ejercicio${nEx===1?'':'s'}`;
+  }
+  const nEx=(d.exercises||[]).length;
+  return `${TPL_KIND_LABEL[d.kind]||d.kind} · ${nEx} ejercicio${nEx===1?'':'s'}`;
+}
+window.renderTemplatesView=async function(){
+  const list=await loadBloqueTemplates();
+  const q=norm(document.getElementById('tpl-search')?.value||'');
+  const kindFilter=document.getElementById('tpl-kind-filter')?.value||'';
+  const el=document.getElementById('tpl-list');
+  const filtered=list.filter((t,i)=>{
+    t._idx=i;
+    if(kindFilter&&t.data.kind!==kindFilter)return false;
+    if(q&&!norm(t.name).includes(q))return false;
+    return true;
+  });
+  if(!filtered.length){
+    el.innerHTML=`<p style="color:var(--mu);font-size:.85rem">No hay plantillas${q||kindFilter?' que coincidan con el filtro':' todavía. Creá una con "➕ Nueva plantilla" o importá las 300 WOD.'}</p>`;
+    return;
+  }
+  el.innerHTML=filtered.map(t=>`<div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px">
+    <div>
+      <div style="font-weight:600">${BLOCK_KIND_ICON[t.data.kind]||'📋'} ${t.name}</div>
+      <div style="font-size:.76rem;color:var(--mu);margin-top:2px">${templateSummary(t)}</div>
+    </div>
+    <div style="display:flex;gap:6px;flex-shrink:0">
+      <button class="btn bg2 xs" onclick="abrirEditorPlantilla('${t.id}')">✏️ Editar</button>
+      <button class="btn bd2 xs" onclick="borrarPlantillaDesdeVista('${t.id}')">🗑️ Eliminar</button>
+    </div>
+  </div>`).join('');
+};
+
+window.borrarPlantillaDesdeVista=async function(id){
+  if(!confirm('¿Eliminar esta plantilla?'))return;
+  await borrarPlantillaPorId(id);
+  toast('🗑️ Plantilla eliminada');
+  renderTemplatesView();
+};
+
+const TPL_KIND_OPTIONS=[
+  {value:'warmup',label:'🔥 Calentamiento'},
+  {value:'gym:simple',label:'🏋️ Gym — Ejercicio simple'},
+  {value:'gym:tri',label:'🏋️ Gym — Triserie'},
+  {value:'gym:super',label:'🏋️ Gym — Superserie'},
+  {value:'gym:giant',label:'🏋️ Gym — Serie gigante'},
+  {value:'func',label:'🧓 Funcional'},
+  ...Object.keys(CF_TYPES).map(k=>({value:'cf:'+k,label:`${CF_TYPES[k].icon} CF — ${CF_TYPES[k].label}`})),
+];
+
+function renderTplEditorBody(kindVal,data){
+  const body=document.getElementById('tpl-editor-body');
+  body.innerHTML='';
+  const cid='tplblk'+Date.now();
+  const holder=document.createElement('div');holder.id=cid;
+  body.appendChild(holder);
+  const [kind,sub]=kindVal.split(':');
+  if(kind==='warmup')addWarmupBlock(cid,data);
+  else if(kind==='gym')addGymBlock(cid,sub,data);
+  else if(kind==='func')addFuncBlock(cid,data);
+  else if(kind==='cf')addCFBlock(cid,sub,data);
+}
+
+window.abrirEditorPlantilla=async function(id){
+  const list=id?await loadBloqueTemplates():null;
+  const t=id?list.find(x=>x.id===id):null;
+  const kindVal=t?(t.data.kind==='gym'?`gym:${t.data.type}`:t.data.kind==='cf'?`cf:${t.data.cftype}`:t.data.kind):TPL_KIND_OPTIONS[0].value;
+  const modal=document.getElementById('modal-bg');
+  modal.style.display='flex';
+  modal.innerHTML=`<div style="background:var(--s1);border-radius:16px;padding:24px;width:100%;max-width:520px;max-height:88vh;overflow-y:auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <h2>${t?'✏️ Editar':'➕ Nueva'} plantilla</h2>
+      <button onclick="document.getElementById('modal-bg').style.display='none'" style="background:none;border:none;color:var(--mu);font-size:1.4rem;cursor:pointer">✕</button>
+    </div>
+    <input type="hidden" id="tpl-editor-id" value="${t?.id||''}">
+    <div class="fg" style="margin-bottom:10px"><label>Nombre de la plantilla</label><input type="text" id="tpl-editor-name" value="${t?.name||''}" placeholder="Ej: Fran, Calentamiento estándar..."></div>
+    <div class="fg" style="margin-bottom:14px"><label>Tipo de bloque</label>
+      <select id="tpl-editor-kind" ${t?'disabled':''} onchange="renderTplEditorBody(this.value,null)">
+        ${TPL_KIND_OPTIONS.map(o=>`<option value="${o.value}" ${o.value===kindVal?'selected':''}>${o.label}</option>`).join('')}
+      </select>
+    </div>
+    <div class="tpl-editor-body" id="tpl-editor-body"></div>
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <button class="btn bg2" style="flex:1;justify-content:center" onclick="document.getElementById('modal-bg').style.display='none'">Cancelar</button>
+      <button class="btn bp" style="flex:1;justify-content:center" onclick="guardarPlantillaDesdeEditor()">💾 Guardar</button>
+    </div>
+  </div>`;
+  renderTplEditorBody(kindVal,t?.data||null);
+};
+
+window.guardarPlantillaDesdeEditor=async function(){
+  const name=document.getElementById('tpl-editor-name').value.trim();
+  if(!name){toast('❌ Poné un nombre para la plantilla');return}
+  const blk=document.querySelector('#tpl-editor-body>.blk, #tpl-editor-body>.cf-blk');
+  if(!blk){toast('❌ Elegí un tipo de bloque');return}
+  const data=collectBlockData(blk);
+  const id=document.getElementById('tpl-editor-id').value;
+  const list=await loadBloqueTemplates();
+  if(id){
+    const i=list.findIndex(t=>t.id===id);
+    if(i>=0)list[i]={id,name,data};
+  }else{
+    list.push({id:'tpl'+Date.now()+Math.random().toString(36).slice(2,7),name,data});
+  }
+  await setDoc(doc(db,'meta','bloqueTemplates'),{list});
+  bloqueTemplatesCache=list;
+  document.getElementById('modal-bg').style.display='none';
+  toast('💾 Plantilla guardada');
+  renderTemplatesView();
 };
 
 // ══ SAVE CLIENT ══
