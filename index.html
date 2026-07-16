@@ -923,6 +923,7 @@ setTimeout(()=>{
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
     <button class="btn bp" onclick="abrirEditorPlantilla()">➕ Nueva plantilla</button>
     <button class="btn bg2" onclick="importWodTemplates()">📦 Importar 300 WOD CrossFit</button>
+    <button class="btn bg2" onclick="autocompletarVideosWOD()">🎬 Autocompletar videos desde biblioteca</button>
     <input type="text" id="tpl-search" placeholder="Buscar plantilla..." style="flex:1;min-width:150px" oninput="renderTemplatesView()">
     <select id="tpl-kind-filter" style="width:190px" onchange="renderTemplatesView()">
       <option value="">Todas</option>
@@ -2534,10 +2535,39 @@ window.abrirEditorPlantilla=async function(id){
   renderTplEditorBody(kindVal,t?.data||null);
 };
 
+window.autocompletarVideosWOD=async function(){
+  if(!exDB.length){toast('❌ No hay ejercicios cargados en la biblioteca');return}
+  const videoByName={};
+  exDB.forEach(e=>{ if(e.video) videoByName[norm(e.name)]=e.video; });
+  const list=await loadBloqueTemplates();
+  let exUpdated=0;
+  list.forEach(t=>{
+    (t.data.sections||[]).forEach(s=>{
+      (s.exercises||[]).forEach(ex=>{
+        if(ex.video)return;
+        const v=videoByName[norm(ex.name)];
+        if(v){ex.video=v;exUpdated++;}
+      });
+    });
+    if(t.data.exercises){
+      t.data.exercises.forEach(ex=>{
+        if(ex.video)return;
+        const v=videoByName[norm(ex.name)];
+        if(v){ex.video=v;exUpdated++;}
+      });
+    }
+  });
+  if(!exUpdated){toast('No se encontraron coincidencias nuevas con la biblioteca');return}
+  await setDoc(doc(db,'meta','bloqueTemplates'),{list});
+  bloqueTemplatesCache=list;
+  toast(`🎬 ${exUpdated} ejercicios enlazados con su video`);
+  renderTemplatesView();
+};
+
 window.guardarPlantillaDesdeEditor=async function(){
   const name=document.getElementById('tpl-editor-name').value.trim();
   if(!name){toast('❌ Poné un nombre para la plantilla');return}
-  const blk=document.querySelector('#tpl-editor-body>.blk, #tpl-editor-body>.cf-blk');
+  const blk=document.querySelector('#tpl-editor-body .blk, #tpl-editor-body .cf-blk');
   if(!blk){toast('❌ Elegí un tipo de bloque');return}
   const data=collectBlockData(blk);
   const id=document.getElementById('tpl-editor-id').value;
