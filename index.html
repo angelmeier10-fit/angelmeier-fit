@@ -904,6 +904,7 @@ setTimeout(()=>{
     <button class="btn bg2" onclick="openCatModal()">⚙️ Categorías</button>
     <label class="btn bg2" style="cursor:pointer">📥 Importar CSV<input type="file" accept=".csv" style="display:none" onchange="importExercises(this)"></label>
     <button class="btn bg2" onclick="exportExercisesCSV()">📤 Exportar CSV</button>
+    <button class="btn bg2" onclick="importWodTemplates()">📦 Importar 300 WOD CrossFit</button>
     <input type="text" id="ex-search-db" placeholder="Buscar ejercicio..." style="flex:1;min-width:150px" oninput="renderExDB()">
     <select id="ex-cat-filter" style="width:180px" onchange="renderExDB()"><option value="">Todas las categorías</option></select>
   </div>
@@ -2322,6 +2323,28 @@ async function loadBloqueTemplates(){
   bloqueTemplatesCache=snap.exists()?(snap.data().list||[]):[];
   return bloqueTemplatesCache;
 }
+
+window.importWodTemplates=async function(){
+  if(!confirm('Esto va a agregar 300 plantillas de WOD de CrossFit (incluye benchmarks clásicos como Fran, Murph, DT, etc.) a tu lista de plantillas de bloque. Se suman a las que ya tenés, sin borrar ninguna. ¿Continuar?'))return;
+  try{
+    const res=await fetch('wod-templates.json');
+    const seed=await res.json();
+    const list=await loadBloqueTemplates();
+    const existingNames=new Set(list.map(t=>t.name));
+    let added=0;
+    seed.forEach(t=>{
+      if(existingNames.has(t.name))return;
+      list.push({id:'tpl'+Date.now()+Math.random().toString(36).slice(2,7),name:t.name,data:t.data});
+      existingNames.add(t.name);
+      added++;
+    });
+    await setDoc(doc(db,'meta','bloqueTemplates'),{list});
+    bloqueTemplatesCache=list;
+    toast(`✅ ${added} WOD importados (${seed.length-added} ya existían)`);
+  }catch(err){
+    toast('❌ Error al importar WOD: '+err.message);
+  }
+};
 
 window.guardarBloqueComoPlantilla=async function(blockId){
   const blk=document.getElementById(blockId);
