@@ -444,13 +444,12 @@ setTimeout(()=>{
   <h1>Panel del Entrenador</h1>
   <p class="sub">Planificá rutinas por día con bloques de gym y CrossFit mezclados.</p>
   <div class="itabs">
-    <button class="itab active" id="it-clients" onclick="showPanel('clients',this)">👥 Clientes</button>
+    <button class="itab active" id="it-alumnosuni" onclick="showPanel('alumnosuni',this)">👤 Alumnos</button>
     <button class="itab" id="it-new" onclick="showPanel('new',this)">➕ Nuevo cliente</button>
     <button class="itab" id="it-edit" style="display:none" onclick="showPanel('edit',this)">✏️ Editar</button>
     <button class="itab" id="it-macro" style="display:none" onclick="showPanel('macro',this)">📊 Macrociclo</button>
-    <button class="itab" id="it-alumnosuni" onclick="showPanel('alumnosuni',this)">👤 Alumnos</button>
   </div>
-  <div id="panel-alumnosuni" style="display:none">
+  <div id="panel-alumnosuni">
     <div class="card" style="margin-bottom:16px;padding:16px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
       <div><div style="font-weight:700;font-size:.9rem">🔗 Link de suscripción</div><div class="sub" style="margin-bottom:0">Pasáselo a un alumno nuevo para que se registre solo.</div></div>
       <button class="btn bcy sm" onclick="copyLink('https://angelmeier-fit.web.app/suscripcion')">📋 Copiar link</button>
@@ -465,15 +464,6 @@ setTimeout(()=>{
     </div>
     <input id="uni-search" placeholder="🔍 Buscar alumno por nombre o email..." oninput="renderAlumnosUnificado(this.value)" style="margin-bottom:12px;font-size:.88rem">
     <div id="alumnosuni-list"></div>
-  </div>
-  <div id="panel-clients">
-    <input id="client-search" placeholder="🔍 Buscar cliente por nombre..." oninput="filterClients(this.value)" style="margin-bottom:12px;font-size:.88rem">
-    <div id="client-list"></div>
-    <div id="no-clients" class="card" style="text-align:center;padding:40px;display:none">
-      <div style="font-size:2.5rem;margin-bottom:10px">👥</div>
-      <p style="color:var(--mu)">Todavía no tenés clientes.</p>
-      <button class="btn bp" style="margin-top:12px" onclick="document.getElementById('it-new').click()">Agregar primer cliente</button>
-    </div>
   </div>
   <div id="panel-new" style="display:none">
     <div class="card" id="nc-data-card">
@@ -1424,7 +1414,6 @@ async function init(){
   }
 
   hideLoading();
-  renderClientList();
   renderExDB();
   populateCatFilter();
 }
@@ -1543,11 +1532,10 @@ function compareDates(a,b){
 }
 
 function showPanel(p,btn){
-  ['clients','new','edit','macro','alumnosuni'].forEach(id=>{const el=document.getElementById('panel-'+id);if(el)el.style.display='none';});
+  ['new','edit','macro','alumnosuni'].forEach(id=>{const el=document.getElementById('panel-'+id);if(el)el.style.display='none';});
   document.getElementById('panel-'+p).style.display='block';
   document.querySelectorAll('.itab').forEach(t=>t.classList.remove('active'));
   if(btn)btn.classList.add('active');
-  if(p==='clients')renderClientList();
   if(p==='new')initNewClient();
   if(p==='alumnosuni')renderAlumnosUnificado();
   if(p==='macro'&&editingId){
@@ -2549,59 +2537,12 @@ async function updateClient(){
   c.days=ecWeeklyData[ecCurrentWeek];
   await setDoc(doc(db,'clients',editingId),c);
   toast('✅ Cliente actualizado en la nube');
-  showPanel('clients',document.getElementById('it-clients'));
+  showPanel('alumnosuni',document.getElementById('it-alumnosuni'));
 }
 window.updateClient=updateClient;
 
-// ══ CLIENT LIST ══
-function renderClientList(){
-  const el=document.getElementById('client-list');const none=document.getElementById('no-clients');el.innerHTML='';
-  if(!clients.length){none.style.display='block';return}none.style.display='none';
-  clients.forEach(c=>{
-    const initials=c.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
-    const link=`${location.origin}${location.pathname}?client=${c.id}`;
-    const div=document.createElement('details');div.className='ccrd';
-    function isExpiredBadge(expiry){if(!expiry)return false;const today=new Date();today.setHours(0,0,0,0);return new Date(expiry+'T00:00:00')<today;}
-    const expiredNow=isExpiredBadge(c.expiry);
-    const expiryBadge=c.expiry?`<span class="badge" style="background:${expiredNow?'#f8717122':'#fbbf2422'};color:${expiredNow?'var(--rd)':'var(--yw)'}">${expiredNow?'⏰ Vencido':'📅 Vence: '+new Date(c.expiry+'T00:00:00').toLocaleDateString('es-AR')}</span>`:'';
-    const payBadge=c.payStatus==='paid'?'<span class="badge" style="background:#4ade8022;color:var(--gr)">✅ Pagado</span>':c.payStatus==='pending'?'<span class="badge" style="background:#f8717122;color:var(--rd)">⏳ Pendiente de pago</span>':'';
-    div.innerHTML=`<summary class="ccrd-summary" style="cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none">
-        <div class="cav">${initials}</div>
-        <div class="cn">${c.name}</div>
-      </summary>
-      <div class="ci" style="margin-top:10px">
-        <div class="cn">${c.name} ${payBadge} ${expiryBadge}</div>
-        <div class="cm"><span class="badge bpu2">${c.level}</span><span>🎯 ${c.goal||'—'}</span><span>📅 ${(c.days||[]).length} días</span>${c.email?`<span>✉️ ${c.email}</span>`:''} ${c.whatsapp?`<a href="https://wa.me/${c.whatsapp}" target="_blank" style="font-size:.72rem;color:#25D366;text-decoration:none">💬 ${c.whatsapp}</a>`:''}</div>
-        ${c.mpLink?`<div style="margin-top:6px"><a href="${c.mpLink}" target="_blank" class="btn sm" style="background:#009EE322;color:#009EE3;border:1px solid #009EE344;font-size:.72rem">💳 Link MP</a></div>`:''}
-        <div class="lbox"><span class="ltxt">${link}</span><button class="btn bg2 sm" onclick="copyLink('${link}')">📋 Copiar</button></div>
-      </div>
-      <div class="ca" style="margin-top:10px">
-        <button class="btn bpu sm" onclick="openEdit('${c.id}')">✏️ Editar</button>
-        <button class="btn bcy sm" onclick="duplicateClient('${c.id}')">📋 Duplicar</button>
-        <button class="btn bd2 sm" onclick="delClient('${c.id}')">🗑️</button>
-      </div>`;
-    el.appendChild(div);
-  });
-}
-
-window.filterClients=function(q){
-  const term=q.trim().toLowerCase();
-  document.querySelectorAll('#client-list .ccrd').forEach(card=>{
-    const name=card.querySelector('.cn')?.textContent?.toLowerCase()||'';
-    card.style.display=(!term||name.includes(term))?'':'none';
-  });
-};
-
 function copyLink(link){navigator.clipboard.writeText(link).then(()=>toast('📋 Link copiado'))}
 window.copyLink=copyLink;
-
-async function delClient(id){
-  if(!confirm('¿Eliminar este cliente?'))return;
-  await deleteDoc(doc(db,'clients',id));
-  clients=clients.filter(c=>c.id!==id);
-  renderClientList();toast('🗑️ Eliminado');
-}
-window.delClient=delClient;
 
 async function duplicateClient(id){
   const c=clients.find(cl=>cl.id===id);if(!c)return;
@@ -2613,7 +2554,8 @@ async function duplicateClient(id){
   copy.id=ref.id;
   await setDoc(doc(db,'clients',ref.id),{...copy,id:ref.id});
   clients.push({...copy,id:ref.id});
-  renderClientList();toast('📋 Planificación duplicada');
+  toast('📋 Planificación duplicada');
+  renderAlumnosUnificado(document.getElementById('uni-search')?.value);
 }
 window.duplicateClient=duplicateClient;
 
@@ -3572,14 +3514,21 @@ async function renderProgramaUnificadoHtml(prog,catLabel){
     const{exerciseLogs,notes}=buildProgressSummary(c.progress||{},c.days,c.id);
     const link=`${location.origin}${location.pathname}?client=${c.id}`;
     const progressHtml=renderProgressDetailBlock(c.id,exerciseLogs,c.days,notes)||'<div style="font-size:.78rem;color:var(--mu)">Sin registros todavía.</div>';
+    const expiredNow=c.expiry&&(new Date(c.expiry+'T00:00:00')<new Date());
+    const expiryBadge=c.expiry?`<span class="badge" style="background:${expiredNow?'#f8717122':'#fbbf2422'};color:${expiredNow?'var(--rd)':'var(--yw)'}">${expiredNow?'⏰ Vencido':'📅 Vence: '+new Date(c.expiry+'T00:00:00').toLocaleDateString('es-AR')}</span>`:'';
+    const payBadge=c.payStatus==='paid'?'<span class="badge" style="background:#4ade8022;color:var(--gr)">✅ Pagado</span>':c.payStatus==='pending'?'<span class="badge" style="background:#f8717122;color:var(--rd)">⏳ Pendiente de pago</span>':'';
+    const waLink=c.whatsapp?`<a href="https://wa.me/${c.whatsapp}" target="_blank" style="font-size:.72rem;color:#25D366;text-decoration:none">💬 ${c.whatsapp}</a>`:'';
+    const mpLink=c.mpLink?`<a href="${c.mpLink}" target="_blank" style="font-size:.72rem;color:#009EE3;text-decoration:none">💳 Link MP</a>`:'';
     return`<div style="padding:8px 0;border-bottom:1px solid var(--bd)">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
-        <div style="font-size:.84rem"><b>🎯 Plan personalizado</b>${c.routineName?' — '+c.routineName:''}</div>
+        <div style="font-size:.84rem"><b>🎯 Plan personalizado</b>${c.routineName?' — '+c.routineName:''} ${payBadge} ${expiryBadge}</div>
         <div style="display:flex;gap:6px">
           <button class="btn bcy xs" onclick="openEdit('${c.id}')">✏️ Editar</button>
+          <button class="btn bcy xs" onclick="duplicateClient('${c.id}')">📋 Duplicar</button>
           <button class="btn bgr xs" onclick="copyLink('${link}')">🔗 Link</button>
         </div>
       </div>
+      ${waLink||mpLink?`<div style="display:flex;gap:10px;margin-top:4px">${waLink}${mpLink}</div>`:''}
       ${progressHtml}
     </div>`;
   }
