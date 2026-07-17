@@ -2862,7 +2862,7 @@ function renderWarmupBlock(c,bkey,blk,bi){
   const exList=blk.exercises.map((ex,ei)=>{
     const ekey=`${bkey}-wu${ei}`;
     const ytId=getYTId(ex.video);
-    const vidHtml=ytId?`<div class="yt-th" onclick="embedYT(this,'${ytId}')"><img src="https://img.youtube.com/vi/${ytId}/mqdefault.jpg" loading="lazy"><div class="yt-pl">▶</div></div>`:ex.video?`<a href="${ex.video}" target="_blank" class="btn bg2 sm" style="margin-top:5px">▶ Ver video</a>`:'';
+    const vidHtml=ytId?`<button class="btn bg2 sm" style="margin-top:5px" onclick="embedYT(this,'${ytId}')">▶ Ver video</button>`:ex.video?`<a href="${ex.video}" target="_blank" class="btn bg2 sm" style="margin-top:5px">▶ Ver video</a>`:'';
     let schemeHtml='';
     if(ex.scheme?.length){
       const isLastEx=(ei===blk.exercises.length-1);
@@ -2920,7 +2920,7 @@ function renderFuncBlock(c,bkey,blk,bi){
     blk.exercises.forEach((ex,ei)=>{
       const ekey=bkey+'-fe'+ei;
       const ytId=getYTId(ex.video);
-      const vidHtml=ytId?`<div class="yt-th" onclick="embedYT(this,'${ytId}')"><img src="https://img.youtube.com/vi/${ytId}/mqdefault.jpg" loading="lazy"><div class="yt-pl">▶</div></div>`:'';
+      const vidHtml=ytId?`<button class="btn bg2 sm" style="margin-top:5px" onclick="embedYT(this,'${ytId}')">▶ Ver video</button>`:'';
       const logs=(c.progress||{})[c.id+'-'+ekey+'-logs']||[];
       const lastLog=logs.length?logs[logs.length-1]:null;
       const isTime=/\d+\s*(min|s$|seg|km)/i.test((ex.reps||'').trim());
@@ -2967,7 +2967,7 @@ function renderGymBlock(c,bkey,blk,bi){
   blk.exercises.forEach((ex,ei)=>{
     const ekey=`${bkey}-e${ei}`;
     const ytId=getYTId(ex.video);
-    const vidHtml=ytId?`<div class="yt-th" onclick="embedYT(this,'${ytId}')"><img src="https://img.youtube.com/vi/${ytId}/mqdefault.jpg" loading="lazy"><div class="yt-pl">▶</div></div>`:ex.video?`<a href="${ex.video}" target="_blank" class="btn bg2 sm" style="margin-top:6px">▶ Ver video</a>`:'';
+    const vidHtml=ytId?`<button class="btn bg2 sm" style="margin-top:6px" onclick="embedYT(this,'${ytId}')">▶ Ver video</button>`:ex.video?`<a href="${ex.video}" target="_blank" class="btn bg2 sm" style="margin-top:6px">▶ Ver video</a>`:'';
     if(ei>0){
       const pause=(blk.pauses||[])[ei-1]||'';
       const pauseTimerId=`${c.id}-${bkey}-pause${ei-1}`;
