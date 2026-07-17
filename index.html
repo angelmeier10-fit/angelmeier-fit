@@ -1126,7 +1126,25 @@ async function getCategoriasSuscripcion(){
   cats.push({id:'global',label:'Suscripción global',desc:'Acceso a todas las categorías a la vez'});
   return cats;
 }
-function startAppOnce(){if(!appStarted){appStarted=true;init();}}
+function startAppOnce(){
+  if(appStarted)return;
+  appStarted=true;
+  init().catch(err=>{
+    // Si la sesión guardada en localStorage ya no es válida (token vencido,
+    // sesión cerrada, etc.), Firestore rechaza las lecturas de admin con
+    // "permission-denied" y la app quedaba trabada en "Cargando..." para
+    // siempre. Ante ese error puntual, volvemos a mostrar el login en vez
+    // de dejar la pantalla colgada.
+    if(err?.code==='permission-denied'){
+      localStorage.removeItem('amfit-had-session');
+      appStarted=false;
+      hideLoading();
+      showLoginScreen();
+    }else{
+      throw err;
+    }
+  });
+}
 if(!isClientLink && !isAlumnoSignup && localStorage.getItem('amfit-had-session')==='1'){
   // Ya hubo sesión antes: si Firebase Auth no confirma nada (p.ej. sin conexión),
   // no dejamos al entrenador trabado en el login; arrancamos con lo que haya en caché.
