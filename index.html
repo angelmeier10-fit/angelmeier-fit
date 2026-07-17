@@ -3631,6 +3631,19 @@ async function renderAlumnosUnificado(searchTerm){
     const bodyId=`uni-body-${ai}`;
     const hasSubscription=a.programs.some(p=>p.type==='subscription');
     const convertBtn=hasSubscription?'':`<button class="btn bcy xs" onclick="event.stopPropagation();precargarAltaSuscriptor(${ai})">🔔 Convertir en suscriptor</button>`;
+    const availablePlans=planes.filter(p=>p.kind!=='personal'&&!a.programs.some(pr=>pr.type==='group'&&pr.plan.id===p.id));
+    const addPlanForm=availablePlans.length?`<div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--bd)">
+        <div style="font-size:.76rem;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">➕ Agregar a un plan grupal</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:end">
+          <select id="uni-addplan-${ai}" onchange="onUniAddPlanChange(${ai})" style="font-size:.8rem">
+            <option value="">Elegir plan…</option>
+            ${availablePlans.map(p=>`<option value="${p.id}">${p.name}</option>`).join('')}
+          </select>
+          <div class="fg" style="margin:0"><label style="font-size:.68rem">Vencimiento</label><input type="date" id="uni-addexp-${ai}" style="font-size:.8rem"></div>
+          <div class="fg" id="uni-addweek-wrap-${ai}" style="margin:0;display:none"><label style="font-size:.68rem">Empieza en semana</label><select id="uni-addweek-${ai}" style="font-size:.8rem"></select></div>
+          <button class="btn bp xs" onclick="addUniAlumnoToPlan(${ai})">Agregar</button>
+        </div>
+      </div>`:'';
     cardsArr.push(`<div class="card">
       <div style="display:flex;align-items:center;gap:10px;cursor:pointer" onclick="document.getElementById('${bodyId}').classList.toggle('collapsed');this.querySelector('.card-toggle').style.transform=document.getElementById('${bodyId}').classList.contains('collapsed')?'rotate(-90deg)':''">
         <div class="member-av">${a.name.charAt(0).toUpperCase()}</div>
@@ -3641,11 +3654,49 @@ async function renderAlumnosUnificado(searchTerm){
       </div>
       <div class="collapsible-card-body collapsed" id="${bodyId}" style="margin-top:10px">
         ${progRows.join('')}
+        ${addPlanForm}
       </div>
     </div>`);
   }
   el.innerHTML=cardsArr.join('');
 }
+
+window.onUniAddPlanChange=function(ai){
+  const planId=document.getElementById(`uni-addplan-${ai}`).value;
+  const plan=planes.find(p=>p.id===planId);
+  const expInput=document.getElementById(`uni-addexp-${ai}`);
+  const weekWrap=document.getElementById(`uni-addweek-wrap-${ai}`);
+  const weekSel=document.getElementById(`uni-addweek-${ai}`);
+  if(!plan){expInput.value='';weekWrap.style.display='none';return}
+  const expDate=new Date();expDate.setDate(expDate.getDate()+(plan.durationDays||30));
+  expInput.value=expDate.toISOString().split('T')[0];
+  const weekNums=planWeekNums(plan);
+  if(weekNums.length>1){
+    weekSel.innerHTML=weekNums.map(w=>`<option value="${w}"${w===1?' selected':''}>Semana ${w}</option>`).join('');
+    weekWrap.style.display='flex';
+  } else {
+    weekWrap.style.display='none';
+  }
+};
+
+window.addUniAlumnoToPlan=async function(ai){
+  const a=alumnosUniCache[ai];
+  if(!a)return;
+  const planId=document.getElementById(`uni-addplan-${ai}`).value;
+  const plan=planes.find(p=>p.id===planId);
+  if(!plan){alert('Elegí un plan.');return}
+  const expiry=document.getElementById(`uni-addexp-${ai}`).value;
+  if(!expiry){alert('Elegí la fecha de vencimiento.');return}
+  const weekSel=document.getElementById(`uni-addweek-${ai}`);
+  const startWeek=weekSel&&weekSel.value?parseInt(weekSel.value):1;
+  const member={id:'m'+Date.now()+Math.floor(Math.random()*1000),name:a.name,email:a.email,status:'active',expiry,addedAt:new Date().toLocaleDateString('es-AR'),startDate:new Date().toISOString().split('T')[0],startWeek};
+  if(!plan.members)plan.members=[];
+  plan.members.push(member);
+  await setDoc(doc(db,'planes',planId),plan);
+  toast('✅ Agregado a '+plan.name);
+  renderAlumnosUnificado(document.getElementById('uni-search')?.value);
+  buildNotifications();
+};
 window.precargarAltaSuscriptor=function(ai){
   const a=alumnosUniCache[ai];
   if(!a)return;
