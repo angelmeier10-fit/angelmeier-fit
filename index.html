@@ -1175,6 +1175,15 @@ onAuthStateChanged(auth,async(user)=>{
     return;
   }
   if(user){
+    if(user.email!==ADMIN_EMAIL){
+      // Alguien que no es el entrenador inició sesión por la URL raíz (no
+      // vino por /suscripcion ni ?alumno=1): antes esto igual arrancaba el
+      // panel de entrenador (los datos fallaban por permisos, pero la
+      // pantalla equivocada quedaba mostrada). Lo mandamos a su vista de
+      // alumno en su lugar.
+      location.href='/?alumno=1';
+      return;
+    }
     localStorage.setItem('amfit-had-session','1');
     hideLoginScreen();
     startAppOnce();
