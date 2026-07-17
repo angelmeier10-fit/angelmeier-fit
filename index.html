@@ -229,6 +229,7 @@ textarea{resize:vertical;min-height:52px}
 .yt-pl{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,.7);border-radius:50%;width:46px;height:46px;display:flex;align-items:center;justify-content:center;font-size:1.1rem}
 .yt-em{position:relative;width:100%;padding-bottom:56.25%;border-radius:9px;overflow:hidden;margin-top:7px;background:#000}
 .yt-em iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:none}
+.yt-em .yt-min{position:absolute;top:6px;right:6px;z-index:1;background:rgba(0,0,0,.7);color:#fff;border:none;border-radius:7px;padding:5px 10px;font-size:.72rem;font-weight:700;font-family:inherit;cursor:pointer}
 .plog{margin-top:11px;border-top:1px solid var(--bd);padding-top:10px}
 .lr{display:grid;grid-template-columns:1fr 1fr auto;gap:6px;margin-bottom:6px}
 .lr input{font-size:.8rem;padding:6px 9px}
@@ -3068,7 +3069,8 @@ function renderCFBlock(c,bkey,blk,bi){
 }
 
 window.toggleG=function(id){document.getElementById(id).classList.toggle('open')};
-window.embedYT=function(th,ytId){const e=document.createElement('div');e.className='yt-em';e.innerHTML=`<iframe src="https://www.youtube.com/embed/${ytId}?autoplay=1" allow="autoplay;encrypted-media" allowfullscreen></iframe>`;th.replaceWith(e)};
+window.collapseYT=function(e,ytId){const b=document.createElement('button');b.className='btn bg2 sm';b.style.marginTop='5px';b.textContent='▶ Ver video';b.onclick=()=>embedYT(b,ytId);e.replaceWith(b)};
+window.embedYT=function(th,ytId){const e=document.createElement('div');e.className='yt-em';e.innerHTML=`<iframe src="https://www.youtube.com/embed/${ytId}?autoplay=1" allow="autoplay;encrypted-media" allowfullscreen></iframe><button class="yt-min" onclick="collapseYT(this.parentElement,'${ytId}')">✕ Minimizar</button>`;th.replaceWith(e)};
 
 window.toggleSerie=async function(cId,ekey,si,rk,isLast,blockRest,pauseSecs){
   const c=clients.find(cl=>cl.id===cId);
