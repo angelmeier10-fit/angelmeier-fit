@@ -1,4 +1,4 @@
-const CACHE = 'amfit-v7';
+const CACHE = 'amfit-v8';
 const ASSETS = [
   './',
   './index.html',
