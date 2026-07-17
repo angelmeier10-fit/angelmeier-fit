@@ -3814,6 +3814,12 @@ async function deleteAlumnoCompleto(ai){
         await setDoc(doc(db,'planes',plan.id),plan);
       }
     } else if(prog.type==='subscription'){
+      // Si tenía plan personalizado, ese plan es solo suyo: si no se borra
+      // acá queda huérfano en Firestore para siempre (nadie más lo referencia).
+      if(prog.sub.categoria==='__personal__'&&prog.sub.planId){
+        await deleteDoc(doc(db,'planes',prog.sub.planId));
+        planes=planes.filter(p=>p.id!==prog.sub.planId);
+      }
       await deleteDoc(doc(db,'subscribers',prog.uid));
     }
   }
