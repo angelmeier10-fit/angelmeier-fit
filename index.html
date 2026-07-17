@@ -5054,8 +5054,11 @@ window.activarSuscriptorManual=async function(uid){
   const subSnap=await getDoc(subRef);
   if(!subSnap.exists())return;
   const sub=subSnap.data();
-  let planId=null;
-  if(sub.categoria&&sub.categoria!=='global'){
+  // Si tiene plan personalizado (o suscripción global), el planId ya está
+  // asignado a mano y no viene de planesFijos: no tocarlo, o se lo pisa con
+  // null y el alumno pierde el plan que tenía cargado.
+  let planId=sub.planId||null;
+  if(sub.categoria&&sub.categoria!=='global'&&sub.categoria!=='__personal__'){
     const fijoSnap=await getDoc(doc(db,'planesFijos',sub.categoria));
     planId=fijoSnap.exists()?fijoSnap.data().planId||null:null;
   }
