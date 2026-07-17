@@ -1126,25 +1126,22 @@ async function getCategoriasSuscripcion(){
   cats.push({id:'global',label:'Suscripción global',desc:'Acceso a todas las categorías a la vez'});
   return cats;
 }
-function startAppOnce(){
-  if(appStarted)return;
-  appStarted=true;
-  init().catch(err=>{
-    // Si la sesión guardada en localStorage ya no es válida (token vencido,
-    // sesión cerrada, etc.), Firestore rechaza las lecturas de admin con
-    // "permission-denied" y la app quedaba trabada en "Cargando..." para
-    // siempre. Ante ese error puntual, volvemos a mostrar el login en vez
-    // de dejar la pantalla colgada.
-    if(err?.code==='permission-denied'){
-      localStorage.removeItem('amfit-had-session');
-      appStarted=false;
-      hideLoading();
-      showLoginScreen();
-    }else{
-      throw err;
-    }
-  });
-}
+function startAppOnce(){if(!appStarted){appStarted=true;init()}}
+
+// Si la sesión guardada en localStorage ya no es válida (token vencido, sesión
+// cerrada en otro lado, etc.), Firestore rechaza cualquier lectura de admin con
+// "permission-denied". Eso puede pasar en cualquier función (init, renderAlumnosUnificado,
+// etc.) y antes quedaba como una excepción sin manejar, dejando pantallas enteras
+// trabadas en "Cargando..." para siempre. Este guardia global lo detecta venga de
+// donde venga y fuerza un logout + reload para volver a un estado limpio con login.
+let recoveringFromAuthError=false;
+window.addEventListener('unhandledrejection',e=>{
+  if(e.reason?.code!=='permission-denied'||recoveringFromAuthError)return;
+  recoveringFromAuthError=true;
+  e.preventDefault();
+  localStorage.removeItem('amfit-had-session');
+  signOut(auth).catch(()=>{}).finally(()=>location.reload());
+});
 if(!isClientLink && !isAlumnoSignup && localStorage.getItem('amfit-had-session')==='1'){
   // Ya hubo sesión antes: si Firebase Auth no confirma nada (p.ej. sin conexión),
   // no dejamos al entrenador trabado en el login; arrancamos con lo que haya en caché.
