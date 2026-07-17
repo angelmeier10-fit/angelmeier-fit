@@ -4147,8 +4147,12 @@ window.duplicatePlan=duplicatePlan;
 window.openUseAsBaseModal=async function(planId){
   document.getElementById('ub-plan-id').value=planId;
   const sel=document.getElementById('ub-client-select');
-  sel.innerHTML='<option value="">➕ Alumno nuevo</option>'+clients.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
   const subSnap=await getDocs(collection(db,'subscribers'));
+  const subEmails=new Set(subSnap.docs.map(d=>(d.data().email||'').toLowerCase()).filter(Boolean));
+  // Si ya es suscriptor, no mostrar también su registro viejo en "clients":
+  // ese ya no lo lee nadie y elegirlo por error deja al alumno sin ver el plan nuevo.
+  const clientsSinCuenta=clients.filter(c=>!(c.email&&subEmails.has(c.email.toLowerCase())));
+  sel.innerHTML='<option value="">➕ Alumno nuevo</option>'+clientsSinCuenta.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
   sel.innerHTML+=subSnap.docs.map(d=>{const s=d.data();return`<option value="sub:${d.id}">${s.name||s.email} (suscriptor)</option>`}).join('');
   document.getElementById('ub-new-name').value='';
   document.getElementById('ub-new-email').value='';
