@@ -687,9 +687,14 @@ setTimeout(()=>{
     <button class="itab" id="itp-edit" style="display:none" onclick="showPlanesPanel('edit',this)">✏️ Editar plan</button>
     <button class="itab" id="itp-macro" style="display:none" onclick="showPlanesPanel('macro',this)">📊 Macrociclo</button>
     <button class="itab" id="itp-members" style="display:none" onclick="showPlanesPanel('members',this)">👤 Alumnos</button>
-    <button class="itab" id="itp-fijos" onclick="showPlanesPanel('fijos',this)">🔔 Planes fijos (suscripción)</button>
   </div>
   <div id="planes-panel-list">
+    <div class="card">
+      <h2>🔔 Planes fijos por categoría</h2>
+      <p class="sub" style="margin-bottom:14px">Elegí, para cada categoría de la suscripción, cuál de tus planes grupales es el plan fijo que reciben los alumnos que se suscriban. Marcá esos planes como "🔒 privados" en su edición para que solo se pueda acceder con una suscripción activa.</p>
+      <div id="planes-fijos-form"></div>
+      <button class="btn bp" onclick="savePlanesFijos()" style="width:100%;justify-content:center;padding:12px;font-size:.93rem;margin-top:12px">💾 Guardar mapeo</button>
+    </div>
     <div id="planes-list"></div>
     <div id="no-planes" class="card" style="text-align:center;padding:40px;display:none">
       <div style="font-size:2.5rem;margin-bottom:10px">👥</div>
@@ -746,6 +751,7 @@ setTimeout(()=>{
     <button class="btn bp" onclick="savePlan()" style="width:100%;justify-content:center;padding:12px;font-size:.93rem;margin-top:4px">💾 Guardar plan</button>
   </div>
   <div id="planes-panel-edit" style="display:none">
+    <button id="btn-volver-alumnos" class="btn bg2 sm" style="display:none;margin-bottom:12px" onclick="volverAAlumnosDesdeEdicion()">← Volver a Alumnos</button>
     <div class="card" id="ep-data-card">
       <div class="collapsible-card-hdr" onclick="document.getElementById('ep-data-card').classList.toggle('collapsed');this.querySelector('.card-toggle').style.transform=document.getElementById('ep-data-card').classList.contains('collapsed')?'rotate(-90deg)':''">
         <h2 id="edit-plan-title">Editando plan</h2>
@@ -827,14 +833,6 @@ setTimeout(()=>{
       <button class="btn bp" onclick="addMember()" style="margin-top:10px">➕ Agregar y generar link</button>
     </div>
     <div id="members-list"></div>
-  </div>
-  <div id="planes-panel-fijos" style="display:none">
-    <div class="card">
-      <h2>🔔 Planes fijos por categoría</h2>
-      <p class="sub" style="margin-bottom:14px">Elegí, para cada categoría de la suscripción, cuál de tus planes grupales es el plan fijo que reciben los alumnos que se suscriban. Marcá esos planes como "🔒 privados" en su edición para que solo se pueda acceder con una suscripción activa.</p>
-      <div id="planes-fijos-form"></div>
-      <button class="btn bp" onclick="savePlanesFijos()" style="width:100%;justify-content:center;padding:12px;font-size:.93rem;margin-top:12px">💾 Guardar mapeo</button>
-    </div>
   </div>
 </div>
 
@@ -1452,7 +1450,7 @@ function showView(v,btn){
   if(v==='client')populateClientSelect();
   if(v==='exdb'){renderExDB();populateCatFilter();}
   if(v==='templates')renderTemplatesView();
-  if(v==='planes')renderPlanesList();
+  if(v==='planes'){renderPlanesList();renderPlanesFijosPanel();}
   if(v==='solicitudes')renderSolicitudes();
 }
 window.showView=showView;
@@ -3473,6 +3471,9 @@ window.handleImgUpload=handleImgUpload;
 let planes=[];
 let editingPlanId=null;
 let activePlanId=null;
+// True mientras se edita el plan personalizado de un alumno desde su ficha:
+// oculta las sub-pestañas de Planes Grupales para que no se sienta "guardado ahí".
+let editingPersonalPlan=false;
 
 async function loadPlanes(){
   const snap=await getDocsSafe(collection(db,'planes'));
@@ -3481,15 +3482,14 @@ async function loadPlanes(){
 }
 
 function showPlanesPanel(p,btn){
-  ['list','new','edit','members','macro','fijos'].forEach(id=>{
+  ['list','new','edit','members','macro'].forEach(id=>{
     const el=document.getElementById('planes-panel-'+id);if(el)el.style.display='none';
   });
   document.getElementById('planes-panel-'+p).style.display='block';
   document.querySelectorAll('#view-planes .itab').forEach(t=>t.classList.remove('active'));
   if(btn)btn.classList.add('active');
-  if(p==='list')renderPlanesList();
+  if(p==='list'){renderPlanesList();renderPlanesFijosPanel();}
   if(p==='new')initNewPlan();
-  if(p==='fijos')renderPlanesFijosPanel();
   if(p==='macro'&&editingPlanId){
     const mc=document.getElementById('plan-macro-content');
     if(mc){
@@ -3931,7 +3931,11 @@ async function updatePlan(){
   plan.days=epWeeklyData[epCurrentWeek];
   await setDoc(doc(db,'planes',editingPlanId),plan);
   toast('✅ Plan actualizado');
-  showPlanesPanel('list',document.getElementById('itp-list'));
+  if(editingPersonalPlan){
+    volverAAlumnosDesdeEdicion();
+  }else{
+    showPlanesPanel('list',document.getElementById('itp-list'));
+  }
 }
 window.updatePlan=updatePlan;
 
@@ -4101,9 +4105,20 @@ function openEditPlan(id){
   buildDays('ep-days-container',weekDays.length,weekDays);
   document.getElementById('itp-edit').style.display='inline-block';
   document.getElementById('itp-macro').style.display='inline-block';
+  editingPersonalPlan=plan.kind==='personal';
+  document.querySelector('#view-planes .itabs').style.display=editingPersonalPlan?'none':'flex';
+  document.getElementById('btn-volver-alumnos').style.display=editingPersonalPlan?'inline-flex':'none';
   showPlanesPanel('edit',document.getElementById('itp-edit'));
 }
 window.openEditPlan=openEditPlan;
+
+window.volverAAlumnosDesdeEdicion=function(){
+  editingPersonalPlan=false;
+  document.querySelector('#view-planes .itabs').style.display='flex';
+  document.getElementById('btn-volver-alumnos').style.display='none';
+  const btn=document.querySelector(".tab-btn[onclick*=\"'trainer'\"]");
+  showView('trainer',btn);
+};
 
 window.abrirCargarComoBaseEnEdicion=function(){
   const list=planes.filter(p=>p.id!==editingPlanId);
@@ -4149,8 +4164,11 @@ window.aplicarBaseEnEdicion=function(sourcePlanId){
 };
 
 window.irAEditarPlanPersonal=function(planId){
-  const btn=document.querySelector(".tab-btn[onclick*=\"'planes'\"]");
-  if(btn)showView('planes',btn);
+  // No usamos showView('planes',...): eso marcaría la pestaña "Planes Grupales"
+  // como activa en el nav, y este plan no es un plan grupal. Dejamos la pestaña
+  // que ya estaba activa (Entrenador/Alumnos) y solo cambiamos qué vista se ve.
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
+  document.getElementById('view-planes').classList.add('active');
   openEditPlan(planId);
 };
 
