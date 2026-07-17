@@ -5577,11 +5577,11 @@ function notifId(n){
   return n.texto;
 }
 
-function buildNotifications(){
+async function buildNotifications(){
   const notifs=[];
   const today=new Date();today.setHours(0,0,0,0);
 
-  // Vencimientos próximos (hoy hasta +3 días)
+  // Vencimientos próximos de planes grupales (hoy hasta +3 días)
   planes.forEach(plan=>{
     (plan.members||[]).forEach(m=>{
       if(m.status!=='active'||!m.expiry)return;
@@ -5592,6 +5592,19 @@ function buildNotifications(){
         notifs.push({tipo:'vencimiento',texto:`⏰ ${m.name} (${plan.name}) ${label}`,fecha:exp,targetView:'planes',order:0,planId:plan.id,member:m.name});
       }
     });
+  });
+
+  // Vencimientos próximos de suscriptores (hoy hasta +3 días)
+  const subSnap=await getDocsSafe(collection(db,'subscribers'));
+  subSnap.docs.forEach(d=>{
+    const s=d.data();
+    if(s.status!=='active'||!s.expiry)return;
+    const exp=new Date(s.expiry+'T00:00:00');
+    const diff=Math.round((exp-today)/86400000);
+    if(diff>=0&&diff<=3){
+      const label=diff===0?'vence hoy':diff===1?'vence mañana':`vence en ${diff} días`;
+      notifs.push({tipo:'vencimiento',texto:`⏰ ${s.name||s.email} (suscripción) ${label}`,fecha:exp,targetView:'trainer',order:0});
+    }
   });
 
   // Anamnesis pendientes
