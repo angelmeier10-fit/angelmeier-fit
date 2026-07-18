@@ -3577,6 +3577,7 @@ async function renderProgramaUnificadoHtml(prog,cats){
   }
   if(prog.type==='group'){
     const{plan,member:m}=prog;
+    await loadPlanProgreso(plan);
     const days=getMemberPlanDays(plan,m);
     const{exerciseLogs,notes}=buildProgressSummary(m.progress||{},days,`${plan.id}-${m.id}`);
     const expired=m.expiry&&(new Date(m.expiry+'T00:00:00')<new Date());
@@ -3687,7 +3688,7 @@ async function renderAlumnosUnificado(searchTerm){
             <option value="">Elegir plan…</option>
             ${availablePlans.map(p=>`<option value="${p.id}">${p.name}</option>`).join('')}
           </select>
-          <div class="fg" style="margin:0"><label style="font-size:.68rem">Vencimiento</label><input type="date" id="uni-addexp-${ai}" style="font-size:.8rem"></div>
+          ${hasSubscription?'':`<div class="fg" style="margin:0"><label style="font-size:.68rem">Vencimiento</label><input type="date" id="uni-addexp-${ai}" style="font-size:.8rem"></div>`}
           <div class="fg" id="uni-addweek-wrap-${ai}" style="margin:0;display:none"><label style="font-size:.68rem">Empieza en semana</label><select id="uni-addweek-${ai}" style="font-size:.8rem"></select></div>
           <button class="btn bp xs" onclick="addUniAlumnoToPlan(${ai})">Agregar</button>
         </div>
@@ -3727,9 +3728,11 @@ window.onUniAddPlanChange=function(ai){
   const expInput=document.getElementById(`uni-addexp-${ai}`);
   const weekWrap=document.getElementById(`uni-addweek-wrap-${ai}`);
   const weekSel=document.getElementById(`uni-addweek-${ai}`);
-  if(!plan){expInput.value='';weekWrap.style.display='none';return}
-  const expDate=new Date();expDate.setDate(expDate.getDate()+(plan.durationDays||30));
-  expInput.value=expDate.toISOString().split('T')[0];
+  if(!plan){if(expInput)expInput.value='';weekWrap.style.display='none';return}
+  if(expInput){
+    const expDate=new Date();expDate.setDate(expDate.getDate()+(plan.durationDays||30));
+    expInput.value=expDate.toISOString().split('T')[0];
+  }
   const weekNums=planWeekNums(plan);
   if(weekNums.length>1){
     weekSel.innerHTML=weekNums.map(w=>`<option value="${w}"${w===1?' selected':''}>Semana ${w}</option>`).join('');
@@ -3745,11 +3748,23 @@ window.addUniAlumnoToPlan=async function(ai){
   const planId=document.getElementById(`uni-addplan-${ai}`).value;
   const plan=planes.find(p=>p.id===planId);
   if(!plan){alert('Elegí un plan.');return}
-  const expiry=document.getElementById(`uni-addexp-${ai}`).value;
-  if(!expiry){alert('Elegí la fecha de vencimiento.');return}
   const weekSel=document.getElementById(`uni-addweek-${ai}`);
   const startWeek=weekSel&&weekSel.value?parseInt(weekSel.value):1;
-  const member={id:'m'+Date.now()+Math.floor(Math.random()*1000),name:a.name,email:a.email,status:'active',expiry,addedAt:new Date().toLocaleDateString('es-AR'),startDate:new Date().toISOString().split('T')[0],startWeek};
+  // Si ya es un alumno con cuenta (subscriber), el member queda vinculado con
+  // su propio uid: así el login lo puede descubrir (findAllProgramsForAlumno)
+  // y no hace falta pedir un vencimiento aparte — el acceso ya lo gobierna
+  // su ficha general (activo/status/expiry de subscribers/{uid}).
+  const subProg=a.programs.find(p=>p.type==='subscription');
+  let id,expiry;
+  if(subProg){
+    id=subProg.uid;
+    expiry='';
+  }else{
+    expiry=document.getElementById(`uni-addexp-${ai}`).value;
+    if(!expiry){alert('Elegí la fecha de vencimiento.');return}
+    id='m'+Date.now()+Math.floor(Math.random()*1000);
+  }
+  const member={id,name:a.name,email:a.email,status:'active',expiry,addedAt:new Date().toLocaleDateString('es-AR'),startDate:new Date().toISOString().split('T')[0],startWeek};
   if(!plan.members)plan.members=[];
   plan.members.push(member);
   await setDoc(doc(db,'planes',planId),plan);
@@ -4642,13 +4657,45 @@ function findAllProgramsForPerson(name,email){
   if(personalClient)progs.push({type:'personal',client:personalClient});
   return progs;
 }
-function programPickerHTML(gkey,progs,activeType,activePlanId){
+// Igual que findAllProgramsForPerson pero para un subscriber logueado: prioriza
+// el match exacto por uid (membresías creadas ya vinculadas) y cae a email
+// para membresías viejas creadas antes de que addUniAlumnoToPlan usara el uid.
+function findAllProgramsForAlumno(uid,name,email,ownPlanId){
+  const emailKey=(email||'').toLowerCase();
+  const byPlan=new Map();
+  planes.forEach(p=>(p.members||[]).forEach(m=>{
+    const matches=m.id===uid||(emailKey&&(m.email||'').toLowerCase()===emailKey);
+    if(!matches)return;
+    const existing=byPlan.get(p.id);
+    if(!existing||(m.status==='active'&&existing.member.status!=='active'))byPlan.set(p.id,{type:'group',plan:p,member:m});
+  }));
+  const progs=[...byPlan.values()];
+  if(ownPlanId)progs.unshift({type:'personal',client:{id:'sub',name,email}});
+  return progs;
+}
+// El progreso real de un member de plan grupal vive en la subcolección
+// planes/{planId}/progreso/{memberId} (ver firestore.rules: solo así un
+// alumno puede escribir su propio progreso sin poder tocar el resto del
+// plan). Se carga una vez por plan y se mergea en memoria sobre members[].
+const planProgresoLoaded=new Set();
+async function loadPlanProgreso(plan){
+  if(planProgresoLoaded.has(plan.id))return;
+  planProgresoLoaded.add(plan.id);
+  const snap=await getDocsSafe(collection(db,'planes',plan.id,'progreso'));
+  snap.docs.forEach(d=>{
+    const m=plan.members?.find(mb=>mb.id===d.id);
+    if(m)m.progress=d.data().progress||{};
+  });
+}
+function programPickerHTML(gkey,progs,activeType,activePlanId,mode='client'){
   if(progs.length<2)return'';
   const activeLabel=activeType==='personal'?'🎯 Plan personalizado':progs.find(p=>p.type==='group'&&p.plan.id===activePlanId)?.plan.name||'Plan';
   const items=progs.map(p=>{
     const isActive=p.type===activeType&&(p.type==='personal'||p.plan.id===activePlanId);
     const label=p.type==='personal'?'🎯 Plan personalizado':p.plan.name;
-    const onclick=p.type==='personal'?`switchToPersonalProgram('${p.client.id}')`:`switchToGroupProgram('${p.plan.id}','${p.member.id}')`;
+    const onclick=p.type==='personal'?
+      (mode==='alumno'?'switchToPersonalProgramAlumno()':`switchToPersonalProgram('${p.client.id}')`):
+      (mode==='alumno'?`switchToGroupProgramAlumno('${p.plan.id}','${p.member.id}')`:`switchToGroupProgram('${p.plan.id}','${p.member.id}')`);
     return`<div class="cv-day-item${isActive?' active':''}" onclick="${onclick}"><span class="cv-day-item-name">${label}</span></div>`;
   }).join('');
   return`<div class="cv-day-picker">
@@ -4675,13 +4722,26 @@ window.switchToPersonalProgram=function(clientId){
   history.replaceState(null,'',`?client=${clientId}`);
   renderCV(clientId);
 };
+// Equivalentes para un alumno logueado (subscriber): sin history.replaceState
+// para no interferir con la recarga normal de initAlumno, y renderizando en
+// el contenedor de la sesión de alumno en vez de #cv-content.
+window.switchToGroupProgramAlumno=async function(planId,memberId){
+  const plan=planes.find(p=>p.id===planId);
+  const member=plan?.members?.find(m=>m.id===memberId);
+  if(!plan||!member)return;
+  await loadPlanProgreso(plan);
+  renderGroupCV(plan,member,'alumno');
+};
+window.switchToPersonalProgramAlumno=function(){
+  renderAlumnoPlanView(alumnoState.sub,alumnoState.uid);
+};
 
-function renderGroupCV(plan,member){
+function renderGroupCV(plan,member,mode='client'){
   const initials=member.name.charAt(0).toUpperCase();
   const expDate=member.expiry?new Date(member.expiry+'T00:00:00').toLocaleDateString('es-AR'):'—';
   const daysLeft=member.expiry?Math.max(0,Math.ceil((new Date(member.expiry+'T00:00:00')-new Date())/(1000*60*60*24))):null;
   const days=getMemberPlanDays(plan,member);
-  const fakeC={id:`${plan.id}-${member.id}`,progress:member.progress||{}};
+  const fakeC={id:`grp::${plan.id}::${member.id}`,progress:member.progress||{}};
   const nextIdx=getNextDayIdx({days,...fakeC});
   const gkey=`${plan.id}-${member.id}`;
   const activeDayName=days[nextIdx]?.name||'Día '+(nextIdx+1);
@@ -4693,7 +4753,7 @@ function renderGroupCV(plan,member){
       <span class="cv-day-item-name">${d.name||'Día '+(i+1)}</span>${badge}
     </div>`;
   }).join('');
-  document.getElementById('cv-content').innerHTML=`
+  document.getElementById(mode==='alumno'?'alumno-cv-content':'cv-content').innerHTML=`
     <div class="hero">
       <div class="hero-top">
         <div class="hav">${initials}</div>
@@ -4706,9 +4766,9 @@ function renderGroupCV(plan,member){
         ${daysLeft!==null?`<span class="badge ${daysLeft<=7?'brd2':'byw2'}">📅 Vence en ${daysLeft} día${daysLeft!==1?'s':''} (${expDate})</span>`:''}
         ${mesoBadge}
       </div>
-      ${plan.mpLink&&daysLeft<=7?`<a href="${plan.mpLink}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:#009EE322;color:#009EE3;border:1px solid #009EE344;border-radius:8px;padding:6px 14px;font-size:.78rem;font-weight:600;text-decoration:none;margin-bottom:12px">💳 Renovar plan</a>`:''}
+      ${plan.mpLink&&daysLeft!==null&&daysLeft<=7?`<a href="${plan.mpLink}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:#009EE322;color:#009EE3;border:1px solid #009EE344;border-radius:8px;padding:6px 14px;font-size:.78rem;font-weight:600;text-decoration:none;margin-bottom:12px">💳 Renovar plan</a>`:''}
     </div>
-    ${programPickerHTML(gkey,findAllProgramsForPerson(member.name,member.email),'group',plan.id)}
+    ${mode==='alumno'?programPickerHTML(gkey,findAllProgramsForAlumno(alumnoState.uid,alumnoState.sub.name,alumnoState.sub.email,alumnoState.plan?.id),'group',plan.id,'alumno'):programPickerHTML(gkey,findAllProgramsForPerson(member.name,member.email),'group',plan.id)}
     <div class="cv-day-picker">
       <div class="cv-day-picker-title">Seleccionar día</div>
       <div class="cv-day-picker-hdr" id="gv-picker-hdr-${gkey}" onclick="toggleGroupCVDayPicker('${gkey}')">
@@ -4748,7 +4808,7 @@ function renderGroupDay(plan,member,dIdx){
   if(!container)return;
   if(!day||!day.blocks?.length){container.innerHTML='<div style="text-align:center;padding:40px;color:var(--mu)">Sin bloques en este día.</div>';return}
   // Reuse same render functions but with plan+member as client proxy
-  const fakeClient={id:`${plan.id}-${member.id}`,progress:member.progress||{},days};
+  const fakeClient={id:`grp::${plan.id}::${member.id}`,progress:member.progress||{},days};
   let html='';
   day.blocks.forEach((blk,bi)=>{
     const bkey=`${dIdx}-${bi}`;
@@ -4796,22 +4856,20 @@ window.toggleSerie=async function(cId,ekey,si,rk,isLast,blockRest,pauseSecs){
     }
     return;
   }
-  // Check if this is a group member (cId = planId-memberId)
-  if(cId.includes('-m')){
-    const [planId,...rest]=cId.split('-m');const memberId='m'+rest.join('-m');
+  // Check if this is a group member (cId = grp::planId::memberId)
+  if(cId.startsWith('grp::')){
+    const[,planId,memberId]=cId.split('::');
     const plan=planes.find(p=>p.id===planId);if(!plan)return;
     const member=plan.members.find(m=>m.id===memberId);if(!member)return;
     if(!member.progress)member.progress={};
     const row=document.getElementById('sr-'+rk);const btn=row.querySelector('.ckbtn');
     const prev=member.progress[rk];
     member.progress[rk]=!member.progress[rk];
-    plan.members=plan.members.map(m=>m.id===memberId?member:m);
     btn.classList.add('saving');
     try{
-      await setDoc(doc(db,'planes',planId),plan);
+      await setDoc(doc(db,'planes',planId,'progreso',memberId),{progress:member.progress});
     }catch(e){
       member.progress[rk]=prev;
-      plan.members=plan.members.map(m=>m.id===memberId?member:m);
       btn.classList.remove('saving');
       toast('⚠️ No se pudo guardar, probá de nuevo');
       return;
@@ -4863,8 +4921,8 @@ window.logGym=async function(cId,ekey){
     renderAlumnoDay(alumnoState.plan,member,dIdx,uid);
     return;
   }
-  if(cId.includes('-m')){
-    const [planId,...rest]=cId.split('-m');const memberId='m'+rest.join('-m');
+  if(cId.startsWith('grp::')){
+    const[,planId,memberId]=cId.split('::');
     const plan=planes.find(p=>p.id===planId);if(!plan)return;
     const member=plan.members.find(m=>m.id===memberId);if(!member)return;
     const weights=collectSetWeights(cId,ekey);
@@ -4881,8 +4939,7 @@ window.logGym=async function(cId,ekey){
     entry.weight=singleW||weights.filter(w=>w).slice(-1)[0]||'';
     if(n)entry.note=n;
     member.progress[key].push(entry);
-    plan.members=plan.members.map(m=>m.id===memberId?member:m);
-    await setDoc(doc(db,'planes',planId),plan);
+    await setDoc(doc(db,'planes',planId,'progreso',memberId),{progress:member.progress});
     if(document.getElementById('pw-'+cId+'-'+ekey))document.getElementById('pw-'+cId+'-'+ekey).value='';
     document.getElementById('pr-'+cId+'-'+ekey).value='';
     if(document.getElementById('pn-'+cId+'-'+ekey))document.getElementById('pn-'+cId+'-'+ekey).value='';
@@ -4902,8 +4959,7 @@ window.saveGroupNote=async function(planId,memberId,dIdx){
   const key='snote-'+dIdx;
   if(!member.progress[key])member.progress[key]=[];
   member.progress[key].push({date:new Date().toLocaleDateString('es-AR'),text:txt});
-  plan.members=plan.members.map(m=>m.id===memberId?member:m);
-  await setDoc(doc(db,'planes',planId),plan);
+  await setDoc(doc(db,'planes',planId,'progreso',memberId),{progress:member.progress});
   document.getElementById(`gsnote-${planId}-${memberId}-${dIdx}`).value='';
   toast('📝 Nota guardada');renderGroupDay(plan,member,dIdx);
 };
@@ -4914,8 +4970,7 @@ window.deleteGroupNote=async function(planId,memberId,dIdx,noteIdx){
   const member=plan.members.find(m=>m.id===memberId);
   const key='snote-'+dIdx;
   member.progress[key].splice(noteIdx,1);
-  plan.members=plan.members.map(m=>m.id===memberId?member:m);
-  await setDoc(doc(db,'planes',planId),plan);
+  await setDoc(doc(db,'planes',planId,'progreso',memberId),{progress:member.progress});
   toast('🗑️ Nota eliminada');renderGroupDay(plan,member,dIdx);
 };
 
@@ -4955,6 +5010,14 @@ async function renderAlumnoPlanView(sub,uid){
 
   const contentEl=document.getElementById('alumno-cv-content');
   if(!planId){
+    // Sin plan individual propio: puede que igual tenga acceso a planes
+    // grupales asignados aparte — mostrar el primero en vez de "no listo".
+    const gruposSinIndividual=findAllProgramsForAlumno(uid,sub.name,sub.email,null);
+    if(gruposSinIndividual.length){
+      await loadPlanProgreso(gruposSinIndividual[0].plan);
+      renderGroupCV(gruposSinIndividual[0].plan,gruposSinIndividual[0].member,'alumno');
+      return;
+    }
     contentEl.innerHTML=`<div class="card" style="text-align:center;padding:30px 20px">
       <div style="font-size:2rem;margin-bottom:10px">🚧</div>
       <h3 style="margin-bottom:8px">Tu plan todavía no está listo</h3>
@@ -5016,6 +5079,7 @@ function renderAlumnoCV(plan,member,uid){
         ${mesoBadge}
       </div>
     </div>
+    ${programPickerHTML(akey,findAllProgramsForAlumno(uid,member.name,member.email,plan.id),'personal',null,'alumno')}
     <div class="cv-day-picker">
       <div class="cv-day-picker-title">Seleccionar día</div>
       <div class="cv-day-picker-hdr" id="av-picker-hdr-${akey}" onclick="toggleAlumnoCVDayPicker('${akey}')">
@@ -6221,6 +6285,30 @@ window.toggleMeso=function(id){
 }
 window.deleteLog=async function(clientId,ekey,logIdx){
   if(!confirm('¿Borrar este registro?'))return;
+  const dIdx=parseInt(ekey.split('-')[0]);
+  if(clientId.startsWith('alu-')){
+    const logKey=clientId+'-'+ekey+'-logs';
+    if(!alumnoState.sub.progress?.[logKey])return;
+    alumnoState.sub.progress[logKey].splice(logIdx,1);
+    await persistAlumnoProgress();
+    toast('🗑️ Registro eliminado');
+    const uid=alumnoState.uid;
+    const member={id:'sub',name:alumnoState.sub.name,email:alumnoState.sub.email,status:alumnoState.sub.status,expiry:alumnoState.sub.expiry,startDate:alumnoState.sub.startDate||'',startWeek:alumnoState.sub.startWeek||1,progress:alumnoState.sub.progress};
+    renderAlumnoDay(alumnoState.plan,member,dIdx,uid);
+    return;
+  }
+  if(clientId.startsWith('grp::')){
+    const[,planId,memberId]=clientId.split('::');
+    const plan=planes.find(p=>p.id===planId);if(!plan)return;
+    const member=plan.members.find(m=>m.id===memberId);if(!member)return;
+    const logKey=clientId+'-'+ekey+'-logs';
+    if(!member.progress?.[logKey])return;
+    member.progress[logKey].splice(logIdx,1);
+    await setDoc(doc(db,'planes',planId,'progreso',memberId),{progress:member.progress});
+    toast('🗑️ Registro eliminado');
+    renderGroupDay(plan,member,dIdx);
+    return;
+  }
   const c=clients.find(cl=>cl.id===clientId);
   if(!c)return;
   const logKey=clientId+'-'+ekey+'-logs';
@@ -6228,7 +6316,6 @@ window.deleteLog=async function(clientId,ekey,logIdx){
   c.progress[logKey].splice(logIdx,1);
   await setDoc(doc(db,'clients',clientId),c);
   toast('🗑️ Registro eliminado');
-  const dIdx=parseInt(ekey.split('-')[0]);
   renderDay(clientId,dIdx);
 };
 

@@ -52,6 +52,14 @@ service cloud.firestore {
         || resource.data.get('public', true) != false
         || subscriberActiveFor(planId);
       allow write: if isAdmin();
+
+      // Progreso individual de un member (alumno logueado) dentro de un plan
+      // grupal, separado del documento del plan para poder darle permiso de
+      // escritura sin exponer la rutina completa ni el progreso de otros.
+      match /progreso/{memberId} {
+        allow read, write: if isAdmin()
+          || (request.auth != null && request.auth.uid == memberId);
+      }
     }
 
     // Catálogo de planes fijos por categoría: público de solo lectura
