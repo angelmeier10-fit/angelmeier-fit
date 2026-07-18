@@ -5551,13 +5551,58 @@ function beep3(loud=true){
       const g=ctx.createGain();
       o.connect(g);g.connect(ctx.destination);
       o.type='square';
-      o.frequency.setValueAtTime(880,ctx.currentTime+delay);
+      o.frequency.setValueAtTime(660,ctx.currentTime+delay);
       g.gain.setValueAtTime(0,ctx.currentTime+delay);
       g.gain.linearRampToValueAtTime(vol,ctx.currentTime+delay+0.02);
       g.gain.linearRampToValueAtTime(0,ctx.currentTime+delay+0.18);
       o.start(ctx.currentTime+delay);
       o.stop(ctx.currentTime+delay+0.2);
     });
+  }catch(e){}
+}
+// Pitidos cortos (1 o 2 pulsos) para avisos puntuales del timer (10s, 3-2-1),
+// más graves que el beep3 de siempre.
+function beepPulses(n,vol=0.8){
+  try{
+    const ctx=new (window.AudioContext||window.webkitAudioContext)();
+    for(let i=0;i<n;i++){
+      const delay=i*0.22;
+      const o=ctx.createOscillator();const g=ctx.createGain();
+      o.connect(g);g.connect(ctx.destination);
+      o.type='square';
+      o.frequency.setValueAtTime(520,ctx.currentTime+delay);
+      g.gain.setValueAtTime(0,ctx.currentTime+delay);
+      g.gain.linearRampToValueAtTime(vol,ctx.currentTime+delay+0.02);
+      g.gain.linearRampToValueAtTime(0,ctx.currentTime+delay+0.18);
+      o.start(ctx.currentTime+delay);
+      o.stop(ctx.currentTime+delay+0.2);
+    }
+  }catch(e){}
+}
+function beep1(){beepPulses(1)}
+function beep2(){beepPulses(2)}
+// Pitido largo para marcar el fin/comienzo de una fase (trabajo↔descanso).
+function beepLong(){
+  try{
+    const ctx=new (window.AudioContext||window.webkitAudioContext)();
+    const o=ctx.createOscillator();const g=ctx.createGain();
+    o.connect(g);g.connect(ctx.destination);
+    o.type='square';
+    o.frequency.setValueAtTime(440,ctx.currentTime);
+    g.gain.setValueAtTime(0,ctx.currentTime);
+    g.gain.linearRampToValueAtTime(0.8,ctx.currentTime+0.03);
+    g.gain.linearRampToValueAtTime(0,ctx.currentTime+0.9);
+    o.start(ctx.currentTime);o.stop(ctx.currentTime+0.95);
+  }catch(e){}
+}
+// Anuncio hablado (ej. "diez segundos") para no depender solo de mirar la
+// pantalla durante el ejercicio.
+function speakText(text){
+  try{
+    if(!window.speechSynthesis)return;
+    const u=new SpeechSynthesisUtterance(text);
+    u.lang='es-AR';u.rate=1;
+    window.speechSynthesis.speak(u);
   }catch(e){}
 }
 
@@ -5660,7 +5705,7 @@ function cfTimerTick(){
       cfTimerUpdateDisplay();return;
     }
     if(cfTimer.mode==='interval'||cfTimer.mode==='tabata'){
-      beep3(true);
+      beepLong();
       if(cfTimer.isWork){
         // Switch to rest
         cfTimer.isWork=false;
@@ -5694,9 +5739,9 @@ function cfTimerTick(){
       cfTimerUpdateDisplay();return;
     }
   }
-  // Beep at 10s and 3s warnings
-  if(cfTimer.currentSecs===10) beep3(false);
-  if(cfTimer.currentSecs===3) beep3(true);
+  // Avisos: 2 pitidos + "diez segundos" hablado a los 10s, 1 pitido en 3-2-1
+  if(cfTimer.currentSecs===10){beep2();speakText('diez segundos');}
+  if(cfTimer.currentSecs===3||cfTimer.currentSecs===2||cfTimer.currentSecs===1)beep1();
   // EMOM: beep each minute mark
   if(cfTimer.mode==='emom'&&cfTimer.currentSecs%60===0&&cfTimer.currentSecs>0) beep3(true);
 }
