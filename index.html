@@ -4670,7 +4670,7 @@ function findAllProgramsForPerson(name,email){
 // Igual que findAllProgramsForPerson pero para un subscriber logueado: prioriza
 // el match exacto por uid (membresías creadas ya vinculadas) y cae a email
 // para membresías viejas creadas antes de que addUniAlumnoToPlan usara el uid.
-function findAllProgramsForAlumno(uid,name,email,ownPlanId){
+function findAllProgramsForAlumno(uid,name,email,ownPlanId,ownPlanName){
   const emailKey=(email||'').toLowerCase();
   const byPlan=new Map();
   planes.forEach(p=>(p.members||[]).forEach(m=>{
@@ -4680,7 +4680,7 @@ function findAllProgramsForAlumno(uid,name,email,ownPlanId){
     if(!existing||(m.status==='active'&&existing.member.status!=='active'))byPlan.set(p.id,{type:'group',plan:p,member:m});
   }));
   const progs=[...byPlan.values()];
-  if(ownPlanId)progs.unshift({type:'personal',client:{id:'sub',name,email}});
+  if(ownPlanId)progs.unshift({type:'personal',client:{id:'sub',name,email},planName:ownPlanName});
   return progs;
 }
 // El progreso real de un member de plan grupal vive en la subcolección
@@ -4699,10 +4699,12 @@ async function loadPlanProgreso(plan){
 }
 function programPickerHTML(gkey,progs,activeType,activePlanId,mode='client'){
   if(progs.length<2)return'';
-  const activeLabel=activeType==='personal'?'🎯 Plan personalizado':progs.find(p=>p.type==='group'&&p.plan.id===activePlanId)?.plan.name||'Plan';
+  const labelOf=p=>p.type==='personal'?(p.planName||'🎯 Plan personalizado'):p.plan.name;
+  const activeProg=progs.find(p=>p.type===activeType&&(p.type==='personal'||p.plan.id===activePlanId));
+  const activeLabel=activeProg?labelOf(activeProg):'Plan';
   const items=progs.map(p=>{
     const isActive=p.type===activeType&&(p.type==='personal'||p.plan.id===activePlanId);
-    const label=p.type==='personal'?'🎯 Plan personalizado':p.plan.name;
+    const label=labelOf(p);
     const onclick=p.type==='personal'?
       (mode==='alumno'?'switchToPersonalProgramAlumno()':`switchToPersonalProgram('${p.client.id}')`):
       (mode==='alumno'?`switchToGroupProgramAlumno('${p.plan.id}','${p.member.id}')`:`switchToGroupProgram('${p.plan.id}','${p.member.id}')`);
@@ -4778,7 +4780,7 @@ function renderGroupCV(plan,member,mode='client'){
       </div>
       ${plan.mpLink&&daysLeft!==null&&daysLeft<=7?`<a href="${plan.mpLink}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:#009EE322;color:#009EE3;border:1px solid #009EE344;border-radius:8px;padding:6px 14px;font-size:.78rem;font-weight:600;text-decoration:none;margin-bottom:12px">💳 Renovar plan</a>`:''}
     </div>
-    ${mode==='alumno'?programPickerHTML(gkey,findAllProgramsForAlumno(alumnoState.uid,alumnoState.sub.name,alumnoState.sub.email,alumnoState.plan?.id),'group',plan.id,'alumno'):programPickerHTML(gkey,findAllProgramsForPerson(member.name,member.email),'group',plan.id)}
+    ${mode==='alumno'?programPickerHTML(gkey,findAllProgramsForAlumno(alumnoState.uid,alumnoState.sub.name,alumnoState.sub.email,alumnoState.plan?.id,alumnoState.plan?.name),'group',plan.id,'alumno'):programPickerHTML(gkey,findAllProgramsForPerson(member.name,member.email),'group',plan.id)}
     <div class="cv-day-picker">
       <div class="cv-day-picker-title">Seleccionar día</div>
       <div class="cv-day-picker-hdr" id="gv-picker-hdr-${gkey}" onclick="toggleGroupCVDayPicker('${gkey}')">
@@ -5089,7 +5091,7 @@ function renderAlumnoCV(plan,member,uid){
         ${mesoBadge}
       </div>
     </div>
-    ${programPickerHTML(akey,findAllProgramsForAlumno(uid,member.name,member.email,plan.id),'personal',null,'alumno')}
+    ${programPickerHTML(akey,findAllProgramsForAlumno(uid,member.name,member.email,plan.id,plan.name),'personal',null,'alumno')}
     <div class="cv-day-picker">
       <div class="cv-day-picker-title">Seleccionar día</div>
       <div class="cv-day-picker-hdr" id="av-picker-hdr-${akey}" onclick="toggleAlumnoCVDayPicker('${akey}')">
