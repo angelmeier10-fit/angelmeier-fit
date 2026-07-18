@@ -3303,6 +3303,45 @@ function showVideoPreview(url){
 }
 window.closeExModal=function(){pendingExTarget=null;document.getElementById('ex-modal').classList.remove('open')};
 
+// Un ejercicio dentro de un plan/cliente es una COPIA (nombre+video) tomada
+// al momento de agregarlo, no una referencia al catálogo. Por eso editar el
+// video acá no se veía reflejado en rutinas ya armadas — esta función busca
+// por nombre (case-insensitive) en todos los planes y clientes existentes y
+// les actualiza el video (y el nombre, si también cambió) a la vez.
+function patchExerciseListVideo(exList,key,newName,newVideo){
+  let changed=false;
+  (exList||[]).forEach(e=>{
+    if((e.name||'').trim().toLowerCase()===key){e.video=newVideo;if(newName)e.name=newName;changed=true;}
+  });
+  return changed;
+}
+function patchDaysVideo(days,key,newName,newVideo){
+  let changed=false;
+  (days||[]).forEach(d=>(d.blocks||[]).forEach(blk=>{
+    if(blk.kind==='cf'){
+      (blk.sections||[]).forEach(sec=>{if(patchExerciseListVideo(sec.exercises,key,newName,newVideo))changed=true;});
+    }else{
+      if(patchExerciseListVideo(blk.exercises,key,newName,newVideo))changed=true;
+    }
+  }));
+  return changed;
+}
+async function propagateExerciseEdit(oldName,newName,newVideo){
+  const key=oldName.trim().toLowerCase();
+  for(const plan of planes){
+    let changed=false;
+    if(plan.weeks)Object.values(plan.weeks).forEach(days=>{if(patchDaysVideo(days,key,newName,newVideo))changed=true;});
+    if(patchDaysVideo(plan.days,key,newName,newVideo))changed=true;
+    if(changed)await setDoc(doc(db,'planes',plan.id),plan);
+  }
+  for(const c of clients){
+    let changed=false;
+    if(c.weeks)Object.values(c.weeks).forEach(days=>{if(patchDaysVideo(days,key,newName,newVideo))changed=true;});
+    if(patchDaysVideo(c.days,key,newName,newVideo))changed=true;
+    if(changed)await setDoc(doc(db,'clients',c.id),c);
+  }
+}
+
 window.saveExercise=async function(){
   const name=document.getElementById('em-name').value.trim();
   if(!name){alert('Ingresá el nombre.');return}
@@ -3312,9 +3351,12 @@ window.saveExercise=async function(){
   const target=pendingExTarget;pendingExTarget=null;
   if(existingId){
     const ex=exDB.find(e=>e.id===existingId);
+    const oldName=ex?.name||name;
     if(ex){ex.name=name;ex.cat=cat;ex.video=video;}
     await setDoc(doc(db,'exercises',existingId),{id:existingId,name,cat,video});
-    toast('✅ Ejercicio actualizado');
+    toast('⏳ Actualizando en rutinas existentes...');
+    await propagateExerciseEdit(oldName,name,video);
+    toast('✅ Ejercicio actualizado en el catálogo y en todas las rutinas');
   } else {
     const id='ex'+Date.now();
     await setDoc(doc(db,'exercises',id),{id,name,cat,video});
