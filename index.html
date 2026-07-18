@@ -296,7 +296,7 @@ textarea{resize:vertical;min-height:52px}
 .pub-plan-desc{font-size:.85rem;color:var(--mu);margin-bottom:14px;line-height:1.6}
 .pub-plan-price{font-family:'Space Grotesk',sans-serif;font-size:1.5rem;font-weight:700;color:var(--ac2);margin-bottom:14px}
 /* CF TIMER */
-.cf-timer-bar{position:fixed;bottom:0;left:0;right:0;z-index:900;background:var(--s1);border-top:3px solid var(--or);padding:10px 16px;box-shadow:0 -4px 20px rgba(0,0,0,.5);display:none}
+.cf-timer-bar{position:fixed;bottom:0;left:0;right:0;z-index:9999;background:var(--s1);border-top:3px solid var(--or);padding:10px 16px;box-shadow:0 -4px 20px rgba(0,0,0,.5);display:none}
 .cf-timer-inner{max-width:980px;margin:0 auto;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .cf-timer-display{font-family:'Space Grotesk',sans-serif;font-size:2.4rem;font-weight:700;color:var(--or);min-width:90px;text-align:center;line-height:1}
 .cf-timer-info{flex:1;min-width:120px}
@@ -976,7 +976,7 @@ function toggleTheme(){
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, getDoc, getDocs, getDocFromCache, getDocsFromCache, setDoc, updateDoc, deleteDoc, addDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, getDoc, getDocs, getDocFromCache, getDocsFromCache, getDocFromServer, getDocsFromServer, setDoc, updateDoc, deleteDoc, addDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 /* r3 */
@@ -3503,7 +3503,7 @@ async function loadPlanes(){
 // bloqueada por permisos para un alumno no-admin.
 async function ensurePlanesLoadedForAlumno(){
   if(planes.length)return;
-  const snap=await getDocsSafe(collection(db,'planes'));
+  const snap=await getDocsFromServer(collection(db,'planes'));
   planes=snap.docs.map(d=>({id:d.id,...d.data()}));
 }
 
@@ -5037,7 +5037,11 @@ async function renderAlumnoPlanView(sub,uid){
     </div>`;
     return;
   }
-  const planSnap=await getDoc(doc(db,'planes',planId));
+  // Siempre desde el servidor: con persistencia offline habilitada, un
+  // getDoc normal puede servir una copia vieja en caché si el entrenador
+  // cambió algo (ej. el link de un video) recién y el alumno no refrescó
+  // en un buen rato.
+  const planSnap=await getDocFromServer(doc(db,'planes',planId));
   if(!planSnap.exists()){
     contentEl.innerHTML=`<div class="card" style="text-align:center;padding:30px 20px"><h3>No se encontró tu plan</h3></div>`;
     return;
