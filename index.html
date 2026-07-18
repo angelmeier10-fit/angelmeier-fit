@@ -2565,7 +2565,23 @@ async function updateClient(){
 }
 window.updateClient=updateClient;
 
-function copyLink(link){navigator.clipboard.writeText(link).then(()=>toast('📋 Link copiado'))}
+function copyLink(link){
+  navigator.clipboard.writeText(link).then(()=>toast('📋 Link copiado')).catch(()=>{
+    // Si la Clipboard API falla (permiso denegado, pestaña sin foco, etc.) no
+    // avisar nada dejaba al usuario pegando lo que sea que hubiera antes en el
+    // portapapeles, sin saber que el link real nunca se copió.
+    try{
+      const ta=document.createElement('textarea');
+      ta.value=link;ta.style.position='fixed';ta.style.opacity='0';
+      document.body.appendChild(ta);ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      toast('📋 Link copiado');
+    }catch(err){
+      toast('⚠️ No se pudo copiar el link. Copialo a mano: '+link);
+    }
+  });
+}
 window.copyLink=copyLink;
 
 async function duplicateClient(id){
@@ -3540,7 +3556,6 @@ async function renderProgramaUnificadoHtml(prog,cats){
   if(prog.type==='personal'){
     const c=prog.client;
     const{exerciseLogs,notes}=buildProgressSummary(c.progress||{},c.days,c.id);
-    const link=`${location.origin}${location.pathname}?client=${c.id}`;
     const progressHtml=renderProgressDetailBlock(c.id,exerciseLogs,c.days,notes)||'<div style="font-size:.78rem;color:var(--mu)">Sin registros todavía.</div>';
     const expiredNow=c.expiry&&(new Date(c.expiry+'T00:00:00')<new Date());
     const expiryBadge=c.expiry?`<span class="badge" style="background:${expiredNow?'#f8717122':'#fbbf2422'};color:${expiredNow?'var(--rd)':'var(--yw)'}">${expiredNow?'⏰ Vencido':'📅 Vence: '+new Date(c.expiry+'T00:00:00').toLocaleDateString('es-AR')}</span>`:'';
@@ -3550,10 +3565,10 @@ async function renderProgramaUnificadoHtml(prog,cats){
     return`<div style="padding:8px 0;border-bottom:1px solid var(--bd)">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
         <div style="font-size:.84rem"><b>🎯 Plan personalizado</b>${c.routineName?' — '+c.routineName:''} ${payBadge} ${expiryBadge}</div>
-        <div style="display:flex;gap:6px">
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
           <button class="btn bcy xs" onclick="openEdit('${c.id}')">✏️ Editar</button>
           <button class="btn bcy xs" onclick="duplicateClient('${c.id}')">📋 Duplicar</button>
-          <button class="btn bgr xs" onclick="copyLink('${link}')">🔗 Link</button>
+          <button class="btn bpu xs" onclick="migrarClienteAAlumno('${c.id}')" title="Crea una cuenta con usuario y contraseña para este alumno, en reemplazo del acceso por link">🔑 Migrar a cuenta con login</button>
         </div>
       </div>
       ${waLink||mpLink?`<div style="display:flex;gap:10px;margin-top:4px">${waLink}${mpLink}</div>`:''}
@@ -3566,7 +3581,6 @@ async function renderProgramaUnificadoHtml(prog,cats){
     const{exerciseLogs,notes}=buildProgressSummary(m.progress||{},days,`${plan.id}-${m.id}`);
     const expired=m.expiry&&(new Date(m.expiry+'T00:00:00')<new Date());
     const statusBadge=m.status==='active'&&!expired?'<span class="badge bgr2">✅ Activo</span>':expired?'<span class="badge" style="background:#f8717122;color:var(--rd)">⏰ Vencido</span>':'<span class="badge byw2">⏳ Pendiente</span>';
-    const memberLink=`${location.origin}${location.pathname}?plan=${plan.id}&member=${m.id}`;
     const progressHtml=renderProgressDetailBlock(`${plan.id}-${m.id}`,exerciseLogs,days,notes)||'<div style="font-size:.78rem;color:var(--mu)">Sin registros todavía.</div>';
     return`<div style="padding:8px 0;border-bottom:1px solid var(--bd)">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
@@ -3574,7 +3588,6 @@ async function renderProgramaUnificadoHtml(prog,cats){
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
           <input type="date" id="alu-exp-${plan.id}-${m.id}" value="${m.expiry||''}" style="font-size:.78rem;padding:4px 6px">
           <button class="btn bcy xs" onclick="updateMemberExpiry('${plan.id}','${m.id}')">💾 Vencimiento</button>
-          <button class="btn bgr xs" onclick="copyLink('${memberLink}')">🔗 Link</button>
           <button class="btn bd2 xs" onclick="removeMemberFromAlumnos('${plan.id}','${m.id}')">✕ Sacar</button>
         </div>
       </div>
@@ -3596,7 +3609,7 @@ async function renderProgramaUnificadoHtml(prog,cats){
   const{exerciseLogs,notes}=buildProgressSummary(s.progress||{},days,`alu-${uid}`);
   const vencido=s.status==='active'&&s.expiry&&new Date(s.expiry+'T00:00:00')<new Date();
   const statusLabel=vencido?SUSCRIPTOR_STATUS_LABEL.expired:(SUSCRIPTOR_STATUS_LABEL[s.status]||s.status);
-  const expTxt=s.expiry?new Date(s.expiry+'T00:00:00').toLocaleDateString('es-AR'):'—';
+  const expTxt=s.expiry?new Date(s.expiry+'T00:00:00').toLocaleDateString('es-AR'):'Sin vencimiento';
   const defaultExp=new Date();defaultExp.setDate(defaultExp.getDate()+30);
   const catOptions=cats.map(c=>`<option value="${c.id}"${c.id===s.categoria?' selected':''}>${c.label}</option>`).join('')
     +`<option value="__personal__"${s.categoria==='__personal__'?' selected':''}>🎯 Plan personalizado</option>`;
@@ -3607,15 +3620,20 @@ async function renderProgramaUnificadoHtml(prog,cats){
   }
   const accionBtn=(s.status!=='active'||vencido)?`
     <input type="date" id="susc-exp-${uid}" value="${defaultExp.toISOString().split('T')[0]}" style="width:auto;font-size:.78rem">
+    <label style="font-size:.72rem;display:flex;align-items:center;gap:3px"><input type="checkbox" id="susc-noexp-${uid}" onchange="document.getElementById('susc-exp-${uid}').disabled=this.checked">Sin vencimiento</label>
     ${startWeekHtml}
     <button class="btn bgr xs" onclick="activarSuscriptorManual('${uid}')">✅ Activar</button>`:
-    `<button class="btn bg2 xs" onclick="desactivarSuscriptorManual('${uid}')">⛔ Desactivar</button>`;
-  const editarPlanBtn=(s.categoria==='__personal__'&&s.planId)?`<button class="btn bpu xs" onclick="irAEditarPlanPersonal('${s.planId}')">✏️ Editar su plan</button>`:'';
+    `<input type="date" id="susc-exp-${uid}" value="${s.expiry||''}" ${s.expiry?'':'disabled'} style="width:auto;font-size:.78rem">
+    <label style="font-size:.72rem;display:flex;align-items:center;gap:3px"><input type="checkbox" id="susc-noexp-${uid}" ${s.expiry?'':'checked'} onchange="document.getElementById('susc-exp-${uid}').disabled=this.checked">Sin vencimiento</label>
+    <button class="btn bg2 xs" onclick="editarVencimientoSuscriptor('${uid}')">💾 Guardar vencimiento</button>
+    <button class="btn bg2 xs" onclick="desactivarSuscriptorManual('${uid}')">⛔ Desactivar</button>`;
+  const editarPlanBtn=(s.categoria==='__personal__'&&s.planId)?`<button class="btn bpu xs" onclick="irAEditarPlanPersonal('${s.planId}')">✏️ Editar su plan</button>
+    <button class="btn bd2 xs" onclick="borrarPlanSuscriptor('${uid}','${s.planId}')">🗑️ Borrar plan</button>`:'';
   const catTxt=s.categoria==='__personal__'?'🎯 Plan personalizado':(catLabel[s.categoria]||s.categoria||'—');
   const progressHtml=renderProgressDetailBlock(`alu-${uid}`,exerciseLogs,days,notes)||'<div style="font-size:.78rem;color:var(--mu)">Sin registros todavía.</div>';
   return`<div style="padding:8px 0;border-bottom:1px solid var(--bd)">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
-      <div style="font-size:.84rem"><b>🔔 Suscripción — ${catTxt}</b> · ${statusLabel}${s.expiry?' · vence '+expTxt:''}</div>
+      <div style="font-size:.84rem"><b>🔔 Suscripción — ${catTxt}</b> · ${statusLabel} · ${s.expiry?'vence '+expTxt:'sin vencimiento'}</div>
       <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
         ${editarPlanBtn}
         <select id="susc-cat-${uid}" style="width:auto;font-size:.78rem">${catOptions}</select>
@@ -3660,10 +3678,15 @@ async function renderAlumnosUnificado(searchTerm){
           <button class="btn bp xs" onclick="addUniAlumnoToPlan(${ai})">Agregar</button>
         </div>
       </div>`:'';
+    const subProg=a.programs.find(p=>p.type==='subscription');
+    const activoSwitch=subProg?(subProg.sub.activo===false?
+      `<button class="btn bd2 xs" onclick="event.stopPropagation();toggleAlumnoActivo('${subProg.uid}',false,${ai})" title="Alumno inactivo: sin acceso a ningún programa. Click para reactivar">⚪ Inactivo</button>`:
+      `<button class="btn bgr xs" onclick="event.stopPropagation();toggleAlumnoActivo('${subProg.uid}',true,${ai})" title="Alumno activo. Click para desactivar todo su acceso">🟢 Activo</button>`):'';
     return`<div class="card">
       <div style="display:flex;align-items:center;gap:10px;cursor:pointer" onclick="document.getElementById('${bodyId}').classList.toggle('collapsed');this.querySelector('.card-toggle').style.transform=document.getElementById('${bodyId}').classList.contains('collapsed')?'rotate(-90deg)':''">
         <div class="member-av">${a.name.charAt(0).toUpperCase()}</div>
         <div style="flex:1"><div style="font-weight:700;font-size:.92rem">${a.name}</div><div style="font-size:.74rem;color:var(--mu)">${a.email||''} · ${a.programs.length} programa${a.programs.length!==1?'s':''}</div></div>
+        ${activoSwitch}
         ${convertBtn}
         <button class="btn bd2 xs" onclick="event.stopPropagation();deleteAlumnoCompleto(${ai})" title="Borrar alumno">🗑️ Borrar</button>
         <span class="card-toggle" style="transition:transform .2s;transform:rotate(-90deg)">▼</span>
@@ -4944,7 +4967,7 @@ window.cambiarCategoriaGlobalAlumno=async function(categoria){
 
 function renderAlumnoCV(plan,member,uid){
   const akey='alu-'+uid;
-  const expDate=member.expiry?new Date(member.expiry+'T00:00:00').toLocaleDateString('es-AR'):'—';
+  const expDate=member.expiry?new Date(member.expiry+'T00:00:00').toLocaleDateString('es-AR'):'Sin vencimiento';
   const daysLeft=member.expiry?Math.max(0,Math.ceil((new Date(member.expiry+'T00:00:00')-new Date())/(1000*60*60*24))):null;
   const days=getMemberPlanDays(plan,member);
   const fakeC={id:akey,progress:member.progress||{}};
@@ -5080,9 +5103,11 @@ async function poblarCategoriaSelect(id){
 }
 
 window.activarSuscriptorManual=async function(uid){
-  const expiry=document.getElementById('susc-exp-'+uid).value;
-  if(!expiry){toast('⚠️ Elegí una fecha de vencimiento');return}
-  if(!confirm('¿Activar acceso hasta el '+new Date(expiry+'T00:00:00').toLocaleDateString('es-AR')+'?'))return;
+  const sinVencimiento=document.getElementById('susc-noexp-'+uid)?.checked;
+  const expiry=sinVencimiento?'':document.getElementById('susc-exp-'+uid).value;
+  if(!sinVencimiento&&!expiry){toast('⚠️ Elegí una fecha de vencimiento o marcá "Sin vencimiento"');return}
+  const confirmMsg=expiry?'¿Activar acceso hasta el '+new Date(expiry+'T00:00:00').toLocaleDateString('es-AR')+'?':'¿Activar acceso sin restricción de vencimiento?';
+  if(!confirm(confirmMsg))return;
   const subRef=doc(db,'subscribers',uid);
   const subSnap=await getDoc(subRef);
   if(!subSnap.exists())return;
@@ -5113,12 +5138,37 @@ window.activarSuscriptorManual=async function(uid){
   refreshSuscriptorPanels();
 };
 
+// Cambia el vencimiento de un alumno ya activo (fecha o "sin restricción")
+// sin pasar por desactivar/reactivar.
+window.editarVencimientoSuscriptor=async function(uid){
+  const sinVencimiento=document.getElementById('susc-noexp-'+uid)?.checked;
+  const expiry=sinVencimiento?'':document.getElementById('susc-exp-'+uid).value;
+  if(!sinVencimiento&&!expiry){toast('⚠️ Elegí una fecha de vencimiento o marcá "Sin vencimiento"');return}
+  await updateDoc(doc(db,'subscribers',uid),{expiry});
+  toast(expiry?'✅ Vencimiento actualizado':'✅ Ahora sin restricción de vencimiento');
+  suscriptoresCache=null;
+  refreshSuscriptorPanels();
+};
+
+window.toggleAlumnoActivo=async function(uid,currentActivo,ai){
+  const next=!currentActivo;
+  if(!confirm(next?'¿Reactivar a este alumno? Recupera acceso a todos sus programas.':'¿Desactivar a este alumno? Pierde acceso a todos sus programas, pero no se borra nada y puede reactivarse después.'))return;
+  await updateDoc(doc(db,'subscribers',uid),{activo:next});
+  toast(next?'🟢 Alumno activado':'⚪ Alumno desactivado');
+  suscriptoresCache=null;
+  renderAlumnosUnificado(document.getElementById('uni-search')?.value);
+};
+
 window.cambiarCategoriaSuscriptorManual=async function(uid){
   const categoria=document.getElementById('susc-cat-'+uid).value;
   if(categoria==='__personal__'){
     const subSnap=await getDoc(doc(db,'subscribers',uid));
     const sub=subSnap.data();
-    if(sub.categoria==='__personal__'){toast('Ya tiene un plan personalizado asignado.');return}
+    // Si ya figura como personal, solo bloqueamos el reemplazo cuando el plan
+    // realmente existe en Firestore — si fue borrado o quedó roto, dejamos
+    // seguir para crear uno nuevo en vez de fallar en silencio.
+    const planExistente=sub.categoria==='__personal__'&&sub.planId?await getDoc(doc(db,'planes',sub.planId)):null;
+    if(planExistente&&planExistente.exists()){toast('Ya tiene un plan personalizado asignado.');return}
     const planId=await crearPlanPersonalVacio(sub.name||sub.email);
     await updateDoc(doc(db,'subscribers',uid),{categoria,planId});
     toast('✅ Plan personalizado creado y asignado');
@@ -5131,6 +5181,19 @@ window.cambiarCategoriaSuscriptorManual=async function(uid){
     await updateDoc(doc(db,'subscribers',uid),{categoria,planId});
     toast('✅ Categoría actualizada');
   }
+  suscriptoresCache=null;
+  refreshSuscriptorPanels();
+};
+
+// Borra el plan personalizado de un suscriptor (y su progreso) para poder
+// asignarle otra categoría/plan desde cero, sin el bloqueo de
+// cambiarCategoriaSuscriptorManual ("Ya tiene un plan personalizado asignado.").
+window.borrarPlanSuscriptor=async function(uid,planId){
+  if(!confirm('¿Borrar el plan personalizado de este alumno? Se pierde el plan y todo su progreso registrado. Después vas a poder asignarle otra categoría o plan.'))return;
+  await deleteDoc(doc(db,'planes',planId));
+  planes=planes.filter(p=>p.id!==planId);
+  await updateDoc(doc(db,'subscribers',uid),{categoria:'',planId:null,status:'pending',progress:{}});
+  toast('🗑️ Plan borrado — elegí una nueva categoría y guardá');
   suscriptoresCache=null;
   refreshSuscriptorPanels();
 };
@@ -5208,6 +5271,63 @@ window.altaManualAlumno=async function(nameId,emailId,catId,refreshFn){
       'auth/network-request-failed':'Sin conexión. Revisá tu internet e intentá de nuevo.'
     };
     toast('⚠️ '+(msgs[err.code]||('No se pudo crear la cuenta ('+err.code+').')));
+  }
+};
+
+// Migra un alumno viejo con acceso por link (clients/{id}) a una cuenta con
+// usuario y contraseña (subscribers/{uid} + plan personal), igual que
+// altaManualAlumno pero conservando la rutina/progreso ya cargados.
+window.migrarClienteAAlumno=async function(clientId){
+  const c=clients.find(cl=>cl.id===clientId);
+  if(!c)return;
+  if(!c.email){toast('⚠️ Este alumno no tiene email cargado, necesario para crear la cuenta. Editalo primero.');return}
+  if(!confirm(`¿Migrar a ${c.name} a una cuenta con usuario y contraseña? Le va a llegar un email para definir su contraseña, y deja de necesitar el link viejo.`))return;
+  const tempPass=Math.random().toString(36).slice(-10)+'Aa1!';
+  try{
+    const sAuth=getSecondaryAuth();
+    const cred=await createUserWithEmailAndPassword(sAuth,c.email,tempPass);
+    const uid=cred.user.uid;
+    await signOut(sAuth);
+    const planId='plan'+Date.now();
+    const personalPlan={
+      id:planId,name:'Plan personalizado — '+c.name,kind:'personal',
+      desc:'',price:'',durationDays:365,mpLink:c.mpLink||'',img:'',level:c.level||'',cat:'',
+      totalWeeks:c.totalWeeks||12,mesoWeeks:c.mesoWeeks||4,weeks:c.weeks||{[c.activeWeek||1]:c.days||[]},
+      activeWeek:c.activeWeek||1,days:c.days||[],
+      members:[],public:false,createdAt:new Date().toLocaleDateString('es-AR')
+    };
+    await setDoc(doc(db,'planes',planId),personalPlan);
+    planes.push(personalPlan);
+    // Las claves de progreso de un client viejo (ej. "c1234-1-1-e0-logs") están
+    // prefijadas con su propio id. La vista de suscripción arma esas mismas
+    // claves con el prefijo `alu-${uid}`, así que hay que remapearlas o el
+    // progreso migrado queda invisible aunque los datos estén completos.
+    const remappedProgress={};
+    Object.entries(c.progress||{}).forEach(([k,v])=>{
+      const newKey=k.startsWith(c.id+'-')?'alu-'+uid+k.slice(c.id.length):k;
+      remappedProgress[newKey]=v;
+    });
+    await setDoc(doc(db,'subscribers',uid),{
+      email:c.email,name:c.name,categoria:'__personal__',planId,
+      status:c.payStatus==='paid'?'active':'pending',
+      expiry:c.expiry||null,activo:true,progress:remappedProgress,
+      // Sin esto, getMemberCurrentWeekNum no sabe qué semana mostrar y el
+      // progreso migrado queda invisible aunque los datos estén completos.
+      startDate:new Date().toISOString().split('T')[0],startWeek:c.activeWeek||1
+    });
+    await sendPasswordResetEmail(auth,c.email);
+    await deleteDoc(doc(db,'clients',clientId));
+    clients=clients.filter(cl=>cl.id!==clientId);
+    toast('✅ Migrado — le llegó un email para definir su contraseña.');
+    suscriptoresCache=null;
+    renderAlumnosUnificado(document.getElementById('uni-search')?.value);
+  }catch(err){
+    const msgs={
+      'auth/email-already-in-use':'Ese email ya tiene una cuenta creada (puede que ya esté migrado o sea suscriptor).',
+      'auth/invalid-email':'El email no es válido.',
+      'auth/network-request-failed':'Sin conexión. Revisá tu internet e intentá de nuevo.'
+    };
+    toast('⚠️ '+(msgs[err.code]||('No se pudo migrar la cuenta ('+err.code+').')));
   }
 };
 
