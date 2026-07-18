@@ -313,6 +313,7 @@ textarea{resize:vertical;min-height:52px}
 @keyframes spin{to{transform:rotate(360deg)}}
 .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;display:none;align-items:center;justify-content:center;padding:20px}
 .modal-bg.open{display:flex}
+#cf-config-modal{z-index:9999}
 .modal{background:var(--s1);border:1px solid var(--bd);border-radius:var(--ra);padding:22px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto}
 .modal h2{margin-bottom:16px}
 .tpl-editor-body .blk-hdr>button,.tpl-editor-body .cf-hdr>button{display:none}
@@ -609,6 +610,19 @@ setTimeout(()=>{
     <button onclick="openContact()" style="background:#25D366;color:#fff;border:none;border-radius:50px;padding:12px 20px;font-size:.9rem;font-weight:700;font-family:inherit;cursor:pointer;display:flex;align-items:center;gap:8px;box-shadow:0 4px 20px rgba(37,211,102,.4)">
       💬 Contactar a Angel
     </button>
+  </div>
+</div>
+
+<!-- CF TIMER CONFIG MODAL: se abre antes de arrancar el timer para que el
+     alumno pueda ver/ajustar rondas, tiempo de trabajo y descanso -->
+<div class="modal-bg" id="cf-config-modal">
+  <div class="modal">
+    <h2>⏱ Configurar timer</h2>
+    <div id="cf-config-fields" style="display:flex;flex-direction:column;gap:10px;margin:14px 0"></div>
+    <div style="display:flex;gap:10px">
+      <button class="btn bg2" style="flex:1;justify-content:center" onclick="document.getElementById('cf-config-modal').classList.remove('open')">Cancelar</button>
+      <button class="btn bgr" style="flex:1;justify-content:center" onclick="confirmCFTimerConfig()">▶ Iniciar</button>
+    </div>
   </div>
 </div>
 
@@ -3063,7 +3077,7 @@ function renderCFBlock(c,bkey,blk,bi){
       </div>`;
     }).join('');
     const sectionLabel=sections.length>1?`<div style="font-size:.7rem;color:var(--mu);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Sección ${si+1}</div>`:'';
-    const timerBtn=`<button onclick="launchCFTimer('${blk.cftype}',${JSON.stringify(sec.meta||{}).replace(/"/g,"'")},'')" style="display:flex;align-items:center;gap:7px;background:${cfg.color}22;color:${cfg.color};border:1px solid ${cfg.color}44;border-radius:9px;padding:9px 16px;font-size:.85rem;font-weight:700;font-family:inherit;cursor:pointer;width:100%;justify-content:center;margin-bottom:${si<sections.length-1&&sec.pause?4:10}px">
+    const timerBtn=`<button onclick='openCFTimerConfig(${JSON.stringify(blk.cftype)},${JSON.stringify(sec.meta||{})})' style="display:flex;align-items:center;gap:7px;background:${cfg.color}22;color:${cfg.color};border:1px solid ${cfg.color}44;border-radius:9px;padding:9px 16px;font-size:.85rem;font-weight:700;font-family:inherit;cursor:pointer;width:100%;justify-content:center;margin-bottom:${si<sections.length-1&&sec.pause?4:10}px">
         ⏱ Iniciar timer${sections.length>1?' — Sección '+(si+1):' del WOD'}
       </button>`;
     const pauseHtml=(si<sections.length-1&&sec.pause)?`<div style="text-align:center;font-size:.78rem;color:var(--mu);font-weight:600;padding:6px 0 10px">⏸ Pausa: ${sec.pause}</div>`:'';
@@ -5829,6 +5843,31 @@ function launchCFTimer(cftype, meta, customLabel){
 }
 window.launchCFTimer=launchCFTimer;
 
+// Modal previo al timer: deja ver/editar rondas, tiempo de trabajo y
+// descanso (los campos configurados por el entrenador para ese bloque)
+// antes de arrancar — tanto el entrenador como el alumno pueden ajustarlo.
+let pendingCFTimer=null;
+window.openCFTimerConfig=function(cftype,meta){
+  pendingCFTimer={cftype};
+  const cfg=CF_TYPES[cftype]||{fields:[]};
+  const fieldsToShow=cfg.fields.length?cfg.fields:[{id:'duration',label:'Duración'}];
+  document.getElementById('cf-config-fields').innerHTML=fieldsToShow.map(f=>
+    `<div class="fg"><label>${f.label}</label><input type="text" id="cfc-${f.id}" value="${meta?.[f.id]||''}" placeholder="${f.placeholder||f.label}"></div>`
+  ).join('');
+  document.getElementById('cf-config-modal').classList.add('open');
+};
+window.confirmCFTimerConfig=function(){
+  if(!pendingCFTimer)return;
+  const{cftype}=pendingCFTimer;
+  const cfg=CF_TYPES[cftype]||{fields:[]};
+  const fieldsToShow=cfg.fields.length?cfg.fields:[{id:'duration',label:'Duración'}];
+  const meta={};
+  fieldsToShow.forEach(f=>{const el=document.getElementById('cfc-'+f.id);if(el)meta[f.id]=el.value.trim()});
+  document.getElementById('cf-config-modal').classList.remove('open');
+  pendingCFTimer=null;
+  launchCFTimer(cftype,meta,'');
+};
+
 window.launchExTimer=function(exTimerId, exName, prefillVal){
   const val=(prefillVal||'').trim();
   if(!val){toast('Este ejercicio no tiene tiempo definido. Ingresalo en la barra del timer.');
@@ -5850,19 +5889,6 @@ window.launchExTimer=function(exTimerId, exName, prefillVal){
   cfTimerUpdateDisplay();
   // Auto-start with 10s countdown
   cfTimerToggle();
-};
-
-window.launchCFTimerFromUI=function(cftype, tid){
-  const g=id=>document.getElementById(id);
-  const meta={};
-  if(g('tcfg-dur-'+tid)) meta.duration=g('tcfg-dur-'+tid).value;
-  if(g('tcfg-int-'+tid)) meta.interval=g('tcfg-int-'+tid).value;
-  if(g('tcfg-work-'+tid)) meta.work=g('tcfg-work-'+tid).value;
-  if(g('tcfg-rest-'+tid)) meta.rest=g('tcfg-rest-'+tid).value;
-  if(g('tcfg-rnd-'+tid)) meta.rounds=g('tcfg-rnd-'+tid).value;
-  launchCFTimer(cftype, meta, '');
-  // Auto-start with 10s countdown
-  setTimeout(()=>cfTimerToggle(),100);
 };
 
 window.clientLogout=function(clientId){
