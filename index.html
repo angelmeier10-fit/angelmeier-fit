@@ -1192,6 +1192,7 @@ onAuthStateChanged(auth,async(user)=>{
 
 async function initAlumno(user){
   document.getElementById('view-alumno').style.display='block';
+  await ensurePlanesLoadedForAlumno();
   const ref=doc(db,'subscribers',user.uid);
   const snap=await getDoc(ref);
   if(!snap.exists()){
@@ -3495,6 +3496,15 @@ async function loadPlanes(){
   const snap=await getDocsSafe(collection(db,'planes'));
   planes=snap.docs.map(d=>({id:d.id,...d.data()}));
   buildNotifications();
+}
+// Versión liviana para la sesión de alumno: solo trae `planes` (necesario
+// para descubrir sus membresías de plan grupal, findAllProgramsForAlumno),
+// sin buildNotifications() — esa función lee toda la colección subscribers,
+// bloqueada por permisos para un alumno no-admin.
+async function ensurePlanesLoadedForAlumno(){
+  if(planes.length)return;
+  const snap=await getDocsSafe(collection(db,'planes'));
+  planes=snap.docs.map(d=>({id:d.id,...d.data()}));
 }
 
 function showPlanesPanel(p,btn){
