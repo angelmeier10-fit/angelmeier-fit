@@ -3077,7 +3077,8 @@ function renderCFBlock(c,bkey,blk,bi){
       </div>`;
     }).join('');
     const sectionLabel=sections.length>1?`<div style="font-size:.7rem;color:var(--mu);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Sección ${si+1}</div>`:'';
-    const timerBtn=`<button onclick='openCFTimerConfig(${JSON.stringify(blk.cftype)},${JSON.stringify(sec.meta||{})})' style="display:flex;align-items:center;gap:7px;background:${cfg.color}22;color:${cfg.color};border:1px solid ${cfg.color}44;border-radius:9px;padding:9px 16px;font-size:.85rem;font-weight:700;font-family:inherit;cursor:pointer;width:100%;justify-content:center;margin-bottom:${si<sections.length-1&&sec.pause?4:10}px">
+    const exNamesForTimer=(sec.exercises||[]).map(e=>e.name).filter(Boolean);
+    const timerBtn=`<button onclick='openCFTimerConfig(${JSON.stringify(blk.cftype)},${JSON.stringify(sec.meta||{})},${JSON.stringify(exNamesForTimer)})' style="display:flex;align-items:center;gap:7px;background:${cfg.color}22;color:${cfg.color};border:1px solid ${cfg.color}44;border-radius:9px;padding:9px 16px;font-size:.85rem;font-weight:700;font-family:inherit;cursor:pointer;width:100%;justify-content:center;margin-bottom:${si<sections.length-1&&sec.pause?4:10}px">
         ⏱ Iniciar timer${sections.length>1?' — Sección '+(si+1):' del WOD'}
       </button>`;
     const pauseHtml=(si<sections.length-1&&sec.pause)?`<div style="text-align:center;font-size:.78rem;color:var(--mu);font-weight:600;padding:6px 0 10px">⏸ Pausa: ${sec.pause}</div>`:'';
@@ -5603,7 +5604,9 @@ function cfTimerUpdateDisplay(){
   }
   if(cfTimer.mode==='interval'||cfTimer.mode==='tabata'){
     const phase=cfTimer.isWork?'🔥 TRABAJO':'😮‍💨 DESCANSO';
-    sub.textContent=`${phase} · Ronda ${cfTimer.currentRound} / ${cfTimer.rounds}`;
+    const nEx=cfTimer.exercises?.length||1;
+    const exTxt=nEx>1?` · Ejercicio ${(cfTimer.currentExIdx||0)+1}/${nEx}${cfTimer.exercises[cfTimer.currentExIdx]?' — '+cfTimer.exercises[cfTimer.currentExIdx]:''}`:'';
+    sub.textContent=`${phase}${exTxt} · Ronda ${cfTimer.currentRound} / ${cfTimer.rounds}`;
   } else if(cfTimer.mode==='emom'){
     const minuto=cfTimer.currentRound;
     sub.textContent=isFinite(cfTimer.rounds)?`Minuto ${minuto} / ${cfTimer.rounds}`:`Minuto ${minuto}`;
@@ -5665,8 +5668,16 @@ function cfTimerTick(){
         cfTimer.totalSecs=cfTimer.restSecs;
         cfTimerSetColor('var(--cy)');
       } else {
-        // Switch to work, new round
-        cfTimer.currentRound++;
+        // Switch to work: si hay varios ejercicios por ronda (circuito), avanza
+        // al siguiente ejercicio primero y recién suma una ronda cuando se
+        // completó la vuelta entera — antes contaba 1 ronda = 1 ciclo trabajo/
+        // descanso sin importar cuántos ejercicios tenía la ronda.
+        const nEx=cfTimer.exercises?.length||1;
+        cfTimer.currentExIdx=(cfTimer.currentExIdx||0)+1;
+        if(cfTimer.currentExIdx>=nEx){
+          cfTimer.currentExIdx=0;
+          cfTimer.currentRound++;
+        }
         if(cfTimer.currentRound>cfTimer.rounds){
           clearInterval(cfTimer.interval);cfTimer.running=false;
           document.getElementById('cf-timer-startstop').textContent='▶ Iniciar';
@@ -5744,7 +5755,7 @@ window.cfTimerReset=function(){
   document.getElementById('cf-timer-startstop').textContent='▶ Iniciar';
   if(cfTimer.mode==='interval'||cfTimer.mode==='tabata'){
     cfTimer.currentSecs=cfTimer.workSecs;cfTimer.totalSecs=cfTimer.workSecs;
-    cfTimer.currentRound=1;cfTimer.isWork=true;cfTimerSetColor('var(--or)');
+    cfTimer.currentRound=1;cfTimer.currentExIdx=0;cfTimer.isWork=true;cfTimerSetColor('var(--or)');
   } else if(cfTimer.mode==='emom'){
     cfTimer.currentSecs=cfTimer.emomInterval;cfTimer.totalSecs=cfTimer.emomInterval;
     cfTimer.currentRound=1;cfTimerSetColor('var(--cy)');
@@ -5789,11 +5800,13 @@ function parseToSecs(str){
   const n=parseFloat(s);return isNaN(n)?0:Math.round(n);
 }
 
-function launchCFTimer(cftype, meta, customLabel){
+function launchCFTimer(cftype, meta, customLabel, exNames){
   const bar=document.getElementById('cf-timer-bar');
   const label=document.getElementById('cf-timer-label');
   clearInterval(cfTimer.interval);cfTimer.running=false;
   document.getElementById('cf-timer-startstop').textContent='▶ Iniciar';
+  cfTimer.exercises=exNames&&exNames.length?exNames:null;
+  cfTimer.currentExIdx=0;
 
   if(cftype==='amrap'||cftype==='endurance'||cftype==='chipper'||cftype==='ladder'){
     const dur=parseToSecs(meta?.duration||meta?.timelimit||'20 min');
@@ -5834,7 +5847,8 @@ function launchCFTimer(cftype, meta, customLabel){
     cfTimer.mode='interval';cfTimer.workSecs=work;cfTimer.restSecs=rest;
     cfTimer.rounds=rounds;cfTimer.currentRound=1;cfTimer.isWork=true;
     cfTimer.totalSecs=work;cfTimer.currentSecs=work;
-    label.textContent=`${cftype.toUpperCase()} — ${meta?.work||meta?.duration||'40s'} / ${meta?.rest||'20s'} × ${rounds}`;
+    const nEx=cfTimer.exercises?.length||1;
+    label.textContent=`${cftype.toUpperCase()} — ${meta?.work||meta?.duration||'40s'} / ${meta?.rest||'20s'} × ${rounds} ronda${rounds!==1?'s':''}${nEx>1?' × '+nEx+' ejercicios':''}`;
     cfTimerSetColor('var(--or)');
   }
 
@@ -5847,8 +5861,8 @@ window.launchCFTimer=launchCFTimer;
 // descanso (los campos configurados por el entrenador para ese bloque)
 // antes de arrancar — tanto el entrenador como el alumno pueden ajustarlo.
 let pendingCFTimer=null;
-window.openCFTimerConfig=function(cftype,meta){
-  pendingCFTimer={cftype};
+window.openCFTimerConfig=function(cftype,meta,exNames){
+  pendingCFTimer={cftype,exNames};
   const cfg=CF_TYPES[cftype]||{fields:[]};
   const fieldsToShow=cfg.fields.length?cfg.fields:[{id:'duration',label:'Duración'}];
   document.getElementById('cf-config-fields').innerHTML=fieldsToShow.map(f=>
@@ -5858,14 +5872,14 @@ window.openCFTimerConfig=function(cftype,meta){
 };
 window.confirmCFTimerConfig=function(){
   if(!pendingCFTimer)return;
-  const{cftype}=pendingCFTimer;
+  const{cftype,exNames}=pendingCFTimer;
   const cfg=CF_TYPES[cftype]||{fields:[]};
   const fieldsToShow=cfg.fields.length?cfg.fields:[{id:'duration',label:'Duración'}];
   const meta={};
   fieldsToShow.forEach(f=>{const el=document.getElementById('cfc-'+f.id);if(el)meta[f.id]=el.value.trim()});
   document.getElementById('cf-config-modal').classList.remove('open');
   pendingCFTimer=null;
-  launchCFTimer(cftype,meta,'');
+  launchCFTimer(cftype,meta,'',exNames);
 };
 
 window.launchExTimer=function(exTimerId, exName, prefillVal){
