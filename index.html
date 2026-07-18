@@ -3607,9 +3607,8 @@ async function renderProgramaUnificadoHtml(prog,cats){
     if(planData)days=getMemberPlanDays(planData,{startWeek:s.startWeek||1,startDate:s.startDate||''});
   }
   const{exerciseLogs,notes}=buildProgressSummary(s.progress||{},days,`alu-${uid}`);
-  const vencido=s.status==='active'&&s.expiry&&new Date(s.expiry+'T00:00:00')<new Date();
-  const statusLabel=vencido?SUSCRIPTOR_STATUS_LABEL.expired:(SUSCRIPTOR_STATUS_LABEL[s.status]||s.status);
-  const expTxt=s.expiry?new Date(s.expiry+'T00:00:00').toLocaleDateString('es-AR'):'Sin vencimiento';
+  const acceso=estadoAccesoAlumno(s);
+  const vencido=acceso.clave==='vencido';
   const defaultExp=new Date();defaultExp.setDate(defaultExp.getDate()+30);
   const catOptions=cats.map(c=>`<option value="${c.id}"${c.id===s.categoria?' selected':''}>${c.label}</option>`).join('')
     +`<option value="__personal__"${s.categoria==='__personal__'?' selected':''}>🎯 Plan personalizado</option>`;
@@ -3618,22 +3617,37 @@ async function renderProgramaUnificadoHtml(prog,cats){
     const weekNums=planWeekNums(planData);
     if(weekNums.length>1)startWeekHtml=`<select id="susc-week-${uid}" style="width:auto">${weekNums.map(w=>`<option value="${w}"${w===s.startWeek?' selected':''}>Empieza semana ${w}</option>`).join('')}</select>`;
   }
-  const accionBtn=(s.status!=='active'||vencido)?`
+  // Una sola zona de acción por estado combinado, para no repetir el bug de
+  // mostrar dos controles contradictorios (ver estadoAccesoAlumno arriba).
+  let accionBtn;
+  if(acceso.clave==='inactivo'){
+    const necesitaDatos=s.status!=='active'||vencido;
+    accionBtn=necesitaDatos?`
     <input type="date" id="susc-exp-${uid}" value="${defaultExp.toISOString().split('T')[0]}" style="width:auto;font-size:.78rem">
     <label style="font-size:.72rem;display:flex;align-items:center;gap:3px"><input type="checkbox" id="susc-noexp-${uid}" onchange="document.getElementById('susc-exp-${uid}').disabled=this.checked">Sin vencimiento</label>
     ${startWeekHtml}
-    <button class="btn bgr xs" onclick="activarSuscriptorManual('${uid}')">✅ Activar</button>`:
-    `<input type="date" id="susc-exp-${uid}" value="${s.expiry||''}" ${s.expiry?'':'disabled'} style="width:auto;font-size:.78rem">
+    <button class="btn bgr xs" onclick="reactivarAlumnoCompleto('${uid}')">🔵 Reactivar alumno</button>`:
+    `<button class="btn bgr xs" onclick="reactivarAlumnoCompleto('${uid}')">🔵 Reactivar alumno</button>`;
+  }else if(acceso.clave==='pendiente'||vencido){
+    accionBtn=`
+    <input type="date" id="susc-exp-${uid}" value="${defaultExp.toISOString().split('T')[0]}" style="width:auto;font-size:.78rem">
+    <label style="font-size:.72rem;display:flex;align-items:center;gap:3px"><input type="checkbox" id="susc-noexp-${uid}" onchange="document.getElementById('susc-exp-${uid}').disabled=this.checked">Sin vencimiento</label>
+    ${startWeekHtml}
+    <button class="btn bgr xs" onclick="activarSuscriptorManual('${uid}')">${vencido?'🔁 Renovar':'✅ Confirmar pago y activar'}</button>`;
+  }else{
+    accionBtn=`
+    <input type="date" id="susc-exp-${uid}" value="${s.expiry||''}" ${s.expiry?'':'disabled'} style="width:auto;font-size:.78rem">
     <label style="font-size:.72rem;display:flex;align-items:center;gap:3px"><input type="checkbox" id="susc-noexp-${uid}" ${s.expiry?'':'checked'} onchange="document.getElementById('susc-exp-${uid}').disabled=this.checked">Sin vencimiento</label>
     <button class="btn bg2 xs" onclick="editarVencimientoSuscriptor('${uid}')">💾 Guardar vencimiento</button>
-    <button class="btn bg2 xs" onclick="desactivarSuscriptorManual('${uid}')">⛔ Desactivar</button>`;
+    <button class="btn bd2 xs" onclick="toggleAlumnoActivo('${uid}',true)">⛔ Desactivar</button>`;
+  }
   const editarPlanBtn=(s.categoria==='__personal__'&&s.planId)?`<button class="btn bpu xs" onclick="irAEditarPlanPersonal('${s.planId}')">✏️ Editar su plan</button>
     <button class="btn bd2 xs" onclick="borrarPlanSuscriptor('${uid}','${s.planId}')">🗑️ Borrar plan</button>`:'';
   const catTxt=s.categoria==='__personal__'?'🎯 Plan personalizado':(catLabel[s.categoria]||s.categoria||'—');
   const progressHtml=renderProgressDetailBlock(`alu-${uid}`,exerciseLogs,days,notes)||'<div style="font-size:.78rem;color:var(--mu)">Sin registros todavía.</div>';
   return`<div style="padding:8px 0;border-bottom:1px solid var(--bd)">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
-      <div style="font-size:.84rem"><b>🔔 Suscripción — ${catTxt}</b> · ${statusLabel} · ${s.expiry?'vence '+expTxt:'sin vencimiento'}</div>
+      <div style="font-size:.84rem"><b>🔔 Suscripción — ${catTxt}</b> · ${acceso.label}</div>
       <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
         ${editarPlanBtn}
         <select id="susc-cat-${uid}" style="width:auto;font-size:.78rem">${catOptions}</select>
@@ -3679,9 +3693,16 @@ async function renderAlumnosUnificado(searchTerm){
         </div>
       </div>`:'';
     const subProg=a.programs.find(p=>p.type==='subscription');
-    const activoSwitch=subProg?(subProg.sub.activo===false?
-      `<button class="btn bd2 xs" onclick="event.stopPropagation();toggleAlumnoActivo('${subProg.uid}',false,${ai})" title="Alumno inactivo: sin acceso a ningún programa. Click para reactivar">⚪ Inactivo</button>`:
-      `<button class="btn bgr xs" onclick="event.stopPropagation();toggleAlumnoActivo('${subProg.uid}',true,${ai})" title="Alumno activo. Click para desactivar todo su acceso">🟢 Activo</button>`):'';
+    const activoSwitch=(()=>{
+      if(!subProg)return'';
+      const acceso=estadoAccesoAlumno(subProg.sub);
+      // Solo el estado "todo en orden" se puede apagar con un click directo
+      // (no requiere datos extra). Cualquier otro estado necesita completar
+      // fecha/plan, así que el click expande la ficha en vez de reactivar a
+      // ciegas — ver bloque de detalle en renderProgramaUnificadoHtml.
+      if(acceso.clave==='activo')return`<button class="btn bgr xs" onclick="event.stopPropagation();toggleAlumnoActivo('${subProg.uid}',true)" title="Click para desactivar todo su acceso">${acceso.label}</button>`;
+      return`<span class="badge" style="font-size:.72rem" title="Expandí la ficha para completar los datos y reactivar">${acceso.label}</span>`;
+    })();
     return`<div class="card">
       <div style="display:flex;align-items:center;gap:10px;cursor:pointer" onclick="document.getElementById('${bodyId}').classList.toggle('collapsed');this.querySelector('.card-toggle').style.transform=document.getElementById('${bodyId}').classList.contains('collapsed')?'rotate(-90deg)':''">
         <div class="member-av">${a.name.charAt(0).toUpperCase()}</div>
@@ -5090,8 +5111,20 @@ window.deleteAlumnoNote=async function(dIdx,noteIdx){
 };
 
 // ══ PANEL DE SUSCRIPTORES (admin) — activación manual para pagos fuera de MercadoPago ══
-const SUSCRIPTOR_STATUS_LABEL={pending:'⏳ Pendiente de pago',active:'✅ Activo',expired:'⚠️ Vencido'};
 let suscriptoresCache=null;
+
+// Estado de acceso combinado de un alumno: unifica `activo` (interruptor
+// manual del entrenador) + `status`/`expiry` (ciclo de pago) en un solo
+// resultado, para que la ficha nunca muestre dos indicadores contradictorios
+// (ver caso real: "🟢 Activo" arriba + "Vencido" abajo, alumno sin acceso real).
+function estadoAccesoAlumno(sub){
+  const vencido=sub.status==='active'&&sub.expiry&&new Date(sub.expiry+'T00:00:00')<new Date();
+  if(sub.activo===false)return{clave:'inactivo',label:'🔴 Inactivo (desactivado)'};
+  if(sub.status==='pending')return{clave:'pendiente',label:'🟡 Pendiente de pago'};
+  if(vencido)return{clave:'vencido',label:'🔴 Vencido'};
+  if(sub.status==='active')return{clave:'activo',label:sub.expiry?'🟢 Activo hasta '+new Date(sub.expiry+'T00:00:00').toLocaleDateString('es-AR'):'🟢 Activo (sin vencimiento)'};
+  return{clave:'pendiente',label:'🟡 Pendiente de pago'};
+}
 
 async function poblarCategoriaSelect(id){
   const sel=document.getElementById(id);
@@ -5198,10 +5231,40 @@ window.borrarPlanSuscriptor=async function(uid,planId){
   refreshSuscriptorPanels();
 };
 
-window.desactivarSuscriptorManual=async function(uid){
-  if(!confirm('¿Desactivar el acceso de este suscriptor? Su progreso no se borra, puede reactivarse después.'))return;
-  await updateDoc(doc(db,'subscribers',uid),{status:'expired'});
-  toast('⛔ Suscripción desactivada');
+// Reactiva a un alumno marcado como "Inactivo" (activo:false). Si su
+// suscripción también necesitaba fecha/plan (pendiente o vencida), completa
+// todo en una sola escritura para no dejarlo "activo" pero sin acceso real
+// (mismo bug que se quiso evitar unificando el estado combinado).
+window.reactivarAlumnoCompleto=async function(uid){
+  const subRef=doc(db,'subscribers',uid);
+  const subSnap=await getDoc(subRef);
+  if(!subSnap.exists())return;
+  const sub=subSnap.data();
+  const vencido=sub.status==='active'&&sub.expiry&&new Date(sub.expiry+'T00:00:00')<new Date();
+  const necesitaDatos=sub.status!=='active'||vencido;
+  const updates={activo:true};
+  if(necesitaDatos){
+    const sinVencimiento=document.getElementById('susc-noexp-'+uid)?.checked;
+    const expiry=sinVencimiento?'':document.getElementById('susc-exp-'+uid)?.value;
+    if(!sinVencimiento&&!expiry){toast('⚠️ Elegí una fecha de vencimiento o marcá "Sin vencimiento"');return}
+    let planId=sub.planId||null;
+    if(sub.categoria&&sub.categoria!=='global'&&sub.categoria!=='__personal__'){
+      const fijoSnap=await getDoc(doc(db,'planesFijos',sub.categoria));
+      planId=fijoSnap.exists()?fijoSnap.data().planId||null:null;
+    }
+    Object.assign(updates,{status:'active',expiry,lastPaymentId:'manual',planId});
+    const weekSel=document.getElementById('susc-week-'+uid);
+    if(weekSel){
+      updates.startDate=new Date().toISOString().split('T')[0];
+      updates.startWeek=parseInt(weekSel.value);
+    }else if(!sub.startDate){
+      updates.startDate=new Date().toISOString().split('T')[0];
+      updates.startWeek=1;
+    }
+  }
+  if(!confirm('¿Reactivar a este alumno? Recupera acceso a todos sus programas.'))return;
+  await updateDoc(subRef,updates);
+  toast('🟢 Alumno reactivado');
   suscriptoresCache=null;
   refreshSuscriptorPanels();
 };
