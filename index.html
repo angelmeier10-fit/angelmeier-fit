@@ -411,6 +411,7 @@ setTimeout(()=>{
       <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.1rem">💪 Angel Meier</div>
       <div style="display:flex;align-items:center;gap:12px">
         <button id="theme-btn-alumno" onclick="toggleTheme()" style="background:var(--s2);border:1px solid var(--bd);color:var(--tx);border-radius:9px;padding:6px 12px;cursor:pointer;font-size:1rem;transition:all .2s;flex-shrink:0" title="Cambiar tema">🌙</button>
+        <button onclick="openPerfilAlumno()" style="background:var(--s2);border:1px solid var(--bd);color:var(--tx);border-radius:9px;padding:6px 12px;cursor:pointer;font-size:.82rem;transition:all .2s;flex-shrink:0" title="Mi perfil">👤 Mi Perfil</button>
         <span id="alumno-logout-btn-active" onclick="handleAlumnoLogoutClick()" style="color:var(--mu);cursor:pointer;font-size:.82rem">🚪 Cerrar sesión</span>
       </div>
     </div>
@@ -460,11 +461,12 @@ setTimeout(()=>{
     </div>
     <div class="card" style="margin-bottom:16px;padding:16px">
       <h3 style="margin-bottom:10px;font-size:.95rem">➕ Dar de alta un alumno vos mismo</h3>
-      <p class="sub" style="margin-bottom:10px">Para alguien que te paga en persona y no quiere/puede registrarse solo. Le creamos la cuenta y le mandamos un email para que defina su contraseña.</p>
+      <p class="sub" style="margin-bottom:10px">Para alguien que te paga en persona y no quiere/puede registrarse solo. Le creás la cuenta con una contraseña que elegís vos y le pasás el link para que ingrese.</p>
       <div class="fg full" style="margin-bottom:8px"><label>Nombre</label><input id="uni-new-name" placeholder="Nombre y apellido"></div>
       <div class="fg full" style="margin-bottom:8px"><label>Email</label><input id="uni-new-email" type="email" placeholder="alumno@gmail.com"></div>
+      <div class="fg full" style="margin-bottom:8px"><label>Contraseña</label><input id="uni-new-pass" type="text" placeholder="Mínimo 6 caracteres"></div>
       <div class="fg full" style="margin-bottom:10px"><label>Categoría</label><select id="uni-new-cat"></select></div>
-      <button class="btn bp" onclick="altaManualAlumno('uni-new-name','uni-new-email','uni-new-cat',renderAlumnosUnificado)" style="width:100%;justify-content:center">Crear alumno</button>
+      <button class="btn bp" onclick="altaManualAlumno('uni-new-name','uni-new-email','uni-new-pass','uni-new-cat',renderAlumnosUnificado)" style="width:100%;justify-content:center">Crear alumno</button>
     </div>
     <input id="uni-search" placeholder="🔍 Buscar alumno por nombre o email..." oninput="renderAlumnosUnificado(this.value)" style="margin-bottom:12px;font-size:.88rem">
     <div id="alumnosuni-list"></div>
@@ -669,6 +671,25 @@ setTimeout(()=>{
       Enviar por WhatsApp
     </button>
     <button onclick="document.getElementById('contact-modal').classList.remove('open')" class="btn bg2" style="width:100%;justify-content:center;margin-top:8px">Cancelar</button>
+  </div>
+</div>
+
+<!-- MI PERFIL MODAL (alumno) -->
+<div class="modal-bg" id="perfil-modal">
+  <div class="modal">
+    <h2>👤 Mi Perfil</h2>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
+      <div class="fg"><label>Nombre</label><input id="perfil-name" disabled></div>
+      <div class="fg"><label>Email</label><input id="perfil-email" disabled></div>
+    </div>
+    <h3 style="margin-bottom:10px;font-size:.95rem">🔒 Cambiar contraseña</h3>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div class="fg"><label>Contraseña actual</label><input id="perfil-pass-actual" type="password" placeholder="Tu contraseña actual"></div>
+      <div class="fg"><label>Nueva contraseña</label><input id="perfil-pass-nueva" type="password" placeholder="Mínimo 6 caracteres"></div>
+      <div class="fg"><label>Repetir nueva contraseña</label><input id="perfil-pass-repetir" type="password" placeholder="Repetí la nueva contraseña"></div>
+    </div>
+    <button onclick="cambiarPasswordAlumno()" class="btn bp" style="width:100%;justify-content:center;margin-top:14px">Guardar contraseña</button>
+    <button onclick="document.getElementById('perfil-modal').classList.remove('open')" class="btn bg2" style="width:100%;justify-content:center;margin-top:8px">Cerrar</button>
   </div>
 </div>
 
@@ -991,7 +1012,7 @@ function toggleTheme(){
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, getDoc, getDocs, getDocFromCache, getDocsFromCache, getDocFromServer, getDocsFromServer, setDoc, updateDoc, deleteDoc, addDoc, collection, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence, GoogleAuthProvider, signInWithPopup, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 /* r3 */
 (async()=>{
@@ -1122,6 +1143,41 @@ window.doForgotPassword=async function(){
   }
 };
 window.doLogout=async function(){localStorage.removeItem('amfit-had-session');await signOut(auth);location.reload();};
+
+// ══ Mi Perfil (alumno): datos de solo lectura + cambio de contraseña ══
+window.openPerfilAlumno=function(){
+  const sub=alumnoState.sub||{};
+  document.getElementById('perfil-name').value=sub.name||'';
+  document.getElementById('perfil-email').value=sub.email||'';
+  document.getElementById('perfil-pass-actual').value='';
+  document.getElementById('perfil-pass-nueva').value='';
+  document.getElementById('perfil-pass-repetir').value='';
+  document.getElementById('perfil-modal').classList.add('open');
+};
+window.cambiarPasswordAlumno=async function(){
+  if(previewAlumnoMode){toast('⚠️ Estás en vista previa del entrenador, no se puede cambiar la contraseña desde acá');return}
+  const actual=document.getElementById('perfil-pass-actual').value;
+  const nueva=document.getElementById('perfil-pass-nueva').value;
+  const repetir=document.getElementById('perfil-pass-repetir').value;
+  if(!actual){toast('⚠️ Ingresá tu contraseña actual');return}
+  if(nueva.length<6){toast('⚠️ La nueva contraseña tiene que tener al menos 6 caracteres');return}
+  if(nueva!==repetir){toast('⚠️ Las contraseñas nuevas no coinciden');return}
+  try{
+    const cred=EmailAuthProvider.credential(auth.currentUser.email,actual);
+    await reauthenticateWithCredential(auth.currentUser,cred);
+    await updatePassword(auth.currentUser,nueva);
+    toast('✅ Contraseña actualizada');
+    document.getElementById('perfil-modal').classList.remove('open');
+  }catch(err){
+    const msgs={
+      'auth/wrong-password':'La contraseña actual no es correcta.',
+      'auth/invalid-credential':'La contraseña actual no es correcta.',
+      'auth/too-many-requests':'Demasiados intentos. Probá de nuevo en un rato.',
+      'auth/network-request-failed':'Sin conexión. Revisá tu internet e intentá de nuevo.'
+    };
+    toast('⚠️ '+(msgs[err.code]||('No se pudo cambiar la contraseña ('+err.code+').')));
+  }
+};
 
 // ══ Vista previa del entrenador: reusa la pantalla real del alumno (view-alumno)
 // sin pedirle contraseña — el admin ya tiene permiso de sobra para leer
@@ -5697,17 +5753,18 @@ async function crearPlanPersonalVacio(nombreAlumno){
   return planId;
 }
 
-window.altaManualAlumno=async function(nameId,emailId,catId,refreshFn){
-  nameId=nameId||'uni-new-name';emailId=emailId||'uni-new-email';catId=catId||'uni-new-cat';
+window.altaManualAlumno=async function(nameId,emailId,passId,catId,refreshFn){
+  nameId=nameId||'uni-new-name';emailId=emailId||'uni-new-email';passId=passId||'uni-new-pass';catId=catId||'uni-new-cat';
   refreshFn=refreshFn||(()=>renderAlumnosUnificado(document.getElementById('uni-search')?.value));
   const name=document.getElementById(nameId).value.trim();
   const email=document.getElementById(emailId).value.trim();
+  const pass=document.getElementById(passId).value;
   const categoria=document.getElementById(catId).value;
   if(!name||!email||!categoria){toast('⚠️ Completá nombre, email y categoría');return}
-  const tempPass=Math.random().toString(36).slice(-10)+'Aa1!';
+  if(!pass||pass.length<6){toast('⚠️ La contraseña tiene que tener al menos 6 caracteres');return}
   try{
     const sAuth=getSecondaryAuth();
-    const cred=await createUserWithEmailAndPassword(sAuth,email,tempPass);
+    const cred=await createUserWithEmailAndPassword(sAuth,email,pass);
     const uid=cred.user.uid;
     await signOut(sAuth);
     let planId=null;
@@ -5718,10 +5775,10 @@ window.altaManualAlumno=async function(nameId,emailId,catId,refreshFn){
       planId=fijoSnap.exists()?fijoSnap.data().planId||null:null;
     }
     await setDoc(doc(db,'subscribers',uid),{email,name,categoria,status:'pending',planId});
-    await sendPasswordResetEmail(auth,email);
     document.getElementById(nameId).value='';
     document.getElementById(emailId).value='';
-    toast('✅ Alumno creado — le llegó un email para definir su contraseña. Activalo abajo cuando pague.');
+    document.getElementById(passId).value='';
+    toast('✅ Alumno creado — pasale el link y la contraseña. Activalo abajo cuando pague.');
     suscriptoresCache=null;
     refreshFn();
   }catch(err){
@@ -5741,8 +5798,10 @@ window.migrarClienteAAlumno=async function(clientId){
   const c=clients.find(cl=>cl.id===clientId);
   if(!c)return;
   if(!c.email){toast('⚠️ Este alumno no tiene email cargado, necesario para crear la cuenta. Editalo primero.');return}
-  if(!confirm(`¿Migrar a ${c.name} a una cuenta con usuario y contraseña? Le va a llegar un email para definir su contraseña, y deja de necesitar el link viejo.`))return;
-  const tempPass=Math.random().toString(36).slice(-10)+'Aa1!';
+  if(!confirm(`¿Migrar a ${c.name} a una cuenta con usuario y contraseña? Vas a elegir vos la contraseña y deja de necesitar el link viejo.`))return;
+  const tempPass=window.prompt(`Contraseña para la cuenta de ${c.name} (mínimo 6 caracteres):`);
+  if(!tempPass)return;
+  if(tempPass.length<6){toast('⚠️ La contraseña tiene que tener al menos 6 caracteres');return}
   try{
     const sAuth=getSecondaryAuth();
     const cred=await createUserWithEmailAndPassword(sAuth,c.email,tempPass);
