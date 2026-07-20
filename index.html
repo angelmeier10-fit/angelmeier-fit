@@ -2332,8 +2332,11 @@ window.guardarBloqueComoPlantilla=async function(blockId){
 };
 
 const BLOCK_KIND_ICON={warmup:'🔥',gym:'🏋️',func:'🧓',cf:'🔥'};
+const BLOCK_KIND_LABEL={warmup:'Calentamiento',gym:'Gym',func:'Funcional',cf:'CF / WOD'};
+let insertarPlantillaList=[];
 window.abrirInsertarPlantilla=async function(bodyId){
   const list=await loadBloqueTemplates();
+  insertarPlantillaList=list;
   const modal=document.getElementById('modal-bg');
   modal.style.display='flex';
   if(!list.length){
@@ -2344,21 +2347,50 @@ window.abrirInsertarPlantilla=async function(bodyId){
     </div>`;
     return;
   }
+  const kinds=[...new Set(list.map(t=>t.data.kind))];
   modal.innerHTML=`<div style="background:var(--s1);border-radius:16px;padding:24px;width:100%;max-width:420px;max-height:80vh;overflow-y:auto">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
       <h2>📥 Insertar plantilla</h2>
       <button onclick="document.getElementById('modal-bg').style.display='none'" style="background:none;border:none;color:var(--mu);font-size:1.4rem;cursor:pointer">✕</button>
     </div>
-    <div style="display:flex;flex-direction:column;gap:8px">
-      ${list.map((t,i)=>`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--s2);border-radius:8px;padding:9px 12px">
-        <span style="font-size:.86rem">${BLOCK_KIND_ICON[t.data.kind]||'📋'} ${t.name}</span>
-        <div style="display:flex;gap:6px">
-          <button class="btn bp xs" onclick="insertarPlantilla('${bodyId}',${i})">Insertar</button>
-          <button class="btn bd2 xs" onclick="eliminarPlantilla(${i})">🗑️</button>
-        </div>
-      </div>`).join('')}
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <input id="ip-search" type="text" placeholder="🔍 Buscar por nombre..." oninput="filtrarInsertarPlantilla('${bodyId}')" style="flex:1">
+      <select id="ip-kind" onchange="filtrarInsertarPlantilla('${bodyId}')" style="width:auto">
+        <option value="">Todos los tipos</option>
+        ${kinds.map(k=>`<option value="${k}">${BLOCK_KIND_ICON[k]||'📋'} ${BLOCK_KIND_LABEL[k]||k}</option>`).join('')}
+      </select>
     </div>
+    <div id="ip-list" style="display:flex;flex-direction:column;gap:8px"></div>
   </div>`;
+  renderInsertarPlantillaList(bodyId,list);
+};
+
+function renderInsertarPlantillaList(bodyId,filtered){
+  const elList=document.getElementById('ip-list');
+  if(!elList)return;
+  if(!filtered.length){
+    elList.innerHTML='<p style="color:var(--mu);font-size:.85rem;text-align:center;padding:10px">Sin resultados.</p>';
+    return;
+  }
+  elList.innerHTML=filtered.map(t=>{
+    const i=insertarPlantillaList.indexOf(t);
+    return`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--s2);border-radius:8px;padding:9px 12px">
+      <span style="font-size:.86rem">${BLOCK_KIND_ICON[t.data.kind]||'📋'} ${t.name}</span>
+      <div style="display:flex;gap:6px">
+        <button class="btn bp xs" onclick="insertarPlantilla('${bodyId}',${i})">Insertar</button>
+        <button class="btn bd2 xs" onclick="eliminarPlantilla(${i})">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+window.filtrarInsertarPlantilla=function(bodyId){
+  const term=(document.getElementById('ip-search')?.value||'').trim().toLowerCase();
+  const kind=document.getElementById('ip-kind')?.value||'';
+  const filtered=insertarPlantillaList.filter(t=>
+    (!kind||t.data.kind===kind) && (!term||t.name.toLowerCase().includes(term))
+  );
+  renderInsertarPlantillaList(bodyId,filtered);
 };
 
 window.insertarPlantilla=function(bodyId,idx){
