@@ -6,6 +6,7 @@
 <title>Angel Meier — Entrenamiento Personalizado</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#7c5cbf">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="AM Fit">
@@ -2899,8 +2900,11 @@ async function renderCV(clientId){
     if(idx>=0)clients[idx]=fresh;
   }
   const c=clients.find(cl=>cl.id===clientId);if(!c)return;
-  // Email verification
-  if(c.email||c.whatsapp){
+  // Email verification (se salta si es el entrenador viendo su propio
+  // simulador de vista de cliente: ya está autenticado, no tiene sentido
+  // pedirle el email/celular del cliente para poder previsualizar).
+  const isTrainerPreview=auth.currentUser?.email===ADMIN_EMAIL;
+  if((c.email||c.whatsapp)&&!isTrainerPreview){
     const verified=localStorage.getItem('verified-'+clientId);
     if(!verified){
       const hasEmail=!!c.email,hasWa=!!c.whatsapp;
