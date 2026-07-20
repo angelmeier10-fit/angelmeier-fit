@@ -450,7 +450,7 @@ setTimeout(()=>{
   <p class="sub">Planificá rutinas por día con bloques de gym y CrossFit mezclados.</p>
   <div class="itabs">
     <button class="itab active" id="it-alumnosuni" onclick="showPanel('alumnosuni',this)">👤 Alumnos</button>
-    <button class="itab" id="it-new" onclick="showPanel('new',this)">➕ Nuevo cliente</button>
+    <button class="itab" id="it-new" style="display:none" onclick="showPanel('new',this)">➕ Nuevo cliente</button>
     <button class="itab" id="it-edit" style="display:none" onclick="showPanel('edit',this)">✏️ Editar</button>
     <button class="itab" id="it-macro" style="display:none" onclick="showPanel('macro',this)">📊 Macrociclo</button>
   </div>
@@ -6513,7 +6513,6 @@ function buildSolCard(s,isNew){
       </div>
       <div style="display:flex;gap:6px;flex-wrap:wrap">
         ${waNum?`<a href="https://wa.me/${waNum}" target="_blank" class="btn bgr sm">💬 WhatsApp</a>`:''}
-        <button class="btn bp sm" onclick="convertirEnCliente('${s._docId}')">✅ ${isNew?'Convertir en cliente':'Re-convertir'}</button>
         <button class="btn bpu sm" onclick="asignarAPlanGrupal('${s._docId}')">👥 Asignar a plan grupal</button>
         <button class="btn bcy sm" onclick="convertirEnSuscriptor('${s._docId}')">🔔 Dar de alta como suscriptor</button>
         <button class="btn bd2 sm" onclick="eliminarSolicitud('${s._docId}')">🗑️</button>
@@ -6567,7 +6566,7 @@ window.verAnamnesis=function(docId){
     ${row('Consideraciones',s.consideraciones)}
     ${row('Cómo conoció a Angel',s.como_conocio)}
     <div style="margin-top:18px;display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn bp" onclick="convertirEnCliente('${docId}');document.getElementById('modal-bg').style.display='none'">✅ Convertir en cliente</button>
+      <button class="btn bp" onclick="convertirEnSuscriptor('${docId}');document.getElementById('modal-bg').style.display='none'">🔔 Dar de alta como suscriptor</button>
       <button class="btn bpu" onclick="asignarAPlanGrupal('${docId}')">👥 Asignar a plan grupal</button>
       ${(s.whatsapp||'').replace(/[^0-9]/g,'')?`<a href="https://wa.me/${(s.whatsapp||'').replace(/[^0-9]/g,'')}" target="_blank" class="btn bgr">💬 WhatsApp</a>`:''}
     </div>
