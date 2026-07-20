@@ -427,7 +427,6 @@ setTimeout(()=>{
   </div>
   <div class="nav-tabs">
     <button class="tab-btn active" onclick="showView('trainer',this)">🏋️ Entrenador</button>
-    <button class="tab-btn" onclick="showView('client',this)">👤 Cliente</button>
     <button class="tab-btn" onclick="showView('exdb',this)">📚 Ejercicios</button>
     <button class="tab-btn" onclick="showView('templates',this)">🧩 Plantillas</button>
     <button class="tab-btn" onclick="showView('planes',this)">👥 Planes Grupales</button>
@@ -1531,24 +1530,6 @@ async function init(){
   // Load solicitudes
   await loadSolicitudes();
   buildNotifications();
-
-  // Check if individual client link
-  const urlId=params.get('client');
-  if(urlId){
-    const c=clients.find(cl=>cl.id===urlId);
-    if(c){
-      isClientMode=true;
-      document.getElementById('main-nav').style.display='none';
-      document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
-      document.getElementById('view-client').classList.add('active');
-      document.getElementById('client-selector').style.display='none';
-      document.getElementById('contact-float').style.display='flex';
-      updateThemeIcons();
-      hideLoading();
-      renderCV(urlId);
-      return;
-    }
-  }
 
   hideLoading();
   renderAlumnosUnificado();
