@@ -4353,7 +4353,7 @@ async function updatePlan(){
   plan.weeks=epWeeklyData;
   plan.activeWeek=epCurrentWeek;
   plan.days=epWeeklyData[epCurrentWeek];
-  console.log('[DEBUG guardar plan]',editingPlanId,'semana',epCurrentWeek,epWeeklyData[epCurrentWeek].map(d=>({dia:d.name,bloques:d.blocks.length})));
+  console.log('[DEBUG guardar plan] '+JSON.stringify({planId:editingPlanId,semana:epCurrentWeek,dias:epWeeklyData[epCurrentWeek].map(d=>({dia:d.name,bloques:d.blocks.map(b=>b.exercises?.map(e=>e.name)||b.kind)}))}));
   await setDoc(doc(db,'planes',editingPlanId),plan);
   toast('✅ Plan actualizado');
   if(editingPersonalPlan){
@@ -5403,7 +5403,7 @@ async function renderAlumnoPlanView(sub,uid){
     return;
   }
   alumnoState.plan={id:planId,...planSnap.data()};
-  console.log('[DEBUG leer plan alumno]',planId,'semanas',Object.keys(alumnoState.plan.weeks||{}),(alumnoState.plan.days||alumnoState.plan.weeks?.[alumnoState.plan.activeWeek]||[]).map(d=>({dia:d.name,bloques:d.blocks.length})));
+  console.log('[DEBUG leer plan alumno] '+JSON.stringify({planId,semanas:Object.keys(alumnoState.plan.weeks||{}),activeWeek:alumnoState.plan.activeWeek,dias:(alumnoState.plan.days||alumnoState.plan.weeks?.[alumnoState.plan.activeWeek]||[]).map(d=>({dia:d.name,bloques:d.blocks.map(b=>b.exercises?.map(e=>e.name)||b.kind)}))}));
   const pseudoMember={
     id:'sub',
     name:sub.name||sub.email||'Alumno',
