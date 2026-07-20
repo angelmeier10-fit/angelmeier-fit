@@ -4087,12 +4087,14 @@ async function renderAlumnosUnificado(searchTerm){
       if(acceso.clave==='activo')return`<button class="btn bgr xs" onclick="event.stopPropagation();toggleAlumnoActivo('${subProg.uid}',true)" title="Click para desactivar todo su acceso">${acceso.label}</button>`;
       return`<span class="badge" style="font-size:.72rem" title="Expandí la ficha para completar los datos y reactivar">${acceso.label}</span>`;
     })();
+    const passBtn=(subProg&&a.email)?`<button class="btn bg2 xs" onclick="event.stopPropagation();cambiarPasswordAlumnoAdmin('${a.email.replace(/'/g,"\\'")}','${a.name.replace(/'/g,"\\'")}')" title="Mandarle email para cambiar la contraseña">🔑 Contraseña</button>`:'';
     return`<div class="card">
       <div style="display:flex;align-items:center;gap:10px;cursor:pointer" onclick="document.getElementById('${bodyId}').classList.toggle('collapsed');this.querySelector('.card-toggle').style.transform=document.getElementById('${bodyId}').classList.contains('collapsed')?'rotate(-90deg)':''">
         <div class="member-av">${a.name.charAt(0).toUpperCase()}</div>
         <div style="flex:1"><div style="font-weight:700;font-size:.92rem">${a.name}</div><div style="font-size:.74rem;color:var(--mu)">${a.email||''} · ${a.programs.length} programa${a.programs.length!==1?'s':''}</div></div>
         ${activoSwitch}
         ${convertBtn}
+        ${passBtn}
         <button class="btn bd2 xs" onclick="event.stopPropagation();deleteAlumnoCompleto(${ai})" title="Borrar alumno">🗑️ Borrar</button>
         <span class="card-toggle" style="transition:transform .2s;transform:rotate(-90deg)">▼</span>
       </div>
@@ -5788,6 +5790,27 @@ window.altaManualAlumno=async function(nameId,emailId,passId,catId,refreshFn){
       'auth/network-request-failed':'Sin conexión. Revisá tu internet e intentá de nuevo.'
     };
     toast('⚠️ '+(msgs[err.code]||('No se pudo crear la cuenta ('+err.code+').')));
+  }
+};
+
+// Cambia la contraseña de la cuenta de un alumno ya existente. El SDK de
+// Auth del cliente solo permite cambiar la propia contraseña (no la de otro
+// usuario) sin pasar por una Cloud Function con Admin SDK — eso exige plan
+// Blaze, que no vamos a activar. Alternativa sin backend: mandarle al alumno
+// el email de reseteo de Firebase para que la defina él mismo.
+window.cambiarPasswordAlumnoAdmin=async function(email,name){
+  if(!email){toast('⚠️ Este alumno no tiene email cargado');return}
+  if(!confirm(`¿Mandarle a ${name} (${email}) un email para que defina una contraseña nueva?`))return;
+  try{
+    await sendPasswordResetEmail(auth,email);
+    toast('✅ Le llegó un email a '+email+' para definir su contraseña nueva');
+  }catch(err){
+    const msgs={
+      'auth/user-not-found':'No existe una cuenta con ese email.',
+      'auth/invalid-email':'El email no es válido.',
+      'auth/network-request-failed':'Sin conexión. Revisá tu internet e intentá de nuevo.'
+    };
+    toast('⚠️ '+(msgs[err.code]||('No se pudo enviar el email ('+err.code+').')));
   }
 };
 
