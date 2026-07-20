@@ -400,16 +400,17 @@ setTimeout(()=>{
     </div>
 
     <div style="text-align:center;margin-top:24px">
-      <span onclick="doLogout()" style="color:var(--mu);cursor:pointer;font-size:.82rem">🚪 Cerrar sesión</span>
+      <span id="alumno-logout-btn-narrow" onclick="handleAlumnoLogoutClick()" style="color:var(--mu);cursor:pointer;font-size:.82rem">🚪 Cerrar sesión</span>
     </div>
   </div>
 
   <div id="alumno-active-wrap" style="display:none;max-width:980px;margin:0 auto;padding:20px">
+    <div id="alumno-preview-banner" style="display:none;background:var(--ac)22;color:var(--ac2);border-radius:9px;padding:8px 12px;font-size:.8rem;font-weight:600;margin-bottom:12px;text-align:center">👁️ Vista previa del entrenador — así ve su plan este alumno</div>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:10px">
       <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.1rem">💪 Angel Meier</div>
       <div style="display:flex;align-items:center;gap:12px">
         <button id="theme-btn-alumno" onclick="toggleTheme()" style="background:var(--s2);border:1px solid var(--bd);color:var(--tx);border-radius:9px;padding:6px 12px;cursor:pointer;font-size:1rem;transition:all .2s;flex-shrink:0" title="Cambiar tema">🌙</button>
-        <span onclick="doLogout()" style="color:var(--mu);cursor:pointer;font-size:.82rem">🚪 Cerrar sesión</span>
+        <span id="alumno-logout-btn-active" onclick="handleAlumnoLogoutClick()" style="color:var(--mu);cursor:pointer;font-size:.82rem">🚪 Cerrar sesión</span>
       </div>
     </div>
     <div id="alumno-cat-switcher"></div>
@@ -1119,6 +1120,46 @@ window.doForgotPassword=async function(){
   }
 };
 window.doLogout=async function(){localStorage.removeItem('amfit-had-session');await signOut(auth);location.reload();};
+
+// ══ Vista previa del entrenador: reusa la pantalla real del alumno (view-alumno)
+// sin pedirle contraseña — el admin ya tiene permiso de sobra para leer
+// subscribers/planes de cualquiera. El botón "Cerrar sesión" de esa pantalla no
+// puede desloguear al entrenador por accidente, así que en vista previa pasa a
+// cerrar la vista previa en vez de llamar a doLogout(). ══
+let previewAlumnoMode=false;
+window.handleAlumnoLogoutClick=function(){
+  if(previewAlumnoMode){cerrarPreviewAlumno();return}
+  doLogout();
+};
+window.cerrarPreviewAlumno=function(){
+  previewAlumnoMode=false;
+  document.getElementById('view-alumno').style.display='none';
+  ['alumno-narrow-wrap','alumno-active-wrap','alumno-categoria-screen','alumno-pending-screen','alumno-expired-screen'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.style.display='none';
+  });
+  document.getElementById('alumno-preview-banner').style.display='none';
+};
+window.previewComoAlumno=async function(uid){
+  const snap=await getDoc(doc(db,'subscribers',uid));
+  if(!snap.exists()){toast('❌ No se encontró ese alumno');return}
+  previewAlumnoMode=true;
+  document.getElementById('alumno-logout-btn-narrow').textContent='✕ Cerrar vista previa';
+  document.getElementById('alumno-logout-btn-active').textContent='✕ Cerrar vista previa';
+  document.getElementById('view-alumno').style.display='block';
+  try{await ensurePlanesLoadedForAlumno();}catch(e){console.error('ensurePlanesLoadedForAlumno',e);}
+  const data=snap.data();
+  const vencido=data.status==='active' && data.expiry && new Date(data.expiry+'T00:00:00')<new Date();
+  if(data.status==='active' && !vencido){
+    document.getElementById('alumno-active-wrap').style.display='block';
+    document.getElementById('alumno-preview-banner').style.display='block';
+    await renderAlumnoPlanView(data,uid);
+    return;
+  }
+  document.getElementById('alumno-narrow-wrap').style.display='block';
+  const screens={pending:'alumno-pending-screen',expired:'alumno-expired-screen'};
+  const id=vencido?'alumno-expired-screen':(screens[data.status]||'alumno-pending-screen');
+  document.getElementById(id).style.display='block';
+};
 
 let appStarted=false;
 const isClientLink=new URLSearchParams(location.search).get('plan')||new URLSearchParams(location.search).get('client');
@@ -2825,12 +2866,28 @@ function renderEcSeguimiento(c){
 }
 
 // ══ CLIENT VIEW ══
-function populateClientSelect(){
+async function populateClientSelect(){
   const sel=document.getElementById('client-select');
-  sel.innerHTML='<option value="">— Seleccioná un cliente —</option>';
-  clients.forEach(c=>{const o=document.createElement('option');o.value=c.id;o.textContent=c.name;sel.appendChild(o)});
+  const clientOptions=clients.map(c=>`<option value="cli:${c.id}">${c.name}</option>`).join('');
+  let subOptions='';
+  try{
+    const subSnap=await getDocs(collection(db,'subscribers'));
+    subOptions=subSnap.docs.map(d=>{
+      const s=d.data();
+      return`<option value="sub:${d.id}">${s.name||s.email||'(sin nombre)'}</option>`;
+    }).join('');
+  }catch(e){console.error('populateClientSelect subscribers',e);}
+  sel.innerHTML=`<option value="">— Seleccioná un cliente o alumno —</option>`
+    +(clientOptions?`<optgroup label="Clientes (plan personalizado por link)">${clientOptions}</optgroup>`:'')
+    +(subOptions?`<optgroup label="Alumnos (suscripción con login)">${subOptions}</optgroup>`:'');
 }
-function loadCV(){const id=document.getElementById('client-select').value;if(id)renderCV(id)}
+function loadCV(){
+  const val=document.getElementById('client-select').value;
+  if(!val)return;
+  const[kind,id]=val.split(':');
+  if(kind==='sub')previewComoAlumno(id);
+  else renderCV(id);
+}
 window.loadCV=loadCV;
 
 async function renderCV(clientId){
