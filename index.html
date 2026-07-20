@@ -990,7 +990,7 @@ function toggleTheme(){
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, getDoc, getDocs, getDocFromCache, getDocsFromCache, getDocFromServer, getDocsFromServer, setDoc, updateDoc, deleteDoc, addDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, getDoc, getDocs, getDocFromCache, getDocsFromCache, getDocFromServer, getDocsFromServer, setDoc, updateDoc, deleteDoc, addDoc, collection, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 /* r3 */
@@ -1206,7 +1206,10 @@ onAuthStateChanged(auth,async(user)=>{
 
 async function initAlumno(user){
   document.getElementById('view-alumno').style.display='block';
-  await ensurePlanesLoadedForAlumno();
+  // Si esto falla (permisos, red), no debe dejar la pantalla en blanco sin
+  // ni el botón de cerrar sesión: solo se pierden los planes grupales
+  // adicionales en el selector, el plan propio del alumno se carga aparte.
+  try{await ensurePlanesLoadedForAlumno();}catch(e){console.error('ensurePlanesLoadedForAlumno',e);}
   const ref=doc(db,'subscribers',user.uid);
   const snap=await getDoc(ref);
   if(!snap.exists()){
@@ -3583,9 +3586,15 @@ async function loadPlanes(){
 // para descubrir sus membresías de plan grupal, findAllProgramsForAlumno),
 // sin buildNotifications() — esa función lee toda la colección subscribers,
 // bloqueada por permisos para un alumno no-admin.
+// Query acotada a public==true: un list sin ese filtro exige la regla
+// subscriberActiveFor (con un get() a otra colección) para el plan propio,
+// y Firestore no filtra eso documento por documento en un list, así que
+// devolvía TODOS los planes (incluidos los personales privados de otros
+// alumnos) a cualquiera. Filtrando por public==true evita esa fuga; el
+// plan personalizado propio del alumno se carga aparte, por id, con getDoc.
 async function ensurePlanesLoadedForAlumno(){
   if(planes.length)return;
-  const snap=await getDocsFromServer(collection(db,'planes'));
+  const snap=await getDocsFromServer(query(collection(db,'planes'),where('public','==',true)));
   planes=snap.docs.map(d=>({id:d.id,...d.data()}));
 }
 
@@ -4862,7 +4871,7 @@ function renderGroupCV(plan,member,mode='client'){
       </div>
       ${plan.mpLink&&daysLeft!==null&&daysLeft<=7?`<a href="${plan.mpLink}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:#009EE322;color:#009EE3;border:1px solid #009EE344;border-radius:8px;padding:6px 14px;font-size:.78rem;font-weight:600;text-decoration:none;margin-bottom:12px">💳 Renovar plan</a>`:''}
     </div>
-    ${mode==='alumno'?programPickerHTML(gkey,findAllProgramsForAlumno(alumnoState.uid,alumnoState.sub.name,alumnoState.sub.email,alumnoState.plan?.id,alumnoState.plan?.name),'group',plan.id,'alumno'):programPickerHTML(gkey,findAllProgramsForPerson(member.name,member.email),'group',plan.id)}
+    ${mode==='alumno'?programPickerHTML(gkey,findAllProgramsForAlumno(alumnoState.uid,alumnoState.sub.name,alumnoState.sub.email,alumnoState.plan?.id||alumnoState.sub.planId,alumnoState.plan?.name),'group',plan.id,'alumno'):programPickerHTML(gkey,findAllProgramsForPerson(member.name,member.email),'group',plan.id)}
     <div class="cv-day-picker">
       <div class="cv-day-picker-title">Seleccionar día</div>
       <div class="cv-day-picker-hdr" id="gv-picker-hdr-${gkey}" onclick="toggleGroupCVDayPicker('${gkey}')">

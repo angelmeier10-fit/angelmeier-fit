@@ -48,9 +48,26 @@ service cloud.firestore {
       // como públicos por defecto (compatibilidad con links ya compartidos).
       // Solo un plan marcado explícitamente public:false requiere login +
       // suscripción activa para ese planId.
-      allow read: if isAdmin()
+      //
+      // "get" (lectura de un doc puntual, por id ya conocido) sí puede
+      // depender de subscriberActiveFor con seguridad. "list" (consultas
+      // sobre toda la colección, como la que arma el selector de planes del
+      // alumno) NO: comprobado que Firestore no filtra esta condición
+      // documento por documento cuando depende de un get() cruzado a otra
+      // colección, así que con subscriberActiveFor en el list cualquier
+      // alumno logueado podía traerse el plan personalizado (privado) de
+      // otro alumno. En list solo se permite lo explícitamente público.
+      allow get: if isAdmin()
         || resource.data.get('public', true) != false
         || subscriberActiveFor(planId);
+      // A diferencia de "get", acá no se puede usar el default-true de
+      // planes viejos sin el campo (get('public', true) != false): probado
+      // que con esa condición Firestore no filtra el list por documento y
+      // devuelve TODA la colección, incluidos los personales privados, a
+      // cualquier alumno logueado. Con igualdad estricta sí filtra bien,
+      // pero exige que todo plan público tenga public:true seteado
+      // explícitamente (los personales llevan public:false).
+      allow list: if isAdmin() || resource.data.public == true;
       allow write: if isAdmin();
 
       // Progreso individual de un member (alumno logueado) dentro de un plan
