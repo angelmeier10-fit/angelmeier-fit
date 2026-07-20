@@ -3681,7 +3681,17 @@ function parseRestToSeconds(rest){
 let timerInterval=null;
 let timerSeconds=60;
 let timerTotal=60;
-function beep(){try{const ctx=new AudioContext();const o=ctx.createOscillator();const g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.frequency.setValueAtTime(880,ctx.currentTime);g.gain.setValueAtTime(0.3,ctx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.6);o.start();o.stop(ctx.currentTime+0.6);}catch(e){}}
+// Un solo AudioContext compartido: crear uno nuevo por cada beep lo deja
+// "suspended" en varios navegadores (Safari/iOS) cuando el beep no dispara
+// directo desde el click del usuario (ej. dentro de un setInterval), y el
+// sonido queda mudo. Reusar y hacer resume() lo mantiene activo.
+let sharedAudioCtx=null;
+function getAudioCtx(){
+  if(!sharedAudioCtx)sharedAudioCtx=new (window.AudioContext||window.webkitAudioContext)();
+  if(sharedAudioCtx.state==='suspended')sharedAudioCtx.resume();
+  return sharedAudioCtx;
+}
+function beep(){try{const ctx=getAudioCtx();const o=ctx.createOscillator();const g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.frequency.setValueAtTime(880,ctx.currentTime);g.gain.setValueAtTime(0.3,ctx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.6);o.start();o.stop(ctx.currentTime+0.6);}catch(e){}}
 function startTimer(secs){
   clearInterval(timerInterval);
   timerTotal=secs;timerSeconds=secs;
@@ -5794,7 +5804,7 @@ let cfTimer={
 
 function beep3(loud=true){
   try{
-    const ctx=new (window.AudioContext||window.webkitAudioContext)();
+    const ctx=getAudioCtx();
     const vol=loud?0.8:0.3;
     [0, 0.25, 0.5].forEach(delay=>{
       const o=ctx.createOscillator();
@@ -5814,7 +5824,7 @@ function beep3(loud=true){
 // más graves que el beep3 de siempre.
 function beepPulses(n,vol=0.8){
   try{
-    const ctx=new (window.AudioContext||window.webkitAudioContext)();
+    const ctx=getAudioCtx();
     for(let i=0;i<n;i++){
       const delay=i*0.22;
       const o=ctx.createOscillator();const g=ctx.createGain();
@@ -5834,7 +5844,7 @@ function beep2(){beepPulses(2)}
 // Pitido largo para marcar el fin/comienzo de una fase (trabajo↔descanso).
 function beepLong(){
   try{
-    const ctx=new (window.AudioContext||window.webkitAudioContext)();
+    const ctx=getAudioCtx();
     const o=ctx.createOscillator();const g=ctx.createGain();
     o.connect(g);g.connect(ctx.destination);
     o.type='square';
@@ -5858,7 +5868,7 @@ function speakText(text){
 
 function beepFinal(){
   try{
-    const ctx=new (window.AudioContext||window.webkitAudioContext)();
+    const ctx=getAudioCtx();
     [0,0.2,0.4].forEach((delay,i)=>{
       const o=ctx.createOscillator();const g=ctx.createGain();
       o.connect(g);g.connect(ctx.destination);
