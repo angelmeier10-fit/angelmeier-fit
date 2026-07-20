@@ -407,9 +407,9 @@ setTimeout(()=>{
 
   <div id="alumno-active-wrap" style="display:none;max-width:980px;margin:0 auto;padding:20px">
     <div id="alumno-preview-banner" style="display:none;background:var(--ac)22;color:var(--ac2);border-radius:9px;padding:8px 12px;font-size:.8rem;font-weight:600;margin-bottom:12px;text-align:center">👁️ Vista previa del entrenador — así ve su plan este alumno</div>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:10px">
+    <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;margin-bottom:14px;gap:10px;row-gap:8px">
       <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.1rem">💪 Angel Meier</div>
-      <div style="display:flex;align-items:center;gap:12px">
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px">
         <button id="theme-btn-alumno" onclick="toggleTheme()" style="background:var(--s2);border:1px solid var(--bd);color:var(--tx);border-radius:9px;padding:6px 12px;cursor:pointer;font-size:1rem;transition:all .2s;flex-shrink:0" title="Cambiar tema">🌙</button>
         <button onclick="openPerfilAlumno()" style="background:var(--s2);border:1px solid var(--bd);color:var(--tx);border-radius:9px;padding:6px 12px;cursor:pointer;font-size:.82rem;transition:all .2s;flex-shrink:0" title="Mi perfil">👤 Mi Perfil</button>
         <span id="alumno-logout-btn-active" onclick="handleAlumnoLogoutClick()" style="color:var(--mu);cursor:pointer;font-size:.82rem">🚪 Cerrar sesión</span>
