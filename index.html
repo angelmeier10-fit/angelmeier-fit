@@ -3700,12 +3700,14 @@ function startTimer(secs){
     const pct=Math.max(0,(timerSeconds/timerTotal)*100);
     prog.style.width=pct+'%';
     if(timerSeconds<=10){big.style.color='var(--rd)';prog.style.background='var(--rd)';bar.style.borderTopColor='var(--rd)';}
+    if(timerSeconds===10)beep2();
+    if(timerSeconds===3||timerSeconds===2||timerSeconds===1)beep1();
     if(timerSeconds<=0){
       clearInterval(timerInterval);
       big.textContent='✓';big.style.color='var(--gr)';
       prog.style.width='100%';prog.style.background='var(--gr)';
       bar.style.borderTopColor='var(--gr)';
-      beep();
+      beepFinal();
       setTimeout(()=>{bar.style.display='none'},3000);
     }
   },1000);
