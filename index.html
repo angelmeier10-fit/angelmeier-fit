@@ -602,6 +602,7 @@ setTimeout(()=>{
     <h2>🔗 Simular vista de cliente</h2>
     <p style="font-size:.81rem;color:var(--mu);margin-bottom:10px">En producción el cliente accede con su link único.</p>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <input type="text" id="cv-client-search" placeholder="🔍 Buscar por nombre..." style="flex:1;min-width:150px" oninput="filtrarClientSelect()">
       <select id="client-select" style="flex:1"><option value="">— Seleccioná un cliente —</option></select>
       <button class="btn bp" onclick="loadCV()">Ver rutina</button>
     </div>
@@ -2867,21 +2868,26 @@ function renderEcSeguimiento(c){
 }
 
 // ══ CLIENT VIEW ══
+let clientSelectOptions=[];
 async function populateClientSelect(){
-  const sel=document.getElementById('client-select');
-  const clientOptions=clients.map(c=>`<option value="cli:${c.id}">${c.name}</option>`).join('');
-  let subOptions='';
+  clientSelectOptions=clients.map(c=>({value:`cli:${c.id}`,name:c.name,group:'Clientes (plan personalizado por link)'}));
   try{
     const subSnap=await getDocs(collection(db,'subscribers'));
-    subOptions=subSnap.docs.map(d=>{
+    subSnap.docs.forEach(d=>{
       const s=d.data();
-      return`<option value="sub:${d.id}">${s.name||s.email||'(sin nombre)'}</option>`;
-    }).join('');
+      clientSelectOptions.push({value:`sub:${d.id}`,name:s.name||s.email||'(sin nombre)',group:'Alumnos (suscripción con login)'});
+    });
   }catch(e){console.error('populateClientSelect subscribers',e);}
-  sel.innerHTML=`<option value="">— Seleccioná un cliente o alumno —</option>`
-    +(clientOptions?`<optgroup label="Clientes (plan personalizado por link)">${clientOptions}</optgroup>`:'')
-    +(subOptions?`<optgroup label="Alumnos (suscripción con login)">${subOptions}</optgroup>`:'');
+  filtrarClientSelect();
 }
+window.filtrarClientSelect=function(){
+  const term=(document.getElementById('cv-client-search')?.value||'').trim().toLowerCase();
+  const filtered=term?clientSelectOptions.filter(o=>o.name.toLowerCase().includes(term)):clientSelectOptions;
+  const groups=[...new Set(filtered.map(o=>o.group))];
+  const sel=document.getElementById('client-select');
+  sel.innerHTML=`<option value="">— Seleccioná un cliente o alumno —</option>`
+    +groups.map(g=>`<optgroup label="${g}">${filtered.filter(o=>o.group===g).map(o=>`<option value="${o.value}">${o.name}</option>`).join('')}</optgroup>`).join('');
+};
 function loadCV(){
   const val=document.getElementById('client-select').value;
   if(!val)return;
