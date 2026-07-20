@@ -427,6 +427,7 @@ setTimeout(()=>{
   </div>
   <div class="nav-tabs">
     <button class="tab-btn active" onclick="showView('trainer',this)">🏋️ Entrenador</button>
+    <button class="tab-btn" onclick="showView('client',this)">👁️ Simular alumno</button>
     <button class="tab-btn" onclick="showView('exdb',this)">📚 Ejercicios</button>
     <button class="tab-btn" onclick="showView('templates',this)">🧩 Plantillas</button>
     <button class="tab-btn" onclick="showView('planes',this)">👥 Planes Grupales</button>
@@ -600,11 +601,11 @@ setTimeout(()=>{
 <!-- CLIENT VIEW -->
 <div id="view-client" class="view">
   <div id="client-selector" class="card">
-    <h2>🔗 Simular vista de cliente</h2>
-    <p style="font-size:.81rem;color:var(--mu);margin-bottom:10px">En producción el cliente accede con su link único.</p>
+    <h2>👁️ Simular vista de alumno</h2>
+    <p style="font-size:.81rem;color:var(--mu);margin-bottom:10px">Buscá un alumno para ver la app tal como la ve él, con su usuario y contraseña.</p>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <input type="text" id="cv-client-search" placeholder="🔍 Buscar por nombre..." style="flex:1;min-width:150px" oninput="filtrarClientSelect()">
-      <select id="client-select" style="flex:1"><option value="">— Seleccioná un cliente —</option></select>
+      <select id="client-select" style="flex:1"><option value="">— Seleccioná un alumno —</option></select>
       <button class="btn bp" onclick="loadCV()">Ver rutina</button>
     </div>
   </div>
@@ -2907,12 +2908,12 @@ function renderEcSeguimiento(c){
 // ══ CLIENT VIEW ══
 let clientSelectOptions=[];
 async function populateClientSelect(){
-  clientSelectOptions=clients.map(c=>({value:`cli:${c.id}`,name:c.name,group:'Clientes (plan personalizado por link)'}));
+  clientSelectOptions=[];
   try{
     const subSnap=await getDocs(collection(db,'subscribers'));
     subSnap.docs.forEach(d=>{
       const s=d.data();
-      clientSelectOptions.push({value:`sub:${d.id}`,name:s.name||s.email||'(sin nombre)',group:'Alumnos (suscripción con login)'});
+      clientSelectOptions.push({value:`sub:${d.id}`,name:s.name||s.email||'(sin nombre)'});
     });
   }catch(e){console.error('populateClientSelect subscribers',e);}
   filtrarClientSelect();
@@ -2920,17 +2921,15 @@ async function populateClientSelect(){
 window.filtrarClientSelect=function(){
   const term=(document.getElementById('cv-client-search')?.value||'').trim().toLowerCase();
   const filtered=term?clientSelectOptions.filter(o=>o.name.toLowerCase().includes(term)):clientSelectOptions;
-  const groups=[...new Set(filtered.map(o=>o.group))];
   const sel=document.getElementById('client-select');
-  sel.innerHTML=`<option value="">— Seleccioná un cliente o alumno —</option>`
-    +groups.map(g=>`<optgroup label="${g}">${filtered.filter(o=>o.group===g).map(o=>`<option value="${o.value}">${o.name}</option>`).join('')}</optgroup>`).join('');
+  sel.innerHTML=`<option value="">— Seleccioná un alumno —</option>`
+    +filtered.map(o=>`<option value="${o.value}">${o.name}</option>`).join('');
 };
 function loadCV(){
   const val=document.getElementById('client-select').value;
   if(!val)return;
-  const[kind,id]=val.split(':');
-  if(kind==='sub')previewComoAlumno(id);
-  else renderCV(id);
+  const[,id]=val.split(':');
+  previewComoAlumno(id);
 }
 window.loadCV=loadCV;
 
