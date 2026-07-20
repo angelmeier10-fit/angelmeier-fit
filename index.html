@@ -892,16 +892,10 @@ setTimeout(()=>{
   <p class="sub">Calentamientos, WOD, bloques de gym y funcionales guardados para reusar en cualquier planificación.</p>
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
     <button class="btn bp" onclick="abrirEditorPlantilla()">➕ Nueva plantilla</button>
+    <button class="btn bg2" onclick="abrirGestionCategoriasPlantilla()">🏷️ Categorías</button>
     <button class="btn bg2" onclick="importWodTemplates()">📦 Importar 300 WOD CrossFit</button>
     <button class="btn bg2" onclick="autocompletarVideosWOD()">🎬 Autocompletar videos desde biblioteca</button>
     <input type="text" id="tpl-search" placeholder="Buscar plantilla..." style="flex:1;min-width:150px" oninput="renderTemplatesView()">
-    <select id="tpl-kind-filter" style="width:190px" onchange="renderTemplatesView()">
-      <option value="">Todos los tipos</option>
-      <option value="warmup">🔥 Calentamiento</option>
-      <option value="gym">🏋️ Gym</option>
-      <option value="func">🧓 Funcional</option>
-      <option value="cf">🔥 CF / WOD</option>
-    </select>
     <select id="tpl-cat-filter" style="width:190px" onchange="renderTemplatesView()">
       <option value="">Todas las categorías</option>
     </select>
@@ -2321,23 +2315,103 @@ window.importWodTemplates=async function(){
   }
 };
 
-function plantillaCategorias(list){
-  return [...new Set(list.map(t=>t.categoria).filter(Boolean))].sort();
+// ══ CATEGORÍAS DE PLANTILLA (lista única y administrable — reemplaza el
+// viejo filtro por "tipo": se sigue guardando el kind técnico del bloque
+// (warmup/gym/func/cf) porque el editor lo necesita para saber qué campos
+// mostrar, pero de cara al entrenador solo existe "categoría"). ══
+let plantillaCategoriasCache=null;
+async function loadPlantillaCategorias(){
+  if(plantillaCategoriasCache)return plantillaCategoriasCache;
+  const snap=await getDocSafe(doc(db,'meta','plantillaCategorias'));
+  if(snap.exists()){
+    plantillaCategoriasCache=snap.data().list||[];
+  }else{
+    plantillaCategoriasCache=Object.values(BLOCK_KIND_LABEL);
+    await setDoc(doc(db,'meta','plantillaCategorias'),{list:plantillaCategoriasCache});
+  }
+  return plantillaCategoriasCache;
 }
+function categoriaDe(t){
+  return t.categoria||BLOCK_KIND_LABEL[t.data.kind]||'Sin categoría';
+}
+
+window.abrirGestionCategoriasPlantilla=async function(){
+  await loadPlantillaCategorias();
+  document.getElementById('modal-bg').style.display='flex';
+  renderGestionCategoriasPlantilla();
+};
+function renderGestionCategoriasPlantilla(){
+  const modal=document.getElementById('modal-bg');
+  const cats=plantillaCategoriasCache||[];
+  modal.innerHTML=`<div style="background:var(--s1);border-radius:16px;padding:24px;width:100%;max-width:380px;max-height:80vh;overflow-y:auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <h2>🏷️ Categorías de plantilla</h2>
+      <button onclick="document.getElementById('modal-bg').style.display='none';renderTemplatesView()" style="background:none;border:none;color:var(--mu);font-size:1.4rem;cursor:pointer">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px">
+      ${cats.map(c=>`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--s2);border-radius:8px;padding:8px 12px">
+        <span style="font-size:.86rem">${c}</span>
+        <div style="display:flex;gap:6px">
+          <button class="btn bg2 xs" onclick="renombrarPlantillaCategoria('${c}')">✏️</button>
+          <button class="btn bd2 xs" onclick="borrarPlantillaCategoria('${c}')">🗑️</button>
+        </div>
+      </div>`).join('')||'<p style="color:var(--mu);font-size:.85rem">Sin categorías todavía.</p>'}
+    </div>
+    <div style="display:flex;gap:8px">
+      <input type="text" id="cat-new-name" placeholder="Nueva categoría...">
+      <button class="btn bp" onclick="agregarPlantillaCategoria()">➕</button>
+    </div>
+  </div>`;
+}
+window.agregarPlantillaCategoria=async function(){
+  const input=document.getElementById('cat-new-name');
+  const name=input.value.trim();
+  if(!name)return;
+  const cats=await loadPlantillaCategorias();
+  if(cats.includes(name)){toast('Ya existe esa categoría');return}
+  cats.push(name);
+  await setDoc(doc(db,'meta','plantillaCategorias'),{list:cats});
+  renderGestionCategoriasPlantilla();
+};
+window.renombrarPlantillaCategoria=async function(oldName){
+  const nuevo=prompt('Nuevo nombre para "'+oldName+'":',oldName);
+  if(!nuevo||!nuevo.trim()||nuevo.trim()===oldName)return;
+  const nuevoName=nuevo.trim();
+  const cats=await loadPlantillaCategorias();
+  if(cats.includes(nuevoName)){toast('Ya existe esa categoría');return}
+  const i=cats.indexOf(oldName);
+  if(i<0)return;
+  cats[i]=nuevoName;
+  await setDoc(doc(db,'meta','plantillaCategorias'),{list:cats});
+  const list=await loadBloqueTemplates();
+  let changed=false;
+  list.forEach(t=>{if(t.categoria===oldName){t.categoria=nuevoName;changed=true;}});
+  if(changed){await setDoc(doc(db,'meta','bloqueTemplates'),{list});bloqueTemplatesCache=list;}
+  renderGestionCategoriasPlantilla();
+};
+window.borrarPlantillaCategoria=async function(name){
+  if(!confirm('¿Eliminar la categoría "'+name+'"? Las plantillas que la usaban quedan sin categoría.'))return;
+  const cats=(await loadPlantillaCategorias()).filter(c=>c!==name);
+  plantillaCategoriasCache=cats;
+  await setDoc(doc(db,'meta','plantillaCategorias'),{list:cats});
+  const list=await loadBloqueTemplates();
+  let changed=false;
+  list.forEach(t=>{if(t.categoria===name){t.categoria='';changed=true;}});
+  if(changed){await setDoc(doc(db,'meta','bloqueTemplates'),{list});bloqueTemplatesCache=list;}
+  renderGestionCategoriasPlantilla();
+};
 
 window.guardarBloqueComoPlantilla=async function(blockId){
   const blk=document.getElementById(blockId);
   if(!blk)return;
-  const list=await loadBloqueTemplates();
-  const cats=plantillaCategorias(list);
+  const cats=await loadPlantillaCategorias();
   const modal=document.getElementById('modal-bg');
   modal.style.display='flex';
   modal.innerHTML=`<div style="background:var(--s1);border-radius:16px;padding:24px;width:100%;max-width:380px">
     <h2 style="margin-bottom:14px">💾 Guardar como plantilla</h2>
     <div class="fg" style="margin-bottom:10px"><label>Nombre</label><input type="text" id="qtpl-name" placeholder='Ej: "Calentamiento estándar"'></div>
     <div class="fg" style="margin-bottom:16px"><label>Categoría</label>
-      <input type="text" id="qtpl-cat" list="qtpl-cat-list" placeholder="Ej: Adultos mayores, HIIT...">
-      <datalist id="qtpl-cat-list">${cats.map(c=>`<option value="${c}">`).join('')}</datalist>
+      <select id="qtpl-cat">${cats.length?cats.map(c=>`<option value="${c}">${c}</option>`).join(''):'<option value="">(creá una categoría desde Plantillas)</option>'}</select>
     </div>
     <div style="display:flex;gap:8px">
       <button class="btn bg2" style="flex:1;justify-content:center" onclick="document.getElementById('modal-bg').style.display='none'">Cancelar</button>
@@ -2351,7 +2425,7 @@ window.confirmarGuardarBloqueComoPlantilla=async function(blockId){
   const blk=document.getElementById(blockId);
   const name=document.getElementById('qtpl-name').value.trim();
   if(!blk||!name){toast('❌ Poné un nombre para la plantilla');return}
-  const categoria=document.getElementById('qtpl-cat').value.trim();
+  const categoria=document.getElementById('qtpl-cat').value;
   const data=collectBlockData(blk);
   const list=await loadBloqueTemplates();
   list.push({id:'tpl'+Date.now(),name,categoria,data});
@@ -2377,26 +2451,19 @@ window.abrirInsertarPlantilla=async function(bodyId){
     </div>`;
     return;
   }
-  const kinds=[...new Set(list.map(t=>t.data.kind))];
-  const cats=plantillaCategorias(list);
+  const cats=await loadPlantillaCategorias();
   modal.innerHTML=`<div style="background:var(--s1);border-radius:16px;padding:24px;width:100%;max-width:420px;max-height:80vh;overflow-y:auto">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
       <h2>📥 Insertar plantilla</h2>
       <button onclick="document.getElementById('modal-bg').style.display='none'" style="background:none;border:none;color:var(--mu);font-size:1.4rem;cursor:pointer">✕</button>
     </div>
-    <div style="display:flex;gap:8px;margin-bottom:8px">
+    <div style="display:flex;gap:8px;margin-bottom:12px">
       <input id="ip-search" type="text" placeholder="🔍 Buscar por nombre..." oninput="filtrarInsertarPlantilla('${bodyId}')" style="flex:1">
-      <select id="ip-kind" onchange="filtrarInsertarPlantilla('${bodyId}')" style="width:auto">
-        <option value="">Todos los tipos</option>
-        ${kinds.map(k=>`<option value="${k}">${BLOCK_KIND_ICON[k]||'📋'} ${BLOCK_KIND_LABEL[k]||k}</option>`).join('')}
-      </select>
-    </div>
-    ${cats.length?`<div style="margin-bottom:12px">
-      <select id="ip-cat" onchange="filtrarInsertarPlantilla('${bodyId}')" style="width:100%">
+      <select id="ip-cat" onchange="filtrarInsertarPlantilla('${bodyId}')" style="width:auto">
         <option value="">Todas las categorías</option>
         ${cats.map(c=>`<option value="${c}">${c}</option>`).join('')}
       </select>
-    </div>`:''}
+    </div>
     <div id="ip-list" style="display:flex;flex-direction:column;gap:8px"></div>
   </div>`;
   renderInsertarPlantillaList(bodyId,list);
@@ -2412,7 +2479,7 @@ function renderInsertarPlantillaList(bodyId,filtered){
   elList.innerHTML=filtered.map(t=>{
     const i=insertarPlantillaList.indexOf(t);
     return`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--s2);border-radius:8px;padding:9px 12px">
-      <span style="font-size:.86rem">${BLOCK_KIND_ICON[t.data.kind]||'📋'} ${t.name}${t.categoria?` <span style="color:var(--mu);font-size:.76rem">· ${t.categoria}</span>`:''}</span>
+      <span style="font-size:.86rem">${BLOCK_KIND_ICON[t.data.kind]||'📋'} ${t.name} <span style="color:var(--mu);font-size:.76rem">· ${categoriaDe(t)}</span></span>
       <div style="display:flex;gap:6px">
         <button class="btn bp xs" onclick="insertarPlantilla('${bodyId}',${i})">Insertar</button>
         <button class="btn bd2 xs" onclick="eliminarPlantilla(${i})">🗑️</button>
@@ -2423,10 +2490,9 @@ function renderInsertarPlantillaList(bodyId,filtered){
 
 window.filtrarInsertarPlantilla=function(bodyId){
   const term=(document.getElementById('ip-search')?.value||'').trim().toLowerCase();
-  const kind=document.getElementById('ip-kind')?.value||'';
   const categoria=document.getElementById('ip-cat')?.value||'';
   const filtered=insertarPlantillaList.filter(t=>
-    (!kind||t.data.kind===kind) && (!categoria||t.categoria===categoria) && (!term||t.name.toLowerCase().includes(term))
+    (!categoria||categoriaDe(t)===categoria) && (!term||t.name.toLowerCase().includes(term))
   );
   renderInsertarPlantillaList(bodyId,filtered);
 };
@@ -2473,28 +2539,26 @@ function templateSummary(t){
 window.renderTemplatesView=async function(){
   const list=await loadBloqueTemplates();
   const q=norm(document.getElementById('tpl-search')?.value||'');
-  const kindFilter=document.getElementById('tpl-kind-filter')?.value||'';
   const catSelect=document.getElementById('tpl-cat-filter');
   const catFilter=catSelect?.value||'';
   if(catSelect){
-    const cats=plantillaCategorias(list);
+    const cats=await loadPlantillaCategorias();
     catSelect.innerHTML=`<option value="">Todas las categorías</option>${cats.map(c=>`<option value="${c}"${c===catFilter?' selected':''}>${c}</option>`).join('')}`;
   }
   const el=document.getElementById('tpl-list');
   const filtered=list.filter((t,i)=>{
     t._idx=i;
-    if(kindFilter&&t.data.kind!==kindFilter)return false;
-    if(catFilter&&t.categoria!==catFilter)return false;
+    if(catFilter&&categoriaDe(t)!==catFilter)return false;
     if(q&&!norm(t.name).includes(q))return false;
     return true;
   });
   if(!filtered.length){
-    el.innerHTML=`<p style="color:var(--mu);font-size:.85rem">No hay plantillas${q||kindFilter||catFilter?' que coincidan con el filtro':' todavía. Creá una con "➕ Nueva plantilla" o importá las 300 WOD.'}</p>`;
+    el.innerHTML=`<p style="color:var(--mu);font-size:.85rem">No hay plantillas${q||catFilter?' que coincidan con el filtro':' todavía. Creá una con "➕ Nueva plantilla" o importá las 300 WOD.'}</p>`;
     return;
   }
   el.innerHTML=filtered.map(t=>`<div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px">
     <div>
-      <div style="font-weight:600">${BLOCK_KIND_ICON[t.data.kind]||'📋'} ${t.name}${t.categoria?` <span style="color:var(--mu);font-weight:400;font-size:.76rem">· ${t.categoria}</span>`:''}</div>
+      <div style="font-weight:600">${BLOCK_KIND_ICON[t.data.kind]||'📋'} ${t.name} <span style="color:var(--mu);font-weight:400;font-size:.76rem">· ${categoriaDe(t)}</span></div>
       <div style="font-size:.76rem;color:var(--mu);margin-top:2px">${templateSummary(t)}</div>
     </div>
     <div style="display:flex;gap:6px;flex-shrink:0">
@@ -2538,7 +2602,8 @@ window.abrirEditorPlantilla=async function(id){
   const list=await loadBloqueTemplates();
   const t=id?list.find(x=>x.id===id):null;
   const kindVal=t?(t.data.kind==='gym'?`gym:${t.data.type}`:t.data.kind==='cf'?`cf:${t.data.cftype}`:t.data.kind):TPL_KIND_OPTIONS[0].value;
-  const cats=plantillaCategorias(list);
+  const cats=await loadPlantillaCategorias();
+  const currentCat=t?categoriaDe(t):(cats[0]||'');
   const modal=document.getElementById('modal-bg');
   modal.style.display='flex';
   modal.innerHTML=`<div style="background:var(--s1);border-radius:16px;padding:24px;width:100%;max-width:520px;max-height:88vh;overflow-y:auto">
@@ -2549,8 +2614,7 @@ window.abrirEditorPlantilla=async function(id){
     <input type="hidden" id="tpl-editor-id" value="${t?.id||''}">
     <div class="fg" style="margin-bottom:10px"><label>Nombre de la plantilla</label><input type="text" id="tpl-editor-name" value="${t?.name||''}" placeholder="Ej: Fran, Calentamiento estándar..."></div>
     <div class="fg" style="margin-bottom:10px"><label>Categoría</label>
-      <input type="text" id="tpl-editor-cat" list="tpl-editor-cat-list" value="${t?.categoria||''}" placeholder="Ej: Adultos mayores, HIIT...">
-      <datalist id="tpl-editor-cat-list">${cats.map(c=>`<option value="${c}">`).join('')}</datalist>
+      <select id="tpl-editor-cat">${cats.length?cats.map(c=>`<option value="${c}" ${c===currentCat?'selected':''}>${c}</option>`).join(''):'<option value="">(creá una categoría con el botón 🏷️ Categorías)</option>'}</select>
     </div>
     <div class="fg" style="margin-bottom:14px"><label>Tipo de bloque</label>
       <select id="tpl-editor-kind" ${t?'disabled':''} onchange="renderTplEditorBody(this.value,null)">
