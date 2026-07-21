@@ -509,6 +509,8 @@ setTimeout(()=>{
         </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
           <button class="btn bcy sm" onclick="duplicateWeek('nc')">📋 Duplicar esta semana</button>
+          <button class="btn bg2 sm" onclick="renumberWeek('nc')">🔢 Renumerar</button>
+          <button class="btn bd2 sm" onclick="deleteWeek('nc')">🗑️ Borrar semana</button>
         </div>
       </div>
       <p style="font-size:.74rem;color:var(--mu);margin-top:8px">Cada semana tiene su propia rutina. Cambiá de semana arriba para planificar otra, o duplicá la actual para editar solo algunos cambios.</p>
@@ -581,6 +583,8 @@ setTimeout(()=>{
         </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
           <button class="btn bcy sm" onclick="duplicateWeek('ec')">📋 Duplicar esta semana</button>
+          <button class="btn bg2 sm" onclick="renumberWeek('ec')">🔢 Renumerar</button>
+          <button class="btn bd2 sm" onclick="deleteWeek('ec')">🗑️ Borrar semana</button>
         </div>
       </div>
       <p style="font-size:.74rem;color:var(--mu);margin-top:8px">Cada semana tiene su propia rutina. Cambiá de semana arriba, o duplicá la actual para editar solo algunos cambios.</p>
@@ -773,6 +777,8 @@ setTimeout(()=>{
         </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
           <button class="btn bcy sm" onclick="duplicateWeek('np')">📋 Duplicar esta semana</button>
+          <button class="btn bg2 sm" onclick="renumberWeek('np')">🔢 Renumerar</button>
+          <button class="btn bd2 sm" onclick="deleteWeek('np')">🗑️ Borrar semana</button>
         </div>
       </div>
       <p style="font-size:.74rem;color:var(--mu);margin-top:8px">Si cargás más de una semana, los alumnos rotan entre todas ellas en bucle según en cuál elijas que arranquen.</p>
@@ -824,6 +830,8 @@ setTimeout(()=>{
         </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
           <button class="btn bcy sm" onclick="duplicateWeek('ep')">📋 Duplicar esta semana</button>
+          <button class="btn bg2 sm" onclick="renumberWeek('ep')">🔢 Renumerar</button>
+          <button class="btn bd2 sm" onclick="deleteWeek('ep')">🗑️ Borrar semana</button>
         </div>
       </div>
       <p style="font-size:.74rem;color:var(--mu);margin-top:8px">Si cargás más de una semana, los alumnos rotan entre todas ellas en bucle según en cuál elijas que arranquen.</p>
@@ -1730,9 +1738,11 @@ window.onWeekChange=function(prefix){
   let newWeek=sel.value;
   if(newWeek==='__new__'){
     const weekNums=Object.keys(data).map(Number);
-    newWeek=Math.max(...weekNums)+1;
-    data[newWeek]=JSON.parse(JSON.stringify(data[curWeek]||[])); // copy structure but will be empty days
-    data[newWeek]=data[curWeek].map(d=>({name:d.name,blocks:[]})); // empty blocks, keep day names
+    const suggested=Math.max(...weekNums)+1;
+    const picked=promptWeekNumber('Número para la nueva semana:',suggested,weekNums);
+    if(picked==null){sel.value=curWeek;return} // canceló: no crear nada, volver a la semana actual
+    newWeek=picked;
+    data[newWeek]=data[curWeek].map(d=>({name:d.name,blocks:[]})); // empieza vacía, conserva nombres de días
     toast('✅ Semana '+newWeek+' creada');
   } else {
     newWeek=parseInt(newWeek);
@@ -1743,6 +1753,60 @@ window.onWeekChange=function(prefix){
   const weekDays=data[newWeek]||[];
   document.getElementById(countId).value=weekDays.length||4;
   buildDays(containerId,weekDays.length||4,weekDays);
+};
+
+// Pide un número de semana por prompt, validando que sea un entero positivo
+// y que no choque con una semana ya existente (excepto la propia, si se le
+// pasa excludeCurrent). Devuelve null si el usuario cancela o insiste en un
+// valor inválido tras el aviso.
+function promptWeekNumber(message,suggested,existingNums,excludeCurrent){
+  const taken=excludeCurrent!=null?existingNums.filter(n=>n!==excludeCurrent):existingNums;
+  const raw=window.prompt(message,String(suggested));
+  if(raw==null)return null;
+  const n=parseInt(raw.trim());
+  if(!n||n<1){toast('⚠️ Ingresá un número de semana válido (mayor a 0).');return null}
+  if(taken.includes(n)){toast('⚠️ Ya existe una semana con ese número.');return null}
+  return n;
+}
+
+// Cambia el número de la semana actual (sin tocar su contenido), validando
+// que no quede duplicada con otra semana ya existente del mismo plan.
+window.renumberWeek=function(prefix){
+  const store=weekStoreFor(prefix);
+  const{containerId,countId,data}=store;
+  const curWeek=store.getCur();
+  const curCount=parseInt(document.getElementById(countId).value)||1;
+  data[curWeek]=collectDays(containerId,curCount); // no perder cambios sin guardar
+
+  const weekNums=Object.keys(data).map(Number);
+  const newWeek=promptWeekNumber('Nuevo número para la semana '+curWeek+':',curWeek,weekNums,curWeek);
+  if(newWeek==null||newWeek===curWeek)return;
+
+  data[newWeek]=data[curWeek];
+  delete data[curWeek];
+  store.setCur(newWeek);
+  setupWeekSelector(prefix);
+  toast('✅ Ahora es la semana '+newWeek);
+};
+
+// Borra la semana actual del plan (mínimo 1 semana siempre tiene que quedar).
+window.deleteWeek=function(prefix){
+  const store=weekStoreFor(prefix);
+  const{containerId,countId,data}=store;
+  const curWeek=store.getCur();
+  const weekNums=Object.keys(data).map(Number).sort((a,b)=>a-b);
+  if(weekNums.length<=1){toast('⚠️ No se puede borrar: tiene que quedar al menos una semana.');return}
+  if(!confirm('¿Borrar la semana '+curWeek+'? Se pierde toda su rutina.'))return;
+
+  delete data[curWeek];
+  const remaining=weekNums.filter(w=>w!==curWeek);
+  const nextWeek=remaining[0];
+  store.setCur(nextWeek);
+  setupWeekSelector(prefix);
+  const weekDays=data[nextWeek]||[];
+  document.getElementById(countId).value=weekDays.length||4;
+  buildDays(containerId,weekDays.length||4,weekDays);
+  toast('🗑️ Semana '+curWeek+' borrada');
 };
 
 window.duplicateWeek=function(prefix){
