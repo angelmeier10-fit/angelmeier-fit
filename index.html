@@ -3935,6 +3935,7 @@ async function renderProgramaUnificadoHtml(prog,cats,allPrograms=[]){
           <button class="btn bcy xs" onclick="duplicateClient('${c.id}')">📋 Duplicar</button>
           ${migrarRutinaBtn}
           <button class="btn bpu xs" onclick="migrarClienteAAlumno('${c.id}')" title="Crea una cuenta con usuario y contraseña para este alumno, en reemplazo del acceso por link">🔑 Migrar a cuenta con login</button>
+          <button class="btn bd2 xs" onclick="borrarClienteViejo('${c.id}')" title="Borra solo este plan viejo, sin tocar la suscripción">🗑️ Borrar plan viejo</button>
         </div>
       </div>
       ${waLink||mpLink?`<div style="display:flex;gap:10px;margin-top:4px">${waLink}${mpLink}</div>`:''}
@@ -5821,6 +5822,19 @@ window.migrarRutinaClienteASuscripcion=async function(clientId,subUid){
   const planIdx=planes.findIndex(p=>p.id===sub.planId);
   if(planIdx>=0)planes[planIdx]=plan;
   toast('✅ Rutina migrada a la suscripción. Ahora podés borrar el plan personalizado viejo.');
+  suscriptoresCache=null;
+  renderAlumnosUnificado(document.getElementById('uni-search')?.value);
+};
+
+// Borra SOLO el registro viejo de clients/{id}, sin tocar ninguna suscripción
+// del mismo alumno (a diferencia de deleteAlumnoCompleto, que borra todo).
+window.borrarClienteViejo=async function(clientId){
+  const c=clients.find(cl=>cl.id===clientId);
+  if(!c)return;
+  if(!confirm(`¿Borrar el plan personalizado viejo de ${c.name}? Su suscripción (si tiene) no se toca.`))return;
+  await deleteDoc(doc(db,'clients',clientId));
+  clients=clients.filter(cl=>cl.id!==clientId);
+  toast('🗑️ Plan personalizado viejo borrado');
   suscriptoresCache=null;
   renderAlumnosUnificado(document.getElementById('uni-search')?.value);
 };
