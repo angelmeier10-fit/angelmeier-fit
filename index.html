@@ -3919,7 +3919,7 @@ async function buildAlumnosUnificadoGroups(){
   return groups;
 }
 
-async function renderProgramaUnificadoHtml(prog,cats,allPrograms=[]){
+async function renderProgramaUnificadoHtml(prog,cats){
   const catLabel=Object.fromEntries(cats.map(c=>[c.id,c.label]));
   if(prog.type==='personal'){
     const c=prog.client;
@@ -3930,17 +3930,13 @@ async function renderProgramaUnificadoHtml(prog,cats,allPrograms=[]){
     const payBadge=c.payStatus==='paid'?'<span class="badge" style="background:#4ade8022;color:var(--gr)">✅ Pagado</span>':c.payStatus==='pending'?'<span class="badge" style="background:#f8717122;color:var(--rd)">⏳ Pendiente de pago</span>':'';
     const waLink=c.whatsapp?`<a href="https://wa.me/${c.whatsapp}" target="_blank" style="font-size:.72rem;color:#25D366;text-decoration:none">💬 ${c.whatsapp}</a>`:'';
     const mpLink=c.mpLink?`<a href="${c.mpLink}" target="_blank" style="font-size:.72rem;color:#009EE3;text-decoration:none">💳 Link MP</a>`:'';
-    const subSibling=allPrograms.find(p=>p.type==='subscription'&&p.sub?.planId);
-    const migrarRutinaBtn=subSibling?`<button class="btn bd2 xs" onclick="migrarRutinaClienteASuscripcion('${c.id}','${subSibling.uid}')" title="Copia la rutina de este plan viejo dentro del plan de su suscripción actual">➡️ Migrar rutina a su suscripción</button>`:'';
     return`<div style="padding:8px 0;border-bottom:1px solid var(--bd)">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
         <div style="font-size:.84rem"><b>🎯 Plan personalizado</b>${c.routineName?' — '+c.routineName:''} ${payBadge} ${expiryBadge}</div>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
           <button class="btn bcy xs" onclick="openEdit('${c.id}')">✏️ Editar</button>
           <button class="btn bcy xs" onclick="duplicateClient('${c.id}')">📋 Duplicar</button>
-          ${migrarRutinaBtn}
           <button class="btn bpu xs" onclick="migrarClienteAAlumno('${c.id}')" title="Crea una cuenta con usuario y contraseña para este alumno, en reemplazo del acceso por link">🔑 Migrar a cuenta con login</button>
-          <button class="btn bd2 xs" onclick="borrarClienteViejo('${c.id}')" title="Borra solo este plan viejo, sin tocar la suscripción">🗑️ Borrar plan viejo</button>
         </div>
       </div>
       ${waLink||mpLink?`<div style="display:flex;gap:10px;margin-top:4px">${waLink}${mpLink}</div>`:''}
@@ -4048,7 +4044,7 @@ async function renderAlumnosUnificado(searchTerm){
   }
   const [cats]=await Promise.all([getCategoriasSuscripcion(),loadPlanesFijos()]);
   const cardsArr=await Promise.all(alumnos.map(async(a,ai)=>{
-    const progRows=await Promise.all(a.programs.map(prog=>renderProgramaUnificadoHtml(prog,cats,a.programs)));
+    const progRows=await Promise.all(a.programs.map(prog=>renderProgramaUnificadoHtml(prog,cats)));
     const bodyId=`uni-body-${ai}`;
     const hasSubscription=a.programs.some(p=>p.type==='subscription');
     const convertBtn=hasSubscription?'':`<button class="btn bcy xs" onclick="event.stopPropagation();precargarAltaSuscriptor(${ai})">🔔 Convertir en suscriptor</button>`;
@@ -5801,47 +5797,6 @@ window.cambiarPasswordAlumnoAdmin=async function(email,name){
     };
     toast('⚠️ '+(msgs[err.code]||('No se pudo enviar el email ('+err.code+').')));
   }
-};
-
-// Copia la rutina de un cliente viejo (clients/{id}) dentro del plan que ya
-// tiene su suscripción (subscribers/{uid} -> planes/{planId}), para unificar
-// cuando quedaron dos registros separados del mismo alumno (cliente viejo +
-// suscripción nueva) y la rutina real está armada en el registro viejo.
-window.migrarRutinaClienteASuscripcion=async function(clientId,subUid){
-  const c=clients.find(cl=>cl.id===clientId);
-  if(!c){toast('❌ No se encontró el plan personalizado viejo');return}
-  const subSnap=await getDoc(doc(db,'subscribers',subUid));
-  if(!subSnap.exists()){toast('❌ No se encontró la suscripción');return}
-  const sub=subSnap.data();
-  if(!sub.planId){toast('⚠️ Esta suscripción todavía no tiene un plan asignado');return}
-  if(!confirm(`¿Copiar la rutina de "${c.name}" (plan personalizado viejo) dentro del plan de su suscripción? Esto reemplaza la rutina actual de la suscripción por la del plan viejo.`))return;
-  const planSnap=await getDoc(doc(db,'planes',sub.planId));
-  if(!planSnap.exists()){toast('❌ No se encontró el plan de la suscripción');return}
-  const plan={id:sub.planId,...planSnap.data()};
-  plan.weeks=(c.weeks&&Object.keys(c.weeks).length)?c.weeks:{1:c.days||[]};
-  plan.activeWeek=c.activeWeek||1;
-  plan.days=plan.weeks[plan.activeWeek]||c.days||[];
-  plan.totalWeeks=c.totalWeeks||plan.totalWeeks||12;
-  plan.mesoWeeks=c.mesoWeeks||plan.mesoWeeks||4;
-  await setDoc(doc(db,'planes',sub.planId),plan);
-  const planIdx=planes.findIndex(p=>p.id===sub.planId);
-  if(planIdx>=0)planes[planIdx]=plan;
-  toast('✅ Rutina migrada a la suscripción. Ahora podés borrar el plan personalizado viejo.');
-  suscriptoresCache=null;
-  renderAlumnosUnificado(document.getElementById('uni-search')?.value);
-};
-
-// Borra SOLO el registro viejo de clients/{id}, sin tocar ninguna suscripción
-// del mismo alumno (a diferencia de deleteAlumnoCompleto, que borra todo).
-window.borrarClienteViejo=async function(clientId){
-  const c=clients.find(cl=>cl.id===clientId);
-  if(!c)return;
-  if(!confirm(`¿Borrar el plan personalizado viejo de ${c.name}? Su suscripción (si tiene) no se toca.`))return;
-  await deleteDoc(doc(db,'clients',clientId));
-  clients=clients.filter(cl=>cl.id!==clientId);
-  toast('🗑️ Plan personalizado viejo borrado');
-  suscriptoresCache=null;
-  renderAlumnosUnificado(document.getElementById('uni-search')?.value);
 };
 
 // Migra un alumno viejo con acceso por link (clients/{id}) a una cuenta con
