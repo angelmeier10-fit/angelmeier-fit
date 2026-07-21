@@ -3604,7 +3604,7 @@ window.closeExModal=function(){pendingExTarget=null;document.getElementById('ex-
 function patchExerciseListVideo(exList,key,newName,newVideo){
   let changed=false;
   (exList||[]).forEach(e=>{
-    if((e.name||'').trim().toLowerCase()===key){e.video=newVideo;if(newName)e.name=newName;changed=true;}
+    if(norm(e.name).trim()===key){e.video=newVideo;if(newName)e.name=newName;changed=true;}
   });
   return changed;
 }
@@ -3620,7 +3620,7 @@ function patchDaysVideo(days,key,newName,newVideo){
   return changed;
 }
 async function propagateExerciseEdit(oldName,newName,newVideo){
-  const key=oldName.trim().toLowerCase();
+  const key=norm(oldName).trim();
   for(const plan of planes){
     let changed=false;
     if(plan.weeks)Object.values(plan.weeks).forEach(days=>{if(patchDaysVideo(days,key,newName,newVideo))changed=true;});
@@ -3644,8 +3644,13 @@ window.saveExercise=async function(){
   try{
   const cat=document.getElementById('em-cat').value;
   const video=document.getElementById('em-video').value.trim();
-  const existingId=document.getElementById('em-id').value;
   const target=pendingExTarget;pendingExTarget=null;
+  // Si el nombre ya existe en el catálogo (aunque se haya llegado acá por
+  // "agregar" y no por el lápiz de editar), lo tratamos como edición del
+  // mismo registro: evita crear un duplicado y asegura que el video se
+  // propague a las rutinas ya armadas.
+  const dupMatch=exDB.find(e=>norm(e.name).trim()===norm(name).trim());
+  const existingId=document.getElementById('em-id').value||dupMatch?.id||'';
   if(existingId){
     const ex=exDB.find(e=>e.id===existingId);
     const oldName=ex?.name||name;
