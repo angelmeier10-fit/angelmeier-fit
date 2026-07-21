@@ -3635,9 +3635,13 @@ async function propagateExerciseEdit(oldName,newName,newVideo){
   }
 }
 
+let savingExercise=false;
 window.saveExercise=async function(){
+  if(savingExercise)return;
   const name=document.getElementById('em-name').value.trim();
   if(!name){alert('Ingresá el nombre.');return}
+  savingExercise=true;
+  try{
   const cat=document.getElementById('em-cat').value;
   const video=document.getElementById('em-video').value.trim();
   const existingId=document.getElementById('em-id').value;
@@ -3663,6 +3667,7 @@ window.saveExercise=async function(){
     target.input.dataset.video=video;
     target.input.focus();
   }
+  }finally{savingExercise=false;}
 };
 
 window.delEx=async function(id){
