@@ -6078,6 +6078,29 @@ function cfTimerTick(){
   if(cfTimer.mode==='emom'&&cfTimer.currentSecs%60===0&&cfTimer.currentSecs>0) beep3(true);
 }
 
+// El navegador pausa o retrasa mucho los setInterval cuando la pestaña/app
+// queda en segundo plano (celular bloqueado, cambio de app), así que restar
+// "1 segundo por tick" hace que el timer se vea frenado al volver. En vez de
+// eso, cada tick mide cuánto tiempo real pasó (Date.now()) y corre tantos
+// cfTimerTick() como segundos reales hayan transcurrido, así el timer queda
+// al día apenas el intervalo vuelve a dispararse.
+function cfTimerCatchUpTick(){
+  if(!cfTimer.running||cfTimer._countingDown)return;
+  const now=Date.now();
+  const elapsedSecs=Math.floor((now-cfTimer.lastTickAt)/1000);
+  if(elapsedSecs<1)return;
+  cfTimer.lastTickAt+=elapsedSecs*1000;
+  const n=Math.min(elapsedSecs,7200); // tope de seguridad ante ausencias muy largas
+  for(let i=0;i<n&&cfTimer.running;i++)cfTimerTick();
+}
+function cfTimerStartMainInterval(){
+  cfTimer.lastTickAt=Date.now();
+  cfTimer.interval=setInterval(cfTimerCatchUpTick,1000);
+}
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible')cfTimerCatchUpTick();
+});
+
 window.cfTimerToggle=function(){
   const btn=document.getElementById('cf-timer-startstop');
   if(cfTimer.running){
@@ -6119,7 +6142,7 @@ window.cfTimerToggle=function(){
         lbl.textContent=savedLabel;
         beepFinal();
         // Now start actual timer
-        cfTimer.interval=setInterval(cfTimerTick,1000);
+        cfTimerStartMainInterval();
       } else {
         disp.textContent=countdown;
         document.getElementById('cf-timer-prog-bar').style.width=((countdown/10)*100)+'%';
