@@ -1556,6 +1556,11 @@ async function init(){
 function showView(v,btn){
   document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('active'));
+  // La clase "as-modal" (edición de un plan personalizado como ventana
+  // superpuesta) solo la agrega irAEditarPlanPersonal; cualquier navegación
+  // normal por las pestañas de arriba tiene que sacarla, o se queda pegada
+  // y toda la pantalla de Planes Grupales queda con el overlay fijo puesto.
+  document.getElementById('view-planes').classList.remove('as-modal');
   document.getElementById('view-'+v).classList.add('active');btn.classList.add('active');
   if(v==='client')populateClientSelect();
   if(v==='exdb'){renderExDB();populateCatFilter();}
