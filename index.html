@@ -3840,11 +3840,21 @@ function timerCatchUp(){
   if(elapsedSecs<1)return;
   timerLastTickAt+=elapsedSecs*1000;
   const n=Math.min(elapsedSecs,7200);
-  for(let i=0;i<n&&timerRunning;i++)timerTick();
+  // Si una vuelta del bucle tira un error (ej. algún elemento del DOM no
+  // está disponible en ese instante), no debe cortar el conteo a mitad de
+  // camino: eso hacía que el timer "avanzara de menos" al volver del
+  // segundo plano en vez de ponerse al día del todo.
+  for(let i=0;i<n&&timerRunning;i++){try{timerTick();}catch(e){timerSeconds--;}}
 }
 document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='visible')timerCatchUp();
 });
+// Refuerzo: en algunos navegadores móviles (sobre todo apps agregadas a la
+// pantalla de inicio) "visibilitychange" no siempre dispara al desbloquear
+// el celular, así que también escuchamos "focus"/"pageshow" como señal extra
+// de que la app volvió a primer plano.
+window.addEventListener('focus',timerCatchUp);
+window.addEventListener('pageshow',timerCatchUp);
 function startTimer(secs){
   clearInterval(timerInterval);
   timerTotal=secs;timerSeconds=secs;
@@ -6214,7 +6224,7 @@ function cfTimerCatchUpTick(){
   if(elapsedSecs<1)return;
   cfTimer.lastTickAt+=elapsedSecs*1000;
   const n=Math.min(elapsedSecs,7200); // tope de seguridad ante ausencias muy largas
-  for(let i=0;i<n&&cfTimer.running;i++)cfTimerTick();
+  for(let i=0;i<n&&cfTimer.running;i++){try{cfTimerTick();}catch(e){cfTimer.currentSecs--;}}
 }
 function cfTimerStartMainInterval(){
   cfTimer.lastTickAt=Date.now();
@@ -6223,6 +6233,8 @@ function cfTimerStartMainInterval(){
 document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='visible')cfTimerCatchUpTick();
 });
+window.addEventListener('focus',cfTimerCatchUpTick);
+window.addEventListener('pageshow',cfTimerCatchUpTick);
 
 window.cfTimerToggle=function(){
   const btn=document.getElementById('cf-timer-startstop');
