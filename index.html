@@ -4102,8 +4102,18 @@ async function renderProgramaUnificadoHtml(prog,cats){
     <button class="btn bg2 xs" onclick="editarVencimientoSuscriptor('${uid}')">💾 Guardar vencimiento</button>
     <button class="btn bd2 xs" onclick="toggleAlumnoActivo('${uid}',true)">⛔ Desactivar</button>`;
   }
+  // Cambiar la semana que ve el alumno en cualquier momento (no solo al
+  // reactivarlo): elige una semana del plan y reinicia startDate a hoy para
+  // que el cálculo de "semana actual" arranque desde ahí y siga avanzando.
+  const cambiarSemanaHtml=(s.categoria==='__personal__'&&planData)?(()=>{
+    const weekNums=planWeekNums(planData);
+    if(weekNums.length<2)return'';
+    return`<select id="susc-changeweek-${uid}" style="width:auto;font-size:.78rem">${weekNums.map(w=>`<option value="${w}"${w===s.startWeek?' selected':''}>Semana ${w}</option>`).join('')}</select>
+    <button class="btn bg2 xs" onclick="cambiarSemanaAlumno('${uid}')">📅 Cambiar semana</button>`;
+  })():'';
   const editarPlanBtn=(s.categoria==='__personal__'&&s.planId)?`<button class="btn bpu xs" onclick="irAEditarPlanPersonal('${s.planId}')">✏️ Editar su plan</button>
-    <button class="btn bd2 xs" onclick="borrarPlanSuscriptor('${uid}','${s.planId}')">🗑️ Borrar plan</button>`:'';
+    <button class="btn bd2 xs" onclick="borrarPlanSuscriptor('${uid}','${s.planId}')">🗑️ Borrar plan</button>
+    ${cambiarSemanaHtml}`:'';
   const catTxt=s.categoria==='__personal__'?'🎯 Plan personalizado':(catLabel[s.categoria]||s.categoria||'—');
   const progressHtml=renderProgressDetailBlock(`alu-${uid}`,exerciseLogs,days,notes)||'<div style="font-size:.78rem;color:var(--mu)">Sin registros todavía.</div>';
   return`<div style="padding:8px 0;border-bottom:1px solid var(--bd)">
@@ -5703,6 +5713,21 @@ window.activarSuscriptorManual=async function(uid){
   refreshSuscriptorPanels();
 };
 
+// Permite forzar en cualquier momento la semana que ve un alumno con plan
+// personalizado (sin desactivarlo/reactivarlo). Reinicia startDate a hoy
+// para que el cálculo de "semana actual" arranque desde la semana elegida
+// y de ahí en más siga avanzando normalmente.
+window.cambiarSemanaAlumno=async function(uid){
+  const sel=document.getElementById('susc-changeweek-'+uid);
+  if(!sel)return;
+  const startWeek=parseInt(sel.value);
+  if(!confirm(`¿Cambiar ahora a la semana ${startWeek}?`))return;
+  await updateDoc(doc(db,'subscribers',uid),{startWeek,startDate:new Date().toISOString().split('T')[0]});
+  toast(`✅ Ahora ve la semana ${startWeek}`);
+  suscriptoresCache=null;
+  refreshSuscriptorPanels();
+};
+
 // Cambia el vencimiento de un alumno ya activo (fecha o "sin restricción")
 // sin pasar por desactivar/reactivar.
 window.editarVencimientoSuscriptor=async function(uid){
@@ -6025,19 +6050,19 @@ function speakText(text){
   }catch(e){}
 }
 
+// Mismo timbre (square) y tono que el resto de los pitidos, pero un solo
+// pitido largo para marcar el final de todos los timers.
 function beepFinal(){
   try{
     const ctx=getAudioCtx();
-    [0,0.2,0.4].forEach((delay,i)=>{
-      const o=ctx.createOscillator();const g=ctx.createGain();
-      o.connect(g);g.connect(ctx.destination);
-      o.type='sawtooth';
-      o.frequency.setValueAtTime(i===2?1100:880,ctx.currentTime+delay);
-      g.gain.setValueAtTime(0,ctx.currentTime+delay);
-      g.gain.linearRampToValueAtTime(0.9,ctx.currentTime+delay+0.02);
-      g.gain.linearRampToValueAtTime(0,ctx.currentTime+delay+0.3);
-      o.start(ctx.currentTime+delay);o.stop(ctx.currentTime+delay+0.35);
-    });
+    const o=ctx.createOscillator();const g=ctx.createGain();
+    o.connect(g);g.connect(ctx.destination);
+    o.type='square';
+    o.frequency.setValueAtTime(440,ctx.currentTime);
+    g.gain.setValueAtTime(0,ctx.currentTime);
+    g.gain.linearRampToValueAtTime(0.9,ctx.currentTime+0.03);
+    g.gain.linearRampToValueAtTime(0,ctx.currentTime+1.5);
+    o.start(ctx.currentTime);o.stop(ctx.currentTime+1.55);
   }catch(e){}
 }
 
