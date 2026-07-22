@@ -4637,7 +4637,13 @@ function openEditPlan(id){
   document.getElementById('itp-edit').style.display='inline-block';
   document.getElementById('itp-macro').style.display='inline-block';
   editingPersonalPlan=plan.kind==='personal';
-  document.querySelector('#view-planes .itabs').style.display=editingPersonalPlan?'none':'flex';
+  // Un plan personalizado es 1:1 de un solo alumno: "Mis planes"/"Nuevo plan"/
+  // "Alumnos" no aplican acá, pero "Editar plan" y "Macrociclo" (objetivos por
+  // semana/mes) sí, así que solo se ocultan las pestañas que no corresponden
+  // en vez de esconder toda la barra (eso dejaba inaccesible el Macrociclo).
+  document.getElementById('itp-list').style.display=editingPersonalPlan?'none':'inline-block';
+  document.getElementById('itp-new').style.display=editingPersonalPlan?'none':'inline-block';
+  document.getElementById('itp-members').style.display='none';
   document.getElementById('btn-volver-alumnos').style.display=editingPersonalPlan?'inline-flex':'none';
   showPlanesPanel('edit',document.getElementById('itp-edit'));
 }
@@ -4645,7 +4651,8 @@ window.openEditPlan=openEditPlan;
 
 window.volverAAlumnosDesdeEdicion=function(){
   editingPersonalPlan=false;
-  document.querySelector('#view-planes .itabs').style.display='flex';
+  document.getElementById('itp-list').style.display='inline-block';
+  document.getElementById('itp-new').style.display='inline-block';
   document.getElementById('btn-volver-alumnos').style.display='none';
   const btn=document.querySelector(".tab-btn[onclick*=\"'trainer'\"]");
   showView('trainer',btn);
