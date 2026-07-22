@@ -3791,6 +3791,8 @@ function parseRestToSeconds(rest){
 let timerInterval=null;
 let timerSeconds=60;
 let timerTotal=60;
+let timerRunning=false;
+let timerLastTickAt=0;
 // Un solo AudioContext compartido: crear uno nuevo por cada beep lo deja
 // "suspended" en varios navegadores (Safari/iOS) cuando el beep no dispara
 // directo desde el click del usuario (ej. dentro de un setInterval), y el
@@ -3802,6 +3804,41 @@ function getAudioCtx(){
   return sharedAudioCtx;
 }
 function beep(){try{const ctx=getAudioCtx();const o=ctx.createOscillator();const g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.frequency.setValueAtTime(880,ctx.currentTime);g.gain.setValueAtTime(0.3,ctx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.6);o.start();o.stop(ctx.currentTime+0.6);}catch(e){}}
+function timerTick(){
+  const bar=document.getElementById('timer-bar');
+  const big=document.getElementById('timer-big');
+  const prog=document.getElementById('timer-progress');
+  timerSeconds--;
+  big.textContent=timerSeconds;
+  const pct=Math.max(0,(timerSeconds/timerTotal)*100);
+  prog.style.width=pct+'%';
+  if(timerSeconds<=10){big.style.color='var(--rd)';prog.style.background='var(--rd)';bar.style.borderTopColor='var(--rd)';}
+  if(timerSeconds===10)beep2();
+  if(timerSeconds===3||timerSeconds===2||timerSeconds===1)beep1();
+  if(timerSeconds<=0){
+    clearInterval(timerInterval);timerRunning=false;
+    big.textContent='✓';big.style.color='var(--gr)';
+    prog.style.width='100%';prog.style.background='var(--gr)';
+    bar.style.borderTopColor='var(--gr)';
+    beepFinal();
+    setTimeout(()=>{bar.style.display='none'},3000);
+  }
+}
+// Igual que con el timer de CrossFit: el navegador pausa o retrasa los
+// setInterval en segundo plano, así que en vez de restar "1 segundo por tick"
+// medimos con Date.now() cuánto tiempo real pasó y ponemos al día el timer.
+function timerCatchUp(){
+  if(!timerRunning)return;
+  const now=Date.now();
+  const elapsedSecs=Math.floor((now-timerLastTickAt)/1000);
+  if(elapsedSecs<1)return;
+  timerLastTickAt+=elapsedSecs*1000;
+  const n=Math.min(elapsedSecs,7200);
+  for(let i=0;i<n&&timerRunning;i++)timerTick();
+}
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible')timerCatchUp();
+});
 function startTimer(secs){
   clearInterval(timerInterval);
   timerTotal=secs;timerSeconds=secs;
@@ -3814,25 +3851,11 @@ function startTimer(secs){
   bar.style.borderTopColor='var(--or)';
   big.textContent=timerSeconds;big.style.color='var(--or)';
   prog.style.background='var(--or)';prog.style.width='100%';
-  timerInterval=setInterval(()=>{
-    timerSeconds--;
-    big.textContent=timerSeconds;
-    const pct=Math.max(0,(timerSeconds/timerTotal)*100);
-    prog.style.width=pct+'%';
-    if(timerSeconds<=10){big.style.color='var(--rd)';prog.style.background='var(--rd)';bar.style.borderTopColor='var(--rd)';}
-    if(timerSeconds===10)beep2();
-    if(timerSeconds===3||timerSeconds===2||timerSeconds===1)beep1();
-    if(timerSeconds<=0){
-      clearInterval(timerInterval);
-      big.textContent='✓';big.style.color='var(--gr)';
-      prog.style.width='100%';prog.style.background='var(--gr)';
-      bar.style.borderTopColor='var(--gr)';
-      beepFinal();
-      setTimeout(()=>{bar.style.display='none'},3000);
-    }
-  },1000);
+  timerRunning=true;
+  timerLastTickAt=Date.now();
+  timerInterval=setInterval(timerCatchUp,1000);
 }
-window.stopTimer=function(){clearInterval(timerInterval);document.getElementById('timer-bar').style.display='none'};
+window.stopTimer=function(){clearInterval(timerInterval);timerRunning=false;document.getElementById('timer-bar').style.display='none'};
 window.restartWithCustom=function(){
   const v=parseInt(document.getElementById('timer-custom').value)||60;
   startTimer(Math.max(5,Math.min(600,v)));
