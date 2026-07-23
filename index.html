@@ -4197,9 +4197,9 @@ async function renderAlumnosUnificado(searchTerm){
     })();
     const passBtn=(subProg&&a.email)?`<button class="btn bg2 xs" onclick="event.stopPropagation();cambiarPasswordAlumnoAdmin('${a.email.replace(/'/g,"\\'")}','${a.name.replace(/'/g,"\\'")}')" title="Mandarle email para cambiar la contraseña">🔑 Contraseña</button>`:'';
     return`<div class="card">
-      <div style="display:flex;align-items:center;gap:10px;cursor:pointer" onclick="document.getElementById('${bodyId}').classList.toggle('collapsed');this.querySelector('.card-toggle').style.transform=document.getElementById('${bodyId}').classList.contains('collapsed')?'rotate(-90deg)':''">
+      <div style="display:flex;align-items:center;gap:10px;cursor:pointer;flex-wrap:wrap" onclick="document.getElementById('${bodyId}').classList.toggle('collapsed');this.querySelector('.card-toggle').style.transform=document.getElementById('${bodyId}').classList.contains('collapsed')?'rotate(-90deg)':''">
         <div class="member-av">${a.name.charAt(0).toUpperCase()}</div>
-        <div style="flex:1"><div style="font-weight:700;font-size:.92rem">${a.name}</div><div style="font-size:.74rem;color:var(--mu)">${a.email||''} · ${a.programs.length} programa${a.programs.length!==1?'s':''}</div></div>
+        <div style="flex:1;min-width:140px"><div style="font-weight:700;font-size:.92rem">${a.name}</div><div style="font-size:.74rem;color:var(--mu)">${a.email||''} · ${a.programs.length} programa${a.programs.length!==1?'s':''}</div></div>
         ${activoSwitch}
         ${convertBtn}
         ${passBtn}
