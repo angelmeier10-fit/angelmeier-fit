@@ -5130,6 +5130,9 @@ function renderPublicPlan(plan){
       </div>
       <div style="color:var(--mu);font-size:.88rem;line-height:1.7;margin-bottom:20px">${plan.desc||''}</div>
       ${plan.price?`<div style="font-family:'Space Grotesk',sans-serif;font-size:1.8rem;font-weight:700;color:var(--ac2);margin-bottom:16px">$${parseInt(plan.price).toLocaleString('es-AR')}<span style="font-size:.9rem;color:var(--mu);font-weight:400"> / ${weeksLabel} sem.</span></div>`:''}
+      <a href="anamnesis_digital.html?plan=${encodeURIComponent(plan.id)}&nombre=${encodeURIComponent(plan.name||'')}" style="display:flex;align-items:center;gap:8px;justify-content:center;background:var(--ac2);color:#fff;border-radius:10px;padding:15px 28px;font-weight:700;font-size:1rem;text-decoration:none;margin-bottom:10px">
+        ✅ Inscribirme
+      </a>
       ${plan.mpLink?`<a href="${plan.mpLink}" target="_blank" style="display:flex;align-items:center;gap:8px;justify-content:center;background:#009EE3;color:#fff;border-radius:10px;padding:15px 28px;font-weight:700;font-size:1rem;text-decoration:none;margin-bottom:10px">
         💳 Pagar con Mercado Pago
       </a>`:''}
@@ -6663,6 +6666,7 @@ function buildSolCard(s,isNew){
         <div style="font-size:.76rem;color:var(--mu);margin-top:2px">
           🎯 ${s.objetivo||'—'} · 📊 ${s.nivel||'—'} · 🏠 ${s.lugar||'—'}
         </div>
+        ${s.planNombre?`<div style="font-size:.76rem;color:var(--ac2);font-weight:600;margin-top:4px">✅ Quiere anotarse en: ${s.planNombre}</div>`:''}
       </div>
       <div style="display:flex;gap:6px;flex-wrap:wrap">
         ${waNum?`<a href="https://wa.me/${waNum}" target="_blank" class="btn bgr sm">💬 WhatsApp</a>`:''}
@@ -6848,7 +6852,7 @@ window.asignarAPlanGrupal=function(docId){
         const weekNums=planWeekNums(p);
         const weekSel=weekNums.length>1?`<select data-startweek-for="${p.id}" style="background:var(--s1);border:1px solid var(--bd);color:var(--tx);border-radius:6px;padding:4px 8px;font-size:.78rem;font-family:inherit" onclick="event.stopPropagation()">${weekNums.map(w=>`<option value="${w}">Semana ${w}</option>`).join('')}</select>`:'';
         return`<label style="display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--s2);border-radius:8px;padding:8px 11px;cursor:pointer;font-size:.86rem">
-          <span style="display:flex;align-items:center;gap:8px"><input type="checkbox" value="${p.id}" style="accent-color:var(--ac)"> ${p.name}</span>
+          <span style="display:flex;align-items:center;gap:8px"><input type="checkbox" value="${p.id}" ${s.planId===p.id?'checked':''} style="accent-color:var(--ac)"> ${p.name}</span>
           ${weekSel}
         </label>`;
       }).join('')}

@@ -56,6 +56,7 @@ textarea{resize:vertical;min-height:80px}
 </div>
 
 <div class="container">
+  <div id="plan-banner" style="display:none;background:#7c5cbf22;border:1px solid #7c5cbf44;border-radius:var(--ra);padding:14px 18px;margin-bottom:16px;text-align:center;font-size:.88rem;font-weight:600;color:var(--ac2)"></div>
   <form id="anamnesis-form">
 
     <!-- 1. DATOS PERSONALES -->
@@ -397,6 +398,15 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+const urlParams = new URLSearchParams(location.search);
+const planId = urlParams.get('plan') || '';
+const planNombre = urlParams.get('nombre') || '';
+if(planNombre){
+  const banner = document.getElementById('plan-banner');
+  banner.textContent = `✅ Te estás anotando en: ${planNombre}`;
+  banner.style.display = 'block';
+}
+
 document.getElementById('anamnesis-form').addEventListener('submit', function(e) {
   e.preventDefault();
   const data = new FormData(this);
@@ -410,7 +420,7 @@ document.getElementById('anamnesis-form').addEventListener('submit', function(e)
   const nombre = data.get('nombre') || 'alguien';
 
   // Abrir WhatsApp con mensaje corto — SINCRÓNICO antes de cualquier await
-  const waMsg = `Hola Angel! Soy ${nombre} y acabo de completar la anamnesis. Quedo a tu disposición 💪`;
+  const waMsg = `Hola Angel! Soy ${nombre} y acabo de completar la anamnesis${planNombre?` para inscribirme en ${planNombre}`:''}. Quedo a tu disposición 💪`;
   window.open(`https://wa.me/5491172399988?text=${encodeURIComponent(waMsg)}`, '_blank');
 
   // Mostrar confirmación
@@ -423,6 +433,8 @@ document.getElementById('anamnesis-form').addEventListener('submit', function(e)
     status: 'pendiente',
     createdAt: new Date().toLocaleDateString('es-AR'),
     createdAtISO: new Date().toISOString(),
+    planId: planId,
+    planNombre: planNombre,
     nombre: data.get('nombre') || '',
     nacimiento: data.get('nacimiento') || '',
     email: data.get('email') || '',
