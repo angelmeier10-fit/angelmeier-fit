@@ -699,7 +699,36 @@ setTimeout(()=>{
       <div class="fg"><label>Repetir nueva contraseña</label><input id="perfil-pass-repetir" type="password" placeholder="Repetí la nueva contraseña"></div>
     </div>
     <button onclick="cambiarPasswordAlumno()" class="btn bp" style="width:100%;justify-content:center;margin-top:14px">Guardar contraseña</button>
-    <button onclick="document.getElementById('perfil-modal').classList.remove('open')" class="btn bg2" style="width:100%;justify-content:center;margin-top:8px">Cerrar</button>
+
+    <h3 style="margin:20px 0 10px;font-size:.95rem">🏋️ Mis RM (récords personales)</h3>
+    <div id="perfil-rm-lista" style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px"></div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div class="fg">
+        <label>Ejercicio</label>
+        <select id="perfil-rm-ejercicio" onchange="document.getElementById('perfil-rm-otro').style.display=(this.value==='__otro__'?'block':'none')">
+          <option value="Sentadilla">Sentadilla</option>
+          <option value="Press banca">Press banca</option>
+          <option value="Peso muerto">Peso muerto</option>
+          <option value="Press militar">Press militar</option>
+          <option value="Remo con barra">Remo con barra</option>
+          <option value="Peso muerto rumano">Peso muerto rumano</option>
+          <option value="Clean">Clean</option>
+          <option value="Snatch">Snatch</option>
+          <option value="Front Squat">Front Squat</option>
+          <option value="Clean and Jerk">Clean and Jerk</option>
+          <option value="Thruster">Thruster</option>
+          <option value="__otro__">Otro ejercicio…</option>
+        </select>
+        <input id="perfil-rm-otro" placeholder="Nombre del ejercicio" style="display:none;margin-top:6px">
+      </div>
+      <div style="display:flex;gap:10px">
+        <div class="fg" style="flex:1"><label>Reps</label><input id="perfil-rm-reps" type="number" min="1" placeholder="Ej: 1"></div>
+        <div class="fg" style="flex:1"><label>Kg</label><input id="perfil-rm-kg" type="number" min="0" step="0.5" placeholder="Ej: 80"></div>
+      </div>
+    </div>
+    <button id="perfil-rm-guardar-btn" onclick="guardarRMAlumno()" class="btn bp" style="width:100%;justify-content:center;margin-top:10px">Guardar RM</button>
+
+    <button onclick="document.getElementById('perfil-modal').classList.remove('open')" class="btn bg2" style="width:100%;justify-content:center;margin-top:14px">Cerrar</button>
   </div>
 </div>
 
@@ -1166,7 +1195,79 @@ window.openPerfilAlumno=function(){
   document.getElementById('perfil-pass-actual').value='';
   document.getElementById('perfil-pass-nueva').value='';
   document.getElementById('perfil-pass-repetir').value='';
+  resetFormRMAlumno();
+  renderRMAlumno();
   document.getElementById('perfil-modal').classList.add('open');
+};
+
+// ══ Mi Perfil (alumno): RM (récords personales) ══
+function resetFormRMAlumno(){
+  document.getElementById('perfil-rm-ejercicio').value='Sentadilla';
+  document.getElementById('perfil-rm-otro').style.display='none';
+  document.getElementById('perfil-rm-otro').value='';
+  document.getElementById('perfil-rm-reps').value='';
+  document.getElementById('perfil-rm-kg').value='';
+  delete window.__perfilRMEditIdx;
+  document.getElementById('perfil-rm-guardar-btn').textContent='Guardar RM';
+}
+function renderRMAlumno(){
+  const rm=alumnoState.sub?.rm||[];
+  const cont=document.getElementById('perfil-rm-lista');
+  if(!rm.length){cont.innerHTML='<div style="color:var(--mu);font-size:.85rem">Todavía no cargaste ningún RM.</div>';return}
+  cont.innerHTML=rm.map((r,i)=>`<div style="display:flex;align-items:center;gap:8px;background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:8px 10px">
+    <div style="flex:1"><b>${r.exercise}</b> — ${r.reps} rep${r.reps==1?'':'s'} x ${r.kg}kg</div>
+    <button onclick="editarRMAlumno(${i})" style="background:none;border:none;cursor:pointer;font-size:.9rem" title="Editar">✏️</button>
+    <button onclick="eliminarRMAlumno(${i})" style="background:none;border:none;cursor:pointer;font-size:.9rem" title="Eliminar">🗑️</button>
+  </div>`).join('');
+}
+window.editarRMAlumno=function(i){
+  const r=(alumnoState.sub.rm||[])[i];
+  if(!r)return;
+  const sel=document.getElementById('perfil-rm-ejercicio');
+  const known=[...sel.options].some(o=>o.value===r.exercise);
+  if(known){
+    sel.value=r.exercise;
+    document.getElementById('perfil-rm-otro').style.display='none';
+  }else{
+    sel.value='__otro__';
+    document.getElementById('perfil-rm-otro').style.display='block';
+    document.getElementById('perfil-rm-otro').value=r.exercise;
+  }
+  document.getElementById('perfil-rm-reps').value=r.reps;
+  document.getElementById('perfil-rm-kg').value=r.kg;
+  window.__perfilRMEditIdx=i;
+  document.getElementById('perfil-rm-guardar-btn').textContent='Actualizar RM';
+};
+window.eliminarRMAlumno=async function(i){
+  if(previewAlumnoMode){toast('⚠️ Estás en vista previa del entrenador, no se puede editar desde acá');return}
+  const rm=alumnoState.sub.rm||[];
+  rm.splice(i,1);
+  alumnoState.sub.rm=rm;
+  await updateDoc(doc(db,'subscribers',alumnoState.uid),{rm});
+  resetFormRMAlumno();
+  renderRMAlumno();
+  toast('✅ RM eliminado');
+};
+window.guardarRMAlumno=async function(){
+  if(previewAlumnoMode){toast('⚠️ Estás en vista previa del entrenador, no se puede editar desde acá');return}
+  const sel=document.getElementById('perfil-rm-ejercicio').value;
+  const exercise=sel==='__otro__'?document.getElementById('perfil-rm-otro').value.trim():sel;
+  const reps=Number(document.getElementById('perfil-rm-reps').value);
+  const kg=Number(document.getElementById('perfil-rm-kg').value);
+  if(!exercise){toast('⚠️ Ingresá el nombre del ejercicio');return}
+  if(!reps||reps<1){toast('⚠️ Ingresá una cantidad de reps válida');return}
+  if(!kg||kg<=0){toast('⚠️ Ingresá un peso válido');return}
+  if(!alumnoState.sub.rm)alumnoState.sub.rm=[];
+  const entry={exercise,reps,kg};
+  if(window.__perfilRMEditIdx!=null){
+    alumnoState.sub.rm[window.__perfilRMEditIdx]=entry;
+  }else{
+    alumnoState.sub.rm.push(entry);
+  }
+  await updateDoc(doc(db,'subscribers',alumnoState.uid),{rm:alumnoState.sub.rm});
+  resetFormRMAlumno();
+  renderRMAlumno();
+  toast('✅ RM guardado');
 };
 window.cambiarPasswordAlumno=async function(){
   if(previewAlumnoMode){toast('⚠️ Estás en vista previa del entrenador, no se puede cambiar la contraseña desde acá');return}
