@@ -7548,6 +7548,12 @@ function setupPlanMacroListeners(pid){
 <script>
 if('serviceWorker' in navigator){
   window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js'));
+  let swRefrescando=false;
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{
+    if(swRefrescando)return;
+    swRefrescando=true;
+    location.reload();
+  });
 }
 </script>
 </body>
