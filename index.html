@@ -1385,7 +1385,7 @@ onAuthStateChanged(auth,async(user)=>{
       if(user.email===ADMIN_EMAIL){
         // No usar location.pathname acá: si vino por /suscripcion, redirigir a
         // esa misma ruta causaría un loop infinito (isAlumnoSignup seguiría en true).
-        location.href='/';
+        location.href=location.pathname;
         return;
       }
       hideLoginScreen();
@@ -1404,7 +1404,7 @@ onAuthStateChanged(auth,async(user)=>{
       // panel de entrenador (los datos fallaban por permisos, pero la
       // pantalla equivocada quedaba mostrada). Lo mandamos a su vista de
       // alumno en su lugar.
-      location.href='/?alumno=1';
+      location.href=location.pathname+'?alumno=1';
       return;
     }
     localStorage.setItem('amfit-had-session','1');
