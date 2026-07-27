@@ -6,5 +6,10 @@
       <stop offset="100%" stop-color="#7c5cbf"/>
     </linearGradient>
   </defs>
-  <text x="256" y="348" text-anchor="middle" font-family="'Inter',sans-serif" font-weight="700" font-size="232" fill="url(#g)">AM</text>
+  <g transform="translate(256,256) scale(0.8) translate(-256,-256)">
+    <g transform="translate(80,101) scale(3.47)">
+      <circle cx="48" cy="22" r="12" fill="url(#g)"/>
+      <path d="M88,38 C76,58 60,64 44,56 C30,49 18,54 8,74 C22,66 36,63 48,67 C64,72 78,64 88,38 Z" fill="url(#g)"/>
+    </g>
+  </g>
 </svg>

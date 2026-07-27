@@ -350,7 +350,7 @@ setTimeout(()=>{
 
 <div id="login-screen" style="display:none;position:fixed;inset:0;z-index:9999;background:var(--bg);align-items:center;justify-content:center;flex-direction:column;padding:20px">
   <div style="max-width:340px;width:100%;text-align:center">
-    <div style="font-size:2.4rem;margin-bottom:10px">💪</div>
+    <div style="margin-bottom:10px"><svg width="44" height="44" viewBox="0 0 100 100"><defs><linearGradient id="amlogo-g1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#c084fc"/><stop offset="100%" stop-color="#7c5cbf"/></linearGradient></defs><circle cx="48" cy="22" r="12" fill="url(#amlogo-g1)"/><path d="M88,38 C76,58 60,64 44,56 C30,49 18,54 8,74 C22,66 36,63 48,67 C64,72 78,64 88,38 Z" fill="url(#amlogo-g1)"/></svg></div>
     <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.3rem;margin-bottom:4px">Angel Meier</div>
     <div id="login-subtitle" style="color:var(--mu);font-size:.85rem;margin-bottom:24px">Panel de entrenador</div>
     <input id="login-email" type="email" placeholder="Email" style="margin-bottom:10px" autocomplete="username">
@@ -382,7 +382,7 @@ setTimeout(()=>{
 <div id="view-alumno" style="display:none;position:fixed;inset:0;z-index:9998;background:var(--bg);overflow-y:auto">
   <div id="alumno-narrow-wrap" style="display:none;max-width:420px;margin:0 auto;padding:24px 16px">
     <div style="text-align:center;margin-bottom:20px">
-      <div style="font-size:2.4rem;margin-bottom:6px">💪</div>
+      <div style="margin-bottom:6px"><svg width="40" height="40" viewBox="0 0 100 100"><defs><linearGradient id="amlogo-g2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#c084fc"/><stop offset="100%" stop-color="#7c5cbf"/></linearGradient></defs><circle cx="48" cy="22" r="12" fill="url(#amlogo-g2)"/><path d="M88,38 C76,58 60,64 44,56 C30,49 18,54 8,74 C22,66 36,63 48,67 C64,72 78,64 88,38 Z" fill="url(#amlogo-g2)"/></svg></div>
       <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.25rem">Suscripción Angel Meier</div>
     </div>
 
@@ -414,7 +414,7 @@ setTimeout(()=>{
   <div id="alumno-active-wrap" style="display:none;max-width:980px;margin:0 auto;padding:20px">
     <div id="alumno-preview-banner" style="display:none;background:var(--ac)22;color:var(--ac2);border-radius:9px;padding:8px 12px;font-size:.8rem;font-weight:600;margin-bottom:12px;text-align:center">👁️ Vista previa del entrenador — así ve su plan este alumno</div>
     <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;margin-bottom:14px;gap:10px;row-gap:8px">
-      <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.1rem">💪 Angel Meier</div>
+      <div style="display:flex;align-items:center;gap:8px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.1rem"><svg width="22" height="22" viewBox="0 0 100 100"><defs><linearGradient id="amlogo-g3" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#c084fc"/><stop offset="100%" stop-color="#7c5cbf"/></linearGradient></defs><circle cx="48" cy="22" r="12" fill="url(#amlogo-g3)"/><path d="M88,38 C76,58 60,64 44,56 C30,49 18,54 8,74 C22,66 36,63 48,67 C64,72 78,64 88,38 Z" fill="url(#amlogo-g3)"/></svg>Angel Meier</div>
       <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px">
         <button id="theme-btn-alumno" onclick="toggleTheme()" style="background:var(--s2);border:1px solid var(--bd);color:var(--tx);border-radius:9px;padding:6px 12px;cursor:pointer;font-size:1rem;transition:all .2s;flex-shrink:0" title="Cambiar tema">🌙</button>
         <button onclick="openPerfilAlumno()" style="background:var(--s2);border:1px solid var(--bd);color:var(--tx);border-radius:9px;padding:6px 12px;cursor:pointer;font-size:.82rem;transition:all .2s;flex-shrink:0" title="Mi perfil">👤 Mi Perfil</button>
@@ -428,7 +428,7 @@ setTimeout(()=>{
 
 <nav id="main-nav">
   <div>
-    <div class="nav-logo">💪 Angel Meier</div>
+    <div style="display:flex;align-items:center;gap:8px"><svg width="22" height="22" viewBox="0 0 100 100"><defs><linearGradient id="amlogo-g4" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#c084fc"/><stop offset="100%" stop-color="#7c5cbf"/></linearGradient></defs><circle cx="48" cy="22" r="12" fill="url(#amlogo-g4)"/><path d="M88,38 C76,58 60,64 44,56 C30,49 18,54 8,74 C22,66 36,63 48,67 C64,72 78,64 88,38 Z" fill="url(#amlogo-g4)"/></svg><div class="nav-logo">Angel Meier</div></div>
     <div class="nav-sub">angelmasaje.fit</div>
   </div>
   <div class="nav-tabs">
@@ -3486,7 +3486,7 @@ function renderCFBlock(c,bkey,blk,bi){
   const sections=blk.sections?.length?blk.sections:[{meta:blk.meta||{},exercises:blk.exercises||[],pause:''}];
   const allExercises=sections.flatMap(s=>s.exercises||[]);
   const sectionsHtml=sections.map((sec,si)=>{
-    const chips=cfg.fields.map(f=>sec.meta?.[f.id]?`<span class="cf-chip" style="background:${cfg.color}22;color:${cfg.color}">${f.label}: ${sec.meta[f.id]}</span>`:'').join('');
+    const chips=cfg.fields.map(f=>sec.meta?.[f.id]?`<span class="cf-chip" style="background:${cfg.color}22;color:${cfg.color}">${f.label.replace(/\s*\(ej:[^)]*\)/i,'')}: ${sec.meta[f.id]}</span>`:'').join('');
     const exList=(sec.exercises||[]).map((ex,exi)=>{
       const exTimerId=`${c.id}-${bkey}-s${si}-ex${exi}`;
       const defaultTime=ex.reps||'';
