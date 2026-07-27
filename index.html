@@ -2044,7 +2044,7 @@ function showCFMenu(bodyId,btn){
   const existing=document.getElementById('cf-menu-popup');if(existing)existing.remove();
   const menu=document.createElement('div');
   menu.id='cf-menu-popup';
-  menu.style.cssText='position:fixed;background:var(--s1);border:1px solid var(--bd);border-radius:11px;padding:8px;z-index:400;box-shadow:0 8px 24px rgba(0,0,0,.5);display:grid;grid-template-columns:1fr 1fr;gap:5px;width:340px';
+  menu.style.cssText='position:fixed;background:var(--s1);border:1px solid var(--bd);border-radius:11px;padding:8px;z-index:9500;box-shadow:0 8px 24px rgba(0,0,0,.5);display:grid;grid-template-columns:1fr 1fr;gap:5px;width:340px';
   Object.entries(CF_TYPES).forEach(([k,v])=>{
     const b=document.createElement('button');
     b.className='btn sm';b.style.cssText=`background:${v.color}18;color:${v.color};border:1px solid ${v.color}44;justify-content:flex-start`;
