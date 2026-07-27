@@ -2053,9 +2053,12 @@ function showCFMenu(bodyId,btn){
     menu.appendChild(b);
   });
   const rect=btn.getBoundingClientRect();
-  menu.style.top=(rect.bottom+6)+'px';
-  menu.style.left=Math.min(rect.left,window.innerWidth-350)+'px';
   document.body.appendChild(menu);
+  const menuH=menu.offsetHeight;
+  let top=rect.bottom+6;
+  if(top+menuH>window.innerHeight)top=Math.max(6,rect.top-menuH-6);
+  menu.style.top=top+'px';
+  menu.style.left=Math.min(rect.left,window.innerWidth-350)+'px';
   setTimeout(()=>document.addEventListener('click',function h(e){if(!menu.contains(e.target)&&e.target!==btn){menu.remove();document.removeEventListener('click',h,true)}},true),100);
 }
 window.showCFMenu=showCFMenu;
