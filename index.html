@@ -1322,7 +1322,7 @@ window.previewComoAlumno=async function(uid){
   try{await ensurePlanesLoadedForAlumno();}catch(e){console.error('ensurePlanesLoadedForAlumno',e);}
   const data=snap.data();
   const vencido=data.status==='active' && data.expiry && new Date(data.expiry+'T00:00:00')<new Date();
-  if(data.status==='active' && !vencido){
+  if(data.status==='active' && !vencido && data.activo!==false){
     document.getElementById('alumno-active-wrap').style.display='block';
     document.getElementById('alumno-preview-banner').style.display='block';
     await renderAlumnoPlanView(data,uid);
@@ -1439,7 +1439,7 @@ async function initAlumno(user){
   // Corte de acceso también en frontend: si venció, se trata como expired aunque
   // el status en Firestore todavía diga "active" (el webhook no corre proactivamente).
   const vencido=data.status==='active' && data.expiry && new Date(data.expiry+'T00:00:00')<new Date();
-  if(data.status==='active' && !vencido){
+  if(data.status==='active' && !vencido && data.activo!==false){
     document.getElementById('alumno-active-wrap').style.display='block';
     updateThemeIcons();
     await renderAlumnoPlanView(data,user.uid);
