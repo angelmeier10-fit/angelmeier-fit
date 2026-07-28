@@ -1566,7 +1566,7 @@ const DEFAULT_EX=[
 
 const CF_TYPES={
   amrap:{label:"AMRAP",icon:"🔄",color:"var(--or)",fields:[{id:"duration",label:"Duración (ej: 20 min)"}],desc:"As Many Rounds/Reps As Possible"},
-  fortime:{label:"FOR TIME",icon:"⏱",color:"var(--rd)",fields:[{id:"rounds",label:"Rondas"}],desc:"Completar lo más rápido posible"},
+  fortime:{label:"FOR TIME",icon:"⏱",color:"var(--rd)",fields:[{id:"rounds",label:"Rondas"},{id:"timecap",label:"Time cap (opcional)",placeholder:"Ej: 15 min"}],desc:"Completar lo más rápido posible"},
   emom:{label:"EMOM",icon:"📡",color:"var(--cy)",fields:[{id:"duration",label:"Duración",placeholder:"Vacío = infinito (Death by...)"},{id:"interval",label:"Intervalo",placeholder:"Ej: 1:30, 1 min 30s, 45s"}],desc:"Every Minute On the Minute"},
   tabata:{label:"TABATA",icon:"⚡",color:"var(--yw)",fields:[{id:"rounds",label:"Rondas"},{id:"work",label:"Trabajo"},{id:"rest",label:"Descanso"}],desc:"20s trabajo / 10s descanso"},
   endurance:{label:"ENDURANCE",icon:"🏃",color:"var(--gr)",fields:[{id:"duration",label:"Duración"},{id:"intensity",label:"Intensidad"}],desc:"Resistencia aeróbica"},
@@ -6272,13 +6272,20 @@ function cfTimerUpdateDisplay(){
     const minuto=cfTimer.currentRound;
     sub.textContent=isFinite(cfTimer.rounds)?`Minuto ${minuto} / ${cfTimer.rounds}`:`Minuto ${minuto}`;
   } else if(cfTimer.mode==='fortime'){
-    sub.textContent='⏱ Tiempo transcurrido';
+    sub.textContent=cfTimer.capped?'⏱ ¡TIME CAP!':'⏱ Tiempo transcurrido';
     disp.textContent=fmtTime(cfTimer.currentSecs);
   } else {
     sub.textContent='';
   }
   // Color warnings
-  if(cfTimer.mode!=='fortime'){
+  if(cfTimer.mode==='fortime'){
+    if(cfTimer.totalSecs>0){
+      const remaining=cfTimer.totalSecs-cfTimer.currentSecs;
+      if(remaining<=0) cfTimerSetColor('var(--rd)');
+      else if(remaining<=10) cfTimerSetColor('var(--yw)');
+      else cfTimerSetColor('var(--gr)');
+    }
+  } else {
     if(cfTimer.currentSecs<=10&&cfTimer.currentSecs>0) cfTimerSetColor('var(--rd)');
     else if(cfTimer.currentSecs>10) cfTimerSetColor(cfTimer.isWork===false?'var(--cy)':'var(--or)');
   }
@@ -6290,6 +6297,10 @@ function cfTimerTick(){
     cfTimer.currentSecs++;
     // beep every minute
     if(cfTimer.currentSecs%60===0) beep3(true);
+    if(cfTimer.totalSecs>0&&!cfTimer.capped&&cfTimer.currentSecs>=cfTimer.totalSecs){
+      cfTimer.capped=true;
+      beepFinal();
+    }
     cfTimerUpdateDisplay();
     return;
   }
@@ -6446,7 +6457,7 @@ window.cfTimerReset=function(){
     cfTimer.currentSecs=cfTimer.emomInterval;cfTimer.totalSecs=cfTimer.emomInterval;
     cfTimer.currentRound=1;cfTimerSetColor('var(--cy)');
   } else if(cfTimer.mode==='fortime'){
-    cfTimer.currentSecs=0;
+    cfTimer.currentSecs=0;cfTimer.capped=false;
   } else {
     cfTimer.currentSecs=cfTimer.totalSecs;
   }
@@ -6501,8 +6512,10 @@ function launchCFTimer(cftype, meta, customLabel, exNames){
     cfTimerSetColor('var(--or)');
 
   } else if(cftype==='fortime'){
-    cfTimer.mode='fortime';cfTimer.totalSecs=0;cfTimer.currentSecs=0;
-    label.textContent=`FOR TIME — ${meta?.rounds||''}${meta?.rounds?' rondas':''}`;
+    const cap=meta?.timecap?parseToSecs(meta.timecap):0;
+    cfTimer.mode='fortime';cfTimer.totalSecs=cap;cfTimer.currentSecs=0;cfTimer.capped=false;
+    const capTxt=meta?.timecap?` · cap ${meta.timecap}`:'';
+    label.textContent=`FOR TIME — ${meta?.rounds||''}${meta?.rounds?' rondas':''}${capTxt}`;
     cfTimerSetColor('var(--gr)');
 
   } else if(cftype==='emom'){
