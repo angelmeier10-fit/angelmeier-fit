@@ -5557,6 +5557,45 @@ window.logGym=async function(cId,ekey){
   origLogGym(cId,ekey);
 };
 
+const origLogCF=window.logCF;
+window.logCF=async function(cId,bkey,rk){
+  const res=document.getElementById('cfr-'+cId+'-'+bkey).value;
+  const note=document.getElementById('cfn-'+cId+'-'+bkey).value;
+  if(!res)return;
+  if(cId.startsWith('alu-')){
+    if(!alumnoState.sub.progress)alumnoState.sub.progress={};
+    if(!alumnoState.sub.progress[rk])alumnoState.sub.progress[rk]=[];
+    alumnoState.sub.progress[rk].push({date:new Date().toLocaleDateString('es-AR'),result:res+(note?' — '+note:'')});
+    try{
+      await persistAlumnoProgress();
+    }catch(e){
+      alumnoState.sub.progress[rk].pop();
+      toast('⚠️ No se pudo guardar, probá de nuevo');
+      return;
+    }
+    document.getElementById('cfr-'+cId+'-'+bkey).value='';document.getElementById('cfn-'+cId+'-'+bkey).value='';
+    toast('🔥 Resultado guardado');
+    const dIdx=parseInt(bkey.split('-')[0]);
+    const uid=alumnoState.uid;
+    const member={id:'sub',name:alumnoState.sub.name,email:alumnoState.sub.email,status:alumnoState.sub.status,expiry:alumnoState.sub.expiry,startDate:alumnoState.sub.startDate||'',startWeek:alumnoState.sub.startWeek||1,progress:alumnoState.sub.progress};
+    renderAlumnoDay(alumnoState.plan,member,dIdx,uid);
+    return;
+  }
+  if(cId.startsWith('grp::')){
+    const[,planId,memberId]=cId.split('::');
+    const plan=planes.find(p=>p.id===planId);if(!plan)return;
+    const member=plan.members.find(m=>m.id===memberId);if(!member)return;
+    if(!member.progress)member.progress={};
+    if(!member.progress[rk])member.progress[rk]=[];
+    member.progress[rk].push({date:new Date().toLocaleDateString('es-AR'),result:res+(note?' — '+note:'')});
+    await setDoc(doc(db,'planes',planId,'progreso',memberId),{progress:member.progress});
+    document.getElementById('cfr-'+cId+'-'+bkey).value='';document.getElementById('cfn-'+cId+'-'+bkey).value='';
+    toast('🔥 Resultado guardado');const dIdx=parseInt(bkey.split('-')[0]);renderGroupDay(plan,member,dIdx);
+    return;
+  }
+  origLogCF(cId,bkey,rk);
+};
+
 window.saveGroupNote=async function(planId,memberId,dIdx){
   const plan=planes.find(p=>p.id===planId);
   const member=plan.members.find(m=>m.id===memberId);
