@@ -2349,7 +2349,7 @@ function addCFBlock(bodyId,cftype,data=null){
 }
 window.addCFBlock=addCFBlock;
 
-function addCFSection(bid,data,cftype){
+function addCFSection(bid,data,cftype,insertAfterId=null){
   const cfg=CF_TYPES[cftype];
   const container=document.getElementById(bid+'-sections');
   const sid='cfs'+Date.now()+Math.random().toString(36).slice(2,5);
@@ -2357,20 +2357,38 @@ function addCFSection(bid,data,cftype){
   const div=document.createElement('div');div.className='cf-section';div.id=sid;
   div.innerHTML=`<div class="cf-section-hdr">
       <span class="cf-section-lbl"></span>
-      <button class="btn bd2 xs cf-section-rm" onclick="rmCFSection('${sid}','${bid}')">✕ Quitar sección</button>
+      <div style="display:flex;gap:6px">
+        <button class="btn bg2 xs cf-section-dup" onclick="dupCFSection('${sid}','${bid}')">⧉ Duplicar sección</button>
+        <button class="btn bd2 xs cf-section-rm" onclick="rmCFSection('${sid}','${bid}')">✕ Quitar sección</button>
+      </div>
     </div>
     <div class="cf-meta">${metaF}</div>
     <div style="margin:8px 0 5px"><label>Ejercicios</label></div>
     <div id="${sid}-exs"></div>
     <button class="btn bg2 sm" style="margin-top:5px" onclick="addCFEx('${sid}-exs')">+ Ejercicio</button>
     <div class="fg cf-pause-fg" style="margin-top:9px"><label>⏸ Pausa después de esta sección</label><input type="text" class="cf-pause" value="${data?.pause||''}" placeholder="Ej: 2 min descanso"></div>`;
-  container.appendChild(div);
+  if(insertAfterId&&document.getElementById(insertAfterId)) document.getElementById(insertAfterId).insertAdjacentElement('afterend',div);
+  else container.appendChild(div);
   const exData=data?.exercises||[];
   if(exData.length) exData.forEach(ex=>addCFEx(sid+'-exs',ex));
   else{addCFEx(sid+'-exs');addCFEx(sid+'-exs')}
   refreshCFSections(bid);
 }
 window.addCFSection=addCFSection;
+
+function dupCFSection(sid,bid){
+  const cftype=document.getElementById(bid).dataset.cftype;
+  const cfg=CF_TYPES[cftype];
+  const sec=document.getElementById(sid);
+  const meta={};cfg.fields.forEach(f=>{const el=sec.querySelector('.cf-meta-'+f.id);if(el)meta[f.id]=el.value});
+  const exercises=[...sec.querySelectorAll('.cf-ex-row')].map(row=>{
+    const inp=row.querySelector('.ex-search');
+    return{reps:row.querySelector('.cf-reps').value,name:inp.dataset.name||inp.value,video:inp.dataset.video||''};
+  }).filter(e=>e.name);
+  const pause=sec.querySelector('.cf-pause')?.value||'';
+  addCFSection(bid,{meta,exercises,pause},cftype,sid);
+}
+window.dupCFSection=dupCFSection;
 
 function rmCFSection(sid,bid){
   const container=document.getElementById(bid+'-sections');
