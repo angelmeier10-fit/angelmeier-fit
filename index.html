@@ -6672,6 +6672,7 @@ function notifId(n){
   if(n.tipo==='vencimiento')return `venc:${n.planId}:${n.member}:${n.fecha?n.fecha.getTime():''}`;
   if(n.tipo==='anamnesis')return `anam:${n.docId}`;
   if(n.tipo==='alumno')return `alu:${n.planId}:${n.member}:${n.fecha?n.fecha.getTime():''}`;
+  if(n.tipo==='suscripcion')return `sus:${n.uid}`;
   return n.texto;
 }
 
@@ -6703,6 +6704,14 @@ async function buildNotifications(){
       const label=diff===0?'vence hoy':diff===1?'vence mañana':`vence en ${diff} días`;
       notifs.push({tipo:'vencimiento',texto:`⏰ ${s.name||s.email} (suscripción) ${label}`,fecha:exp,targetView:'trainer',order:0});
     }
+  });
+
+  // Suscripciones nuevas pendientes de activar
+  subSnap.docs.forEach(d=>{
+    const s=d.data();
+    if(s.status!=='pending')return;
+    const cat=planesFijosCache[s.categoria]?.label||LEGACY_CAT_LABELS[s.categoria]||s.categoria||'sin categoría';
+    notifs.push({tipo:'suscripcion',texto:`🆕 Nueva suscripción: ${s.name||s.email} (${cat})`,fecha:null,targetView:'trainer',order:0,uid:d.id});
   });
 
   // Anamnesis pendientes
