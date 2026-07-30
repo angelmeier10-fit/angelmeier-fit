@@ -1369,9 +1369,10 @@ const ADMIN_EMAIL='angelmeier10@gmail.com';
 const LEGACY_CAT_LABELS={gap:'GAP',musculacion:'Musculación',casa_sin_elementos:'Casa sin elementos',adultos_mayores:'Adultos mayores'};
 async function getCategoriasSuscripcion(){
   const snap=await getDocs(collection(db,'planesFijos'));
-  const cats=snap.docs.filter(d=>d.id!=='global'&&d.id!=='_config').map(d=>({id:d.id,label:d.data().label||LEGACY_CAT_LABELS[d.id]||d.id,desc:d.data().desc||''}));
+  const cats=snap.docs.filter(d=>d.id!=='global'&&d.id!=='_config').map(d=>({id:d.id,label:d.data().label||LEGACY_CAT_LABELS[d.id]||d.id,desc:d.data().desc||'',planId:d.data().planId||null}));
   cats.sort((a,b)=>a.label.localeCompare(b.label,undefined,{sensitivity:'base'}));
-  cats.push({id:'global',label:'Suscripción global',desc:'Acceso a todas las categorías a la vez'});
+  const globalSnap=snap.docs.find(d=>d.id==='global');
+  cats.push({id:'global',label:'Suscripción global',desc:'Acceso a todas las categorías a la vez',planId:null,price:globalSnap?.data().price||null});
   return cats;
 }
 function startAppOnce(){if(!appStarted){appStarted=true;init()}}
@@ -1490,17 +1491,33 @@ async function initAlumno(user){
 
 const OBJETIVOS_ALUMNO=['Bajar de peso','Tonificar','Ganar masa muscular'];
 
+window.sendWhatsAppPlanPersonalizado=function(){
+  const objetivo=window.__objetivoElegido||'';
+  const msg=encodeURIComponent(`Hola Angel! Quiero armar un plan personalizado${objetivo?` (mi objetivo: ${objetivo})`:''}.`);
+  window.open('https://wa.me/5491172399988?text='+msg,'_blank');
+};
+
 window.elegirObjetivoAlumno=async function(objetivo){
   window.__objetivoElegido=objetivo;
   document.getElementById('alumno-objetivo-screen').style.display='none';
   document.getElementById('alumno-categoria-screen').style.display='block';
   const cats=await getCategoriasSuscripcion();
+  const priceHtml=c=>{
+    const price=c.id==='global'?c.price:planes.find(p=>p.id===c.planId)?.price;
+    return price?`<div style="font-weight:700;color:var(--ac2);margin-top:4px">$${parseInt(price).toLocaleString('es-AR')}</div>`:'';
+  };
   document.getElementById('alumno-categorias-list').innerHTML=cats.map(c=>`
     <div class="card" style="cursor:pointer;padding:16px" onclick="elegirCategoriaAlumno('${c.id}')">
       <div style="font-weight:600">${c.label}</div>
       <div class="sub">${c.desc}</div>
+      ${priceHtml(c)}
     </div>
-  `).join('');
+  `).join('')+`
+    <div class="card" style="cursor:pointer;padding:16px" onclick="sendWhatsAppPlanPersonalizado()">
+      <div style="font-weight:600">🎯 Plan personalizado</div>
+      <div class="sub">Consultá por WhatsApp para armar un plan a tu medida</div>
+    </div>
+  `;
 };
 
 window.elegirCategoriaAlumno=async function(categoria){
