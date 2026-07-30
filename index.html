@@ -389,6 +389,11 @@ setTimeout(()=>{
       <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.25rem">Suscripción Angel Meier</div>
     </div>
 
+    <div id="alumno-objetivo-screen" style="display:none">
+      <p class="sub" style="text-align:center;margin-bottom:16px">¿Cuál es tu objetivo?</p>
+      <div style="display:flex;flex-direction:column;gap:10px" id="alumno-objetivo-list"></div>
+    </div>
+
     <div id="alumno-categoria-screen" style="display:none">
       <p class="sub" style="text-align:center;margin-bottom:16px">Elegí tu categoría</p>
       <div style="display:flex;flex-direction:column;gap:10px" id="alumno-categorias-list"></div>
@@ -694,6 +699,14 @@ setTimeout(()=>{
     <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">
       <div class="fg"><label>Nombre</label><input id="perfil-name" disabled></div>
       <div class="fg"><label>Email</label><input id="perfil-email" disabled></div>
+      <div class="fg">
+        <label>Objetivo</label>
+        <select id="perfil-objetivo" onchange="guardarObjetivoAlumno(this.value)">
+          <option value="Bajar de peso">Bajar de peso</option>
+          <option value="Tonificar">Tonificar</option>
+          <option value="Ganar masa muscular">Ganar masa muscular</option>
+        </select>
+      </div>
     </div>
     <h3 style="margin-bottom:10px;font-size:.95rem">🔒 Cambiar contraseña</h3>
     <div style="display:flex;flex-direction:column;gap:10px">
@@ -1195,12 +1208,20 @@ window.openPerfilAlumno=function(){
   const sub=alumnoState.sub||{};
   document.getElementById('perfil-name').value=sub.name||'';
   document.getElementById('perfil-email').value=sub.email||'';
+  document.getElementById('perfil-objetivo').value=sub.objetivo||'Bajar de peso';
   document.getElementById('perfil-pass-actual').value='';
   document.getElementById('perfil-pass-nueva').value='';
   document.getElementById('perfil-pass-repetir').value='';
   resetFormRMAlumno();
   renderRMAlumno();
   document.getElementById('perfil-modal').classList.add('open');
+};
+
+window.guardarObjetivoAlumno=async function(objetivo){
+  const user=auth.currentUser;
+  if(!user)return;
+  await updateDoc(doc(db,'subscribers',user.uid),{objetivo});
+  if(alumnoState.sub)alumnoState.sub.objetivo=objetivo;
 };
 
 // ══ Mi Perfil (alumno): RM (récords personales) ══
@@ -1310,7 +1331,7 @@ window.handleAlumnoLogoutClick=function(){
 window.cerrarPreviewAlumno=function(){
   previewAlumnoMode=false;
   document.getElementById('view-alumno').style.display='none';
-  ['alumno-narrow-wrap','alumno-active-wrap','alumno-categoria-screen','alumno-pending-screen','alumno-expired-screen'].forEach(id=>{
+  ['alumno-narrow-wrap','alumno-active-wrap','alumno-objetivo-screen','alumno-categoria-screen','alumno-pending-screen','alumno-expired-screen'].forEach(id=>{
     const el=document.getElementById(id);if(el)el.style.display='none';
   });
   document.getElementById('alumno-preview-banner').style.display='none';
@@ -1428,12 +1449,10 @@ async function initAlumno(user){
   const snap=await getDoc(ref);
   if(!snap.exists()){
     document.getElementById('alumno-narrow-wrap').style.display='block';
-    document.getElementById('alumno-categoria-screen').style.display='block';
-    const cats=await getCategoriasSuscripcion();
-    document.getElementById('alumno-categorias-list').innerHTML=cats.map(c=>`
-      <div class="card" style="cursor:pointer;padding:16px" onclick="elegirCategoriaAlumno('${c.id}')">
-        <div style="font-weight:600">${c.label}</div>
-        <div class="sub">${c.desc}</div>
+    document.getElementById('alumno-objetivo-screen').style.display='block';
+    document.getElementById('alumno-objetivo-list').innerHTML=OBJETIVOS_ALUMNO.map(o=>`
+      <div class="card" style="cursor:pointer;padding:16px" onclick="elegirObjetivoAlumno('${o}')">
+        <div style="font-weight:600">${o}</div>
       </div>
     `).join('');
     return;
@@ -1469,6 +1488,21 @@ async function initAlumno(user){
   }
 }
 
+const OBJETIVOS_ALUMNO=['Bajar de peso','Tonificar','Ganar masa muscular'];
+
+window.elegirObjetivoAlumno=async function(objetivo){
+  window.__objetivoElegido=objetivo;
+  document.getElementById('alumno-objetivo-screen').style.display='none';
+  document.getElementById('alumno-categoria-screen').style.display='block';
+  const cats=await getCategoriasSuscripcion();
+  document.getElementById('alumno-categorias-list').innerHTML=cats.map(c=>`
+    <div class="card" style="cursor:pointer;padding:16px" onclick="elegirCategoriaAlumno('${c.id}')">
+      <div style="font-weight:600">${c.label}</div>
+      <div class="sub">${c.desc}</div>
+    </div>
+  `).join('');
+};
+
 window.elegirCategoriaAlumno=async function(categoria){
   const user=auth.currentUser;
   const errEl=document.getElementById('alumno-categoria-error');
@@ -1477,6 +1511,7 @@ window.elegirCategoriaAlumno=async function(categoria){
       email:user.email,
       name:user.displayName||'',
       categoria,
+      objetivo:window.__objetivoElegido||null,
       status:'pending',
       planId:null
     });
