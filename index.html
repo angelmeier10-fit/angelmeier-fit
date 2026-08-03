@@ -4436,10 +4436,15 @@ async function renderProgramaUnificadoHtml(prog,cats){
     const payBadge=c.payStatus==='paid'?'<span class="badge" style="background:#4ade8022;color:var(--gr)">✅ Pagado</span>':c.payStatus==='pending'?'<span class="badge" style="background:#f8717122;color:var(--rd)">⏳ Pendiente de pago</span>':'';
     const waLink=c.whatsapp?`<a href="https://wa.me/${c.whatsapp}" target="_blank" style="font-size:.72rem;color:#25D366;text-decoration:none">💬 ${c.whatsapp}</a>`:'';
     const mpLink=c.mpLink?`<a href="${c.mpLink}" target="_blank" style="font-size:.72rem;color:#009EE3;text-decoration:none">💳 Link MP</a>`:'';
+    const weekNumsC=hasWeeks?Object.keys(c.weeks).map(Number).sort((a,b)=>a-b):[];
+    const weekBadge=hasWeeks?`<span class="badge bgr2">Semana ${wk} de ${weekNumsC.length}</span>`:'';
+    const weekSelectHtml=weekNumsC.length>1?`<select id="cli-changeweek-${c.id}" style="width:auto;font-size:.78rem">${weekNumsC.map(w=>`<option value="${w}"${w===wk?' selected':''}>Semana ${w}</option>`).join('')}</select>
+    <button class="btn bg2 xs" onclick="cambiarSemanaCliente('${c.id}')">📅 Cambiar semana</button>`:'';
     return`<div style="padding:8px 0;border-bottom:1px solid var(--bd)">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
-        <div style="font-size:.84rem"><b>🎯 Plan personalizado</b>${c.routineName?' — '+c.routineName:''} ${payBadge} ${expiryBadge}</div>
+        <div style="font-size:.84rem"><b>🎯 Plan personalizado</b>${c.routineName?' — '+c.routineName:''} ${payBadge} ${expiryBadge} ${weekBadge}</div>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
+          ${weekSelectHtml}
           <button class="btn bcy xs" onclick="openEdit('${c.id}')">✏️ Editar</button>
           <button class="btn bcy xs" onclick="duplicateClient('${c.id}')">📋 Duplicar</button>
           <button class="btn bpu xs" onclick="migrarClienteAAlumno('${c.id}')" title="Crea una cuenta con usuario y contraseña para este alumno, en reemplazo del acceso por link">🔑 Migrar a cuenta con login</button>
@@ -4453,14 +4458,20 @@ async function renderProgramaUnificadoHtml(prog,cats){
     const{plan,member:m}=prog;
     await loadPlanProgreso(plan);
     const days=getMemberPlanDays(plan,m);
-    const{exerciseLogs,notes}=buildProgressSummary(m.progress||{},days,`${plan.id}-${m.id}`,getMemberCurrentWeekNum(plan,m)||1);
+    const memberWeek=getMemberCurrentWeekNum(plan,m)||1;
+    const{exerciseLogs,notes}=buildProgressSummary(m.progress||{},days,`${plan.id}-${m.id}`,memberWeek);
     const expired=m.expiry&&(new Date(m.expiry+'T00:00:00')<new Date());
     const statusBadge=m.status==='active'&&!expired?'<span class="badge bgr2">✅ Activo</span>':expired?'<span class="badge" style="background:#f8717122;color:var(--rd)">⏰ Vencido</span>':'<span class="badge byw2">⏳ Pendiente</span>';
     const progressHtml=renderProgressDetailBlock(`${plan.id}-${m.id}`,exerciseLogs,days,notes)||'<div style="font-size:.78rem;color:var(--mu)">Sin registros todavía.</div>';
+    const weekNumsG=planWeekNums(plan);
+    const weekBadgeG=weekNumsG.length?`<span class="badge bgr2">Semana ${memberWeek} de ${weekNumsG.length}</span>`:'';
+    const weekSelectHtmlG=weekNumsG.length>1?`<select id="mw-week-${m.id}" style="width:auto;font-size:.78rem">${weekNumsG.map(w=>`<option value="${w}"${w===m.startWeek?' selected':''}>Semana ${w}</option>`).join('')}</select>
+    <button class="btn bg2 xs" onclick="cambiarSemanaMiembro('${plan.id}','${m.id}')">📅 Cambiar semana</button>`:'';
     return`<div style="padding:8px 0;border-bottom:1px solid var(--bd)">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
-        <div style="font-size:.84rem"><b>${plan.name}</b> ${statusBadge}</div>
+        <div style="font-size:.84rem"><b>${plan.name}</b> ${statusBadge} ${weekBadgeG}</div>
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+          ${weekSelectHtmlG}
           <input type="date" id="alu-exp-${plan.id}-${m.id}" value="${m.expiry||''}" style="font-size:.78rem;padding:4px 6px">
           <button class="btn bcy xs" onclick="updateMemberExpiry('${plan.id}','${m.id}')">💾 Vencimiento</button>
           <button class="btn bd2 xs" onclick="removeMemberFromAlumnos('${plan.id}','${m.id}')">✕ Sacar</button>
@@ -4471,20 +4482,27 @@ async function renderProgramaUnificadoHtml(prog,cats){
   }
   // subscription
   if(prog.sub.categoria==='desafio-gluteos-21'){
-    const s=prog.sub;
+    const s=prog.sub,uid=prog.uid;
     const plan=planes.find(p=>p.id===s.planId);
     let badge=`<span class="badge bgr2">Sin plan asignado todavía</span>`;
     let progressHtml='';
+    let weekSelectHtml='';
     if(plan){
       const pseudoMember={startWeek:s.startWeek||1,startDate:s.startDate||'',progress:s.progress||{}};
       const days=getMemberPlanDays(plan,pseudoMember);
       const info=getMemberWeekMesoInfo(plan,pseudoMember);
       badge=`<span class="badge bgr2">Semana ${info.currentWeek} de ${info.totalWeeks}</span>`;
-      const{exerciseLogs,notes}=buildProgressSummary(s.progress||{},days,`alu-${prog.uid}`,info.currentWeek);
-      progressHtml=renderProgressDetailBlock(`alu-${prog.uid}`,exerciseLogs,days,notes)||'';
+      const{exerciseLogs,notes}=buildProgressSummary(s.progress||{},days,`alu-${uid}`,info.currentWeek);
+      progressHtml=renderProgressDetailBlock(`alu-${uid}`,exerciseLogs,days,notes)||'';
+      const weekNumsD=planWeekNums(plan);
+      if(weekNumsD.length>1)weekSelectHtml=`<select id="susc-changeweek-${uid}" style="width:auto;font-size:.78rem">${weekNumsD.map(w=>`<option value="${w}"${w===s.startWeek?' selected':''}>Semana ${w}</option>`).join('')}</select>
+      <button class="btn bg2 xs" onclick="cambiarSemanaAlumno('${uid}')">📅 Cambiar semana</button>`;
     }
     return`<div style="padding:8px 0;border-bottom:1px solid var(--bd)">
-      <div style="font-size:.84rem"><b>🍑 Desafío Glúteos 21 días</b> ${badge}</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
+        <div style="font-size:.84rem"><b>🍑 Desafío Glúteos 21 días</b> ${badge}</div>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">${weekSelectHtml}</div>
+      </div>
       <div style="font-size:.78rem;color:var(--mu);margin-top:2px">${s.name||'(sin nombre)'} · ${s.email||''}</div>
       ${progressHtml}
     </div>`;
@@ -4543,22 +4561,23 @@ async function renderProgramaUnificadoHtml(prog,cats){
   // Cambiar la semana que ve el alumno en cualquier momento (no solo al
   // reactivarlo): elige una semana del plan y reinicia startDate a hoy para
   // que el cálculo de "semana actual" arranque desde ahí y siga avanzando.
-  const cambiarSemanaHtml=(s.categoria==='__personal__'&&planData)?(()=>{
+  const cambiarSemanaHtml=(planData&&s.categoria!=='global')?(()=>{
     const weekNums=planWeekNums(planData);
     if(weekNums.length<2)return'';
     return`<select id="susc-changeweek-${uid}" style="width:auto;font-size:.78rem">${weekNums.map(w=>`<option value="${w}"${w===s.startWeek?' selected':''}>Semana ${w}</option>`).join('')}</select>
     <button class="btn bg2 xs" onclick="cambiarSemanaAlumno('${uid}')">📅 Cambiar semana</button>`;
   })():'';
+  const weekBadgeS=(planData&&s.categoria!=='global')?`<span class="badge bgr2">Semana ${subWeek} de ${planWeekNums(planData).length}</span>`:'';
   const editarPlanBtn=(s.categoria==='__personal__'&&s.planId)?`<button class="btn bpu xs" onclick="irAEditarPlanPersonal('${s.planId}')">✏️ Editar su plan</button>
-    <button class="btn bd2 xs" onclick="borrarPlanSuscriptor('${uid}','${s.planId}')">🗑️ Borrar plan</button>
-    ${cambiarSemanaHtml}`:'';
+    <button class="btn bd2 xs" onclick="borrarPlanSuscriptor('${uid}','${s.planId}')">🗑️ Borrar plan</button>`:'';
   const catTxt=s.categoria==='__personal__'?'🎯 Plan personalizado':(catLabel[s.categoria]||s.categoria||'—');
   const progressHtml=renderProgressDetailBlock(`alu-${uid}`,exerciseLogs,days,notes)||'<div style="font-size:.78rem;color:var(--mu)">Sin registros todavía.</div>';
   return`<div style="padding:8px 0;border-bottom:1px solid var(--bd)">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
-      <div style="font-size:.84rem"><b>🔔 Suscripción — ${catTxt}</b> · ${acceso.label}</div>
+      <div style="font-size:.84rem"><b>🔔 Suscripción — ${catTxt}</b> · ${acceso.label} ${weekBadgeS}</div>
       <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
         ${editarPlanBtn}
+        ${cambiarSemanaHtml}
         <select id="susc-cat-${uid}" style="width:auto;font-size:.78rem">${catOptions}</select>
         <button class="btn bg2 xs" onclick="cambiarCategoriaSuscriptorManual('${uid}')">💾</button>
         ${accionBtn}
@@ -5379,6 +5398,7 @@ function getMemberPlanDays(plan,member){
 function renderMembersList(planId){
   const plan=planes.find(p=>p.id===planId);
   const el=document.getElementById('members-list');
+  if(!el)return;
   if(!plan.members?.length){el.innerHTML='<div class="card" style="text-align:center;padding:30px;color:var(--mu)">Sin alumnos todavía.</div>';return}
   const memberLink=(m)=>`${location.origin}${location.pathname}?plan=${planId}&member=${m.id}`;
   el.innerHTML=`<div class="card" style="padding:0;overflow:hidden">
@@ -5417,6 +5437,18 @@ window.cambiarSemanaMiembro=async function(planId,memberId){
   await setDoc(doc(db,'planes',planId),plan);
   toast('✅ Ahora arranca desde semana '+week);
   renderMembersList(planId);
+  refreshSuscriptorPanels();
+};
+
+window.cambiarSemanaCliente=async function(clientId){
+  const c=clients.find(cl=>cl.id===clientId);
+  if(!c)return;
+  const week=parseInt(document.getElementById('cli-changeweek-'+clientId).value);
+  c.activeWeek=week;
+  c.startDate=new Date().toISOString().split('T')[0];
+  await updateDoc(doc(db,'clients',clientId),{activeWeek:week,startDate:c.startDate});
+  toast('✅ Ahora arranca desde semana '+week);
+  refreshSuscriptorPanels();
 };
 
 async function addMember(){
