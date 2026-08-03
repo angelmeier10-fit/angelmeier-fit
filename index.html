@@ -844,6 +844,7 @@ setTimeout(()=>{
         <div class="fg"><label>Semanas por mesociclo</label><input id="np-mesoweeks" type="number" value="4" min="1" max="12"></div>
         <div class="fg full"><label>Cantidad de días de entrenamiento</label><input id="np-days" type="number" value="3" min="1" max="14"></div>
         <div class="fg full"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="np-private" style="width:auto"> 🔒 Plan privado (solo alumnos con suscripción activa, no accesible por link público)</label></div>
+        <div class="fg full"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="np-continuo" style="width:auto"> 🔥 Desafío continuo (mostrar todos los días seguidos al alumno, sin separar por semanas)</label></div>
       </div></div>
     </div>
     <div class="card" style="margin-bottom:10px;padding:14px 16px">
@@ -896,6 +897,7 @@ setTimeout(()=>{
         <div class="fg"><label>Total de semanas (macrociclo)</label><input id="ep-totalweeks" type="number" min="1" max="52"></div>
         <div class="fg"><label>Semanas por mesociclo</label><input id="ep-mesoweeks" type="number" min="1" max="12"></div>
         <div class="fg full"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="ep-private" style="width:auto"> 🔒 Plan privado (solo alumnos con suscripción activa, no accesible por link público)</label></div>
+        <div class="fg full"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="ep-continuo" style="width:auto"> 🔥 Desafío continuo (mostrar todos los días seguidos al alumno, sin separar por semanas)</label></div>
         <input type="hidden" id="ep-days">
       </div></div>
     </div>
@@ -1516,6 +1518,11 @@ onAuthStateChanged(auth,async(user)=>{
           return;
         }
         const name=(document.getElementById('login-name')?.value||'').trim();
+        // Vencimiento por defecto = duración del desafío (plan.durationDays),
+        // editable después a mano por Angel desde el panel de alumnos.
+        const planSnap=await getDoc(doc(db,'planes',planId));
+        const durationDays=planSnap.exists()?(planSnap.data().durationDays||21):21;
+        const expDate=new Date();expDate.setDate(expDate.getDate()+durationDays);
         await setDoc(ref,{
           email:user.email,
           name,
@@ -1523,6 +1530,7 @@ onAuthStateChanged(auth,async(user)=>{
           status:'active',
           activo:true,
           startDate:new Date().toISOString().split('T')[0],
+          expiry:expDate.toISOString().split('T')[0],
           planId
         });
       }
@@ -4351,7 +4359,7 @@ window.sembrarPlanDesafioGluteos=async function(){
     id,name:'Desafío Glúteos 21 días',
     desc:'Desafío gratuito de 21 días, 3 semanas de fuerza + movilidad + descanso.',
     price:'',durationDays:21,mpLink:'',img:'',level:'',cat:'',
-    totalWeeks:3,mesoWeeks:3,
+    totalWeeks:3,mesoWeeks:3,continuo:true,
     weeks,activeWeek:1,days:weeks[1],
     members:[],public:false,
     createdAt:new Date().toLocaleDateString('es-AR')
@@ -4464,8 +4472,8 @@ async function renderProgramaUnificadoHtml(prog,cats){
     const statusBadge=m.status==='active'&&!expired?'<span class="badge bgr2">✅ Activo</span>':expired?'<span class="badge" style="background:#f8717122;color:var(--rd)">⏰ Vencido</span>':'<span class="badge byw2">⏳ Pendiente</span>';
     const progressHtml=renderProgressDetailBlock(`${plan.id}-${m.id}`,exerciseLogs,days,notes)||'<div style="font-size:.78rem;color:var(--mu)">Sin registros todavía.</div>';
     const weekNumsG=planWeekNums(plan);
-    const weekBadgeG=weekNumsG.length?`<span class="badge bgr2">Semana ${memberWeek} de ${weekNumsG.length}</span>`:'';
-    const weekSelectHtmlG=weekNumsG.length>1?`<select id="mw-week-${m.id}" style="width:auto;font-size:.78rem">${weekNumsG.map(w=>`<option value="${w}"${w===m.startWeek?' selected':''}>Semana ${w}</option>`).join('')}</select>
+    const weekBadgeG=plan.continuo?`<span class="badge bgr2">🔥 ${days.length} días</span>`:weekNumsG.length?`<span class="badge bgr2">Semana ${memberWeek} de ${weekNumsG.length}</span>`:'';
+    const weekSelectHtmlG=(!plan.continuo&&weekNumsG.length>1)?`<select id="mw-week-${m.id}" style="width:auto;font-size:.78rem">${weekNumsG.map(w=>`<option value="${w}"${w===m.startWeek?' selected':''}>Semana ${w}</option>`).join('')}</select>
     <button class="btn bg2 xs" onclick="cambiarSemanaMiembro('${plan.id}','${m.id}')">📅 Cambiar semana</button>`:'';
     return`<div style="padding:8px 0;border-bottom:1px solid var(--bd)">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
@@ -4491,17 +4499,22 @@ async function renderProgramaUnificadoHtml(prog,cats){
       const pseudoMember={startWeek:s.startWeek||1,startDate:s.startDate||'',progress:s.progress||{}};
       const days=getMemberPlanDays(plan,pseudoMember);
       const info=getMemberWeekMesoInfo(plan,pseudoMember);
-      badge=`<span class="badge bgr2">Semana ${info.currentWeek} de ${info.totalWeeks}</span>`;
+      badge=plan.continuo?`<span class="badge bgr2">🔥 ${days.length} días</span>`:`<span class="badge bgr2">Semana ${info.currentWeek} de ${info.totalWeeks}</span>`;
       const{exerciseLogs,notes}=buildProgressSummary(s.progress||{},days,`alu-${uid}`,info.currentWeek);
       progressHtml=renderProgressDetailBlock(`alu-${uid}`,exerciseLogs,days,notes)||'';
       const weekNumsD=planWeekNums(plan);
-      if(weekNumsD.length>1)weekSelectHtml=`<select id="susc-changeweek-${uid}" style="width:auto;font-size:.78rem">${weekNumsD.map(w=>`<option value="${w}"${w===s.startWeek?' selected':''}>Semana ${w}</option>`).join('')}</select>
+      if(!plan.continuo&&weekNumsD.length>1)weekSelectHtml=`<select id="susc-changeweek-${uid}" style="width:auto;font-size:.78rem">${weekNumsD.map(w=>`<option value="${w}"${w===s.startWeek?' selected':''}>Semana ${w}</option>`).join('')}</select>
       <button class="btn bg2 xs" onclick="cambiarSemanaAlumno('${uid}')">📅 Cambiar semana</button>`;
     }
+    const expTxtD=s.expiry?new Date(s.expiry+'T00:00:00').toLocaleDateString('es-AR'):'Sin vencimiento';
+    const expHtmlD=`<span style="font-size:.72rem;color:var(--mu)">Vence: ${expTxtD}</span>
+      <input type="date" id="susc-exp-${uid}" value="${s.expiry||''}" ${s.expiry?'':'disabled'} style="width:auto;font-size:.78rem">
+      <label style="font-size:.72rem;display:flex;align-items:center;gap:3px"><input type="checkbox" id="susc-noexp-${uid}" ${s.expiry?'':'checked'} onchange="document.getElementById('susc-exp-${uid}').disabled=this.checked">Sin vencimiento</label>
+      <button class="btn bg2 xs" onclick="editarVencimientoSuscriptor('${uid}')">💾 Vencimiento</button>`;
     return`<div style="padding:8px 0;border-bottom:1px solid var(--bd)">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
         <div style="font-size:.84rem"><b>🍑 Desafío Glúteos 21 días</b> ${badge}</div>
-        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">${weekSelectHtml}</div>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">${weekSelectHtml}${expHtmlD}</div>
       </div>
       <div style="font-size:.78rem;color:var(--mu);margin-top:2px">${s.name||'(sin nombre)'} · ${s.email||''}</div>
       ${progressHtml}
@@ -4530,7 +4543,7 @@ async function renderProgramaUnificadoHtml(prog,cats){
   const catOptions=cats.map(c=>`<option value="${c.id}"${c.id===s.categoria?' selected':''}>${c.label}</option>`).join('')
     +`<option value="__personal__"${s.categoria==='__personal__'?' selected':''}>🎯 Plan personalizado</option>`;
   let startWeekHtml='';
-  if((s.status!=='active'||vencido)&&s.categoria&&s.categoria!=='global'&&planData){
+  if((s.status!=='active'||vencido)&&s.categoria&&s.categoria!=='global'&&planData&&!planData.continuo){
     const weekNums=planWeekNums(planData);
     if(weekNums.length>1)startWeekHtml=`<select id="susc-week-${uid}" style="width:auto">${weekNums.map(w=>`<option value="${w}"${w===s.startWeek?' selected':''}>Empieza semana ${w}</option>`).join('')}</select>`;
   }
@@ -4561,13 +4574,13 @@ async function renderProgramaUnificadoHtml(prog,cats){
   // Cambiar la semana que ve el alumno en cualquier momento (no solo al
   // reactivarlo): elige una semana del plan y reinicia startDate a hoy para
   // que el cálculo de "semana actual" arranque desde ahí y siga avanzando.
-  const cambiarSemanaHtml=(planData&&s.categoria!=='global')?(()=>{
+  const cambiarSemanaHtml=(planData&&!planData.continuo&&s.categoria!=='global')?(()=>{
     const weekNums=planWeekNums(planData);
     if(weekNums.length<2)return'';
     return`<select id="susc-changeweek-${uid}" style="width:auto;font-size:.78rem">${weekNums.map(w=>`<option value="${w}"${w===s.startWeek?' selected':''}>Semana ${w}</option>`).join('')}</select>
     <button class="btn bg2 xs" onclick="cambiarSemanaAlumno('${uid}')">📅 Cambiar semana</button>`;
   })():'';
-  const weekBadgeS=(planData&&s.categoria!=='global')?`<span class="badge bgr2">Semana ${subWeek} de ${planWeekNums(planData).length}</span>`:'';
+  const weekBadgeS=(planData&&s.categoria!=='global')?(planData.continuo?`<span class="badge bgr2">🔥 ${days.length} días</span>`:`<span class="badge bgr2">Semana ${subWeek} de ${planWeekNums(planData).length}</span>`):'';
   const editarPlanBtn=(s.categoria==='__personal__'&&s.planId)?`<button class="btn bpu xs" onclick="irAEditarPlanPersonal('${s.planId}')">✏️ Editar su plan</button>
     <button class="btn bd2 xs" onclick="borrarPlanSuscriptor('${uid}','${s.planId}')">🗑️ Borrar plan</button>`:'';
   const catTxt=s.categoria==='__personal__'?'🎯 Plan personalizado':(catLabel[s.categoria]||s.categoria||'—');
@@ -4864,6 +4877,7 @@ async function savePlan(){
     days:npWeeklyData[npCurrentWeek],
     members:[],
     public:!document.getElementById('np-private').checked,
+    continuo:document.getElementById('np-continuo').checked,
     createdAt:new Date().toLocaleDateString('es-AR')
   };
   await setDoc(doc(db,'planes',id),plan);
@@ -4886,6 +4900,7 @@ async function updatePlan(){
   plan.totalWeeks=parseInt(document.getElementById('ep-totalweeks').value)||12;
   plan.mesoWeeks=parseInt(document.getElementById('ep-mesoweeks').value)||4;
   plan.public=!document.getElementById('ep-private').checked;
+  plan.continuo=document.getElementById('ep-continuo').checked;
   const blocks=[...document.getElementById('ep-days-container').querySelectorAll('.day-block')];
   epWeeklyData[epCurrentWeek]=blocks.map(db2=>({
     name:db2.querySelector('.day-name-input').value,
@@ -5083,6 +5098,7 @@ function openEditPlan(id){
   document.getElementById('ep-totalweeks').value=plan.totalWeeks||12;
   document.getElementById('ep-mesoweeks').value=plan.mesoWeeks||4;
   document.getElementById('ep-private').checked=plan.public===false;
+  document.getElementById('ep-continuo').checked=!!plan.continuo;
   // Migrar planes viejos de una sola semana (plan.days) a plan.weeks
   epWeeklyData=plan.weeks&&Object.keys(plan.weeks).length?JSON.parse(JSON.stringify(plan.weeks)):{1:plan.days||[]};
   epCurrentWeek=plan.activeWeek&&epWeeklyData[plan.activeWeek]?plan.activeWeek:Object.keys(epWeeklyData).map(Number)[0]||1;
@@ -5362,6 +5378,10 @@ function sundayAlignedElapsedWeeks(startDateStr){
 function getMemberCurrentWeekNum(plan,member){
   const weekNums=planWeekNums(plan);
   if(!weekNums.length)return null;
+  // Planes "continuos" (desafíos) no rotan por semana: se muestran todos los
+  // días juntos, así que la "semana" queda fija para no correr las keys de
+  // progreso (w{semana}-{día}-{bloque}) solas con el paso del tiempo.
+  if(plan.continuo)return weekNums.includes(member?.startWeek)?member.startWeek:weekNums[0];
   const startIdx=weekNums.includes(member?.startWeek)?weekNums.indexOf(member.startWeek):0;
   const elapsedWeeks=sundayAlignedElapsedWeeks(member?.startDate);
   return weekNums[(startIdx+elapsedWeeks)%weekNums.length];
@@ -5391,6 +5411,9 @@ function getMemberWeekMesoInfo(plan,member){
 function getMemberPlanDays(plan,member){
   const weekNums=planWeekNums(plan);
   if(!weekNums.length)return plan.days||[];
+  // Plan continuo (desafío): todos los días de todas las semanas, en orden,
+  // como una sola lista — no solo los de la semana que "tocaría" hoy.
+  if(plan.continuo)return weekNums.flatMap(w=>plan.weeks[w]||[]);
   const weekNum=getMemberCurrentWeekNum(plan,member);
   return plan.weeks[weekNum]||[];
 }
@@ -5409,7 +5432,7 @@ function renderMembersList(planId){
       return`<div class="member-row">
         <div class="member-av">${m.name.charAt(0).toUpperCase()}</div>
         <div style="flex:1;min-width:0">
-          <div style="font-weight:600;font-size:.86rem">${m.name} ${statusBadge}${(()=>{if(!plan.weeks||!m.startDate)return'';const info=getMemberWeekMesoInfo(plan,m);return` <span class="badge" style="background:var(--ac)22;color:var(--ac2)">🗓️ Sem ${info.currentWeek}/${info.totalWeeks} · Meso ${info.mesoNum}/${info.totalMesos}</span>`;})()}</div>
+          <div style="font-weight:600;font-size:.86rem">${m.name} ${statusBadge}${(()=>{if(plan.continuo)return'';if(!plan.weeks||!m.startDate)return'';const info=getMemberWeekMesoInfo(plan,m);return` <span class="badge" style="background:var(--ac)22;color:var(--ac2)">🗓️ Sem ${info.currentWeek}/${info.totalWeeks} · Meso ${info.mesoNum}/${info.totalMesos}</span>`;})()}</div>
           <div style="font-size:.72rem;color:var(--mu)">${m.email||''} ${m.expiry?'· Vence: '+new Date(m.expiry+'T00:00:00').toLocaleDateString('es-AR'):''}</div>
           <div style="font-size:.7rem;color:var(--ac2);word-break:break-all;margin-top:2px">${link}</div>
         </div>
@@ -5730,7 +5753,7 @@ function renderGroupCV(plan,member,mode='client'){
   const nextIdx=getNextDayIdx({days,...fakeC},memberWeek);
   const gkey=`${plan.id}-${member.id}`;
   const activeDayName=days[nextIdx]?.name||'Día '+(nextIdx+1);
-  const mesoBadge=(plan.weeks&&member.startDate)?(()=>{const info=getMemberWeekMesoInfo(plan,member);return`<span class="badge" style="background:var(--ac)22;color:var(--ac2)">🗓️ Semana ${info.currentWeek} de ${info.totalWeeks} — Meso ${info.mesoNum}/${info.totalMesos}</span>`;})():'';
+  const mesoBadge=plan.continuo?`<span class="badge" style="background:var(--ac)22;color:var(--ac2)">🔥 Desafío de ${getMemberPlanDays(plan,member).length} días</span>`:(plan.weeks&&member.startDate)?(()=>{const info=getMemberWeekMesoInfo(plan,member);return`<span class="badge" style="background:var(--ac)22;color:var(--ac2)">🗓️ Semana ${info.currentWeek} de ${info.totalWeeks} — Meso ${info.mesoNum}/${info.totalMesos}</span>`;})():'';
   const dayListItems=(days||[]).map((d,i)=>{
     const isDone=(member.progress?.['snote-w'+memberWeek+'-'+i]||[]).length>0||isDayDoneViaSeries(fakeC,days,i,memberWeek);
     const badge=i===nextIdx?`<span style="font-size:.68rem;padding:2px 8px;border-radius:20px;font-weight:600;background:var(--ac)33;color:var(--ac2)">Siguiente</span>`:isDone?`<span style="font-size:.68rem;padding:2px 8px;border-radius:20px;font-weight:600;background:var(--gr)22;color:var(--gr)">✓</span>`:'';
@@ -6087,7 +6110,7 @@ function renderAlumnoCV(plan,member,uid){
   const memberWeek=getMemberCurrentWeekNum(plan,member)||1;
   const nextIdx=getNextDayIdx({days,...fakeC},memberWeek);
   const activeDayName=days[nextIdx]?.name||'Día '+(nextIdx+1);
-  const mesoBadge=(plan.weeks&&member.startDate)?(()=>{const info=getMemberWeekMesoInfo(plan,member);return`<span class="badge" style="background:var(--ac)22;color:var(--ac2)">🗓️ Semana ${info.currentWeek} de ${info.totalWeeks} — Meso ${info.mesoNum}/${info.totalMesos}</span>`;})():'';
+  const mesoBadge=plan.continuo?`<span class="badge" style="background:var(--ac)22;color:var(--ac2)">🔥 Desafío de ${getMemberPlanDays(plan,member).length} días</span>`:(plan.weeks&&member.startDate)?(()=>{const info=getMemberWeekMesoInfo(plan,member);return`<span class="badge" style="background:var(--ac)22;color:var(--ac2)">🗓️ Semana ${info.currentWeek} de ${info.totalWeeks} — Meso ${info.mesoNum}/${info.totalMesos}</span>`;})():'';
   const dayListItems=(days||[]).map((d,i)=>{
     const isDone=(member.progress?.['snote-w'+memberWeek+'-'+i]||[]).length>0||isDayDoneViaSeries(fakeC,days,i,memberWeek);
     const badge=i===nextIdx?`<span style="font-size:.68rem;padding:2px 8px;border-radius:20px;font-weight:600;background:var(--ac)33;color:var(--ac2)">Siguiente</span>`:isDone?`<span style="font-size:.68rem;padding:2px 8px;border-radius:20px;font-weight:600;background:var(--gr)22;color:var(--gr)">✓</span>`:'';
