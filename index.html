@@ -4361,7 +4361,7 @@ window.sembrarPlanDesafioGluteos=async function(){
     price:'',durationDays:21,mpLink:'',img:'',level:'',cat:'',
     totalWeeks:3,mesoWeeks:3,continuo:true,
     weeks,activeWeek:1,days:weeks[1],
-    members:[],public:false,
+    members:[],public:true,
     createdAt:new Date().toLocaleDateString('es-AR')
   };
   await setDoc(doc(db,'planes',id),plan);
