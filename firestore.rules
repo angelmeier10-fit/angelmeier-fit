@@ -93,6 +93,13 @@ service cloud.firestore {
         || (isOwner(uid)
             && request.resource.data.status == 'pending'
             && !('expiry' in request.resource.data)
+            && !('lastPaymentId' in request.resource.data))
+        // Desafío Glúteos 21 días: gratuito, acceso inmediato sin pasar por
+        // el estado "pending" de pago (no aplica a ningún otro programa).
+        || (isOwner(uid)
+            && request.resource.data.programa == 'desafio-gluteos-21'
+            && request.resource.data.status == 'active'
+            && !('expiry' in request.resource.data)
             && !('lastPaymentId' in request.resource.data));
       allow update: if isAdmin()
         || (isOwner(uid)

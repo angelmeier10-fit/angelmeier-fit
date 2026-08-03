@@ -351,11 +351,30 @@ setTimeout(()=>{
 },6000);
 </script>
 
+<div id="desafio-landing-screen" style="display:none;position:fixed;inset:0;z-index:9999;background:var(--bg);overflow-y:auto;padding:20px">
+  <div style="max-width:440px;margin:40px auto;text-align:center">
+    <div style="margin-bottom:14px"><svg width="48" height="48" viewBox="0 0 100 100"><defs><linearGradient id="amlogo-gd" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#c084fc"/><stop offset="100%" stop-color="#7c5cbf"/></linearGradient></defs><circle cx="48" cy="22" r="12" fill="url(#amlogo-gd)"/><path d="M88,38 C76,58 60,64 44,56 C30,49 18,54 8,74 C22,66 36,63 48,67 C64,72 78,64 88,38 Z" fill="url(#amlogo-gd)"/></svg></div>
+    <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.6rem;margin-bottom:6px">🍑 Desafío Glúteos 21 días</div>
+    <p style="color:var(--mu);font-size:.92rem;line-height:1.6;margin-bottom:22px">Un plan gratuito de 21 días para activar, tonificar y fortalecer glúteos: rutinas de fuerza, movilidad y descanso guiado, día por día, sin costo.</p>
+    <div class="card" style="text-align:left;padding:18px 20px;margin-bottom:22px">
+      <div style="font-weight:600;margin-bottom:8px">Incluye:</div>
+      <div style="font-size:.85rem;color:var(--mu);line-height:2">
+        ✅ Rutinas de fuerza (básicos, unilateral y con banda elástica)<br>
+        ✅ Días de movilidad y descanso activo<br>
+        ✅ Progresión semana a semana<br>
+        ✅ Acceso inmediato, sin tarjeta ni pago
+      </div>
+    </div>
+    <button class="btn bp" style="width:100%;justify-content:center;font-size:1rem;padding:14px" onclick="mostrarSignupDesafio()">Sumarme gratis</button>
+  </div>
+</div>
+
 <div id="login-screen" style="display:none;position:fixed;inset:0;z-index:9999;background:var(--bg);align-items:center;justify-content:center;flex-direction:column;padding:20px">
   <div style="max-width:340px;width:100%;text-align:center">
     <div style="margin-bottom:10px"><svg width="44" height="44" viewBox="0 0 100 100"><defs><linearGradient id="amlogo-g1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#c084fc"/><stop offset="100%" stop-color="#7c5cbf"/></linearGradient></defs><circle cx="48" cy="22" r="12" fill="url(#amlogo-g1)"/><path d="M88,38 C76,58 60,64 44,56 C30,49 18,54 8,74 C22,66 36,63 48,67 C64,72 78,64 88,38 Z" fill="url(#amlogo-g1)"/></svg></div>
     <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.3rem;margin-bottom:4px">Angel Meier</div>
     <div id="login-subtitle" style="color:var(--mu);font-size:.85rem;margin-bottom:24px">Panel de entrenador</div>
+    <input id="login-name" type="text" placeholder="Nombre" style="display:none;margin-bottom:10px">
     <input id="login-email" type="email" placeholder="Email" style="margin-bottom:10px" autocomplete="username">
     <div style="position:relative;margin-bottom:5px">
       <input id="login-pass" type="password" placeholder="Contraseña" style="padding-right:42px" autocomplete="current-password" oninput="checkPassReqs()" onkeydown="if(event.key==='Enter')doLogin()">
@@ -379,6 +398,16 @@ setTimeout(()=>{
       <span onclick="toggleSignupMode()" style="color:var(--ac2);cursor:pointer" id="login-mode-toggle">Crear cuenta</span>
       <span onclick="doForgotPassword()" style="color:var(--mu);cursor:pointer">Olvidé mi contraseña</span>
     </div>
+  </div>
+</div>
+
+<div id="desafio-view" style="display:none;position:fixed;inset:0;z-index:9998;background:var(--bg);overflow-y:auto">
+  <div style="max-width:440px;margin:0 auto;padding:24px 16px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+      <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.15rem">🍑 Desafío Glúteos 21 días</div>
+      <button class="btn bg2 xs" onclick="doLogout()">Salir</button>
+    </div>
+    <div id="desafio-content"></div>
   </div>
 </div>
 
@@ -472,6 +501,10 @@ setTimeout(()=>{
     <div class="card" style="margin-bottom:16px;padding:16px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
       <div><div style="font-weight:700;font-size:.9rem">🔗 Link de suscripción</div><div class="sub" style="margin-bottom:0">Pasáselo a un alumno nuevo para que se registre solo.</div></div>
       <button class="btn bcy sm" onclick="copyLink('https://angelmeier-fit.web.app/suscripcion')">📋 Copiar link</button>
+    </div>
+    <div class="card" style="margin-bottom:16px;padding:16px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+      <div><div style="font-weight:700;font-size:.9rem">🍑 Link del Desafío Glúteos (gratis)</div><div class="sub" style="margin-bottom:0">Landing pública + registro gratuito, sin pago.</div></div>
+      <button class="btn bcy sm" onclick="copyLink('https://angelmeier-fit.web.app/desafio-gluteos')">📋 Copiar link</button>
     </div>
     <div class="card" style="margin-bottom:16px;padding:16px">
       <h3 style="margin-bottom:10px;font-size:.95rem">➕ Dar de alta un alumno vos mismo</h3>
@@ -1361,7 +1394,57 @@ window.previewComoAlumno=async function(uid){
 let appStarted=false;
 const isClientLink=new URLSearchParams(location.search).get('plan')||new URLSearchParams(location.search).get('client');
 const isAlumnoSignup=new URLSearchParams(location.search).get('alumno')==='1'||location.pathname.replace(/\/+$/,'').endsWith('/suscripcion');
+const isDesafioLanding=location.pathname.replace(/\/+$/,'').endsWith('/desafio-gluteos');
 const ADMIN_EMAIL='angelmeier10@gmail.com';
+
+// ══ DESAFÍO GLÚTEOS 21 DÍAS (gratuito, aislado del flujo de planes pagos) ══
+const DESAFIO_TIPOS_DIA={
+  fuerzaA:{nombre:'Fuerza A (básicos)',ejercicios:[
+    {name:'Hip thrust',detalle:'4x12'},
+    {name:'Puente de glúteo',detalle:'3x15'},
+    {name:'Sentadilla',detalle:'3x15'},
+    {name:'Patada de glúteo',detalle:'3x12 c/lado'}
+  ]},
+  fuerzaB:{nombre:'Fuerza B (unilateral)',ejercicios:[
+    {name:'Zancada caminando',detalle:'3x10 c/lado'},
+    {name:'Step up',detalle:'3x12 c/lado'},
+    {name:'Peso muerto rumano a 1 pierna',detalle:'3x10 c/lado'},
+    {name:'Hip thrust a 1 pierna',detalle:'3x10 c/lado'}
+  ]},
+  fuerzaC:{nombre:'Fuerza C (banda elástica)',ejercicios:[
+    {name:'Clamshell',detalle:'3x15 c/lado'},
+    {name:'Abducción de cadera',detalle:'3x15 c/lado'},
+    {name:'Patada con banda',detalle:'3x15 c/lado'},
+    {name:'Sentadilla sumo con banda',detalle:'3x15'}
+  ]},
+  movilidad:{nombre:'Movilidad / Cardio',ejercicios:[
+    {name:'Caminata',detalle:'20-30 min'},
+    {name:'Estiramiento de cadera',detalle:'3x30seg c/lado'},
+    {name:'Movilidad de cadera',detalle:'2x8 c/lado'}
+  ]},
+  descansoActivo:{nombre:'Descanso activo',ejercicios:[
+    {name:'Foam roller',detalle:'5-10 min'},
+    {name:'Estiramiento general',detalle:'10 min'}
+  ]},
+  descansoCompleto:{nombre:'Descanso completo',ejercicios:[]}
+};
+const DESAFIO_SECUENCIA_SEMANAL=['fuerzaA','movilidad','fuerzaB','descansoActivo','fuerzaC','movilidad','descansoCompleto'];
+const DESAFIO_GLUTEOS_DIAS=(()=>{
+  const dias=[];
+  for(let semana=1;semana<=3;semana++){
+    DESAFIO_SECUENCIA_SEMANAL.forEach(tipoKey=>{
+      const tipo=DESAFIO_TIPOS_DIA[tipoKey];
+      const esFuerza=tipoKey.startsWith('fuerza');
+      dias.push({
+        semana,
+        tipo:tipo.nombre,
+        ejercicios:tipo.ejercicios,
+        nota:(esFuerza&&semana>1)?'💪 Progresión: sumá +2-3 reps o +1 serie sobre la semana anterior.':''
+      });
+    });
+  }
+  return dias;
+})();
 // Categorías de la suscripción: se leen de planesFijos (colección pública de solo
 // lectura) en vez de estar fijas en el código, para que Angel pueda agregar/sacar
 // categorías desde la pestaña "Planes fijos" sin tocar código. Los ids legacy (creados
@@ -1391,7 +1474,7 @@ window.addEventListener('unhandledrejection',e=>{
   localStorage.removeItem('amfit-had-session');
   signOut(auth).catch(()=>{}).finally(()=>location.reload());
 });
-if(!isClientLink && !isAlumnoSignup && localStorage.getItem('amfit-had-session')==='1'){
+if(!isClientLink && !isAlumnoSignup && !isDesafioLanding && localStorage.getItem('amfit-had-session')==='1'){
   // Ya hubo sesión antes: si Firebase Auth no confirma nada (p.ej. sin conexión),
   // no dejamos al entrenador trabado en el login; arrancamos con lo que haya en caché.
   setTimeout(()=>{if(!appStarted){hideLoginScreen();startAppOnce();}},2500);
@@ -1399,10 +1482,35 @@ if(!isClientLink && !isAlumnoSignup && localStorage.getItem('amfit-had-session')
 if(isAlumnoSignup){
   document.getElementById('login-subtitle').textContent='Registrate o ingresá a tu suscripción';
 }
+window.mostrarSignupDesafio=function(){
+  document.getElementById('desafio-landing-screen').style.display='none';
+  document.getElementById('login-name').style.display='block';
+  document.getElementById('login-subtitle').textContent='Sumate al Desafío Glúteos 21 días';
+  if(!signupMode)toggleSignupMode();
+  showLoginScreen();
+};
 onAuthStateChanged(auth,async(user)=>{
   if(isClientLink){
     // Los links de plan para clientes no requieren login del entrenador
     startAppOnce();
+    return;
+  }
+  if(isDesafioLanding){
+    hideLoading();
+    if(user){
+      if(user.email===ADMIN_EMAIL){
+        // Igual que en isAlumnoSignup: no usar location.pathname para evitar
+        // loops, y no mezclar la sesión del entrenador con esta vista pública.
+        location.href=location.pathname;
+        return;
+      }
+      hideLoginScreen();
+      appStarted=true;
+      await initDesafioGluteos(user);
+    }else{
+      document.getElementById('login-screen').style.display='none';
+      document.getElementById('desafio-landing-screen').style.display='block';
+    }
     return;
   }
   if(isAlumnoSignup){
@@ -1439,6 +1547,54 @@ onAuthStateChanged(auth,async(user)=>{
     showLoginScreen();
   }
 });
+
+async function initDesafioGluteos(user){
+  document.getElementById('desafio-view').style.display='block';
+  const ref=doc(db,'subscribers',user.uid);
+  let snap=await getDoc(ref);
+  if(!snap.exists()){
+    const name=(document.getElementById('login-name')?.value||'').trim();
+    await setDoc(ref,{
+      email:user.email,
+      name,
+      programa:'desafio-gluteos-21',
+      status:'active',
+      activo:true,
+      startDate:new Date().toISOString().split('T')[0],
+      planId:null,
+      categoria:null
+    });
+    snap=await getDoc(ref);
+  }
+  renderDesafioView(snap.data());
+}
+
+function renderDesafioView(sub){
+  const contentEl=document.getElementById('desafio-content');
+  const start=new Date((sub.startDate||new Date().toISOString().split('T')[0])+'T00:00:00');
+  const today=new Date();today.setHours(0,0,0,0);
+  const diaNum=Math.floor((today-start)/(1000*60*60*24))+1;
+  if(diaNum>DESAFIO_GLUTEOS_DIAS.length){
+    contentEl.innerHTML=`<div class="card" style="text-align:center;padding:30px 20px">
+      <div style="font-size:2rem;margin-bottom:10px">🎉</div>
+      <h3 style="margin-bottom:8px">¡Completaste el desafío!</h3>
+      <p class="sub">Los 21 días ya pasaron. ¡Felicitaciones por el compromiso!</p>
+    </div>`;
+    return;
+  }
+  const dia=DESAFIO_GLUTEOS_DIAS[Math.max(1,diaNum)-1];
+  const exHtml=dia.ejercicios.length?dia.ejercicios.map(ex=>`
+    <div style="padding:8px 0;border-bottom:1px solid var(--bd)">
+      <b>${ex.name}</b> <span style="color:var(--mu)">— ${ex.detalle}</span>
+    </div>`).join(''):'<div style="color:var(--mu);font-size:.9rem;padding:10px 0">Hoy toca descansar. 💤</div>';
+  contentEl.innerHTML=`
+    <div class="card" style="padding:18px 20px">
+      <div style="font-size:.78rem;color:var(--ac2);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Día ${Math.max(1,diaNum)} de ${DESAFIO_GLUTEOS_DIAS.length}</div>
+      <h3 style="margin-bottom:10px">${dia.tipo}</h3>
+      ${exHtml}
+      ${dia.nota?`<div style="margin-top:12px;font-size:.85rem;color:var(--ac2)">${dia.nota}</div>`:''}
+    </div>`;
+}
 
 async function initAlumno(user){
   document.getElementById('view-alumno').style.display='block';
@@ -4315,6 +4471,16 @@ async function renderProgramaUnificadoHtml(prog,cats){
     </div>`;
   }
   // subscription
+  if(prog.sub.programa==='desafio-gluteos-21'){
+    const s=prog.sub;
+    const start=new Date((s.startDate||new Date().toISOString().split('T')[0])+'T00:00:00');
+    const today=new Date();today.setHours(0,0,0,0);
+    const diaNum=Math.min(Math.max(1,Math.floor((today-start)/(1000*60*60*24))+1),DESAFIO_GLUTEOS_DIAS.length);
+    return`<div style="padding:8px 0;border-bottom:1px solid var(--bd)">
+      <div style="font-size:.84rem"><b>🍑 Desafío Glúteos 21 días</b> <span class="badge bgr2">Día ${diaNum} de ${DESAFIO_GLUTEOS_DIAS.length}</span></div>
+      <div style="font-size:.78rem;color:var(--mu);margin-top:2px">${s.name||'(sin nombre)'} · ${s.email||''}</div>
+    </div>`;
+  }
   const s=prog.sub,uid=prog.uid;
   let planData=null,days=[];
   let planId=s.planId;

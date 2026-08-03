@@ -10,7 +10,8 @@
     "public": ".",
     "ignore": ["firebase.json", ".firebaserc", "functions/**", ".git/**"],
     "rewrites": [
-      {"source": "/suscripcion", "destination": "/index.html"}
+      {"source": "/suscripcion", "destination": "/index.html"},
+      {"source": "/desafio-gluteos", "destination": "/index.html"}
     ]
   }
 }
