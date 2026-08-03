@@ -1727,14 +1727,15 @@ function showView(v,btn){
 window.showView=showView;
 
 // Recorre days->blocks->exercises y arma un resumen de progreso (último entrenamiento, notas, historial de cargas por ejercicio) leyendo `progress` con las mismas claves que usan toggleSerie/logGym/saveSessionNote
-function buildProgressSummary(progress,days,idPrefix){
+function buildProgressSummary(progress,days,idPrefix,week){
+  week=week||1;
   let lastDate='—';let lastDay='—';
   const exerciseLogs=[];
   (days||[]).forEach((d,di)=>{
     (d.blocks||[]).forEach((blk,bi)=>{
       if(blk.kind==='gym'){
         (blk.exercises||[]).forEach((ex,ei)=>{
-          const logKey=idPrefix+'-'+di+'-'+bi+'-e'+ei+'-logs';
+          const logKey=idPrefix+'-w'+week+'-'+di+'-'+bi+'-e'+ei+'-logs';
           const logs=progress[logKey]||[];
           if(logs.length){
             const last=logs[logs.length-1];
@@ -1747,7 +1748,7 @@ function buildProgressSummary(progress,days,idPrefix){
   });
   let notes=[];
   (days||[]).forEach((d,di)=>{
-    const snKey='snote-'+di;
+    const snKey=`snote-w${week}-${di}`;
     (progress[snKey]||[]).forEach(n=>notes.push({date:n.date,text:n.text,day:d.name||'Día '+(di+1)}));
   });
   notes.sort((a,b)=>compareDates(b.date,a.date));
@@ -3140,7 +3141,7 @@ window.openEdit=openEdit;
 function renderEcSeguimiento(c){
   const el=document.getElementById('ec-seg-content');
   if(!el)return;
-  const{lastDate,lastDay,notes:allNotes,exerciseLogs}=buildProgressSummary(c.progress||{},c.days,c.id);
+  const{lastDate,lastDay,notes:allNotes,exerciseLogs}=buildProgressSummary(c.progress||{},c.days,c.id,c.activeWeek||1);
   const block=renderProgressDetailBlock(c.id,exerciseLogs,c.days,allNotes);
   el.innerHTML=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
       <div style="background:var(--s2);border-radius:9px;padding:11px">
@@ -3268,7 +3269,7 @@ async function renderCV(clientId){
   const weekLabel=displayWeek&&c.weeks?`<span class="badge" style="background:var(--ac)22;color:var(--ac2)">📅 Semana ${displayWeek}</span>`:'';
   const activeDayName=activeDays[nextIdx]?.name||'Día '+(nextIdx+1);
   const dayListItems=activeDays.map((d,i)=>{
-    const isDone=(c.progress?.['snote-'+i]||[]).length>0||isDayDoneViaSeries(c,activeDays,i);
+    const isDone=(c.progress?.['snote-w'+(c.activeWeek||1)+'-'+i]||[]).length>0||isDayDoneViaSeries(c,activeDays,i,(c.activeWeek||1));
     const badge=i===nextIdx?`<span style="font-size:.68rem;padding:2px 8px;border-radius:20px;font-weight:600;background:var(--ac)33;color:var(--ac2)">Siguiente</span>`:isDone?`<span style="font-size:.68rem;padding:2px 8px;border-radius:20px;font-weight:600;background:var(--gr)22;color:var(--gr)">✓</span>`:'';
     return`<div class="cv-day-item${i===nextIdx?' active':''}" id="cv-ditem-${clientId}-${i}" onclick="selectCVDay('${clientId}',${i})">
       <span class="cv-day-item-name">${d.name||'Día '+(i+1)}</span>${badge}
@@ -3325,11 +3326,12 @@ window.selectCVDay=function(clientId,idx){
   document.getElementById('cv-day-list-'+clientId)?.classList.remove('open');
   renderDay(clientId,idx);
 };
-function isDayDoneViaSeries(c,days,dIdx){
+function isDayDoneViaSeries(c,days,dIdx,week){
+  week=week||1;
   const day=days[dIdx];if(!day?.blocks?.length)return false;
   let total=0,done=0;
   day.blocks.forEach((blk,bi)=>{
-    const bkey=`${dIdx}-${bi}`;
+    const bkey=`w${week}-${dIdx}-${bi}`;
     if(blk.kind==='warmup'||blk.kind==='gym'){
       (blk.exercises||[]).forEach((ex,ei)=>{
         const suffix=blk.kind==='warmup'?`wu${ei}`:`e${ei}`;
@@ -3340,19 +3342,20 @@ function isDayDoneViaSeries(c,days,dIdx){
   });
   return total>0&&done===total;
 }
-function getNextDayInfo(c){
+function getNextDayInfo(c,week){
+  week=week!=null?week:(c.activeWeek||1);
   const days=c.days||[];
   if(!days.length)return{dayIdx:0,days:days,weekNum:null};
   // Try notes first (have dates, more precise)
   let lastDate=null;let lastIdx=-1;
   days.forEach((_,i)=>{
-    (c.progress?.['snote-'+i]||[]).forEach(n=>{
+    (c.progress?.['snote-w'+week+'-'+i]||[]).forEach(n=>{
       if(!lastDate||n.date>lastDate){lastDate=n.date;lastIdx=i;}
     });
   });
   // Fall back to series: highest-indexed day with all series ticked
   if(lastIdx===-1){
-    days.forEach((_,i)=>{if(isDayDoneViaSeries(c,days,i))lastIdx=i;});
+    days.forEach((_,i)=>{if(isDayDoneViaSeries(c,days,i,week))lastIdx=i;});
   }
   if(lastIdx===-1)return{dayIdx:0,days:days,weekNum:null};
   const nextIdx=lastIdx+1;
@@ -3365,7 +3368,7 @@ function getNextDayInfo(c){
   }
   return{dayIdx:0,days:days,weekNum:null};
 }
-function getNextDayIdx(c){return getNextDayInfo(c).dayIdx;}
+function getNextDayIdx(c,week){return getNextDayInfo(c,week).dayIdx;}
 window.toggleDayAcc=function(clientId,idx){
   const hdr=document.querySelector(`#day-acc-${clientId}-${idx} .day-acc-hdr`);
   const body=document.getElementById(`day-body-${clientId}-${idx}`);
@@ -3382,15 +3385,16 @@ function renderDay(clientId,dIdx){
   if(!container)return;
   if(!day||!day.blocks?.length){container.innerHTML='<div style="text-align:center;padding:40px;color:var(--mu)">Sin bloques en este día.</div>';return}
   let html='';
+  const dayWeek=c.activeWeek||1;
   day.blocks.forEach((blk,bi)=>{
-    const bkey=`${dIdx}-${bi}`;
+    const bkey=`w${dayWeek}-${dIdx}-${bi}`;
     if(blk.kind==='warmup') html+=renderWarmupBlock(c,bkey,blk,bi);
     else if(blk.kind==='gym') html+=renderGymBlock(c,bkey,blk,bi);
     else if(blk.kind==='func') html+=renderFuncBlock(c,bkey,blk,bi);
     else html+=renderCFBlock(c,bkey,blk,bi);
   });
   // Session notes for this day
-  const snKey='snote-'+dIdx;
+  const snKey=`snote-w${dayWeek}-${dIdx}`;
   const notes=c.progress[snKey]||[];
   const notesHtml=notes.slice().reverse().map((n,ri)=>{const realIdx=notes.length-1-ri;return`<div class="note-entry" style="display:flex;align-items:flex-start;gap:8px"><div style="flex:1"><div class="note-date">${n.date}</div><div class="note-text">${n.text}</div></div><button onclick="deleteNote('${clientId}',${dIdx},${realIdx})" style="background:none;border:none;color:var(--mu);cursor:pointer;font-size:.85rem;flex-shrink:0;padding:2px 4px" title="Borrar nota">🗑️</button></div>`}).join('');
   html+=`<div style="border:1px solid var(--bd);border-radius:var(--ra);padding:16px;margin-top:6px;background:var(--s1)">
@@ -3706,7 +3710,7 @@ window.logGym=async function(cId,ekey){
   document.getElementById('pr-'+cId+'-'+ekey).value='';
   if(document.getElementById('pn-'+cId+'-'+ekey))document.getElementById('pn-'+cId+'-'+ekey).value='';
   clearSetWeights(cId,ekey,weights.length);
-  toast('📊 Guardado');const dIdx=parseInt(ekey.split('-')[0]);renderDay(cId,dIdx);
+  toast('📊 Guardado');const dIdx=parseInt(ekey.split('-')[1]);renderDay(cId,dIdx);
 };
 
 window.logCF=async function(cId,bkey,rk){
@@ -3717,7 +3721,7 @@ window.logCF=async function(cId,bkey,rk){
   c.progress[rk].push({date:new Date().toLocaleDateString('es-AR'),result:res+(note?' — '+note:'')});
   await updateDoc(doc(db,'clients',cId),{progress:c.progress});
   document.getElementById('cfr-'+cId+'-'+bkey).value='';document.getElementById('cfn-'+cId+'-'+bkey).value='';
-  toast('🔥 Resultado guardado');const dIdx=parseInt(bkey.split('-')[0]);renderDay(cId,dIdx);
+  toast('🔥 Resultado guardado');const dIdx=parseInt(bkey.split('-')[1]);renderDay(cId,dIdx);
 };
 
 // ══ EXERCISE DB ══
@@ -4076,7 +4080,7 @@ window.saveSessionNote=async function(cId,dIdx){
   const c=clients.find(cl=>cl.id===cId);
   const txt=document.getElementById('snote-'+cId+'-'+dIdx).value.trim();
   if(!txt)return;
-  const key='snote-'+dIdx;
+  const key=`snote-w${c.activeWeek||1}-${dIdx}`;
   if(!c.progress[key])c.progress[key]=[];
   c.progress[key].push({date:new Date().toLocaleDateString('es-AR'),text:txt});
   await updateDoc(doc(db,'clients',cId),{progress:c.progress});
@@ -4088,7 +4092,7 @@ window.saveSessionNote=async function(cId,dIdx){
 window.deleteNote=async function(cId,dIdx,noteIdx){
   if(!confirm('¿Borrar esta nota?'))return;
   const c=clients.find(cl=>cl.id===cId);
-  const key='snote-'+dIdx;
+  const key=`snote-w${c.activeWeek||1}-${dIdx}`;
   if(!c.progress[key])return;
   c.progress[key].splice(noteIdx,1);
   await updateDoc(doc(db,'clients',cId),{progress:c.progress});
@@ -4213,7 +4217,7 @@ async function renderProgramaUnificadoHtml(prog,cats){
   const catLabel=Object.fromEntries(cats.map(c=>[c.id,c.label]));
   if(prog.type==='personal'){
     const c=prog.client;
-    const{exerciseLogs,notes}=buildProgressSummary(c.progress||{},c.days,c.id);
+    const{exerciseLogs,notes}=buildProgressSummary(c.progress||{},c.days,c.id,c.activeWeek||1);
     const progressHtml=renderProgressDetailBlock(c.id,exerciseLogs,c.days,notes)||'<div style="font-size:.78rem;color:var(--mu)">Sin registros todavía.</div>';
     const expiredNow=c.expiry&&(new Date(c.expiry+'T00:00:00')<new Date());
     const expiryBadge=c.expiry?`<span class="badge" style="background:${expiredNow?'#f8717122':'#fbbf2422'};color:${expiredNow?'var(--rd)':'var(--yw)'}">${expiredNow?'⏰ Vencido':'📅 Vence: '+new Date(c.expiry+'T00:00:00').toLocaleDateString('es-AR')}</span>`:'';
@@ -4237,7 +4241,7 @@ async function renderProgramaUnificadoHtml(prog,cats){
     const{plan,member:m}=prog;
     await loadPlanProgreso(plan);
     const days=getMemberPlanDays(plan,m);
-    const{exerciseLogs,notes}=buildProgressSummary(m.progress||{},days,`${plan.id}-${m.id}`);
+    const{exerciseLogs,notes}=buildProgressSummary(m.progress||{},days,`${plan.id}-${m.id}`,getMemberCurrentWeekNum(plan,m)||1);
     const expired=m.expiry&&(new Date(m.expiry+'T00:00:00')<new Date());
     const statusBadge=m.status==='active'&&!expired?'<span class="badge bgr2">✅ Activo</span>':expired?'<span class="badge" style="background:#f8717122;color:var(--rd)">⏰ Vencido</span>':'<span class="badge byw2">⏳ Pendiente</span>';
     const progressHtml=renderProgressDetailBlock(`${plan.id}-${m.id}`,exerciseLogs,days,notes)||'<div style="font-size:.78rem;color:var(--mu)">Sin registros todavía.</div>';
@@ -4261,11 +4265,16 @@ async function renderProgramaUnificadoHtml(prog,cats){
     const firstCat=cats.filter(c=>c.id!=='global')[0];
     if(firstCat)planId=planesFijosCache[firstCat.id]?.planId||null;
   }
+  let subWeek=1;
   if(planId){
     planData=planes.find(p=>p.id===planId)||null;
-    if(planData)days=getMemberPlanDays(planData,{startWeek:s.startWeek||1,startDate:s.startDate||''});
+    if(planData){
+      const pseudoMember={startWeek:s.startWeek||1,startDate:s.startDate||''};
+      days=getMemberPlanDays(planData,pseudoMember);
+      subWeek=getMemberCurrentWeekNum(planData,pseudoMember)||1;
+    }
   }
-  const{exerciseLogs,notes}=buildProgressSummary(s.progress||{},days,`alu-${uid}`);
+  const{exerciseLogs,notes}=buildProgressSummary(s.progress||{},days,`alu-${uid}`,subWeek);
   const acceso=estadoAccesoAlumno(s);
   const vencido=acceso.clave==='vencido';
   const defaultExp=new Date();defaultExp.setDate(defaultExp.getDate()+30);
@@ -5422,12 +5431,13 @@ function renderGroupCV(plan,member,mode='client'){
   const daysLeft=member.expiry?Math.max(0,Math.ceil((new Date(member.expiry+'T00:00:00')-new Date())/(1000*60*60*24))):null;
   const days=getMemberPlanDays(plan,member);
   const fakeC={id:`grp::${plan.id}::${member.id}`,progress:member.progress||{}};
-  const nextIdx=getNextDayIdx({days,...fakeC});
+  const memberWeek=getMemberCurrentWeekNum(plan,member)||1;
+  const nextIdx=getNextDayIdx({days,...fakeC},memberWeek);
   const gkey=`${plan.id}-${member.id}`;
   const activeDayName=days[nextIdx]?.name||'Día '+(nextIdx+1);
   const mesoBadge=(plan.weeks&&member.startDate)?(()=>{const info=getMemberWeekMesoInfo(plan,member);return`<span class="badge" style="background:var(--ac)22;color:var(--ac2)">🗓️ Semana ${info.currentWeek} de ${info.totalWeeks} — Meso ${info.mesoNum}/${info.totalMesos}</span>`;})():'';
   const dayListItems=(days||[]).map((d,i)=>{
-    const isDone=(member.progress?.['snote-'+i]||[]).length>0||isDayDoneViaSeries(fakeC,days,i);
+    const isDone=(member.progress?.['snote-w'+memberWeek+'-'+i]||[]).length>0||isDayDoneViaSeries(fakeC,days,i,memberWeek);
     const badge=i===nextIdx?`<span style="font-size:.68rem;padding:2px 8px;border-radius:20px;font-weight:600;background:var(--ac)33;color:var(--ac2)">Siguiente</span>`:isDone?`<span style="font-size:.68rem;padding:2px 8px;border-radius:20px;font-weight:600;background:var(--gr)22;color:var(--gr)">✓</span>`:'';
     return`<div class="cv-day-item${i===nextIdx?' active':''}" id="gv-ditem-${gkey}-${i}" onclick="selectGroupCVDay('${plan.id}','${member.id}',${i})">
       <span class="cv-day-item-name">${d.name||'Día '+(i+1)}</span>${badge}
@@ -5489,16 +5499,17 @@ function renderGroupDay(plan,member,dIdx){
   if(!day||!day.blocks?.length){container.innerHTML='<div style="text-align:center;padding:40px;color:var(--mu)">Sin bloques en este día.</div>';return}
   // Reuse same render functions but with plan+member as client proxy
   const fakeClient={id:`grp::${plan.id}::${member.id}`,progress:member.progress||{},days};
+  const memberWeek=getMemberCurrentWeekNum(plan,member)||1;
   let html='';
   day.blocks.forEach((blk,bi)=>{
-    const bkey=`${dIdx}-${bi}`;
+    const bkey=`w${memberWeek}-${dIdx}-${bi}`;
     if(blk.kind==='warmup') html+=renderWarmupBlock(fakeClient,bkey,blk,bi);
     else if(blk.kind==='gym') html+=renderGymBlock(fakeClient,bkey,blk,bi);
     else if(blk.kind==='func') html+=renderFuncBlock(fakeClient,bkey,blk,bi);
     else html+=renderCFBlock(fakeClient,bkey,blk,bi);
   });
   // Session notes
-  const snKey='snote-'+dIdx;
+  const snKey=`snote-w${memberWeek}-${dIdx}`;
   const notes=member.progress?.[snKey]||[];
   const notesHtml=notes.slice(-5).reverse().map((n,ri)=>{const realIdx=notes.length-1-ri;return`<div class="note-entry" style="display:flex;align-items:flex-start;gap:8px"><div style="flex:1"><div class="note-date">${n.date}</div><div class="note-text">${n.text}</div></div><button onclick="deleteGroupNote('${plan.id}','${member.id}',${dIdx},${realIdx})" style="background:none;border:none;color:var(--mu);cursor:pointer;font-size:.85rem;padding:2px 4px">🗑️</button></div>`}).join('');
   html+=`<div style="border:1px solid var(--bd);border-radius:var(--ra);padding:16px;margin-top:6px;background:var(--s1)">
@@ -5595,7 +5606,7 @@ window.logGym=async function(cId,ekey){
     if(document.getElementById('pn-'+cId+'-'+ekey))document.getElementById('pn-'+cId+'-'+ekey).value='';
     clearSetWeights(cId,ekey,weights.length);
     toast('📊 Guardado');
-    const dIdx=parseInt(ekey.split('-')[0]);
+    const dIdx=parseInt(ekey.split('-')[1]);
     const uid=alumnoState.uid;
     const member={id:'sub',name:alumnoState.sub.name,email:alumnoState.sub.email,status:alumnoState.sub.status,expiry:alumnoState.sub.expiry,startDate:alumnoState.sub.startDate||'',startWeek:alumnoState.sub.startWeek||1,progress:alumnoState.sub.progress};
     renderAlumnoDay(alumnoState.plan,member,dIdx,uid);
@@ -5624,7 +5635,7 @@ window.logGym=async function(cId,ekey){
     document.getElementById('pr-'+cId+'-'+ekey).value='';
     if(document.getElementById('pn-'+cId+'-'+ekey))document.getElementById('pn-'+cId+'-'+ekey).value='';
     clearSetWeights(cId,ekey,weights.length);
-    toast('📊 Guardado');const dIdx=parseInt(ekey.split('-')[0]);renderGroupDay(plan,member,dIdx);
+    toast('📊 Guardado');const dIdx=parseInt(ekey.split('-')[1]);renderGroupDay(plan,member,dIdx);
     return;
   }
   origLogGym(cId,ekey);
@@ -5648,7 +5659,7 @@ window.logCF=async function(cId,bkey,rk){
     }
     document.getElementById('cfr-'+cId+'-'+bkey).value='';document.getElementById('cfn-'+cId+'-'+bkey).value='';
     toast('🔥 Resultado guardado');
-    const dIdx=parseInt(bkey.split('-')[0]);
+    const dIdx=parseInt(bkey.split('-')[1]);
     const uid=alumnoState.uid;
     const member={id:'sub',name:alumnoState.sub.name,email:alumnoState.sub.email,status:alumnoState.sub.status,expiry:alumnoState.sub.expiry,startDate:alumnoState.sub.startDate||'',startWeek:alumnoState.sub.startWeek||1,progress:alumnoState.sub.progress};
     renderAlumnoDay(alumnoState.plan,member,dIdx,uid);
@@ -5663,7 +5674,7 @@ window.logCF=async function(cId,bkey,rk){
     member.progress[rk].push({date:new Date().toLocaleDateString('es-AR'),result:res+(note?' — '+note:'')});
     await setDoc(doc(db,'planes',planId,'progreso',memberId),{progress:member.progress});
     document.getElementById('cfr-'+cId+'-'+bkey).value='';document.getElementById('cfn-'+cId+'-'+bkey).value='';
-    toast('🔥 Resultado guardado');const dIdx=parseInt(bkey.split('-')[0]);renderGroupDay(plan,member,dIdx);
+    toast('🔥 Resultado guardado');const dIdx=parseInt(bkey.split('-')[1]);renderGroupDay(plan,member,dIdx);
     return;
   }
   origLogCF(cId,bkey,rk);
@@ -5675,7 +5686,7 @@ window.saveGroupNote=async function(planId,memberId,dIdx){
   const txt=document.getElementById(`gsnote-${planId}-${memberId}-${dIdx}`).value.trim();
   if(!txt)return;
   if(!member.progress)member.progress={};
-  const key='snote-'+dIdx;
+  const key=`snote-w${getMemberCurrentWeekNum(plan,member)||1}-${dIdx}`;
   if(!member.progress[key])member.progress[key]=[];
   member.progress[key].push({date:new Date().toLocaleDateString('es-AR'),text:txt});
   await setDoc(doc(db,'planes',planId,'progreso',memberId),{progress:member.progress});
@@ -5687,7 +5698,7 @@ window.deleteGroupNote=async function(planId,memberId,dIdx,noteIdx){
   if(!confirm('¿Borrar esta nota?'))return;
   const plan=planes.find(p=>p.id===planId);
   const member=plan.members.find(m=>m.id===memberId);
-  const key='snote-'+dIdx;
+  const key=`snote-w${getMemberCurrentWeekNum(plan,member)||1}-${dIdx}`;
   member.progress[key].splice(noteIdx,1);
   await setDoc(doc(db,'planes',planId,'progreso',memberId),{progress:member.progress});
   toast('🗑️ Nota eliminada');renderGroupDay(plan,member,dIdx);
@@ -5778,11 +5789,12 @@ function renderAlumnoCV(plan,member,uid){
   const daysLeft=member.expiry?Math.max(0,Math.ceil((new Date(member.expiry+'T00:00:00')-new Date())/(1000*60*60*24))):null;
   const days=getMemberPlanDays(plan,member);
   const fakeC={id:akey,progress:member.progress||{}};
-  const nextIdx=getNextDayIdx({days,...fakeC});
+  const memberWeek=getMemberCurrentWeekNum(plan,member)||1;
+  const nextIdx=getNextDayIdx({days,...fakeC},memberWeek);
   const activeDayName=days[nextIdx]?.name||'Día '+(nextIdx+1);
   const mesoBadge=(plan.weeks&&member.startDate)?(()=>{const info=getMemberWeekMesoInfo(plan,member);return`<span class="badge" style="background:var(--ac)22;color:var(--ac2)">🗓️ Semana ${info.currentWeek} de ${info.totalWeeks} — Meso ${info.mesoNum}/${info.totalMesos}</span>`;})():'';
   const dayListItems=(days||[]).map((d,i)=>{
-    const isDone=(member.progress?.['snote-'+i]||[]).length>0||isDayDoneViaSeries(fakeC,days,i);
+    const isDone=(member.progress?.['snote-w'+memberWeek+'-'+i]||[]).length>0||isDayDoneViaSeries(fakeC,days,i,memberWeek);
     const badge=i===nextIdx?`<span style="font-size:.68rem;padding:2px 8px;border-radius:20px;font-weight:600;background:var(--ac)33;color:var(--ac2)">Siguiente</span>`:isDone?`<span style="font-size:.68rem;padding:2px 8px;border-radius:20px;font-weight:600;background:var(--gr)22;color:var(--gr)">✓</span>`:'';
     return`<div class="cv-day-item${i===nextIdx?' active':''}" id="av-ditem-${akey}-${i}" onclick="selectAlumnoCVDay(${i})">
       <span class="cv-day-item-name">${d.name||'Día '+(i+1)}</span>${badge}
@@ -5841,15 +5853,16 @@ function renderAlumnoDay(plan,member,dIdx,uid){
   if(!container)return;
   if(!day||!day.blocks?.length){container.innerHTML='<div style="text-align:center;padding:40px;color:var(--mu)">Sin bloques en este día.</div>';return}
   const fakeClient={id:akey,progress:member.progress||{},days};
+  const memberWeek=getMemberCurrentWeekNum(plan,member)||1;
   let html='';
   day.blocks.forEach((blk,bi)=>{
-    const bkey=`${dIdx}-${bi}`;
+    const bkey=`w${memberWeek}-${dIdx}-${bi}`;
     if(blk.kind==='warmup') html+=renderWarmupBlock(fakeClient,bkey,blk,bi);
     else if(blk.kind==='gym') html+=renderGymBlock(fakeClient,bkey,blk,bi);
     else if(blk.kind==='func') html+=renderFuncBlock(fakeClient,bkey,blk,bi);
     else html+=renderCFBlock(fakeClient,bkey,blk,bi);
   });
-  const snKey='snote-'+dIdx;
+  const snKey=`snote-w${memberWeek}-${dIdx}`;
   const notes=member.progress?.[snKey]||[];
   const notesHtml=notes.slice(-5).reverse().map((n,ri)=>{const realIdx=notes.length-1-ri;return`<div class="note-entry" style="display:flex;align-items:flex-start;gap:8px"><div style="flex:1"><div class="note-date">${n.date}</div><div class="note-text">${n.text}</div></div><button onclick="deleteAlumnoNote(${dIdx},${realIdx})" style="background:none;border:none;color:var(--mu);cursor:pointer;font-size:.85rem;padding:2px 4px">🗑️</button></div>`}).join('');
   html+=`<div style="border:1px solid var(--bd);border-radius:var(--ra);padding:16px;margin-top:6px;background:var(--s1)">
@@ -5871,7 +5884,8 @@ window.saveAlumnoNote=async function(dIdx){
   const txt=document.getElementById(`asnote-${akey}-${dIdx}`).value.trim();
   if(!txt)return;
   if(!alumnoState.sub.progress)alumnoState.sub.progress={};
-  const key='snote-'+dIdx;
+  const subWeek=getMemberCurrentWeekNum(alumnoState.plan,{startWeek:alumnoState.sub.startWeek||1,startDate:alumnoState.sub.startDate||''})||1;
+  const key=`snote-w${subWeek}-${dIdx}`;
   if(!alumnoState.sub.progress[key])alumnoState.sub.progress[key]=[];
   alumnoState.sub.progress[key].push({date:new Date().toLocaleDateString('es-AR'),text:txt});
   try{
@@ -5888,7 +5902,8 @@ window.saveAlumnoNote=async function(dIdx){
 
 window.deleteAlumnoNote=async function(dIdx,noteIdx){
   if(!confirm('¿Borrar esta nota?'))return;
-  const key='snote-'+dIdx;
+  const subWeek=getMemberCurrentWeekNum(alumnoState.plan,{startWeek:alumnoState.sub.startWeek||1,startDate:alumnoState.sub.startDate||''})||1;
+  const key=`snote-w${subWeek}-${dIdx}`;
   alumnoState.sub.progress[key].splice(noteIdx,1);
   await persistAlumnoProgress();
   toast('🗑️ Nota eliminada');
@@ -7164,7 +7179,7 @@ window.toggleMeso=function(id){
 }
 window.deleteLog=async function(clientId,ekey,logIdx){
   if(!confirm('¿Borrar este registro?'))return;
-  const dIdx=parseInt(ekey.split('-')[0]);
+  const dIdx=parseInt(ekey.split('-')[1]);
   if(clientId.startsWith('alu-')){
     const logKey=clientId+'-'+ekey+'-logs';
     if(!alumnoState.sub.progress?.[logKey])return;
