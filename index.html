@@ -5393,6 +5393,10 @@ function renderMembersList(planId){
           <div style="font-size:.72rem;color:var(--mu)">${m.email||''} ${m.expiry?'· Vence: '+new Date(m.expiry+'T00:00:00').toLocaleDateString('es-AR'):''}</div>
           <div style="font-size:.7rem;color:var(--ac2);word-break:break-all;margin-top:2px">${link}</div>
         </div>
+        ${planWeekNums(plan).length>1?`<div style="display:flex;align-items:center;gap:4px;flex-shrink:0">
+          <select id="mw-week-${m.id}" style="width:auto;font-size:.76rem">${planWeekNums(plan).map(w=>`<option value="${w}"${w===m.startWeek?' selected':''}>Semana ${w}</option>`).join('')}</select>
+          <button class="btn bg2 xs" onclick="cambiarSemanaMiembro('${planId}','${m.id}')" title="Poner al alumno a partir de la semana elegida, desde hoy">📅</button>
+        </div>`:''}
         <div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">
           <button class="btn bgr xs" onclick="copyLink('${link}')">📋</button>
           <button class="btn byw xs" onclick="renewMember('${planId}','${m.id}')">↺</button>
@@ -5402,6 +5406,18 @@ function renderMembersList(planId){
     }).join('')}
   </div>`;
 }
+
+window.cambiarSemanaMiembro=async function(planId,memberId){
+  const plan=planes.find(p=>p.id===planId);
+  const member=plan?.members?.find(m=>m.id===memberId);
+  if(!member)return;
+  const week=parseInt(document.getElementById('mw-week-'+memberId).value);
+  member.startWeek=week;
+  member.startDate=new Date().toISOString().split('T')[0];
+  await setDoc(doc(db,'planes',planId),plan);
+  toast('✅ Ahora arranca desde semana '+week);
+  renderMembersList(planId);
+};
 
 async function addMember(){
   const name=document.getElementById('nm-name').value.trim();
