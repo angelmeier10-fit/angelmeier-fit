@@ -2812,14 +2812,61 @@ function renderInsertarPlantillaList(bodyId,filtered){
   }
   elList.innerHTML=filtered.map(t=>{
     const i=insertarPlantillaList.indexOf(t);
-    return`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--s2);border-radius:8px;padding:9px 12px">
-      <span style="font-size:.86rem">${BLOCK_KIND_ICON[t.data.kind]||'📋'} ${t.name} <span style="color:var(--mu);font-size:.76rem">· ${categoriaDe(t)}</span></span>
-      <div style="display:flex;gap:6px">
-        <button class="btn bp xs" onclick="insertarPlantilla('${bodyId}',${i})">Insertar</button>
-        <button class="btn bd2 xs" onclick="eliminarPlantilla(${i})">🗑️</button>
+    return`<div style="background:var(--s2);border-radius:8px;padding:9px 12px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+        <span style="font-size:.86rem">${BLOCK_KIND_ICON[t.data.kind]||'📋'} ${t.name} <span style="color:var(--mu);font-size:.76rem">· ${categoriaDe(t)}</span></span>
+        <div style="display:flex;gap:6px">
+          <button class="btn bg2 xs" onclick="togglePlantillaPreview(${i})">👁️ Ver</button>
+          <button class="btn bp xs" onclick="insertarPlantilla('${bodyId}',${i})">Insertar</button>
+          <button class="btn bd2 xs" onclick="eliminarPlantilla(${i})">🗑️</button>
+        </div>
       </div>
+      <div id="ip-preview-${i}" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid var(--bd)"></div>
     </div>`;
   }).join('');
+}
+
+window.togglePlantillaPreview=function(idx){
+  const el=document.getElementById('ip-preview-'+idx);
+  if(!el)return;
+  const t=insertarPlantillaList[idx];
+  if(!t){el.style.display='none';return}
+  const isOpen=el.style.display==='block';
+  document.querySelectorAll('[id^="ip-preview-"]').forEach(d=>d.style.display='none');
+  if(!isOpen){el.innerHTML=renderPlantillaPreviewHtml(t.data);el.style.display='block'}
+};
+
+function renderPlantillaPreviewHtml(data){
+  const exRow=(ex)=>{
+    const scheme=(ex.scheme||[]).map(s=>`${s.reps||'—'}${s.load?' · '+s.load:''}`).join(', ');
+    return`<div style="padding:4px 0;font-size:.8rem">
+      <b>${ex.name}</b>${ex.reps?` — ${ex.reps}`:''}${scheme?`<div style="color:var(--mu)">${scheme}</div>`:''}
+      ${ex.obs?`<div style="color:var(--mu);font-style:italic">📝 ${ex.obs}</div>`:''}
+    </div>`;
+  };
+  if(data.kind==='warmup'||data.kind==='gym'){
+    return`${data.duration?`<div style="font-size:.8rem;color:var(--mu);margin-bottom:4px">⏱ ${data.duration}</div>`:''}
+      ${data.rest?`<div style="font-size:.8rem;color:var(--mu);margin-bottom:4px">Descanso: ${data.rest}</div>`:''}
+      ${(data.exercises||[]).map(exRow).join('')||'<div style="color:var(--mu);font-size:.8rem">Sin ejercicios.</div>'}`;
+  }
+  if(data.kind==='func'){
+    return`<div style="font-size:.85rem;font-weight:600;margin-bottom:2px">${data.title||''}</div>
+      ${data.desc?`<div style="font-size:.8rem;color:var(--mu);margin-bottom:4px">${data.desc}</div>`:''}
+      <div style="font-size:.78rem;color:var(--mu);margin-bottom:4px">${[data.sets&&data.sets+' series',data.reps,data.rest&&'Descanso '+data.rest].filter(Boolean).join(' · ')}</div>
+      ${(data.exercises||[]).map(exRow).join('')||'<div style="color:var(--mu);font-size:.8rem">Sin ejercicios.</div>'}`;
+  }
+  // cf
+  const cfg=CF_TYPES[data.cftype]||{};
+  return`<div style="font-size:.85rem;font-weight:600;margin-bottom:4px">${cfg.icon||''} ${cfg.label||data.cftype}</div>
+    ${(data.sections||[]).map(sec=>{
+      const meta=Object.entries(sec.meta||{}).filter(([,v])=>v).map(([,v])=>v).join(' · ');
+      return`<div style="margin-bottom:6px">
+        ${meta?`<div style="font-size:.78rem;color:var(--mu)">${meta}</div>`:''}
+        ${(sec.exercises||[]).map(ex=>`<div style="font-size:.8rem">${ex.reps?ex.reps+' — ':''}${ex.name}</div>`).join('')}
+        ${sec.pause?`<div style="font-size:.76rem;color:var(--mu)">Pausa: ${sec.pause}</div>`:''}
+      </div>`;
+    }).join('')||'<div style="color:var(--mu);font-size:.8rem">Sin secciones.</div>'}
+    ${data.notes?`<div style="font-size:.8rem;font-style:italic;color:var(--mu)">📝 ${data.notes}</div>`:''}`;
 }
 
 window.filtrarInsertarPlantilla=function(bodyId){
