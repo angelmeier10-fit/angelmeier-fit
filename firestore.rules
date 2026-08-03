@@ -86,6 +86,15 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Config pública del Desafío Glúteos 21 días (mapeo al planId real, para
+    // que el alta gratuita pueda resolverlo sin necesitar login de admin).
+    // Colección propia (no planesFijos) para que este desafío gratuito no
+    // aparezca nunca en el selector de categorías pagas del alumno.
+    match /desafioGluteos/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     // Suscriptores (alumnos self-service).
     match /subscribers/{uid} {
       allow read: if isAdmin() || isOwner(uid);
@@ -95,9 +104,9 @@ service cloud.firestore {
             && !('expiry' in request.resource.data)
             && !('lastPaymentId' in request.resource.data))
         // Desafío Glúteos 21 días: gratuito, acceso inmediato sin pasar por
-        // el estado "pending" de pago (no aplica a ningún otro programa).
+        // el estado "pending" de pago (no aplica a ninguna otra categoría).
         || (isOwner(uid)
-            && request.resource.data.programa == 'desafio-gluteos-21'
+            && request.resource.data.categoria == 'desafio-gluteos-21'
             && request.resource.data.status == 'active'
             && !('expiry' in request.resource.data)
             && !('lastPaymentId' in request.resource.data));
