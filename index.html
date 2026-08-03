@@ -3195,6 +3195,13 @@ async function renderCV(clientId){
     if(idx>=0)clients[idx]=fresh;
   }
   const c=clients.find(cl=>cl.id===clientId);if(!c)return;
+  if(c.weeks&&Object.keys(c.weeks).length){
+    const wk=getClientCurrentWeekNum(c);
+    if(c.weeks[wk]&&c.activeWeek!==wk){
+      c.activeWeek=wk;
+      c.days=JSON.parse(JSON.stringify(c.weeks[wk]));
+    }
+  }
   // Email verification (se salta si es el entrenador viendo su propio
   // simulador de vista de cliente: ya está autenticado, no tiene sentido
   // pedirle el email/celular del cliente para poder previsualizar).
@@ -4217,8 +4224,11 @@ async function renderProgramaUnificadoHtml(prog,cats){
   const catLabel=Object.fromEntries(cats.map(c=>[c.id,c.label]));
   if(prog.type==='personal'){
     const c=prog.client;
-    const{exerciseLogs,notes}=buildProgressSummary(c.progress||{},c.days,c.id,c.activeWeek||1);
-    const progressHtml=renderProgressDetailBlock(c.id,exerciseLogs,c.days,notes)||'<div style="font-size:.78rem;color:var(--mu)">Sin registros todavía.</div>';
+    const hasWeeks=c.weeks&&Object.keys(c.weeks).length;
+    const wk=hasWeeks?getClientCurrentWeekNum(c):(c.activeWeek||1);
+    const days=hasWeeks&&c.weeks[wk]?c.weeks[wk]:c.days;
+    const{exerciseLogs,notes}=buildProgressSummary(c.progress||{},days,c.id,wk);
+    const progressHtml=renderProgressDetailBlock(c.id,exerciseLogs,days,notes)||'<div style="font-size:.78rem;color:var(--mu)">Sin registros todavía.</div>';
     const expiredNow=c.expiry&&(new Date(c.expiry+'T00:00:00')<new Date());
     const expiryBadge=c.expiry?`<span class="badge" style="background:${expiredNow?'#f8717122':'#fbbf2422'};color:${expiredNow?'var(--rd)':'var(--yw)'}">${expiredNow?'⏰ Vencido':'📅 Vence: '+new Date(c.expiry+'T00:00:00').toLocaleDateString('es-AR')}</span>`:'';
     const payBadge=c.payStatus==='paid'?'<span class="badge" style="background:#4ade8022;color:var(--gr)">✅ Pagado</span>':c.payStatus==='pending'?'<span class="badge" style="background:#f8717122;color:var(--rd)">⏳ Pendiente de pago</span>':'';
@@ -5096,18 +5106,34 @@ function renderStartWeekSelect(selectId,plan){
   if(wrap)wrap.style.display='flex';
 }
 
+// Cantidad de domingos-calendario transcurridos entre startDateStr y hoy (alineado a semana calendario, no a franjas de 7 días desde la hora de alta)
+function sundayAlignedElapsedWeeks(startDateStr){
+  if(!startDateStr)return 0;
+  const start=new Date(startDateStr+'T00:00:00');
+  const today=new Date();today.setHours(0,0,0,0);
+  const startSunday=new Date(start);startSunday.setDate(start.getDate()-start.getDay());
+  const todaySunday=new Date(today);todaySunday.setDate(today.getDate()-today.getDay());
+  const diffDays=Math.round((todaySunday-startSunday)/(1000*60*60*24));
+  return Math.max(0,Math.floor(diffDays/7));
+}
+
 // Semana del plan que le toca a este alumno HOY, según el tiempo transcurrido desde su inicio
 // (no según cuántos días completó). Al llegar a la última semana, vuelve a la primera (bucle).
 function getMemberCurrentWeekNum(plan,member){
   const weekNums=planWeekNums(plan);
   if(!weekNums.length)return null;
   const startIdx=weekNums.includes(member?.startWeek)?weekNums.indexOf(member.startWeek):0;
-  let elapsedWeeks=0;
-  if(member?.startDate){
-    const start=new Date(member.startDate+'T00:00:00');
-    const diffDays=Math.floor((new Date()-start)/(1000*60*60*24));
-    elapsedWeeks=Math.max(0,Math.floor(diffDays/7));
-  }
+  const elapsedWeeks=sundayAlignedElapsedWeeks(member?.startDate);
+  return weekNums[(startIdx+elapsedWeeks)%weekNums.length];
+}
+
+// Semana activa de un cliente individual según fecha de inicio, alineada a domingo, con loop si se pasa de la última semana cargada
+function getClientCurrentWeekNum(c){
+  const weekNums=Object.keys(c.weeks||{}).map(Number).sort((a,b)=>a-b);
+  if(!weekNums.length)return c.activeWeek||1;
+  if(!c.startDate)return weekNums.includes(c.activeWeek)?c.activeWeek:weekNums[0];
+  const startIdx=weekNums.includes(c.activeWeek)?weekNums.indexOf(c.activeWeek):0;
+  const elapsedWeeks=sundayAlignedElapsedWeeks(c.startDate);
   return weekNums[(startIdx+elapsedWeeks)%weekNums.length];
 }
 
