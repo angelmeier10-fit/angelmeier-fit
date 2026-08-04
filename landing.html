@@ -49,6 +49,19 @@ nav {
 .stat-val { font-family: 'Playfair Display', serif; font-size: 2.6rem; font-weight: 800; color: var(--ac); line-height: 1; margin-bottom: 8px; }
 .stat-label { font-size: .8rem; color: #9a9088; line-height: 1.4; }
 
+.flyer-desafio { background: var(--tx); padding: 40px 64px; }
+.flyer-inner { max-width: 1000px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; border: 1px solid #4a7c5950; background: #4a7c5915; border-radius: 20px; padding: 28px 32px; }
+.flyer-text { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+.flyer-emoji { font-size: 2.2rem; line-height: 1; }
+.flyer-copy h3 { font-family: 'Playfair Display', serif; color: #fff; font-size: 1.15rem; font-weight: 700; margin-bottom: 4px; }
+.flyer-copy p { color: #9a9088; font-size: .88rem; }
+.flyer-cta { background: var(--ac); color: #fff; padding: 13px 26px; border-radius: 50px; text-decoration: none; font-weight: 700; font-size: .92rem; white-space: nowrap; transition: background .2s; }
+.flyer-cta:hover { background: var(--ac2); }
+@media (max-width: 768px) {
+  .flyer-desafio { padding: 24px 20px; }
+  .flyer-inner { padding: 22px 20px; flex-direction: column; text-align: center; }
+  .flyer-text { flex-direction: column; }
+}
 .section { padding: 96px 64px; }
 .section-inner { max-width: 1000px; margin: 0 auto; }
 .eyebrow { font-size: .72rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ac); margin-bottom: 12px; }
@@ -188,6 +201,19 @@ footer { padding: 32px 64px; display: flex; flex-direction: column; align-items:
   <div><div class="stat-val">3</div><div class="stat-label">disciplinas integradas<br>en cada programa</div></div>
   <div><div class="stat-val">100%</div><div class="stat-label">programas diseñados<br>a medida</div></div>
 </div>
+
+<section class="flyer-desafio">
+  <div class="flyer-inner">
+    <div class="flyer-text">
+      <div class="flyer-emoji">🍑</div>
+      <div class="flyer-copy">
+        <h3>Desafío Glúteos 21 días — gratis</h3>
+        <p>Rutina día por día de fuerza, movilidad y descanso guiado. Sin costo, sin tarjeta.</p>
+      </div>
+    </div>
+    <a class="flyer-cta" href="https://angelmeier-fit.web.app/desafio-gluteos" target="_blank">Sumarme gratis →</a>
+  </div>
+</section>
 
 <section class="section para-quien" id="para-quien">
   <div class="section-inner">
