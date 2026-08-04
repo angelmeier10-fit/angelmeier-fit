@@ -45,6 +45,19 @@ nav {
 .hero-sub { font-size: .78rem; color: #8a857c; margin-top: 14px; }
 .hero-img { height: 90vh; background: url('https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=900&q=80') center/cover no-repeat; }
 
+.flyer-desafio { background: var(--dark); padding: 40px 64px; }
+.flyer-inner { max-width: 1000px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; border: 1px solid #ff5a1f45; background: #ff5a1f0f; border-radius: 14px; padding: 28px 32px; }
+.flyer-text { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+.flyer-emoji { font-size: 2.2rem; line-height: 1; }
+.flyer-copy h3 { font-family: 'Oswald', sans-serif; color: #fff; font-size: 1.15rem; font-weight: 700; text-transform: none; margin-bottom: 4px; }
+.flyer-copy p { color: #c9c4bb; font-size: .88rem; font-family: 'Inter'; }
+.flyer-cta { background: var(--ac); color: #fff; padding: 13px 26px; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: .92rem; white-space: nowrap; transition: background .2s; }
+.flyer-cta:hover { background: var(--ac2); }
+@media (max-width: 768px) {
+  .flyer-desafio { padding: 24px 20px; }
+  .flyer-inner { padding: 22px 20px; flex-direction: column; text-align: center; }
+  .flyer-text { flex-direction: column; }
+}
 .section { padding: 96px 64px; }
 .section-inner { max-width: 1000px; margin: 0 auto; }
 .eyebrow { font-size: .72rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ac); margin-bottom: 12px; }
@@ -165,6 +178,19 @@ footer { padding: 32px 64px; display: flex; flex-direction: column; gap: 10px; a
     <p class="hero-sub">Evaluación inicial gratuita · Sin compromiso</p>
   </div>
   <div class="hero-img"></div>
+</section>
+
+<section class="flyer-desafio">
+  <div class="flyer-inner">
+    <div class="flyer-text">
+      <div class="flyer-emoji">🍑</div>
+      <div class="flyer-copy">
+        <h3>Desafío Glúteos 21 días — gratis</h3>
+        <p>Rutina día por día de fuerza, movilidad y descanso guiado. Sin costo, sin tarjeta.</p>
+      </div>
+    </div>
+    <a class="flyer-cta" href="https://angelmeier-fit.web.app/desafio-gluteos" target="_blank">Sumarme gratis →</a>
+  </div>
 </section>
 
 <section class="section objetivos" id="objetivos">
