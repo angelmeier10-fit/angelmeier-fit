@@ -2384,19 +2384,20 @@ function addWarmupBlock(bodyId,data=null){
   const div=document.createElement('div');div.className='blk';div.id=gid;div.dataset.kind='warmup';
   div.innerHTML=`<div class="blk-hdr" onclick="toggleBlk('${gid}',event)">
     <span class="blk-type t-warmup">🔥 Entrada en calor</span>
-    <div style="display:flex;align-items:center;gap:6px;flex:1;margin-left:8px" onclick="event.stopPropagation()" ontouchstart="event.stopPropagation()">
-      <label style="font-size:.7rem;color:var(--mu);white-space:nowrap">Duración total:</label>
-      <input type="text" value="${data?.duration||'10 min'}" class="wu-duration" style="max-width:80px;font-size:.78rem;padding:4px 8px">
-      <label style="font-size:.7rem;color:var(--mu);white-space:nowrap">Series del circuito:</label>
-      <input type="number" min="1" value="${data?.series||''}" placeholder="Ej: 2" class="wu-series" style="max-width:60px;font-size:.78rem;padding:4px 8px">
-    </div>
     <button class="btn bg2 xs" onclick="event.stopPropagation();guardarBloqueComoPlantilla('${gid}')" title="Guardar como plantilla">💾</button>
     <button class="btn bg2 xs" onclick="event.stopPropagation();moveBlk('${gid}',-1)" title="Mover arriba">↑</button>
     <button class="btn bg2 xs" onclick="event.stopPropagation();moveBlk('${gid}',1)" title="Mover abajo">↓</button>
     <button class="btn bd2 xs" onclick="event.stopPropagation();document.getElementById('${gid}').remove()">✕</button>
     <span class="blk-toggle">▼</span>
   </div>
-  <div class="blk-body" id="${gid}-body"></div>`;
+  <div class="blk-body" id="${gid}-body">
+    <div style="display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:8px">
+      <label style="font-size:.7rem;color:var(--mu);white-space:nowrap">Duración total:</label>
+      <input type="text" value="${data?.duration||'10 min'}" class="wu-duration" style="max-width:80px;font-size:.78rem;padding:4px 8px">
+      <label style="font-size:.7rem;color:var(--mu);white-space:nowrap">Series del circuito:</label>
+      <input type="number" min="1" value="${data?.series||''}" placeholder="Ej: 2" class="wu-series" style="max-width:60px;font-size:.78rem;padding:4px 8px">
+    </div>
+  </div>`;
   c.appendChild(div);
   const body=document.getElementById(gid+'-body');
   if(data?.exercises?.length) data.exercises.forEach(ex=>addWarmupEx(body,ex));
