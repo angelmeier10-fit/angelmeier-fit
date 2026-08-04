@@ -97,6 +97,7 @@ textarea{resize:vertical;min-height:52px}
 .blk:not(.collapsed) .blk-hdr{background:var(--fuerza-bg)}
 .blk-hdr{display:flex;align-items:center;justify-content:space-between;padding:9px 13px;background:var(--s2);gap:7px;flex-wrap:wrap;cursor:pointer;user-select:none}
 .blk-hdr:hover{background:var(--bd)22}
+.blk-hdr input{-webkit-user-select:text;user-select:text;touch-action:manipulation}
 .blk.collapsed .blk-body{display:none}
 .blk-toggle{color:var(--mu);font-size:.78rem;transition:transform .2s;flex-shrink:0;margin-left:4px}
 .blk.collapsed .blk-toggle{transform:rotate(-90deg)}
@@ -2383,7 +2384,7 @@ function addWarmupBlock(bodyId,data=null){
   const div=document.createElement('div');div.className='blk';div.id=gid;div.dataset.kind='warmup';
   div.innerHTML=`<div class="blk-hdr" onclick="toggleBlk('${gid}',event)">
     <span class="blk-type t-warmup">🔥 Entrada en calor</span>
-    <div style="display:flex;align-items:center;gap:6px;flex:1;margin-left:8px" onclick="event.stopPropagation()">
+    <div style="display:flex;align-items:center;gap:6px;flex:1;margin-left:8px" onclick="event.stopPropagation()" ontouchstart="event.stopPropagation()">
       <label style="font-size:.7rem;color:var(--mu);white-space:nowrap">Duración total:</label>
       <input type="text" value="${data?.duration||'10 min'}" class="wu-duration" style="max-width:80px;font-size:.78rem;padding:4px 8px">
       <label style="font-size:.7rem;color:var(--mu);white-space:nowrap">Series del circuito:</label>
