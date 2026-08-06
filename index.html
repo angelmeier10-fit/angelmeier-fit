@@ -4652,9 +4652,21 @@ async function renderProgramaUnificadoHtml(prog,cats){
     <button class="btn bd2 xs" onclick="borrarPlanSuscriptor('${uid}','${s.planId}')">🗑️ Borrar plan</button>`:'';
   const catTxt=s.categoria==='__personal__'?'🎯 Plan personalizado':(catLabel[s.categoria]||s.categoria||'—');
   const progressHtml=renderProgressDetailBlock(`alu-${uid}`,exerciseLogs,days,notes)||'<div style="font-size:.78rem;color:var(--mu)">Sin registros todavía.</div>';
+  // Desafío Glúteos como plan adicional (ver isDesafioLanding): vive aparte
+  // en s.extraDesafioGluteos, no reemplaza s.categoria — se muestra acá como
+  // badge extra para que el entrenador vea de un vistazo quién lo tiene.
+  const extraDesafioBadge=(()=>{
+    const ex=s.extraDesafioGluteos;
+    if(!ex)return'';
+    const today=new Date().toISOString().split('T')[0];
+    const expired=ex.expiry&&ex.expiry<today;
+    if(ex.status==='active'&&!expired)return` <span class="badge" style="background:var(--ac)22;color:var(--ac2)">🍑 + Desafío Glúteos</span>`;
+    if(expired)return` <span class="badge" style="background:#f8717122;color:var(--rd)">🍑 Desafío vencido</span>`;
+    return'';
+  })();
   return`<div style="padding:8px 0;border-bottom:1px solid var(--bd)">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
-      <div style="font-size:.84rem"><b>🔔 Suscripción — ${catTxt}</b> · ${acceso.label} ${weekBadgeS}</div>
+      <div style="font-size:.84rem"><b>🔔 Suscripción — ${catTxt}</b> · ${acceso.label} ${weekBadgeS}${extraDesafioBadge}</div>
       <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
         ${editarPlanBtn}
         ${cambiarSemanaHtml}
