@@ -1549,28 +1549,24 @@ onAuthStateChanged(auth,async(user)=>{
         }
       }else if(planSnap.exists()){
         // Ya tiene cuenta con otro plan: el desafío se suma como plan
-        // adicional (miembro del plan grupal del desafío, con su propio
-        // vencimiento), sin tocar su suscripción principal — conviven los dos
-        // y aparece en el selector "Elegir plan de entrenamiento".
-        const plan={id:planId,...planSnap.data()};
-        const members=plan.members||[];
-        const idx=members.findIndex(m=>m.id===user.uid);
-        const vigente=idx>=0&&members[idx].status==='active'&&members[idx].expiry&&members[idx].expiry>=today;
+        // adicional, guardado en su propio doc de suscriptor (campo
+        // extraDesafioGluteos) en vez de en el plan grupal compartido —
+        // solo admin puede escribir planes/{id} (ver firestore.rules), pero
+        // el dueño sí puede agregar campos nuevos a su propio subscriber sin
+        // tocar categoria/planId/status/expiry principales. Con su propio
+        // vencimiento, sin tocar su suscripción principal.
+        const extra=data.extraDesafioGluteos;
+        const vigente=extra&&extra.status==='active'&&extra.expiry&&extra.expiry>=today;
         if(!vigente){
           const expDate=new Date();expDate.setDate(expDate.getDate()+durationDays);
-          const member={
-            id:user.uid,
-            name:data.name||user.displayName||'',
-            email:user.email,
+          await setDoc(ref,{extraDesafioGluteos:{
+            planId,
             status:'active',
             expiry:expDate.toISOString().split('T')[0],
-            addedAt:new Date().toLocaleDateString('es-AR'),
             startDate:today,
             startWeek:1,
             progress:{}
-          };
-          if(idx>=0)members[idx]=member;else members.push(member);
-          await setDoc(planRef,{...plan,members});
+          }},{merge:true});
         }
       }
       await initAlumno(user);
@@ -5813,6 +5809,36 @@ window.switchToGroupProgramAlumno=async function(planId,memberId){
 window.switchToPersonalProgramAlumno=function(){
   renderAlumnoPlanView(alumnoState.sub,alumnoState.uid);
 };
+// Desafío Glúteos como plan adicional (subscribers/{uid}.extraDesafioGluteos,
+// ver isDesafioLanding): no es un member real de planes/{id} (solo admin
+// puede escribir ahí), así que no aparece en findAllProgramsForAlumno ni en
+// el picker automático — se abre aparte con su propio botón "Volver".
+// member.id = uid propio para que el progreso pueda escribir en
+// planes/{planId}/progreso/{uid} (permitido por firestore.rules: auth.uid==memberId).
+window.switchToDesafioExtraAlumno=async function(){
+  const extra=alumnoState.sub?.extraDesafioGluteos;
+  if(!extra)return;
+  const planSnap=await getDoc(doc(db,'planes',extra.planId));
+  if(!planSnap.exists())return;
+  const plan={id:extra.planId,...planSnap.data()};
+  const progSnap=await getDoc(doc(db,'planes',extra.planId,'progreso',alumnoState.uid));
+  const member={
+    id:alumnoState.uid,
+    name:alumnoState.sub.name||alumnoState.sub.email||'Alumna',
+    email:alumnoState.sub.email||'',
+    status:extra.status,
+    expiry:extra.expiry,
+    startDate:extra.startDate,
+    startWeek:extra.startWeek||1,
+    progress:progSnap.exists()?(progSnap.data().progress||{}):{}
+  };
+  renderGroupCV(plan,member,'alumno');
+  const contentEl=document.getElementById('alumno-cv-content');
+  const backWrap=document.createElement('div');
+  backWrap.style.marginBottom='10px';
+  backWrap.innerHTML='<button class="btn bg2 sm" onclick="switchToPersonalProgramAlumno()">⬅ Volver a mi plan</button>';
+  contentEl.insertBefore(backWrap,contentEl.firstChild);
+};
 
 function renderGroupCV(plan,member,mode='client'){
   const initials=member.name.charAt(0).toUpperCase();
@@ -6117,15 +6143,23 @@ async function renderAlumnoPlanView(sub,uid){
   alumnoState.categoria=categoria;
 
   const switcherEl=document.getElementById('alumno-cat-switcher');
+  let switcherHtml='';
   if(sub.categoria==='global'){
-    switcherEl.innerHTML=`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">${
+    switcherHtml+=`<div style="display:flex;gap:8px;flex-wrap:wrap">${
       cats.filter(c=>c.id!=='global').map(c=>
         `<button class="btn ${c.id===categoria?'bp':'bg2'} sm" onclick="cambiarCategoriaGlobalAlumno('${c.id}')">${c.label}</button>`
       ).join('')
     }</div>`;
-  }else{
-    switcherEl.innerHTML='';
   }
+  // Desafío Glúteos como plan adicional (ver isDesafioLanding en el login):
+  // vigente y no vencido, se ofrece como botón aparte para no mezclarse con
+  // el switcher de categoría "global" (son cosas independientes).
+  const extra=sub.extraDesafioGluteos;
+  const today=new Date().toISOString().split('T')[0];
+  if(extra&&extra.status==='active'&&extra.expiry&&extra.expiry>=today){
+    switcherHtml+=`<div style="margin-top:8px"><button class="btn bg2 sm" onclick="switchToDesafioExtraAlumno()">🍑 Ver Desafío Glúteos</button></div>`;
+  }
+  switcherEl.innerHTML=switcherHtml;
 
   const contentEl=document.getElementById('alumno-cv-content');
   if(!planId){

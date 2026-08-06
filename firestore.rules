@@ -105,10 +105,12 @@ service cloud.firestore {
             && !('lastPaymentId' in request.resource.data))
         // Desafío Glúteos 21 días: gratuito, acceso inmediato sin pasar por
         // el estado "pending" de pago (no aplica a ninguna otra categoría).
+        // A diferencia del alta paga, acá SÍ puede traer "expiry" ya en la
+        // creación: se autoasigna sin intervención del admin (21 días desde
+        // hoy), no hay webhook de pago que lo setee después.
         || (isOwner(uid)
             && request.resource.data.categoria == 'desafio-gluteos-21'
             && request.resource.data.status == 'active'
-            && !('expiry' in request.resource.data)
             && !('lastPaymentId' in request.resource.data));
       allow update: if isAdmin()
         || (isOwner(uid)
@@ -116,7 +118,17 @@ service cloud.firestore {
             && request.resource.data.expiry == resource.data.expiry
             && request.resource.data.lastPaymentId == resource.data.lastPaymentId
             && request.resource.data.categoria == resource.data.categoria
-            && request.resource.data.planId == resource.data.planId);
+            && request.resource.data.planId == resource.data.planId)
+        // Renovación del Desafío Glúteos: el propio dueño puede actualizar
+        // su "expiry" mientras la categoría siga siendo la del desafío antes
+        // y después del cambio (no permite migrarse a otra categoría paga
+        // por su cuenta ni tocar lastPaymentId).
+        || (isOwner(uid)
+            && resource.data.categoria == 'desafio-gluteos-21'
+            && request.resource.data.categoria == 'desafio-gluteos-21'
+            && request.resource.data.status == 'active'
+            && request.resource.data.planId == resource.data.planId
+            && request.resource.data.lastPaymentId == resource.data.get('lastPaymentId', null));
       allow delete: if isAdmin();
     }
 
