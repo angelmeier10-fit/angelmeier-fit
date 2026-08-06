@@ -5485,14 +5485,41 @@ function getMemberPlanDays(plan,member){
   return plan.weeks[weekNum]||[];
 }
 
-function renderMembersList(planId){
+async function renderMembersList(planId){
   const plan=planes.find(p=>p.id===planId);
   const el=document.getElementById('members-list');
   if(!el)return;
-  if(!plan.members?.length){el.innerHTML='<div class="card" style="text-align:center;padding:30px;color:var(--mu)">Sin alumnos todavía.</div>';return}
+  // Alumnas que se sumaron al Desafío Glúteos por el link ya teniendo otro
+  // plan: no son members reales de este plan (solo admin puede escribir
+  // planes/{id}, ver firestore.rules), viven en su propio
+  // subscribers/{uid}.extraDesafioGluteos — se muestran acá también para que
+  // el entrenador las vea junto con el resto de alumnos del plan.
+  let extraRows='';
+  const cfgSnap=await getDoc(doc(db,'desafioGluteos','config'));
+  if(cfgSnap.exists()&&cfgSnap.data().planId===planId){
+    const extraSnap=await getDocsSafe(query(collection(db,'subscribers'),where('extraDesafioGluteos.planId','==',planId)));
+    const today=new Date().toISOString().split('T')[0];
+    extraRows=extraSnap.docs.map(d=>{
+      const s=d.data();
+      const ex=s.extraDesafioGluteos;
+      const expired=ex.expiry&&ex.expiry<today;
+      const statusBadge=ex.status==='active'&&!expired?'<span class="badge bgr2">✅ Activo</span>':expired?'<span class="badge" style="background:#f8717122;color:var(--rd)">⏰ Vencido</span>':'<span class="badge byw2">⏳ Pendiente</span>';
+      return`<div class="member-row">
+        <div class="member-av">${(s.name||s.email||'?').charAt(0).toUpperCase()}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:.86rem">${s.name||s.email||'(sin nombre)'} ${statusBadge} <span class="badge" style="background:var(--ac)22;color:var(--ac2)">🍑 vía link — plan adicional</span></div>
+          <div style="font-size:.72rem;color:var(--mu)">${s.email||''} ${ex.expiry?'· Vence: '+new Date(ex.expiry+'T00:00:00').toLocaleDateString('es-AR'):''}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">
+          <button class="btn bd2 xs" onclick="quitarExtraDesafio('${d.id}','${planId}')" title="Quitarle el Desafío Glúteos como plan adicional">✕</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  if(!plan.members?.length&&!extraRows){el.innerHTML='<div class="card" style="text-align:center;padding:30px;color:var(--mu)">Sin alumnos todavía.</div>';return}
   const memberLink=(m)=>`${location.origin}${location.pathname}?plan=${planId}&member=${m.id}`;
   el.innerHTML=`<div class="card" style="padding:0;overflow:hidden">
-    ${plan.members.map(m=>{
+    ${(plan.members||[]).map(m=>{
       const expired=m.expiry&&(new Date(m.expiry+'T00:00:00')<new Date());
       const statusBadge=m.status==='active'&&!expired?'<span class="badge bgr2">✅ Activo</span>':expired?'<span class="badge" style="background:#f8717122;color:var(--rd)">⏰ Vencido</span>':'<span class="badge byw2">⏳ Pendiente</span>';
       const link=memberLink(m);
@@ -5514,8 +5541,16 @@ function renderMembersList(planId){
         </div>
       </div>`;
     }).join('')}
+    ${extraRows}
   </div>`;
 }
+
+window.quitarExtraDesafio=async function(uid,planId){
+  if(!confirm('¿Quitarle el Desafío Glúteos como plan adicional a esta alumna?'))return;
+  await updateDoc(doc(db,'subscribers',uid),{extraDesafioGluteos:null});
+  toast('✅ Desafío Glúteos quitado');
+  renderMembersList(planId);
+};
 
 window.cambiarSemanaMiembro=async function(planId,memberId){
   const plan=planes.find(p=>p.id===planId);
