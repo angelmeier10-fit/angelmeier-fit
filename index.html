@@ -4543,7 +4543,8 @@ async function renderProgramaUnificadoHtml(prog,cats){
   const vencido=acceso.clave==='vencido';
   const defaultExp=new Date();defaultExp.setDate(defaultExp.getDate()+30);
   const catOptions=cats.map(c=>`<option value="${c.id}"${c.id===s.categoria?' selected':''}>${c.label}</option>`).join('')
-    +`<option value="__personal__"${s.categoria==='__personal__'?' selected':''}>🎯 Plan personalizado</option>`;
+    +`<option value="__personal__"${s.categoria==='__personal__'?' selected':''}>🎯 Plan personalizado</option>`
+    +`<option value="desafio-gluteos-21"${s.categoria==='desafio-gluteos-21'?' selected':''}>🍑 Desafío Glúteos 21 días</option>`;
   let startWeekHtml='';
   if((s.status!=='active'||vencido)&&s.categoria&&s.categoria!=='global'&&planData&&!planData.continuo){
     const weekNums=planWeekNums(planData);
@@ -6342,6 +6343,19 @@ window.cambiarCategoriaSuscriptorManual=async function(uid){
     const planId=await crearPlanPersonalVacio(sub.name||sub.email);
     await updateDoc(doc(db,'subscribers',uid),{categoria,planId});
     toast('✅ Plan personalizado creado y asignado');
+  } else if(categoria==='desafio-gluteos-21'){
+    const cfgSnap=await getDoc(doc(db,'desafioGluteos','config'));
+    const planId=cfgSnap.exists()?cfgSnap.data().planId:null;
+    if(!planId){toast('⚠️ Todavía no existe el plan del desafío. Creálo primero con "Crear/ver plan del desafío".');return}
+    const planSnap=await getDoc(doc(db,'planes',planId));
+    const durationDays=planSnap.exists()?(planSnap.data().durationDays||21):21;
+    const expDate=new Date();expDate.setDate(expDate.getDate()+durationDays);
+    await updateDoc(doc(db,'subscribers',uid),{
+      categoria,planId,status:'active',activo:true,
+      startDate:new Date().toISOString().split('T')[0],
+      expiry:expDate.toISOString().split('T')[0]
+    });
+    toast('✅ Sumada al Desafío Glúteos');
   } else {
     let planId=null;
     if(categoria!=='global'){
