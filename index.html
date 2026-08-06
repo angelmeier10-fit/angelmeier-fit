@@ -1509,27 +1509,23 @@ onAuthStateChanged(auth,async(user)=>{
       appStarted=true;
       const ref=doc(db,'subscribers',user.uid);
       const snap=await getDoc(ref);
-      const prev=snap.exists()?snap.data():null;
-      // Ya está activa en el desafío y no vencida: no reasignar de nuevo en
-      // cada visita al link (perdería el startDate/progreso que ya tiene).
-      const yaEnDesafio=prev&&prev.categoria==='desafio-gluteos-21'&&prev.status==='active'
-        &&prev.expiry&&prev.expiry>=new Date().toISOString().split('T')[0];
-      if(!yaEnDesafio){
-        const cfgSnap=await getDoc(doc(db,'desafioGluteos','config'));
-        const planId=cfgSnap.exists()?cfgSnap.data().planId:null;
-        if(!planId){
-          document.getElementById('view-alumno').style.display='block';
-          document.getElementById('alumno-active-wrap').style.display='block';
-          document.getElementById('alumno-cv-content').innerHTML='<div class="card" style="text-align:center;padding:30px 20px"><h3>🚧 El desafío todavía no está listo</h3><p class="sub">Volvé a entrar en un rato.</p></div>';
-          return;
-        }
-        // Cualquiera que entre por este link se suma al desafío, tenga o no
-        // cuenta/plan previo — es la puerta de entrada pública al desafío.
-        const name=prev?.name||(document.getElementById('login-name')?.value||'').trim();
-        // Vencimiento por defecto = duración del desafío (plan.durationDays),
-        // editable después a mano por Angel desde el panel de alumnos.
-        const planSnap=await getDoc(doc(db,'planes',planId));
-        const durationDays=planSnap.exists()?(planSnap.data().durationDays||21):21;
+      const data=snap.exists()?snap.data():null;
+      const today=new Date().toISOString().split('T')[0];
+      const cfgSnap=await getDoc(doc(db,'desafioGluteos','config'));
+      const planId=cfgSnap.exists()?cfgSnap.data().planId:null;
+      if(!planId){
+        document.getElementById('view-alumno').style.display='block';
+        document.getElementById('alumno-active-wrap').style.display='block';
+        document.getElementById('alumno-cv-content').innerHTML='<div class="card" style="text-align:center;padding:30px 20px"><h3>🚧 El desafío todavía no está listo</h3><p class="sub">Volvé a entrar en un rato.</p></div>';
+        return;
+      }
+      const planRef=doc(db,'planes',planId);
+      const planSnap=await getDoc(planRef);
+      const durationDays=planSnap.exists()?(planSnap.data().durationDays||21):21;
+      if(!data){
+        // Alumna 100% nueva: el desafío es su plan principal (no tiene otro
+        // plan que preservar).
+        const name=(document.getElementById('login-name')?.value||'').trim();
         const expDate=new Date();expDate.setDate(expDate.getDate()+durationDays);
         await setDoc(ref,{
           email:user.email,
@@ -1537,12 +1533,45 @@ onAuthStateChanged(auth,async(user)=>{
           categoria:'desafio-gluteos-21',
           status:'active',
           activo:true,
-          startDate:new Date().toISOString().split('T')[0],
+          startDate:today,
           startWeek:1,
           progress:{},
           expiry:expDate.toISOString().split('T')[0],
           planId
-        },{merge:true});
+        });
+      }else if(data.categoria==='desafio-gluteos-21'){
+        // Ya tiene el desafío como plan principal (de una entrada anterior):
+        // solo renovar si venció, sin resetear si sigue vigente.
+        const vigente=data.status==='active'&&data.expiry&&data.expiry>=today;
+        if(!vigente){
+          const expDate=new Date();expDate.setDate(expDate.getDate()+durationDays);
+          await setDoc(ref,{status:'active',activo:true,startDate:today,startWeek:1,progress:{},expiry:expDate.toISOString().split('T')[0],planId},{merge:true});
+        }
+      }else if(planSnap.exists()){
+        // Ya tiene cuenta con otro plan: el desafío se suma como plan
+        // adicional (miembro del plan grupal del desafío, con su propio
+        // vencimiento), sin tocar su suscripción principal — conviven los dos
+        // y aparece en el selector "Elegir plan de entrenamiento".
+        const plan={id:planId,...planSnap.data()};
+        const members=plan.members||[];
+        const idx=members.findIndex(m=>m.id===user.uid);
+        const vigente=idx>=0&&members[idx].status==='active'&&members[idx].expiry&&members[idx].expiry>=today;
+        if(!vigente){
+          const expDate=new Date();expDate.setDate(expDate.getDate()+durationDays);
+          const member={
+            id:user.uid,
+            name:data.name||user.displayName||'',
+            email:user.email,
+            status:'active',
+            expiry:expDate.toISOString().split('T')[0],
+            addedAt:new Date().toLocaleDateString('es-AR'),
+            startDate:today,
+            startWeek:1,
+            progress:{}
+          };
+          if(idx>=0)members[idx]=member;else members.push(member);
+          await setDoc(planRef,{...plan,members});
+        }
       }
       await initAlumno(user);
     }else{
