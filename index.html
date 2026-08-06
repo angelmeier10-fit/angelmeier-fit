@@ -1509,7 +1509,12 @@ onAuthStateChanged(auth,async(user)=>{
       appStarted=true;
       const ref=doc(db,'subscribers',user.uid);
       const snap=await getDoc(ref);
-      if(!snap.exists()){
+      const prev=snap.exists()?snap.data():null;
+      // Ya está activa en el desafío y no vencida: no reasignar de nuevo en
+      // cada visita al link (perdería el startDate/progreso que ya tiene).
+      const yaEnDesafio=prev&&prev.categoria==='desafio-gluteos-21'&&prev.status==='active'
+        &&prev.expiry&&prev.expiry>=new Date().toISOString().split('T')[0];
+      if(!yaEnDesafio){
         const cfgSnap=await getDoc(doc(db,'desafioGluteos','config'));
         const planId=cfgSnap.exists()?cfgSnap.data().planId:null;
         if(!planId){
@@ -1518,7 +1523,9 @@ onAuthStateChanged(auth,async(user)=>{
           document.getElementById('alumno-cv-content').innerHTML='<div class="card" style="text-align:center;padding:30px 20px"><h3>🚧 El desafío todavía no está listo</h3><p class="sub">Volvé a entrar en un rato.</p></div>';
           return;
         }
-        const name=(document.getElementById('login-name')?.value||'').trim();
+        // Cualquiera que entre por este link se suma al desafío, tenga o no
+        // cuenta/plan previo — es la puerta de entrada pública al desafío.
+        const name=prev?.name||(document.getElementById('login-name')?.value||'').trim();
         // Vencimiento por defecto = duración del desafío (plan.durationDays),
         // editable después a mano por Angel desde el panel de alumnos.
         const planSnap=await getDoc(doc(db,'planes',planId));
@@ -1531,9 +1538,11 @@ onAuthStateChanged(auth,async(user)=>{
           status:'active',
           activo:true,
           startDate:new Date().toISOString().split('T')[0],
+          startWeek:1,
+          progress:{},
           expiry:expDate.toISOString().split('T')[0],
           planId
-        });
+        },{merge:true});
       }
       await initAlumno(user);
     }else{
