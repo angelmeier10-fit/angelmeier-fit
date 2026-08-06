@@ -1607,6 +1607,16 @@ async function initAlumno(user){
   // Corte de acceso también en frontend: si venció, se trata como expired aunque
   // el status en Firestore todavía diga "active" (el webhook no corre proactivamente).
   const vencido=data.status==='active' && data.expiry && new Date(data.expiry+'T00:00:00')<new Date();
+  // El Desafío Glúteos es gratis y no tiene link de pago: si venció, no tiene
+  // sentido mostrarle "renová tu pago". Le ofrecemos elegir un plan pago o
+  // escribir por WhatsApp, directo, sin esperar el reseteo automático.
+  if(vencido && data.categoria==='desafio-gluteos-21'){
+    document.getElementById('alumno-narrow-wrap').style.display='block';
+    document.getElementById('alumno-categoria-screen').style.display='block';
+    document.querySelector('#alumno-categoria-screen p.sub').textContent='Tu Desafío Glúteos terminó 🎉 Para seguir, suscribite a uno de estos planes o escribinos';
+    await renderCategoriasAlumno();
+    return;
+  }
   if(data.status==='active' && !vencido && data.activo!==false){
     document.getElementById('alumno-active-wrap').style.display='block';
     updateThemeIcons();
