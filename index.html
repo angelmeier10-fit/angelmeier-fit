@@ -5778,6 +5778,17 @@ function findAllProgramsForAlumno(uid,name,email,ownPlanId,ownPlanName){
   }));
   const progs=[...byPlan.values()];
   if(ownPlanId)progs.unshift({type:'personal',client:{id:'sub',name,email},planName:ownPlanName});
+  // Desafío Glúteos como plan adicional (subscribers/{uid}.extraDesafioGluteos,
+  // ver isDesafioLanding): no es un member real de planes/{id} (solo admin
+  // puede escribir ahí, ver firestore.rules), así que no aparece en el scan
+  // de arriba — se agrega acá para que salga en el mismo selector "Elegir
+  // plan de entrenamiento" que el resto, en vez de como ícono aparte.
+  const extra=alumnoState.sub?.extraDesafioGluteos;
+  const today=new Date().toISOString().split('T')[0];
+  if(extra&&extra.status==='active'&&extra.expiry&&extra.expiry>=today&&!byPlan.has(extra.planId)){
+    const extraPlan=planes.find(p=>p.id===extra.planId);
+    progs.push({type:'extra',planId:extra.planId,planName:extraPlan?.name||'🍑 Desafío Glúteos 21 días'});
+  }
   return progs;
 }
 // El progreso real de un member de plan grupal vive en la subcolección
@@ -5796,14 +5807,21 @@ async function loadPlanProgreso(plan){
 }
 function programPickerHTML(gkey,progs,activeType,activePlanId,mode='client'){
   if(progs.length<2)return'';
-  const labelOf=p=>p.type==='personal'?(p.planName||'🎯 Plan personalizado'):p.plan.name;
-  const activeProg=progs.find(p=>p.type===activeType&&(p.type==='personal'||p.plan.id===activePlanId));
+  // planIdOf/isActiveOf comparan por plan.id en vez de por "type" para los
+  // no-personales: así el desafío (type:'extra', sin member real en
+  // planes/{id}) se resalta como activo igual que un plan grupal común
+  // cuando coincide su planId, sin necesitar un activeType nuevo.
+  const planIdOf=p=>p.type==='personal'?null:(p.type==='extra'?p.planId:p.plan.id);
+  const labelOf=p=>p.type==='personal'?(p.planName||'🎯 Plan personalizado'):(p.type==='extra'?p.planName:p.plan.name);
+  const isActiveOf=p=>p.type==='personal'?activeType==='personal':planIdOf(p)===activePlanId;
+  const activeProg=progs.find(isActiveOf);
   const activeLabel=activeProg?labelOf(activeProg):'Plan';
   const items=progs.map(p=>{
-    const isActive=p.type===activeType&&(p.type==='personal'||p.plan.id===activePlanId);
+    const isActive=isActiveOf(p);
     const label=labelOf(p);
     const onclick=p.type==='personal'?
       (mode==='alumno'?'switchToPersonalProgramAlumno()':`switchToPersonalProgram('${p.client.id}')`):
+      p.type==='extra'?(mode==='alumno'?'switchToDesafioExtraAlumno()':''):
       (mode==='alumno'?`switchToGroupProgramAlumno('${p.plan.id}','${p.member.id}')`:`switchToGroupProgram('${p.plan.id}','${p.member.id}')`);
     return`<div class="cv-day-item${isActive?' active':''}" onclick="${onclick}"><span class="cv-day-item-name">${label}</span></div>`;
   }).join('');
@@ -5846,8 +5864,11 @@ window.switchToPersonalProgramAlumno=function(){
 };
 // Desafío Glúteos como plan adicional (subscribers/{uid}.extraDesafioGluteos,
 // ver isDesafioLanding): no es un member real de planes/{id} (solo admin
-// puede escribir ahí), así que no aparece en findAllProgramsForAlumno ni en
-// el picker automático — se abre aparte con su propio botón "Volver".
+// puede escribir ahí, ver firestore.rules) — findAllProgramsForAlumno lo
+// agrega como entrada type:'extra' para que salga en el mismo selector
+// "Elegir plan de entrenamiento" que el resto (ver programPickerHTML), sin
+// UI aparte. Volver al plan principal es la entrada 'personal' de ese mismo
+// selector (switchToPersonalProgramAlumno), no hace falta un botón manual.
 // member.id = uid propio para que el progreso pueda escribir en
 // planes/{planId}/progreso/{uid} (permitido por firestore.rules: auth.uid==memberId).
 window.switchToDesafioExtraAlumno=async function(){
@@ -5868,11 +5889,6 @@ window.switchToDesafioExtraAlumno=async function(){
     progress:progSnap.exists()?(progSnap.data().progress||{}):{}
   };
   renderGroupCV(plan,member,'alumno');
-  const contentEl=document.getElementById('alumno-cv-content');
-  const backWrap=document.createElement('div');
-  backWrap.style.marginBottom='10px';
-  backWrap.innerHTML='<button class="btn bg2 sm" onclick="switchToPersonalProgramAlumno()">⬅ Volver a mi plan</button>';
-  contentEl.insertBefore(backWrap,contentEl.firstChild);
 };
 
 function renderGroupCV(plan,member,mode='client'){
@@ -6177,24 +6193,20 @@ async function renderAlumnoPlanView(sub,uid){
   alumnoState.sub=sub;
   alumnoState.categoria=categoria;
 
+  // El Desafío Glúteos como plan adicional ya no se ofrece acá como botón
+  // aparte: sale integrado en el selector "Elegir plan de entrenamiento"
+  // que arma programPickerHTML dentro de renderAlumnoCV (ver
+  // findAllProgramsForAlumno, entrada type:'extra').
   const switcherEl=document.getElementById('alumno-cat-switcher');
-  let switcherHtml='';
   if(sub.categoria==='global'){
-    switcherHtml+=`<div style="display:flex;gap:8px;flex-wrap:wrap">${
+    switcherEl.innerHTML=`<div style="display:flex;gap:8px;flex-wrap:wrap">${
       cats.filter(c=>c.id!=='global').map(c=>
         `<button class="btn ${c.id===categoria?'bp':'bg2'} sm" onclick="cambiarCategoriaGlobalAlumno('${c.id}')">${c.label}</button>`
       ).join('')
     }</div>`;
+  }else{
+    switcherEl.innerHTML='';
   }
-  // Desafío Glúteos como plan adicional (ver isDesafioLanding en el login):
-  // vigente y no vencido, se ofrece como botón aparte para no mezclarse con
-  // el switcher de categoría "global" (son cosas independientes).
-  const extra=sub.extraDesafioGluteos;
-  const today=new Date().toISOString().split('T')[0];
-  if(extra&&extra.status==='active'&&extra.expiry&&extra.expiry>=today){
-    switcherHtml+=`<div style="margin-top:8px"><button class="btn bg2 sm" onclick="switchToDesafioExtraAlumno()">🍑 Ver Desafío Glúteos</button></div>`;
-  }
-  switcherEl.innerHTML=switcherHtml;
 
   const contentEl=document.getElementById('alumno-cv-content');
   if(!planId){
