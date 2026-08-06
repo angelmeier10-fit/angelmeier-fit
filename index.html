@@ -5899,6 +5899,7 @@ window.switchToDesafioExtraAlumno=async function(){
   const progSnap=await getDoc(doc(db,'planes',extra.planId,'progreso',alumnoState.uid));
   const member={
     id:alumnoState.uid,
+    planId:extra.planId,
     name:alumnoState.sub.name||alumnoState.sub.email||'Alumna',
     email:alumnoState.sub.email||'',
     status:extra.status,
@@ -5907,6 +5908,10 @@ window.switchToDesafioExtraAlumno=async function(){
     startWeek:extra.startWeek||1,
     progress:progSnap.exists()?(progSnap.data().progress||{}):{}
   };
+  // Se guarda en alumnoState para que resolveGroupMember pueda encontrarla
+  // cuando tilda series, guarda pesos/notas o cambia de día — no está en
+  // plan.members (ver comentario arriba).
+  alumnoState.extraMember=member;
   renderGroupCV(plan,member,'alumno');
 };
 
@@ -5962,7 +5967,7 @@ window.toggleGroupCVDayPicker=function(gkey){
 };
 window.selectGroupCVDay=function(planId,memberId,idx){
   const plan=planes.find(p=>p.id===planId);
-  const member=plan?.members?.find(m=>m.id===memberId);
+  const member=plan&&resolveGroupMember(plan,memberId);
   if(!plan||!member)return;
   const gkey=`${planId}-${memberId}`;
   document.querySelectorAll(`[id^="gv-ditem-${gkey}-"]`).forEach(el=>el.classList.remove('active'));
@@ -6006,6 +6011,18 @@ function renderGroupDay(plan,member,dIdx){
   container.innerHTML=html;
 }
 
+// Busca un member dentro de plan.members, con fallback al Desafío Glúteos
+// como plan adicional (alumnoState.extraMember): esa alumna no es un member
+// real de plan.members —solo admin puede escribir planes/{id}, ver
+// firestore.rules—, así que plan.members.find(...) nunca la encuentra y sin
+// este fallback las acciones de progreso (tildar serie, guardar peso, notas)
+// se cortaban en silencio. Se resuelve desde el estado en memoria de su
+// sesión (seteado en switchToDesafioExtraAlumno), y se persiste igual en
+// planes/{planId}/progreso/{uid} (permitido: auth.uid==memberId).
+function resolveGroupMember(plan,memberId){
+  return plan.members?.find(m=>m.id===memberId)
+    ||(alumnoState.extraMember&&alumnoState.extraMember.id===memberId&&alumnoState.extraMember.planId===plan.id?alumnoState.extraMember:null);
+}
 // Override toggleSerie and logGym for group members y para el alumno de suscripción
 const origToggleSerie=window.toggleSerie;
 window.toggleSerie=async function(cId,ekey,si,rk,isLast,blockRest,pauseSecs){
@@ -6036,7 +6053,7 @@ window.toggleSerie=async function(cId,ekey,si,rk,isLast,blockRest,pauseSecs){
   if(cId.startsWith('grp::')){
     const[,planId,memberId]=cId.split('::');
     const plan=planes.find(p=>p.id===planId);if(!plan)return;
-    const member=plan.members.find(m=>m.id===memberId);if(!member)return;
+    const member=resolveGroupMember(plan,memberId);if(!member)return;
     if(!member.progress)member.progress={};
     const row=document.getElementById('sr-'+rk);const btn=row.querySelector('.ckbtn');
     const prev=member.progress[rk];
@@ -6100,7 +6117,7 @@ window.logGym=async function(cId,ekey){
   if(cId.startsWith('grp::')){
     const[,planId,memberId]=cId.split('::');
     const plan=planes.find(p=>p.id===planId);if(!plan)return;
-    const member=plan.members.find(m=>m.id===memberId);if(!member)return;
+    const member=resolveGroupMember(plan,memberId);if(!member)return;
     const weights=collectSetWeights(cId,ekey);
     const singleW=document.getElementById('pw-'+cId+'-'+ekey)?.value||'';
     const r=document.getElementById('pr-'+cId+'-'+ekey).value;
@@ -6153,7 +6170,7 @@ window.logCF=async function(cId,bkey,rk){
   if(cId.startsWith('grp::')){
     const[,planId,memberId]=cId.split('::');
     const plan=planes.find(p=>p.id===planId);if(!plan)return;
-    const member=plan.members.find(m=>m.id===memberId);if(!member)return;
+    const member=resolveGroupMember(plan,memberId);if(!member)return;
     if(!member.progress)member.progress={};
     if(!member.progress[rk])member.progress[rk]=[];
     member.progress[rk].push({date:new Date().toLocaleDateString('es-AR'),result:res+(note?' — '+note:'')});
@@ -6167,7 +6184,7 @@ window.logCF=async function(cId,bkey,rk){
 
 window.saveGroupNote=async function(planId,memberId,dIdx){
   const plan=planes.find(p=>p.id===planId);
-  const member=plan.members.find(m=>m.id===memberId);
+  const member=resolveGroupMember(plan,memberId);if(!member)return;
   const txt=document.getElementById(`gsnote-${planId}-${memberId}-${dIdx}`).value.trim();
   if(!txt)return;
   if(!member.progress)member.progress={};
@@ -6182,7 +6199,7 @@ window.saveGroupNote=async function(planId,memberId,dIdx){
 window.deleteGroupNote=async function(planId,memberId,dIdx,noteIdx){
   if(!confirm('¿Borrar esta nota?'))return;
   const plan=planes.find(p=>p.id===planId);
-  const member=plan.members.find(m=>m.id===memberId);
+  const member=resolveGroupMember(plan,memberId);if(!member)return;
   const key=`snote-w${getMemberCurrentWeekNum(plan,member)||1}-${dIdx}`;
   member.progress[key].splice(noteIdx,1);
   await setDoc(doc(db,'planes',planId,'progreso',memberId),{progress:member.progress});
@@ -7724,7 +7741,7 @@ window.deleteLog=async function(clientId,ekey,logIdx){
   if(clientId.startsWith('grp::')){
     const[,planId,memberId]=clientId.split('::');
     const plan=planes.find(p=>p.id===planId);if(!plan)return;
-    const member=plan.members.find(m=>m.id===memberId);if(!member)return;
+    const member=resolveGroupMember(plan,memberId);if(!member)return;
     const logKey=clientId+'-'+ekey+'-logs';
     if(!member.progress?.[logKey])return;
     member.progress[logKey].splice(logIdx,1);
