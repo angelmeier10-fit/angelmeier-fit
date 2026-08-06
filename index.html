@@ -7284,14 +7284,25 @@ async function buildNotifications(){
     notifs.push({tipo:'suscripcion',texto:`🆕 Nueva suscripción: ${s.name||s.email} (${cat})`,fecha:null,targetView:'trainer',order:0,uid:d.id,searchTerm:s.name||s.email});
   });
 
-  // Nuevas alumnas en el Desafío Glúteos (últimas 48hs)
+  // Nuevas alumnas en el Desafío Glúteos (últimas 48hs), sea como plan
+  // principal (alumna 100% nueva) o como plan adicional (extraDesafioGluteos,
+  // alumna que ya tenía cuenta con otro plan — ver isDesafioLanding).
   subSnap.docs.forEach(d=>{
     const s=d.data();
-    if(s.categoria!=='desafio-gluteos-21'||s.status!=='active'||!s.startDate)return;
-    const added=new Date(s.startDate+'T00:00:00');
-    const diffDays=Math.round((today-added)/86400000);
-    if(diffDays>=0&&diffDays<=2){
-      notifs.push({tipo:'desafio',texto:`🍑 Nueva alumna en el Desafío Glúteos: ${s.name||s.email}`,fecha:added,targetView:'trainer',order:0,uid:d.id,searchTerm:s.name||s.email});
+    if(s.categoria==='desafio-gluteos-21'&&s.status==='active'&&s.startDate){
+      const added=new Date(s.startDate+'T00:00:00');
+      const diffDays=Math.round((today-added)/86400000);
+      if(diffDays>=0&&diffDays<=2){
+        notifs.push({tipo:'desafio',texto:`🍑 Nueva alumna en el Desafío Glúteos: ${s.name||s.email}`,fecha:added,targetView:'trainer',order:0,uid:d.id,searchTerm:s.name||s.email});
+      }
+    }
+    const extra=s.extraDesafioGluteos;
+    if(extra&&extra.status==='active'&&extra.startDate){
+      const added=new Date(extra.startDate+'T00:00:00');
+      const diffDays=Math.round((today-added)/86400000);
+      if(diffDays>=0&&diffDays<=2){
+        notifs.push({tipo:'desafio',texto:`🍑 Nueva alumna en el Desafío Glúteos (plan adicional): ${s.name||s.email}`,fecha:added,targetView:'trainer',order:0,uid:d.id,searchTerm:s.name||s.email});
+      }
     }
   });
 
