@@ -1497,16 +1497,20 @@ onAuthStateChanged(auth,async(user)=>{
     return;
   }
   if(isDesafioLanding){
-    hideLoading();
     if(user){
       if(user.email===ADMIN_EMAIL){
         // Igual que en isAlumnoSignup: no usar location.pathname para evitar
         // loops, y no mezclar la sesión del entrenador con esta vista pública.
+        hideLoading();
         location.href=location.pathname;
         return;
       }
       hideLoginScreen();
       appStarted=true;
+      // hideLoading() se llama recién cuando ya sabemos qué mostrar (no acá
+      // arriba): la vista de entrenador queda "active" por defecto en el
+      // HTML, así que sacar el loading antes de tiempo la destapaba un
+      // instante mientras terminan estas consultas a Firestore.
       const ref=doc(db,'subscribers',user.uid);
       const snap=await getDoc(ref);
       const data=snap.exists()?snap.data():null;
@@ -1514,6 +1518,7 @@ onAuthStateChanged(auth,async(user)=>{
       const cfgSnap=await getDoc(doc(db,'desafioGluteos','config'));
       const planId=cfgSnap.exists()?cfgSnap.data().planId:null;
       if(!planId){
+        hideLoading();
         document.getElementById('view-alumno').style.display='block';
         document.getElementById('alumno-active-wrap').style.display='block';
         document.getElementById('alumno-cv-content').innerHTML='<div class="card" style="text-align:center;padding:30px 20px"><h3>🚧 El desafío todavía no está listo</h3><p class="sub">Volvé a entrar en un rato.</p></div>';
@@ -1570,7 +1575,9 @@ onAuthStateChanged(auth,async(user)=>{
         }
       }
       await initAlumno(user);
+      hideLoading();
     }else{
+      hideLoading();
       document.getElementById('login-screen').style.display='none';
       document.getElementById('desafio-landing-screen').style.display='block';
     }
