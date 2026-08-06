@@ -1596,6 +1596,14 @@ async function initAlumno(user){
     return;
   }
   const data=snap.data();
+  // Sin categoría: alumna nueva a medio onboarding, o una cuyo plan venció y
+  // se le reseteó (ver expiración del Desafío Glúteos) — le mostramos el
+  // selector de plan directo, sin repetir la pregunta de objetivo.
+  if(!data.categoria){
+    document.getElementById('alumno-narrow-wrap').style.display='block';
+    await renderCategoriasAlumno();
+    return;
+  }
   // Corte de acceso también en frontend: si venció, se trata como expired aunque
   // el status en Firestore todavía diga "active" (el webhook no corre proactivamente).
   const vencido=data.status==='active' && data.expiry && new Date(data.expiry+'T00:00:00')<new Date();
@@ -1634,9 +1642,10 @@ window.sendWhatsAppPlanPersonalizado=function(){
   window.open('https://wa.me/5491172399988?text='+msg,'_blank');
 };
 
-window.elegirObjetivoAlumno=async function(objetivo){
-  window.__objetivoElegido=objetivo;
-  document.getElementById('alumno-objetivo-screen').style.display='none';
+// Arma la lista de categorías/planes para elegir. La usan tanto el alta
+// nueva (después de elegir objetivo) como el reingreso de una alumna cuyo
+// plan venció y quedó sin categoría (ver expiración del Desafío Glúteos).
+async function renderCategoriasAlumno(){
   document.getElementById('alumno-categoria-screen').style.display='block';
   const cats=await getCategoriasSuscripcion();
   const priceHtml=c=>{
@@ -1655,20 +1664,31 @@ window.elegirObjetivoAlumno=async function(objetivo){
       <div class="sub">Consultá por WhatsApp para armar un plan a tu medida</div>
     </div>
   `;
+}
+
+window.elegirObjetivoAlumno=async function(objetivo){
+  window.__objetivoElegido=objetivo;
+  document.getElementById('alumno-objetivo-screen').style.display='none';
+  await renderCategoriasAlumno();
 };
 
 window.elegirCategoriaAlumno=async function(categoria){
   const user=auth.currentUser;
   const errEl=document.getElementById('alumno-categoria-error');
   try{
+    // merge:true porque esto también se usa para el reingreso de una alumna
+    // ya existente (plan vencido) — no queremos pisarle activo/otros campos.
     await setDoc(doc(db,'subscribers',user.uid),{
       email:user.email,
       name:user.displayName||'',
       categoria,
       objetivo:window.__objetivoElegido||null,
       status:'pending',
-      planId:null
-    });
+      planId:null,
+      startDate:null,
+      startWeek:null,
+      progress:{}
+    },{merge:true});
     document.getElementById('alumno-categoria-screen').style.display='none';
     document.getElementById('alumno-pending-screen').style.display='block';
   }catch(err){
@@ -7074,6 +7094,7 @@ function notifId(n){
   if(n.tipo==='anamnesis')return `anam:${n.docId}`;
   if(n.tipo==='alumno')return `alu:${n.planId}:${n.member}:${n.fecha?n.fecha.getTime():''}`;
   if(n.tipo==='suscripcion')return `sus:${n.uid}`;
+  if(n.tipo==='desafio')return `des:${n.uid}`;
   return n.texto;
 }
 
@@ -7112,7 +7133,18 @@ async function buildNotifications(){
     const s=d.data();
     if(s.status!=='pending')return;
     const cat=planesFijosCache[s.categoria]?.label||LEGACY_CAT_LABELS[s.categoria]||s.categoria||'sin categoría';
-    notifs.push({tipo:'suscripcion',texto:`🆕 Nueva suscripción: ${s.name||s.email} (${cat})`,fecha:null,targetView:'trainer',order:0,uid:d.id});
+    notifs.push({tipo:'suscripcion',texto:`🆕 Nueva suscripción: ${s.name||s.email} (${cat})`,fecha:null,targetView:'trainer',order:0,uid:d.id,searchTerm:s.name||s.email});
+  });
+
+  // Nuevas alumnas en el Desafío Glúteos (últimas 48hs)
+  subSnap.docs.forEach(d=>{
+    const s=d.data();
+    if(s.categoria!=='desafio-gluteos-21'||s.status!=='active'||!s.startDate)return;
+    const added=new Date(s.startDate+'T00:00:00');
+    const diffDays=Math.round((today-added)/86400000);
+    if(diffDays>=0&&diffDays<=2){
+      notifs.push({tipo:'desafio',texto:`🍑 Nueva alumna en el Desafío Glúteos: ${s.name||s.email}`,fecha:added,targetView:'trainer',order:0,uid:d.id,searchTerm:s.name||s.email});
+    }
   });
 
   // Anamnesis pendientes
@@ -7187,6 +7219,11 @@ function goToNotification(i){
   toggleNotifPanel();
   const btn=document.querySelector(`.tab-btn[onclick*="showView('${n.targetView}'"]`);
   if(btn)showView(n.targetView,btn);
+  if((n.tipo==='desafio'||n.tipo==='suscripcion')&&n.uid){
+    showPanel('alumnosuni',document.getElementById('it-alumnosuni'));
+    const search=document.getElementById('uni-search');
+    if(search){search.value=n.searchTerm||'';renderAlumnosUnificado(search.value);}
+  }
 }
 window.goToNotification=goToNotification;
 

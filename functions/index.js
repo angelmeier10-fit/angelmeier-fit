@@ -1,4 +1,5 @@
 const { onRequest } = require("firebase-functions/v2/https");
+const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { setGlobalOptions } = require("firebase-functions/v2");
 const admin = require("firebase-admin");
 
@@ -300,3 +301,37 @@ exports.crearPago = onRequest(async (req, res) => {
     return res.status(500).json({ error: "Internal error" });
   }
 });
+
+/**
+ * Corre todos los días: a las alumnas del Desafío Glúteos (21 días) cuyo
+ * plan venció les resetea categoría/plan para que en su próximo ingreso
+ * les aparezca la pantalla de elegir plan (armados o personalizado), en
+ * vez de quedar con un plan vencido colgado sin nada.
+ * No borra la cuenta ni el historial: solo limpia categoria/planId y
+ * vuelve el status a "pending" (mismo estado que una alumna a medio
+ * onboarding, ver renderCategoriasAlumno en index.html).
+ */
+exports.expirarDesafioGluteos = onSchedule(
+  { schedule: "every day 03:00", timeZone: "America/Argentina/Buenos_Aires" },
+  async () => {
+    const today = new Date().toISOString().split("T")[0];
+    const snap = await db
+      .collection("subscribers")
+      .where("categoria", "==", "desafio-gluteos-21")
+      .where("status", "==", "active")
+      .get();
+
+    const batch = db.batch();
+    let count = 0;
+    snap.docs.forEach((d) => {
+      const expiry = d.data().expiry;
+      if (expiry && expiry < today) {
+        batch.update(d.ref, { categoria: "", planId: null, status: "pending" });
+        count++;
+      }
+    });
+
+    if (count > 0) await batch.commit();
+    console.log(`Desafío Glúteos: ${count} alumna(s) vencida(s) reseteada(s)`);
+  }
+);
