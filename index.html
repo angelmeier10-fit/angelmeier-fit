@@ -1027,6 +1027,7 @@ setTimeout(()=>{
       </div>
       <div class="fg"><label>Link de YouTube (opcional)</label><input id="em-video" placeholder="https://youtube.com/..."></div>
       <div id="em-preview" style="display:none"></div>
+      <div class="fg"><label>Notas (opcional)</label><textarea id="em-notes" placeholder="Cómo ejecutarlo, técnica, errores comunes..."></textarea></div>
       <input type="hidden" id="em-id">
     </div>
     <div style="display:flex;gap:8px;margin-top:16px">
@@ -1828,15 +1829,15 @@ const DEFAULT_EX=[
 ];
 
 const CF_TYPES={
-  amrap:{label:"AMRAP",icon:"🔄",color:"var(--or)",fields:[{id:"duration",label:"Duración (ej: 20 min)"}],desc:"As Many Rounds/Reps As Possible"},
-  fortime:{label:"FOR TIME",icon:"⏱",color:"var(--rd)",fields:[{id:"rounds",label:"Rondas"},{id:"timecap",label:"Time cap (opcional)",placeholder:"Ej: 15 min"}],desc:"Completar lo más rápido posible"},
-  emom:{label:"EMOM",icon:"📡",color:"var(--cy)",fields:[{id:"duration",label:"Duración",placeholder:"Vacío = infinito (Death by...)"},{id:"interval",label:"Intervalo",placeholder:"Ej: 1:30, 1 min 30s, 45s"}],desc:"Every Minute On the Minute"},
-  tabata:{label:"TABATA",icon:"⚡",color:"var(--yw)",fields:[{id:"rounds",label:"Rondas"},{id:"work",label:"Trabajo"},{id:"rest",label:"Descanso"}],desc:"20s trabajo / 10s descanso"},
-  endurance:{label:"ENDURANCE",icon:"🏃",color:"var(--gr)",fields:[{id:"duration",label:"Duración"},{id:"intensity",label:"Intensidad"}],desc:"Resistencia aeróbica"},
-  circuit:{label:"CIRCUITO",icon:"🔁",color:"var(--ac2)",fields:[{id:"rounds",label:"Rondas"},{id:"work",label:"Trabajo"},{id:"rest",label:"Descanso entre rondas"}],desc:"Circuito metabólico"},
-  chipper:{label:"CHIPPER",icon:"🪓",color:"var(--or)",fields:[{id:"timelimit",label:"Tiempo límite"}],desc:"Lista completa 1 sola vez"},
-  ladder:{label:"ESCALERA",icon:"📈",color:"var(--cy)",fields:[{id:"scheme",label:"Esquema (ej: 1-2-3)"},{id:"rest",label:"Descanso"}],desc:"Reps progresivas"},
-  intervals:{label:"INTERVALOS",icon:"🎯",color:"var(--yw)",fields:[{id:"rounds",label:"Series"},{id:"work",label:"Trabajo"},{id:"rest",label:"Descanso"}],desc:"Series de esfuerzo controlado"}
+  amrap:{label:"AMRAP",icon:"🔄",color:"var(--or)",fields:[{id:"duration",label:"Duración (ej: 20 min)"}],desc:"Realizar la mayor cantidad de rondas o repeticiones del circuito durante el tiempo indicado"},
+  fortime:{label:"FOR TIME",icon:"⏱",color:"var(--rd)",fields:[{id:"rounds",label:"Rondas"},{id:"timecap",label:"Time cap (opcional)",placeholder:"Ej: 15 min"}],desc:"Completar todas las rondas o repeticiones indicadas lo más rápido posible"},
+  emom:{label:"EMOM",icon:"📡",color:"var(--cy)",fields:[{id:"duration",label:"Duración",placeholder:"Vacío = infinito (Death by...)"},{id:"interval",label:"Intervalo",placeholder:"Ej: 1:30, 1 min 30s, 45s"}],desc:"Realizar el ejercicio o ejercicios indicados dentro de cada minuto; el tiempo que sobra es descanso"},
+  tabata:{label:"TABATA",icon:"⚡",color:"var(--yw)",fields:[{id:"rounds",label:"Rondas"},{id:"work",label:"Trabajo"},{id:"rest",label:"Descanso"}],desc:"Alternar bloques cortos de trabajo a máxima intensidad con descansos breves (clásico: 20s trabajo / 10s descanso)"},
+  endurance:{label:"ENDURANCE",icon:"🏃",color:"var(--gr)",fields:[{id:"duration",label:"Duración"},{id:"intensity",label:"Intensidad"}],desc:"Trabajo continuo de resistencia aeróbica a la intensidad indicada, sin pausas"},
+  circuit:{label:"CIRCUITO",icon:"🔁",color:"var(--ac2)",fields:[{id:"rounds",label:"Rondas"},{id:"work",label:"Trabajo"},{id:"rest",label:"Descanso entre rondas"}],desc:"Encadenar los ejercicios uno tras otro sin parar, descansando solo entre rondas completas"},
+  chipper:{label:"CHIPPER",icon:"🪓",color:"var(--or)",fields:[{id:"timelimit",label:"Tiempo límite"}],desc:"Completar la lista de ejercicios en orden, una sola vez cada uno, dentro del tiempo límite"},
+  ladder:{label:"ESCALERA",icon:"📈",color:"var(--cy)",fields:[{id:"scheme",label:"Esquema (ej: 1-2-3)"},{id:"rest",label:"Descanso"}],desc:"Repeticiones que suben o bajan en cada ronda según el esquema indicado"},
+  intervals:{label:"INTERVALOS",icon:"🎯",color:"var(--yw)",fields:[{id:"rounds",label:"Series"},{id:"work",label:"Trabajo"},{id:"rest",label:"Descanso"}],desc:"Alternar bloques de esfuerzo controlado con descansos entre series"}
 };
 
 // ══ STATE ══
@@ -2367,7 +2368,7 @@ function addFuncEx(cid,data=null){
       <input type="text" class="ex-search" value="${data?.name||''}" placeholder="Ejercicio..."
         oninput="filterEx(this,'${eid}-dd')" onfocus="showDd(this,'${eid}-dd')"
         data-name="${data?.name||''}" data-video="${data?.video||''}">
-      ${vidBadgeHtml(data?.video||'')}
+      ${vidBadgeHtml(data?.video||'')}${exEditBtnHtml()}
       <div class="ex-dd" id="${eid}-dd"></div>
     </div>
     <button class="btn bd2 xs" style="flex-shrink:0" onclick="document.getElementById('${eid}').remove()">✕</button>
@@ -2489,7 +2490,7 @@ function addWarmupEx(body,data=null,before=null){
       <input type="text" class="ex-search" value="${data?.name||''}" placeholder="Ej: Trote suave, movilidad de cadera..."
         oninput="filterEx(this,'${eid}-dd')" onfocus="showDd(this,'${eid}-dd')"
         data-name="${data?.name||''}" data-video="${data?.video||''}">
-      ${vidBadgeHtml(data?.video||'')}
+      ${vidBadgeHtml(data?.video||'')}${exEditBtnHtml()}
       <div class="ex-dd" id="${eid}-dd"></div>
     </div>
     <button class="btn bd2 xs" style="margin-top:18px;flex-shrink:0" onclick="document.getElementById('${eid}').remove()">✕</button>
@@ -2523,12 +2524,17 @@ function addExEntry(body,data=null,removable=false,before=null){
       <input type="text" class="ex-search" value="${data?.name||''}" placeholder="Buscá ejercicio..."
         oninput="filterEx(this,'${eid}-dd');updateBlkNames(this)" onfocus="showDd(this,'${eid}-dd')"
         data-name="${data?.name||''}" data-video="${data?.video||''}">
-      ${vidBadgeHtml(data?.video||'')}
+      ${vidBadgeHtml(data?.video||'')}${exEditBtnHtml()}
       <div class="ex-dd" id="${eid}-dd"></div>
     </div>
     ${removable?`<button class="btn bd2 xs" style="margin-top:18px;flex-shrink:0" onclick="removeGiantEx('${eid}')">✕</button>`:''}
   </div>
   <div class="fg"><label>Observaciones</label><input type="text" class="ex-obs" value="${data?.obs||''}" placeholder="RPE, técnica..."></div>
+  <div class="fg full">
+    <label>Variantes (opcional — más fácil / más difícil, para que elija la alumna)</label>
+    <div class="ex-variants" id="${eid}-variants"></div>
+    <button class="btn bg2 xs" style="margin-top:4px" onclick="addExVariant('${eid}-variants')">＋ Variante</button>
+  </div>
   <div>
     <div style="font-size:.7rem;color:var(--mu);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px">Series y repeticiones</div>
     <div style="display:flex;gap:6px;margin-bottom:7px;align-items:center;background:var(--bg2);border:1.5px dashed var(--acc);border-radius:8px;padding:7px 10px">
@@ -2542,7 +2548,24 @@ function addExEntry(body,data=null,removable=false,before=null){
   body.insertBefore(div,before);
   if(data?.scheme?.length) data.scheme.forEach(s=>addSR(eid+'-sc',s));
   else{addSR(eid+'-sc');addSR(eid+'-sc');addSR(eid+'-sc')}
+  if(data?.variants?.length) data.variants.forEach(v=>addExVariant(eid+'-variants',v));
 }
+function addExVariant(containerId,data=null){
+  const container=document.getElementById(containerId);
+  const vid='v'+Date.now()+Math.random().toString(36).slice(2,5);
+  const div=document.createElement('div');div.className='ex-variant-row';div.id=vid;
+  div.style.cssText='display:flex;gap:7px;align-items:flex-start;margin-top:6px';
+  div.innerHTML=`<div class="ex-wrap" style="flex:1">
+    <input type="text" class="ex-search" value="${data?.name||''}" placeholder="Buscá la variante..."
+      oninput="filterEx(this,'${vid}-dd')" onfocus="showDd(this,'${vid}-dd')"
+      data-name="${data?.name||''}" data-video="${data?.video||''}">
+    ${vidBadgeHtml(data?.video||'')}${exEditBtnHtml()}
+    <div class="ex-dd" id="${vid}-dd"></div>
+  </div>
+  <button class="btn bd2 xs" style="margin-top:2px;flex-shrink:0" onclick="document.getElementById('${vid}').remove()">✕</button>`;
+  container.appendChild(div);
+}
+window.addExVariant=addExVariant;
 
 function addSR(cid,data=null){
   const c=document.getElementById(cid);const n=c.querySelectorAll('.sc-row').length+1;
@@ -2683,7 +2706,7 @@ function addCFEx(cid,data=null){
       <input type="text" class="ex-search" value="${data?.name||''}" placeholder="Ejercicio..."
         oninput="filterEx(this,'${eid}-dd')" onfocus="showDd(this,'${eid}-dd')"
         data-name="${data?.name||''}" data-video="${data?.video||''}">
-      ${vidBadgeHtml(data?.video||'')}
+      ${vidBadgeHtml(data?.video||'')}${exEditBtnHtml()}
       <div class="ex-dd" id="${eid}-dd"></div>
     </div>
     <button class="btn bd2 xs" style="flex-shrink:0" onclick="document.getElementById('${eid}').remove()">✕</button>`;
@@ -2723,7 +2746,8 @@ function filterEx(input,ddId){
     const f=exs.filter(e=>norm(e.name).includes(q));if(!f.length)continue;has=true;
     const gl=document.createElement('div');gl.className='ex-gl';gl.textContent=cat;dd.appendChild(gl);
     f.forEach(ex=>{const opt=document.createElement('div');opt.className='ex-opt';
-      opt.innerHTML=`<span>${ex.video?'🎬 ':''}${ex.name}</span><span class="ex-cat-lbl">${cat}</span>`;
+      if(ex.notes)opt.title=ex.notes;
+      opt.innerHTML=`<span>${ex.video?'🎬 ':''}${ex.name}${ex.notes?' 📝':''}</span><span class="ex-cat-lbl">${cat}</span>`;
       opt.onclick=()=>selEx(input,ddId,ex);dd.appendChild(opt)});
   }
   if(input.value.trim()){
@@ -2742,12 +2766,24 @@ function showDd(input,ddId){
     const gl=document.createElement('div');gl.className='ex-gl';gl.textContent=cat;dd.appendChild(gl);
     const list=activeCat?exs:exs.slice(0,3);
     list.forEach(ex=>{const opt=document.createElement('div');opt.className='ex-opt';
-      opt.innerHTML=`<span>${ex.video?'🎬 ':''}${ex.name}</span><span class="ex-cat-lbl">${cat}</span>`;
+      if(ex.notes)opt.title=ex.notes;
+      opt.innerHTML=`<span>${ex.video?'🎬 ':''}${ex.name}${ex.notes?' 📝':''}</span><span class="ex-cat-lbl">${cat}</span>`;
       opt.onclick=()=>selEx(input,ddId,ex);dd.appendChild(opt)});
   }
   dd.classList.add('open');
 }
 function vidBadgeHtml(video){return`<span class="ex-vid-badge" data-has="${video?'1':'0'}" style="display:${video?'block':'none'}" onmousedown="event.preventDefault();event.stopPropagation();window.open('${video}','_blank')" title="Ver video">🎬</span>`}
+function exEditBtnHtml(){return`<button type="button" class="ex-edit-btn" title="Editar este ejercicio en la biblioteca" onmousedown="event.preventDefault()" onclick="event.stopPropagation();openEditExFromPlan(this)" style="background:none;border:none;color:var(--mu);cursor:pointer;font-size:.85rem;padding:2px 4px;flex-shrink:0">✏️</button>`}
+window.openEditExFromPlan=function(btn){
+  const wrap=btn.closest('.ex-wrap');
+  const input=wrap.querySelector('.ex-search');
+  const name=(input.dataset.name||input.value).trim();
+  if(!name){toast('⚠️ Elegí un ejercicio primero');return}
+  const ex=exDB.find(e=>norm(e.name).trim()===norm(name).trim());
+  if(!ex){toast('⚠️ Ese ejercicio todavía no está en la biblioteca — agregalo primero');return}
+  openEditEx(ex.id);
+  pendingExTarget={input,ddId:null};
+};
 function updateVidBadge(input,video){
   const badge=input.parentElement.querySelector('.ex-vid-badge');if(!badge)return;
   badge.dataset.has=video?'1':'0';badge.style.display=video?'block':'none';
@@ -2805,7 +2841,8 @@ function collectBlockData(blk){
     const exercises=[...blk.querySelectorAll('.ex-entry')].map(en=>{
       const inp=en.querySelector('.ex-search');
       const scheme=[...en.querySelectorAll('.sc-row')].map(r=>({reps:r.querySelector('.sr-reps').value,load:r.querySelector('.sr-load').value}));
-      return{name:inp.dataset.name||inp.value,video:inp.dataset.video||'',obs:en.querySelector('.ex-obs').value,scheme};
+      const variants=[...en.querySelectorAll('.ex-variant-row')].map(vr=>{const vi=vr.querySelector('.ex-search');return{name:vi.dataset.name||vi.value,video:vi.dataset.video||''}}).filter(v=>v.name);
+      return{name:inp.dataset.name||inp.value,video:inp.dataset.video||'',obs:en.querySelector('.ex-obs').value,scheme,variants};
     }).filter(e=>e.name);
     const pauses=[...blk.querySelectorAll('.ex-sep-pause-inp')].map(i=>i.value);
     return{kind:'gym',type,rest,exercises,pauses};
@@ -3777,16 +3814,24 @@ function renderGymBlock(c,bkey,blk,bi){
   let inner='';
   blk.exercises.forEach((ex,ei)=>{
     const ekey=`${bkey}-e${ei}`;
-    const ytId=getYTId(ex.video);
-    const vidHtml=ytId?`<button class="btn bg2 sm" style="margin-top:6px" onclick="embedYT(this,'${ytId}')">▶ Ver video</button>`:ex.video?`<a href="${ex.video}" target="_blank" class="btn bg2 sm" style="margin-top:6px">▶ Ver video</a>`:'';
+    const vk=`${c.id}-${ekey}-variant`;
+    const selVariant=c.progress[vk]||0;
+    const activeEx=(selVariant>0&&ex.variants?.[selVariant-1])?ex.variants[selVariant-1]:ex;
+    const ytId=getYTId(activeEx.video);
+    const vidHtml=ytId?`<button class="btn bg2 sm" style="margin-top:6px" onclick="embedYT(this,'${ytId}')">▶ Ver video</button>`:activeEx.video?`<a href="${activeEx.video}" target="_blank" class="btn bg2 sm" style="margin-top:6px">▶ Ver video</a>`:'';
     if(ei>0){
       const pause=(blk.pauses||[])[ei-1]||'';
       const pauseTimerId=`${c.id}-${bkey}-pause${ei-1}`;
       const pauseBtn=pause?`<button onclick="launchExTimer('${pauseTimerId}','Pausa','${pause}')" style="background:var(--ac)22;color:var(--ac2);border:1px solid var(--ac)44;border-radius:7px;padding:4px 11px;font-size:.75rem;font-weight:700;font-family:inherit;cursor:pointer;margin-top:4px">⏱ ${pause}</button>`:'';
       inner+=`<div class="cv-sep">${typeLabel} — ${pause||'sin descanso'}${pauseBtn?`<br>${pauseBtn}`:''}</div>`;
     }
+    const variantChips=ex.variants?.length?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 6px">
+      <button onclick="selectExVariant('${c.id}','${ekey}','${vk}',0)" style="font-size:.72rem;font-weight:700;padding:4px 10px;border-radius:20px;cursor:pointer;font-family:inherit;border:1px solid var(--ac2);background:${selVariant===0?'var(--ac2)':'transparent'};color:${selVariant===0?'#fff':'var(--ac2)'}">${ex.name}</button>
+      ${ex.variants.map((v,vi)=>`<button onclick="selectExVariant('${c.id}','${ekey}','${vk}',${vi+1})" style="font-size:.72rem;font-weight:700;padding:4px 10px;border-radius:20px;cursor:pointer;font-family:inherit;border:1px solid var(--ac2);background:${selVariant===vi+1?'var(--ac2)':'transparent'};color:${selVariant===vi+1?'#fff':'var(--ac2)'}">${v.name}</button>`).join('')}
+    </div>`:'';
     inner+=`<div class="cv-ex">
-      <div class="cv-ex-name">${ex.name}${ex.video?` <a href="${ex.video}" target="_blank" style="font-size:.7rem;color:var(--ac2);text-decoration:none">▶</a>`:''}</div>
+      <div class="cv-ex-name">${activeEx.name}${activeEx.video?` <a href="${activeEx.video}" target="_blank" style="font-size:.7rem;color:var(--ac2);text-decoration:none">▶</a>`:''}</div>
+      ${variantChips}
       ${ex.obs?`<div class="cv-obs">📝 ${ex.obs}</div>`:''}`;
     let setCount=0;
     if(ex.scheme?.length){
@@ -4069,7 +4114,7 @@ function renderExDB(){
   el.innerHTML=filtered.map(ex=>{
     const ytId=getYTId(ex.video);
     return`<div class="exdb-row">
-      <span>${ex.name}</span>
+      <span>${ex.name}${ex.notes?` <span title="${ex.notes.replace(/"/g,'&quot;')}" style="cursor:help">📝</span>`:''}</span>
       <span><span class="exdb-cat">${ex.cat}</span></span>
       <span>${ytId?`<a href="${ex.video}" target="_blank" class="yt-link">▶ ver</a>`:ex.video?`<a href="${ex.video}" target="_blank" class="yt-link">🔗 link</a>`:'<span style="color:var(--mu);font-size:.75rem">sin video</span>'}</span>
       <span style="display:flex;gap:5px">
@@ -4085,6 +4130,7 @@ let pendingExTarget=null;
 window.openAddExModal=function(){
   document.getElementById('em-name').value='';
   document.getElementById('em-video').value='';
+  document.getElementById('em-notes').value='';
   document.getElementById('em-id').value='';
   document.getElementById('em-preview').style.display='none';
   document.getElementById('ex-modal-title').textContent='Agregar ejercicio';
@@ -4102,6 +4148,7 @@ window.openEditEx=function(id){
   document.getElementById('em-name').value=ex.name;
   document.getElementById('em-cat').value=ex.cat;
   document.getElementById('em-video').value=ex.video||'';
+  document.getElementById('em-notes').value=ex.notes||'';
   document.getElementById('em-id').value=ex.id;
   document.getElementById('ex-modal-title').textContent='Editar ejercicio';
   showVideoPreview(ex.video);
@@ -4163,6 +4210,7 @@ window.saveExercise=async function(){
   try{
   const cat=document.getElementById('em-cat').value;
   const video=document.getElementById('em-video').value.trim();
+  const notes=document.getElementById('em-notes').value.trim();
   const target=pendingExTarget;pendingExTarget=null;
   // Si el nombre ya existe en el catálogo (aunque se haya llegado acá por
   // "agregar" y no por el lápiz de editar), lo tratamos como edición del
@@ -4173,15 +4221,15 @@ window.saveExercise=async function(){
   if(existingId){
     const ex=exDB.find(e=>e.id===existingId);
     const oldName=ex?.name||name;
-    if(ex){ex.name=name;ex.cat=cat;ex.video=video;}
-    await setDoc(doc(db,'exercises',existingId),{id:existingId,name,cat,video});
+    if(ex){ex.name=name;ex.cat=cat;ex.video=video;ex.notes=notes;}
+    await setDoc(doc(db,'exercises',existingId),{id:existingId,name,cat,video,notes});
     toast('⏳ Actualizando en rutinas existentes...');
     await propagateExerciseEdit(oldName,name,video);
     toast('✅ Ejercicio actualizado en el catálogo y en todas las rutinas');
   } else {
     const id='ex'+Date.now();
-    await setDoc(doc(db,'exercises',id),{id,name,cat,video});
-    exDB.push({id,name,cat,video});
+    await setDoc(doc(db,'exercises',id),{id,name,cat,video,notes});
+    exDB.push({id,name,cat,video,notes});
     toast('✅ Ejercicio agregado');
   }
   document.getElementById('ex-modal').classList.remove('open');renderExDB();populateCatFilter();
@@ -4189,6 +4237,8 @@ window.saveExercise=async function(){
     target.input.value=name;
     target.input.dataset.name=name;
     target.input.dataset.video=video;
+    updateVidBadge(target.input,video);
+    updateBlkNames(target.input);
     target.input.focus();
   }
   }finally{savingExercise=false;}
@@ -5005,7 +5055,7 @@ async function updatePlan(){
         return{kind:'warmup',duration,series,exercises};
       } else if(blk.dataset.kind==='gym'){
         const type=blk.dataset.type;const rest=blk.querySelector('.sg-rest').value;
-        const exercises=[...blk.querySelectorAll('.ex-entry')].map(en=>{const inp=en.querySelector('.ex-search');const scheme=[...en.querySelectorAll('.sc-row')].map(r=>({reps:r.querySelector('.sr-reps').value,load:r.querySelector('.sr-load').value}));return{name:inp.dataset.name||inp.value,video:inp.dataset.video||'',obs:en.querySelector('.ex-obs').value,scheme};}).filter(e=>e.name);
+        const exercises=[...blk.querySelectorAll('.ex-entry')].map(en=>{const inp=en.querySelector('.ex-search');const scheme=[...en.querySelectorAll('.sc-row')].map(r=>({reps:r.querySelector('.sr-reps').value,load:r.querySelector('.sr-load').value}));const variants=[...en.querySelectorAll('.ex-variant-row')].map(vr=>{const vi=vr.querySelector('.ex-search');return{name:vi.dataset.name||vi.value,video:vi.dataset.video||''}}).filter(v=>v.name);return{name:inp.dataset.name||inp.value,video:inp.dataset.video||'',obs:en.querySelector('.ex-obs').value,scheme,variants};}).filter(e=>e.name);
         const pauses=[...blk.querySelectorAll('.ex-sep-pause-inp')].map(i=>i.value);
         return{kind:'gym',type,rest,exercises,pauses};
       } else {
@@ -6141,6 +6191,35 @@ window.logGym=async function(cId,ekey){
     return;
   }
   origLogGym(cId,ekey);
+};
+
+window.selectExVariant=async function(cId,ekey,vk,idx){
+  if(cId.startsWith('alu-')){
+    if(!alumnoState.sub.progress)alumnoState.sub.progress={};
+    alumnoState.sub.progress[vk]=idx;
+    try{await persistAlumnoProgress()}catch(e){toast('⚠️ No se pudo guardar, probá de nuevo');return}
+    const dIdx=parseInt(ekey.split('-')[1]);
+    const uid=alumnoState.uid;
+    const member={id:'sub',name:alumnoState.sub.name,email:alumnoState.sub.email,status:alumnoState.sub.status,expiry:alumnoState.sub.expiry,startDate:alumnoState.sub.startDate||'',startWeek:alumnoState.sub.startWeek||1,progress:alumnoState.sub.progress};
+    renderAlumnoDay(alumnoState.plan,member,dIdx,uid);
+    return;
+  }
+  if(cId.startsWith('grp::')){
+    const[,planId,memberId]=cId.split('::');
+    const plan=planes.find(p=>p.id===planId);if(!plan)return;
+    const member=resolveGroupMember(plan,memberId);if(!member)return;
+    if(!member.progress)member.progress={};
+    member.progress[vk]=idx;
+    try{await setDoc(doc(db,'planes',planId,'progreso',memberId),{progress:member.progress})}catch(e){toast('⚠️ No se pudo guardar, probá de nuevo');return}
+    const dIdx=parseInt(ekey.split('-')[1]);
+    renderGroupDay(plan,member,dIdx);
+    return;
+  }
+  const c=clients.find(cl=>cl.id===cId);if(!c)return;
+  c.progress[vk]=idx;
+  try{await updateDoc(doc(db,'clients',cId),{progress:c.progress})}catch(e){toast('⚠️ No se pudo guardar, probá de nuevo');return}
+  const dIdx=parseInt(ekey.split('-')[1]);
+  renderDay(cId,dIdx);
 };
 
 const origLogCF=window.logCF;
