@@ -6956,7 +6956,9 @@ function cfTimerUpdateDisplay(){
     sub.textContent=`${phase}${exTxt} · Ronda ${cfTimer.currentRound} / ${cfTimer.rounds}`;
   } else if(cfTimer.mode==='emom'){
     const minuto=cfTimer.currentRound;
-    sub.textContent=isFinite(cfTimer.rounds)?`Minuto ${minuto} / ${cfTimer.rounds}`:`Minuto ${minuto}`;
+    const minTxt=isFinite(cfTimer.rounds)?`Minuto ${minuto} / ${cfTimer.rounds}`:`Minuto ${minuto}`;
+    const exList=(cfTimer.exercises&&cfTimer.exercises.length>1)?' · '+cfTimer.exercises.map((n,i)=>`${i+1}) ${n}`).join(' '):'';
+    sub.textContent=minTxt+exList;
   } else if(cfTimer.mode==='fortime'){
     sub.textContent=cfTimer.capped?'⏱ ¡TIME CAP!':'⏱ Tiempo transcurrido';
     disp.textContent=fmtTime(cfTimer.currentSecs);
