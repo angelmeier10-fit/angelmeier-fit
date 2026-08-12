@@ -45,30 +45,46 @@ contentPanel/state
 ```js
 {
   checks: {
-    "m1": true, "m2": false, /* ...un booleano por cada checkbox existente
-                                  en el panel: piezas de marca (m1-m8),
-                                  prompts (p1-p5), stickers de imagen
-                                  (stk-e-img, stk-m-img, stk-c-img) */
+    "m1": true, "m2": false, /* ...un booleano por cada checkbox del panel:
+                                  piezas de marca (m1-m8), prompts (p1-p5),
+                                  stickers de imagen (stk-e-img, stk-m-img,
+                                  stk-c-img), los checks de temas fijos
+                                  (lanz-whatsapp, lanz-img, tt-guion,
+                                  tt-subtitulos, tt-caption, tt-hashtags),
+                                  y los checks de temas dinámicos
+                                  (`${topicId}-post-chk`, etc., ver abajo) */
   },
   topics: [
     {
-      id: "topic-<timestamp>",
-      title: "Nombre del tema",
-      promptText: "texto del prompt para ChatGPT",
-      done: false
+      id: "t<timestamp>",
+      name: "Nombre del tema",
+      post: "copy del post/carrusel",
+      stories: "copy de historias",
+      slides: "copy de las slides (opcional, string vacío si no aplica)"
     }
-    // ...uno por cada tema agregado en la sección "Publicaciones"
+    // ...uno por cada tema agregado a mano en "Publicaciones"
   ]
 }
 ```
 
-- `checks`: mapa plano `id del checkbox -> boolean`. Los ids son los mismos
-  que ya usa el HTML del panel actual (`m1`..`m8`, `p1`..`p5`,
-  `stk-e-img`, `stk-m-img`, `stk-c-img`, y cualquier checkbox de tema
-  agregado dinámicamente).
-- `topics`: array de temas agregados a mano en la sección "Publicaciones"
-  (hoy viven en memoria/localStorage en el Artifact). Cada uno tiene su
-  propio `done` para el estado de "hecho/pendiente" de esa publicación.
+**Corrección tras leer el HTML real del Artifact** (guardado en
+`.claude/…/tool-results/artifact-bf946d38-…html`, líneas 1841-2083): el
+diseño original de este spec asumía `topics` con `{title, promptText,
+done}` — no es así. La estructura real es `{id, name, post, stories,
+slides}` (tres campos de copy separados: post, historias, slides), sin un
+campo `done` propio: cada tema arma dinámicamente hasta 3 bloques
+(`blockHTML` en el script actual) — post, historias, y slides si
+`slides` no está vacío —, y cada bloque tiene su propio checkbox
+(`${id}-post-chk`, `${id}-stories-chk`, `${id}-slides-chk`) que vive en el
+mismo mapa `checks` que todo lo demás, no en el objeto del tema.
+
+- `checks`: mapa plano `id del checkbox -> boolean`, igual para checkboxes
+  fijos del HTML y para los que se generan al renderizar cada tema
+  dinámico.
+- `topics`: array de temas agregados a mano en la sección "Publicaciones".
+  Todo tema trae `post`/`stories`; `slides` es opcional (string vacío si
+  el tema no es carrusel — así decide `renderTopics()` si mostrar el
+  bloque de slides y si el pill dice "Carrusel" o "Post").
 - Solo estado actual, sin historial de quién tildó qué ni cuándo (decisión
   tomada en brainstorming): cada cambio sobreescribe el campo
   correspondiente con `setDoc(...,{merge:true})`.
@@ -112,6 +128,12 @@ copia tal cual a `contenido.html`. Lo único que cambia es:
 - La barra de progreso general y los contadores (`count-prompts`,
   `count-topics`) se recalculan a partir del estado de Firestore en vez
   del DOM/localStorage.
+- La sección `#sync` ("Sincronizar entre dispositivos", el workaround
+  actual de copiar/pegar un código en base64 entre navegadores) **se
+  elimina por completo** — Firestore hace exactamente eso automáticamente,
+  el workaround manual queda obsoleto. Sacar también la referencia a esta
+  sección del nav lateral y el texto del footer que menciona "Usá
+  Sincronizar para verlos en otro dispositivo".
 
 ## Alcance / fuera de alcance
 
