@@ -1851,6 +1851,66 @@ let isClientMode=false;
 
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2400)}
 function norm(s){return(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')}
+function exPersonKey(name,email){return((name||'')+'|'+(email||'')).toLowerCase().trim()}
+function jsAttr(s){return(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;')}
+let exHistoryCache={};
+async function ensureExHistory(personKey,onLoaded){
+  if(exHistoryCache[personKey])return exHistoryCache[personKey];
+  let data={ex:{}};
+  try{
+    const snap=await getDoc(doc(db,'exHistory',personKey));
+    if(snap.exists())data=snap.data();
+  }catch(e){/* sin conexión: se muestra sin historial, no bloquea */}
+  exHistoryCache[personKey]=data;
+  if(onLoaded)onLoaded();
+  return data;
+}
+async function recordExMax(personKey,exName,weight,reps){
+  const w=parseFloat(weight);
+  if(!w||w<=0)return; // sin peso no hay máximo que registrar
+  await ensureExHistory(personKey);
+  const key=norm(exName).trim();
+  const cur=exHistoryCache[personKey]||{ex:{}};
+  const prevMax=cur.ex?.[key]?.max;
+  const today=new Date().toLocaleDateString('es-AR');
+  const entry={weight:w,reps:reps||'',date:today};
+  const update={};
+  update.last=entry;
+  if(!prevMax||w>prevMax.weight)update.max=entry;
+  if(!cur.ex)cur.ex={};
+  cur.ex[key]={...cur.ex[key],...update};
+  exHistoryCache[personKey]=cur;
+  await setDoc(doc(db,'exHistory',personKey),{ex:{[key]:update}},{merge:true});
+}
+async function saveExNote(personKey,exName,note){
+  const key=norm(exName).trim();
+  const cur=exHistoryCache[personKey]||{ex:{}};
+  if(!cur.ex)cur.ex={};
+  cur.ex[key]={...cur.ex[key],note};
+  exHistoryCache[personKey]=cur;
+  await setDoc(doc(db,'exHistory',personKey),{ex:{[key]:{note}}},{merge:true});
+}
+window.editExNote=async function(clientId,personKey,exName,dIdx){
+  const cur=exHistoryCache[personKey]?.ex?.[norm(exName).trim()]?.note||'';
+  const txt=prompt('Nota para este alumno sobre "'+exName+'":',cur);
+  if(txt===null)return; // canceló
+  await saveExNote(personKey,exName,txt.trim());
+  toast('📝 Nota guardada');
+  renderDay(clientId,dIdx);
+};
+function exHistoryRowHtml(personKey,exName){
+  const h=exHistoryCache[personKey];
+  if(!h)return'';
+  const e=h.ex?.[norm(exName).trim()];
+  if(!e)return'';
+  const parts=[];
+  if(e.max)parts.push(`🏆 Máx: ${e.max.weight}kg${e.max.reps?' × '+e.max.reps:''}`);
+  if(e.last)parts.push(`Último: ${e.last.weight}kg${e.last.reps?' × '+e.last.reps:''} (${e.last.date})`);
+  let html='';
+  if(parts.length)html+=`<div style="font-size:.76rem;color:var(--ac2);font-weight:700;margin:2px 0 4px">${parts.join(' · ')}</div>`;
+  if(e.note)html+=`<div style="font-size:.76rem;color:var(--mu);font-style:italic;margin-bottom:4px">📝 ${e.note}</div>`;
+  return html;
+}
 function getYTId(url){if(!url)return null;const m=url.match(/(?:shorts\/|v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);return m?m[1]:null}
 function hideLoading(){document.getElementById('loading').style.display='none'}
 
@@ -3680,6 +3740,10 @@ window.toggleDayAcc=function(clientId,idx){
 
 function renderDay(clientId,dIdx){
   const c=clients.find(cl=>cl.id===clientId);
+  if(c){
+    const pk=exPersonKey(c.name,c.email||'');
+    if(!exHistoryCache[pk])ensureExHistory(pk,()=>renderDay(clientId,dIdx));
+  }
   const day=c.days[dIdx];
   const container=document.getElementById('day-view-'+clientId);
   if(!container)return;
@@ -3689,8 +3753,8 @@ function renderDay(clientId,dIdx){
   day.blocks.forEach((blk,bi)=>{
     const bkey=`w${dayWeek}-${dIdx}-${bi}`;
     if(blk.kind==='warmup') html+=renderWarmupBlock(c,bkey,blk,bi);
-    else if(blk.kind==='gym') html+=renderGymBlock(c,bkey,blk,bi);
-    else if(blk.kind==='func') html+=renderFuncBlock(c,bkey,blk,bi);
+    else if(blk.kind==='gym') html+=renderGymBlock(c,bkey,blk,bi,true);
+    else if(blk.kind==='func') html+=renderFuncBlock(c,bkey,blk,bi,true);
     else html+=renderCFBlock(c,bkey,blk,bi);
   });
   // Session notes for this day
@@ -3750,7 +3814,8 @@ function renderWarmupBlock(c,bkey,blk,bi){
   </div>`;
 }
 
-function renderFuncBlock(c,bkey,blk,bi){
+function renderFuncBlock(c,bkey,blk,bi,isAdminView){
+  const dIdx=bkey.split('-')[1];
   let inner='';
   // Description
   if(blk.desc){
@@ -3778,6 +3843,8 @@ function renderFuncBlock(c,bkey,blk,bi){
       </button>`:'';
       inner+=`<div class="cv-ex">
         <div class="cv-ex-name">${ex.name}${ex.reps?' <span style="color:var(--ac2);font-size:.78rem">× '+ex.reps+'</span>':''}</div>
+        ${exHistoryRowHtml(exPersonKey(c.name,c.email||''),ex.name)}
+        ${isAdminView?`<button type="button" onclick="editExNote('${c.id}','${jsAttr(exPersonKey(c.name,c.email||''))}','${jsAttr(ex.name)}',${dIdx})" style="background:none;border:none;color:var(--mu);cursor:pointer;font-size:.72rem;padding:0 0 4px">✏️ nota</button>`:''}
         ${vidHtml}
         ${timerBtn}
         <div class="plog">
@@ -3785,7 +3852,7 @@ function renderFuncBlock(c,bkey,blk,bi){
           <div class="lr">
             <input type="number" id="pw-${c.id}-${ekey}" placeholder="${lastLog?.weight?'Último: '+lastLog.weight+'kg':'Peso (kg)'}" step="0.5">
             <input type="number" id="pr-${c.id}-${ekey}" placeholder="${lastLog?.reps?'Último: '+lastLog.reps+' rep':'Reps'}">
-            <button class="btn bgr sm" onclick="logGym('${c.id}','${ekey}')">✓</button>
+            <button class="btn bgr sm" onclick="logGym('${c.id}','${ekey}','${jsAttr(ex.name)}')">✓</button>
           </div>
           ${logs.slice(-3).reverse().map((l,ri)=>{const realIdx=logs.length-1-ri;return`<div class="lent"><span>${l.date}</span><span class="lv">${l.weight?l.weight+'kg':'—'} × ${l.reps||'—'}</span><button onclick="deleteLog('${c.id}','${ekey}',${realIdx})" style="background:none;border:none;color:var(--mu);cursor:pointer;font-size:.75rem;padding:0 4px">✕</button></div>`;}).join('')}
         </div>
@@ -3806,7 +3873,8 @@ function renderFuncBlock(c,bkey,blk,bi){
   </div>`;
 }
 
-function renderGymBlock(c,bkey,blk,bi){
+function renderGymBlock(c,bkey,blk,bi,isAdminView){
+  const dIdx=bkey.split('-')[1];
   const typeBadge=blk.type==='tri'?'<span class="badge bgr2">🟢 Triserie</span>':blk.type==='super'?'<span class="badge byw2">🟡 Superserie</span>':blk.type==='giant'?'<span class="badge" style="background:#f8717122;color:var(--rd)">🔴 Serie gigante</span>':'';
   const mainTitle=blk.exercises.map(e=>e.name).join(' + ');
   const totalSeries=blk.exercises[0]?.scheme?.length||0;
@@ -3831,6 +3899,8 @@ function renderGymBlock(c,bkey,blk,bi){
     </div>`:'';
     inner+=`<div class="cv-ex">
       <div class="cv-ex-name">${activeEx.name}${activeEx.video?` <a href="${activeEx.video}" target="_blank" style="font-size:.7rem;color:var(--ac2);text-decoration:none">▶</a>`:''}</div>
+      ${exHistoryRowHtml(exPersonKey(c.name,c.email||''),activeEx.name)}
+      ${isAdminView?`<button type="button" onclick="editExNote('${c.id}','${jsAttr(exPersonKey(c.name,c.email||''))}','${jsAttr(activeEx.name)}',${dIdx})" style="background:none;border:none;color:var(--mu);cursor:pointer;font-size:.72rem;padding:0 0 4px">✏️ nota</button>`:''}
       ${variantChips}
       ${ex.obs?`<div class="cv-obs">📝 ${ex.obs}</div>`:''}`;
     let setCount=0;
@@ -3852,7 +3922,7 @@ function renderGymBlock(c,bkey,blk,bi){
     const lastLog=logs.length?logs[logs.length-1]:null;
     inner+=`<div class="plog">
       <div style="font-size:.69rem;color:var(--mu);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">📊 Registrar sesión</div>
-      <div class="lr">${setCount?'':`<input type="number" id="pw-${c.id}-${ekey}" placeholder="${lastLog&&lastLog.weight?'Último: '+lastLog.weight+'kg':'Peso (kg)'}" step="0.5">`}<input type="number" id="pr-${c.id}-${ekey}" placeholder="${lastLog&&lastLog.reps?'Último: '+lastLog.reps+'rep':'Reps (opcional)'}"><input type="hidden" data-setcount="${setCount}" id="pwcount-${c.id}-${ekey}"><button class="btn bgr sm" onclick="logGym('${c.id}','${ekey}')">✓ Guardar pesos</button></div>
+      <div class="lr">${setCount?'':`<input type="number" id="pw-${c.id}-${ekey}" placeholder="${lastLog&&lastLog.weight?'Último: '+lastLog.weight+'kg':'Peso (kg)'}" step="0.5">`}<input type="number" id="pr-${c.id}-${ekey}" placeholder="${lastLog&&lastLog.reps?'Último: '+lastLog.reps+'rep':'Reps (opcional)'}"><input type="hidden" data-setcount="${setCount}" id="pwcount-${c.id}-${ekey}"><button class="btn bgr sm" onclick="logGym('${c.id}','${ekey}','${jsAttr(activeEx.name)}')">✓ Guardar pesos</button></div>
       <input type="text" id="pn-${c.id}-${ekey}" placeholder="Nota (opcional): ej. usé mancuernas..." style="margin-top:5px;font-size:.78rem;padding:6px 10px;border-radius:8px;border:1px solid var(--bd);background:var(--s2);color:var(--tx);width:100%;box-sizing:border-box">
       ${logsHtml}</div></div>`;
   });
@@ -3999,7 +4069,7 @@ function clearSetWeights(cId,ekey,setCount){
     const inp=document.getElementById(`sw-${cId}-${ekey}-${si}`);if(inp)inp.value='';
   }
 }
-window.logGym=async function(cId,ekey){
+window.logGym=async function(cId,ekey,exName){
   const c=clients.find(cl=>cl.id===cId);
   const weights=collectSetWeights(cId,ekey);
   const singleW=document.getElementById('pw-'+cId+'-'+ekey)?.value||'';
@@ -4014,6 +4084,7 @@ window.logGym=async function(cId,ekey){
   if(n)entry.note=n;
   c.progress[key].push(entry);
   await updateDoc(doc(db,'clients',cId),{progress:c.progress});
+  if(exName)recordExMax(exPersonKey(c.name,c.email||''),exName,singleW||weights.filter(w=>w).slice(-1)[0]||'',r).catch(()=>{});
   if(document.getElementById('pw-'+cId+'-'+ekey))document.getElementById('pw-'+cId+'-'+ekey).value='';
   document.getElementById('pr-'+cId+'-'+ekey).value='';
   if(document.getElementById('pn-'+cId+'-'+ekey))document.getElementById('pn-'+cId+'-'+ekey).value='';
@@ -6031,6 +6102,8 @@ window.selectGroupCVDay=function(planId,memberId,idx){
 };
 
 function renderGroupDay(plan,member,dIdx){
+  const pk=exPersonKey(member.name,member.email||'');
+  if(!exHistoryCache[pk])ensureExHistory(pk,()=>renderGroupDay(plan,member,dIdx));
   const days=getMemberPlanDays(plan,member);
   const day=days[dIdx];
   const gkey=`${plan.id}-${member.id}`;
@@ -6038,7 +6111,7 @@ function renderGroupDay(plan,member,dIdx){
   if(!container)return;
   if(!day||!day.blocks?.length){container.innerHTML='<div style="text-align:center;padding:40px;color:var(--mu)">Sin bloques en este día.</div>';return}
   // Reuse same render functions but with plan+member as client proxy
-  const fakeClient={id:`grp::${plan.id}::${member.id}`,progress:member.progress||{},days};
+  const fakeClient={id:`grp::${plan.id}::${member.id}`,name:member.name,email:member.email||'',progress:member.progress||{},days};
   const memberWeek=getMemberCurrentWeekNum(plan,member)||1;
   let html='';
   day.blocks.forEach((blk,bi)=>{
@@ -6130,7 +6203,7 @@ window.toggleSerie=async function(cId,ekey,si,rk,isLast,blockRest,pauseSecs){
 };
 
 const origLogGym=window.logGym;
-window.logGym=async function(cId,ekey){
+window.logGym=async function(cId,ekey,exName){
   if(cId.startsWith('alu-')){
     const weights=collectSetWeights(cId,ekey);
     const singleW=document.getElementById('pw-'+cId+'-'+ekey)?.value||'';
@@ -6153,6 +6226,7 @@ window.logGym=async function(cId,ekey){
       toast('⚠️ No se pudo guardar, probá de nuevo');
       return;
     }
+    if(exName)recordExMax(exPersonKey(alumnoState.sub.name,alumnoState.sub.email||''),exName,singleW||weights.filter(w=>w).slice(-1)[0]||'',r).catch(()=>{});
     if(document.getElementById('pw-'+cId+'-'+ekey))document.getElementById('pw-'+cId+'-'+ekey).value='';
     document.getElementById('pr-'+cId+'-'+ekey).value='';
     if(document.getElementById('pn-'+cId+'-'+ekey))document.getElementById('pn-'+cId+'-'+ekey).value='';
@@ -6183,6 +6257,7 @@ window.logGym=async function(cId,ekey){
     if(n)entry.note=n;
     member.progress[key].push(entry);
     await setDoc(doc(db,'planes',planId,'progreso',memberId),{progress:member.progress});
+    if(exName)recordExMax(exPersonKey(member.name,member.email||''),exName,singleW||weights.filter(w=>w).slice(-1)[0]||'',r).catch(()=>{});
     if(document.getElementById('pw-'+cId+'-'+ekey))document.getElementById('pw-'+cId+'-'+ekey).value='';
     document.getElementById('pr-'+cId+'-'+ekey).value='';
     if(document.getElementById('pn-'+cId+'-'+ekey))document.getElementById('pn-'+cId+'-'+ekey).value='';
@@ -6190,7 +6265,7 @@ window.logGym=async function(cId,ekey){
     toast('📊 Guardado');const dIdx=parseInt(ekey.split('-')[1]);renderGroupDay(plan,member,dIdx);
     return;
   }
-  origLogGym(cId,ekey);
+  origLogGym(cId,ekey,exName);
 };
 
 window.selectExVariant=async function(cId,ekey,vk,idx){
@@ -6431,13 +6506,15 @@ window.selectAlumnoCVDay=function(idx){
 };
 
 function renderAlumnoDay(plan,member,dIdx,uid){
+  const pk=exPersonKey(member.name,member.email||'');
+  if(!exHistoryCache[pk])ensureExHistory(pk,()=>renderAlumnoDay(plan,member,dIdx,uid));
   const days=getMemberPlanDays(plan,member);
   const day=days[dIdx];
   const akey='alu-'+uid;
   const container=document.getElementById('aday-view-'+akey);
   if(!container)return;
   if(!day||!day.blocks?.length){container.innerHTML='<div style="text-align:center;padding:40px;color:var(--mu)">Sin bloques en este día.</div>';return}
-  const fakeClient={id:akey,progress:member.progress||{},days};
+  const fakeClient={id:akey,name:member.name,email:member.email||'',progress:member.progress||{},days};
   const memberWeek=getMemberCurrentWeekNum(plan,member)||1;
   let html='';
   day.blocks.forEach((blk,bi)=>{
