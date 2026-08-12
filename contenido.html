@@ -179,7 +179,20 @@
     border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface-2);
     padding: 18px; margin-bottom: 18px;
   }
-  .topic-head{ display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .topic-head{ display: flex; align-items: center; gap: 10px; margin-bottom: 12px; cursor: pointer; }
+  .topic-head::before{
+    content: "▸"; color: var(--accent); font-size: 0.8rem; flex: none; transition: transform .15s ease;
+  }
+  .topic:not(.collapsed) .topic-head::before{ transform: rotate(90deg); }
+  .topic.collapsed .topic-head{ margin-bottom: 0; }
+  .topic.collapsed > *:not(.topic-head){ display: none; }
+  .rec-item{ border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; background: var(--bg); }
+  .rec-add{ display: flex; gap: 6px; margin-top: 10px; }
+  .rec-add input{
+    flex: 1; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--ink);
+    padding: 7px 10px; font-size: 0.85rem; font-family: var(--body-font);
+  }
+  .rec-del-btn{ color: #c0392b; border-color: #c0392b; }
   .topic-head h3{ margin: 0; font-size: 1.05rem; }
   .topic-head .pill{
     font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
@@ -486,7 +499,7 @@ Mostrame cada una con foto placeholder y el texto de ejemplo: "¿Te duele la esp
     <p class="lede">Frases, tips y CTAs sueltos para usar cuando falte contenido del día — no están atados a ninguna fecha ni semana, se repiten y reciclan seguido.</p>
 
     <div class="grid-2">
-      <details class="cat-collapse">
+      <details class="cat-collapse" data-cat-id="entrenando">
         <summary>Entrenando</summary>
         <div class="cat-body">
         <div class="stack" style="margin-top:12px">
@@ -513,10 +526,15 @@ Necesito una plantilla base para historias diarias (formato vertical 1080x1920) 
             <button class="copy-btn" data-copy-target="text-stk-e-img">Copiar prompt</button>
           </div>
         </details>
+        <div class="stack" id="rec-list-entrenando" style="margin-top:10px"></div>
+        <div class="rec-add">
+          <input type="text" id="rec-input-entrenando" placeholder="Nueva idea...">
+          <button type="button" class="copy-btn" data-add-rec="entrenando">+ Agregar</button>
+        </div>
         </div>
       </details>
 
-      <details class="cat-collapse">
+      <details class="cat-collapse" data-cat-id="masajes">
         <summary>Haciendo masajes</summary>
         <div class="cat-body">
         <div class="stack" style="margin-top:12px">
@@ -543,10 +561,15 @@ Necesito una plantilla base para historias diarias (formato vertical 1080x1920) 
             <button class="copy-btn" data-copy-target="text-stk-m-img">Copiar prompt</button>
           </div>
         </details>
+        <div class="stack" id="rec-list-masajes" style="margin-top:10px"></div>
+        <div class="rec-add">
+          <input type="text" id="rec-input-masajes" placeholder="Nueva idea...">
+          <button type="button" class="copy-btn" data-add-rec="masajes">+ Agregar</button>
+        </div>
         </div>
       </details>
 
-      <details class="cat-collapse">
+      <details class="cat-collapse" data-cat-id="cruce">
         <summary>Cruce (entrenamiento + masajes)</summary>
         <div class="cat-body">
         <div class="stack" style="margin-top:12px">
@@ -571,10 +594,15 @@ Necesito una plantilla base para historias diarias (formato vertical 1080x1920) 
             <button class="copy-btn" data-copy-target="text-stk-c-img">Copiar prompt</button>
           </div>
         </details>
+        <div class="stack" id="rec-list-cruce" style="margin-top:10px"></div>
+        <div class="rec-add">
+          <input type="text" id="rec-input-cruce" placeholder="Nueva idea...">
+          <button type="button" class="copy-btn" data-add-rec="cruce">+ Agregar</button>
+        </div>
         </div>
       </details>
 
-      <details class="cat-collapse">
+      <details class="cat-collapse" data-cat-id="encuesta-masajes">
         <summary>Encuesta (Sí/No) — masajes</summary>
         <div class="cat-body">
         <div class="stack" style="margin-top:12px">
@@ -604,10 +632,15 @@ Necesito una plantilla de fondo para historia de encuesta (formato vertical 1080
             <button class="copy-btn" data-copy-target="text-stk-pm-img">Copiar prompt</button>
           </div>
         </details>
+        <div class="stack" id="rec-list-encuesta-masajes" style="margin-top:10px"></div>
+        <div class="rec-add">
+          <input type="text" id="rec-input-encuesta-masajes" placeholder="Nueva idea...">
+          <button type="button" class="copy-btn" data-add-rec="encuesta-masajes">+ Agregar</button>
+        </div>
         </div>
       </details>
 
-      <details class="cat-collapse">
+      <details class="cat-collapse" data-cat-id="encuesta-entrenamiento">
         <summary>Encuesta (Sí/No) — entrenamiento</summary>
         <div class="cat-body">
         <div class="stack" style="margin-top:12px">
@@ -635,10 +668,15 @@ Necesito una plantilla de fondo para historia de encuesta (formato vertical 1080
             <button class="copy-btn" data-copy-target="text-stk-pe-img">Copiar prompt</button>
           </div>
         </details>
+        <div class="stack" id="rec-list-encuesta-entrenamiento" style="margin-top:10px"></div>
+        <div class="rec-add">
+          <input type="text" id="rec-input-encuesta-entrenamiento" placeholder="Nueva idea...">
+          <button type="button" class="copy-btn" data-add-rec="encuesta-entrenamiento">+ Agregar</button>
+        </div>
         </div>
       </details>
 
-      <details class="cat-collapse">
+      <details class="cat-collapse" data-cat-id="pregunta-abierta">
         <summary>Pregunta abierta (sticker "Preguntas")</summary>
         <div class="cat-body">
         <div class="stack" style="margin-top:12px">
@@ -666,10 +704,15 @@ Necesito una plantilla de fondo para historia de pregunta abierta (formato verti
             <button class="copy-btn" data-copy-target="text-stk-q-img">Copiar prompt</button>
           </div>
         </details>
+        <div class="stack" id="rec-list-pregunta-abierta" style="margin-top:10px"></div>
+        <div class="rec-add">
+          <input type="text" id="rec-input-pregunta-abierta" placeholder="Nueva idea...">
+          <button type="button" class="copy-btn" data-add-rec="pregunta-abierta">+ Agregar</button>
+        </div>
         </div>
       </details>
 
-      <details class="cat-collapse">
+      <details class="cat-collapse" data-cat-id="encuesta-multiple">
         <summary>Encuesta múltiple (opción a elegir)</summary>
         <div class="cat-body">
         <div class="stack" style="margin-top:12px">
@@ -697,10 +740,15 @@ Necesito una plantilla de fondo para historia de encuesta con dos opciones a ele
             <button class="copy-btn" data-copy-target="text-stk-o-img">Copiar prompt</button>
           </div>
         </details>
+        <div class="stack" id="rec-list-encuesta-multiple" style="margin-top:10px"></div>
+        <div class="rec-add">
+          <input type="text" id="rec-input-encuesta-multiple" placeholder="Nueva idea...">
+          <button type="button" class="copy-btn" data-add-rec="encuesta-multiple">+ Agregar</button>
+        </div>
         </div>
       </details>
 
-      <details class="cat-collapse">
+      <details class="cat-collapse" data-cat-id="tips">
         <summary>Tips rápidos (mini-consejos)</summary>
         <div class="cat-body">
         <div class="stack" style="margin-top:12px">
@@ -711,10 +759,15 @@ Necesito una plantilla de fondo para historia de encuesta con dos opciones a ele
           <div><pre class="copy" id="text-stk-t5">Tip: tomar agua ANTES de entrenar, no solo durante</pre><button class="copy-btn" data-copy-target="text-stk-t5">Copiar</button></div>
           <div><pre class="copy" id="text-stk-t6">Tip: si dudás de la técnica de un ejercicio, mejor bajar el peso que arriesgarte</pre><button class="copy-btn" data-copy-target="text-stk-t6">Copiar</button></div>
         </div>
+        <div class="stack" id="rec-list-tips" style="margin-top:10px"></div>
+        <div class="rec-add">
+          <input type="text" id="rec-input-tips" placeholder="Nueva idea...">
+          <button type="button" class="copy-btn" data-add-rec="tips">+ Agregar</button>
+        </div>
         </div>
       </details>
 
-      <details class="cat-collapse">
+      <details class="cat-collapse" data-cat-id="recordatorios">
         <summary>Recordatorios / CTA sueltos</summary>
         <div class="cat-body">
         <div class="stack" style="margin-top:12px">
@@ -723,6 +776,11 @@ Necesito una plantilla de fondo para historia de encuesta con dos opciones a ele
           <div><pre class="copy" id="text-stk-r3">¿Dudas sobre por dónde arrancar? Te respondo yo, no un cartel del gym</pre><button class="copy-btn" data-copy-target="text-stk-r3">Copiar</button></div>
           <div><pre class="copy" id="text-stk-r4">Evaluación gratuita esta semana — link en bio</pre><button class="copy-btn" data-copy-target="text-stk-r4">Copiar</button></div>
           <div><pre class="copy" id="text-stk-r5">Recordá: un plan simple que cumplís gana a uno perfecto que abandonás</pre><button class="copy-btn" data-copy-target="text-stk-r5">Copiar</button></div>
+        </div>
+        <div class="stack" id="rec-list-recordatorios" style="margin-top:10px"></div>
+        <div class="rec-add">
+          <input type="text" id="rec-input-recordatorios" placeholder="Nueva idea...">
+          <button type="button" class="copy-btn" data-add-rec="recordatorios">+ Agregar</button>
         </div>
         </div>
       </details>
@@ -2604,9 +2662,82 @@ function startPanel(){
   const stateRef = doc(db, 'contentPanel', 'state');
   let state = {};
   let topics = [];
+  let recurrentes = {};
+  const REC_CAT_IDS = ['entrenando','masajes','cruce','encuesta-masajes','encuesta-entrenamiento','pregunta-abierta','encuesta-multiple','tips','recordatorios'];
 
   function saveState(){ setDoc(stateRef, { checks: state }, { merge: true }).catch(()=>{}); }
   function saveTopics(){ setDoc(stateRef, { topics }, { merge: true }).catch(()=>{}); }
+  function saveRecurrentes(){ setDoc(stateRef, { recurrentes }, { merge: true }).catch(()=>{}); }
+
+  function escapeHtml(s){ return (s||'').replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+
+  function renderRecurrenteList(catId){
+    const container = document.getElementById('rec-list-'+catId);
+    if(!container)return;
+    const items = recurrentes[catId] || [];
+    container.innerHTML = items.map(it => `
+      <div class="rec-item" data-id="${it.id}">
+        <pre class="copy" id="text-rec-${it.id}">${escapeHtml(it.text)}</pre>
+        <div style="display:flex;gap:6px;margin-top:6px">
+          <button type="button" class="copy-btn" data-copy-target="text-rec-${it.id}">Copiar</button>
+          <button type="button" class="copy-btn" data-edit-rec="${it.id}" data-cat="${catId}">Editar</button>
+          <button type="button" class="copy-btn rec-del-btn" data-del-rec="${it.id}" data-cat="${catId}">Eliminar</button>
+        </div>
+      </div>`).join('');
+    container.querySelectorAll('[data-copy-target]').forEach(bindCopyBtn);
+    container.querySelectorAll('[data-edit-rec]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const cat = btn.dataset.cat, id = btn.dataset.editRec;
+        const item = (recurrentes[cat]||[]).find(i => i.id === id);
+        if(!item)return;
+        const txt = prompt('Editar idea:', item.text);
+        if(txt === null)return;
+        const trimmed = txt.trim();
+        if(!trimmed)return;
+        item.text = trimmed;
+        saveRecurrentes();
+        renderRecurrenteList(cat);
+      });
+    });
+    container.querySelectorAll('[data-del-rec]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const cat = btn.dataset.cat, id = btn.dataset.delRec;
+        recurrentes[cat] = (recurrentes[cat]||[]).filter(i => i.id !== id);
+        saveRecurrentes();
+        renderRecurrenteList(cat);
+      });
+    });
+  }
+
+  document.querySelectorAll('[data-add-rec]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const cat = btn.dataset.addRec;
+      const input = document.getElementById('rec-input-'+cat);
+      if(!input)return;
+      const txt = input.value.trim();
+      if(!txt)return;
+      if(!recurrentes[cat])recurrentes[cat] = [];
+      recurrentes[cat].push({id:'r'+Date.now()+Math.floor(Math.random()*1000), text:txt});
+      saveRecurrentes();
+      renderRecurrenteList(cat);
+      input.value = '';
+    });
+  });
+
+  /* --- Colapsar/expandir bloques "topic" (Publicaciones y Plan de 4 semanas) --- */
+  function toggleTopicCollapse(e){
+    if(e.target.closest('.del'))return;
+    const topic = e.currentTarget.closest('.topic');
+    if(topic)topic.classList.toggle('collapsed');
+  }
+  function bindTopicCollapse(scope){
+    scope.querySelectorAll('.topic').forEach(t => {
+      t.classList.add('collapsed');
+      const head = t.querySelector('.topic-head');
+      if(head)head.addEventListener('click', toggleTopicCollapse);
+    });
+  }
+  bindTopicCollapse(document);
 
   function applyStatus(details){
     const checkbox = details.querySelector('input[type="checkbox"]');
@@ -2756,6 +2887,7 @@ function startPanel(){
         updateCounts();
       });
     });
+    bindTopicCollapse(container);
     document.getElementById('count-topics').textContent = String(topics.length + 15);
     updateCounts();
   }
@@ -2785,8 +2917,10 @@ function startPanel(){
     const data = snap.exists() ? snap.data() : {};
     state = data.checks || {};
     topics = data.topics || [];
+    recurrentes = data.recurrentes || {};
     applyAllChecks();
     renderTopics();
+    REC_CAT_IDS.forEach(renderRecurrenteList);
     updateCounts();
   });
 }
