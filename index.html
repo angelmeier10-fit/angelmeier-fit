@@ -3822,7 +3822,7 @@ function renderFuncBlock(c,bkey,blk,bi){
           <div class="lr">
             <input type="number" id="pw-${c.id}-${ekey}" placeholder="${lastLog?.weight?'Último: '+lastLog.weight+'kg':'Peso (kg)'}" step="0.5">
             <input type="number" id="pr-${c.id}-${ekey}" placeholder="${lastLog?.reps?'Último: '+lastLog.reps+' rep':'Reps'}">
-            <button class="btn bgr sm" onclick="logGym('${c.id}','${ekey}')">✓</button>
+            <button class="btn bgr sm" onclick="logGym('${c.id}','${ekey}','${ex.name.replace(/'/g,"\\'")}')">✓</button>
           </div>
           ${logs.slice(-3).reverse().map((l,ri)=>{const realIdx=logs.length-1-ri;return`<div class="lent"><span>${l.date}</span><span class="lv">${l.weight?l.weight+'kg':'—'} × ${l.reps||'—'}</span><button onclick="deleteLog('${c.id}','${ekey}',${realIdx})" style="background:none;border:none;color:var(--mu);cursor:pointer;font-size:.75rem;padding:0 4px">✕</button></div>`;}).join('')}
         </div>
@@ -3889,7 +3889,7 @@ function renderGymBlock(c,bkey,blk,bi){
     const lastLog=logs.length?logs[logs.length-1]:null;
     inner+=`<div class="plog">
       <div style="font-size:.69rem;color:var(--mu);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">📊 Registrar sesión</div>
-      <div class="lr">${setCount?'':`<input type="number" id="pw-${c.id}-${ekey}" placeholder="${lastLog&&lastLog.weight?'Último: '+lastLog.weight+'kg':'Peso (kg)'}" step="0.5">`}<input type="number" id="pr-${c.id}-${ekey}" placeholder="${lastLog&&lastLog.reps?'Último: '+lastLog.reps+'rep':'Reps (opcional)'}"><input type="hidden" data-setcount="${setCount}" id="pwcount-${c.id}-${ekey}"><button class="btn bgr sm" onclick="logGym('${c.id}','${ekey}')">✓ Guardar pesos</button></div>
+      <div class="lr">${setCount?'':`<input type="number" id="pw-${c.id}-${ekey}" placeholder="${lastLog&&lastLog.weight?'Último: '+lastLog.weight+'kg':'Peso (kg)'}" step="0.5">`}<input type="number" id="pr-${c.id}-${ekey}" placeholder="${lastLog&&lastLog.reps?'Último: '+lastLog.reps+'rep':'Reps (opcional)'}"><input type="hidden" data-setcount="${setCount}" id="pwcount-${c.id}-${ekey}"><button class="btn bgr sm" onclick="logGym('${c.id}','${ekey}','${activeEx.name.replace(/'/g,"\\'")}')">✓ Guardar pesos</button></div>
       <input type="text" id="pn-${c.id}-${ekey}" placeholder="Nota (opcional): ej. usé mancuernas..." style="margin-top:5px;font-size:.78rem;padding:6px 10px;border-radius:8px;border:1px solid var(--bd);background:var(--s2);color:var(--tx);width:100%;box-sizing:border-box">
       ${logsHtml}</div></div>`;
   });
@@ -4036,7 +4036,7 @@ function clearSetWeights(cId,ekey,setCount){
     const inp=document.getElementById(`sw-${cId}-${ekey}-${si}`);if(inp)inp.value='';
   }
 }
-window.logGym=async function(cId,ekey){
+window.logGym=async function(cId,ekey,exName){
   const c=clients.find(cl=>cl.id===cId);
   const weights=collectSetWeights(cId,ekey);
   const singleW=document.getElementById('pw-'+cId+'-'+ekey)?.value||'';
@@ -4051,6 +4051,7 @@ window.logGym=async function(cId,ekey){
   if(n)entry.note=n;
   c.progress[key].push(entry);
   await updateDoc(doc(db,'clients',cId),{progress:c.progress});
+  if(exName)recordExMax(exPersonKey(c.name,c.email||''),exName,singleW||weights.filter(w=>w).slice(-1)[0]||'',r).catch(()=>{});
   if(document.getElementById('pw-'+cId+'-'+ekey))document.getElementById('pw-'+cId+'-'+ekey).value='';
   document.getElementById('pr-'+cId+'-'+ekey).value='';
   if(document.getElementById('pn-'+cId+'-'+ekey))document.getElementById('pn-'+cId+'-'+ekey).value='';
@@ -6167,7 +6168,7 @@ window.toggleSerie=async function(cId,ekey,si,rk,isLast,blockRest,pauseSecs){
 };
 
 const origLogGym=window.logGym;
-window.logGym=async function(cId,ekey){
+window.logGym=async function(cId,ekey,exName){
   if(cId.startsWith('alu-')){
     const weights=collectSetWeights(cId,ekey);
     const singleW=document.getElementById('pw-'+cId+'-'+ekey)?.value||'';
@@ -6190,6 +6191,7 @@ window.logGym=async function(cId,ekey){
       toast('⚠️ No se pudo guardar, probá de nuevo');
       return;
     }
+    if(exName)recordExMax(exPersonKey(alumnoState.sub.name,alumnoState.sub.email||''),exName,singleW||weights.filter(w=>w).slice(-1)[0]||'',r).catch(()=>{});
     if(document.getElementById('pw-'+cId+'-'+ekey))document.getElementById('pw-'+cId+'-'+ekey).value='';
     document.getElementById('pr-'+cId+'-'+ekey).value='';
     if(document.getElementById('pn-'+cId+'-'+ekey))document.getElementById('pn-'+cId+'-'+ekey).value='';
@@ -6220,6 +6222,7 @@ window.logGym=async function(cId,ekey){
     if(n)entry.note=n;
     member.progress[key].push(entry);
     await setDoc(doc(db,'planes',planId,'progreso',memberId),{progress:member.progress});
+    if(exName)recordExMax(exPersonKey(member.name,member.email||''),exName,singleW||weights.filter(w=>w).slice(-1)[0]||'',r).catch(()=>{});
     if(document.getElementById('pw-'+cId+'-'+ekey))document.getElementById('pw-'+cId+'-'+ekey).value='';
     document.getElementById('pr-'+cId+'-'+ekey).value='';
     if(document.getElementById('pn-'+cId+'-'+ekey))document.getElementById('pn-'+cId+'-'+ekey).value='';
@@ -6227,7 +6230,7 @@ window.logGym=async function(cId,ekey){
     toast('📊 Guardado');const dIdx=parseInt(ekey.split('-')[1]);renderGroupDay(plan,member,dIdx);
     return;
   }
-  origLogGym(cId,ekey);
+  origLogGym(cId,ekey,exName);
 };
 
 window.selectExVariant=async function(cId,ekey,vk,idx){
