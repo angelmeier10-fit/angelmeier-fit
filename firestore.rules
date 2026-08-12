@@ -28,6 +28,11 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
+    // Panel de contenido de Instagram: uso exclusivo del entrenador.
+    match /contentPanel/{docId} {
+      allow read, write: if isAdmin();
+    }
+
     match /exercises/{exerciseId} {
       allow read, write: if isAdmin();
     }

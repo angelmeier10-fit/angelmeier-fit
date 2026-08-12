@@ -1,0 +1,2096 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Angel Meier — Panel de contenido</title>
+<style>
+  :root{
+    --bg: #f3f1f7;
+    --surface: #ffffff;
+    --surface-2: #ece8f4;
+    --border: #dcd5eb;
+    --ink: #1c1730;
+    --ink-dim: #5c5470;
+    --accent: #7b4fe0;
+    --accent-ink: #ffffff;
+    --ok: #2f9e6b;
+    --ok-bg: #e3f5ec;
+    --pending-bg: #f4e9d8;
+    --pending-ink: #8a5a12;
+    --radius: 10px;
+    --mono: ui-monospace, "SF Mono", Consolas, monospace;
+    --body-font: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg: #131019;
+      --surface: #1c1826;
+      --surface-2: #241f32;
+      --border: #322b45;
+      --ink: #ede9f7;
+      --ink-dim: #a49bc2;
+      --accent: #a684ff;
+      --accent-ink: #14101f;
+      --ok: #5cd39a;
+      --ok-bg: #1c3529;
+      --pending-bg: #3a2e18;
+      --pending-ink: #e0b158;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg: #131019; --surface: #1c1826; --surface-2: #241f32; --border: #322b45;
+    --ink: #ede9f7; --ink-dim: #a49bc2; --accent: #a684ff; --accent-ink: #14101f;
+    --ok: #5cd39a; --ok-bg: #1c3529; --pending-bg: #3a2e18; --pending-ink: #e0b158;
+  }
+  :root[data-theme="light"]{
+    --bg: #f3f1f7; --surface: #ffffff; --surface-2: #ece8f4; --border: #dcd5eb;
+    --ink: #1c1730; --ink-dim: #5c5470; --accent: #7b4fe0; --accent-ink: #ffffff;
+    --ok: #2f9e6b; --ok-bg: #e3f5ec; --pending-bg: #f4e9d8; --pending-ink: #8a5a12;
+  }
+
+  *{ box-sizing: border-box; }
+  body{
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: var(--body-font);
+    display: flex; min-height: 100vh;
+  }
+
+  /* --- Sidebar --- */
+  nav.rail{
+    width: 220px; flex: none; background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 28px 16px; position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  }
+  .brand{
+    font-weight: 800; font-size: 1.05rem; letter-spacing: 0.02em;
+    display: flex; align-items: center; gap: 10px; margin-bottom: 4px;
+  }
+  .brand .mark{
+    width: 30px; height: 30px; border-radius: 8px; background: var(--accent);
+    display: grid; place-items: center; color: var(--accent-ink); font-weight: 900; font-size: 0.8rem;
+    flex: none;
+  }
+  .brand small{ display:block; font-weight: 500; color: var(--ink-dim); font-size: 0.72rem; margin-top: 2px; }
+  .rail-links{ list-style: none; margin: 24px 0 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+  .rail-links a{
+    display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 8px;
+    color: var(--ink-dim); text-decoration: none; font-size: 0.88rem; font-weight: 600;
+  }
+  .rail-links a:hover{ background: var(--surface-2); color: var(--ink); }
+  .rail-links .count{
+    margin-left: auto; font-size: 0.72rem; font-variant-numeric: tabular-nums;
+    color: var(--ink-dim); background: var(--surface-2); border-radius: 999px; padding: 1px 7px;
+  }
+
+  main{ flex: 1; min-width: 0; padding: 40px clamp(20px, 4vw, 56px) 100px; }
+  .top-progress{
+    display: flex; align-items: center; gap: 14px; margin-bottom: 40px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 16px 20px;
+  }
+  .top-progress .bar{ flex: 1; height: 8px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+  .top-progress .bar > span{ display: block; height: 100%; background: var(--accent); border-radius: inherit; transition: width .3s ease; }
+  .top-progress .label{ font-size: 0.82rem; color: var(--ink-dim); white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+  section{ margin-bottom: 56px; scroll-margin-top: 24px; }
+  section > h2{
+    font-size: 1.5rem; letter-spacing: -0.01em; margin: 0 0 6px; text-wrap: balance;
+  }
+  section > p.lede{ color: var(--ink-dim); margin: 0 0 22px; max-width: 62ch; line-height: 1.5; }
+
+  /* --- Cards --- */
+  .card{
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 18px 20px;
+  }
+  .stack{ display: flex; flex-direction: column; gap: 12px; }
+  .grid-2{ display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+
+  /* --- Palette swatches --- */
+  .swatches{ display: flex; gap: 12px; flex-wrap: wrap; margin-top: 16px; }
+  .swatch{ width: 96px; }
+  .swatch .chip{ height: 64px; border-radius: 8px; border: 1px solid var(--border); }
+  .swatch span{ display: block; font-size: 0.72rem; color: var(--ink-dim); margin-top: 6px; font-family: var(--mono); }
+
+  /* --- Checklist items --- */
+  .task{
+    display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px;
+    border: 1px solid var(--border); border-radius: 8px; background: var(--surface);
+  }
+  .task input[type="checkbox"]{
+    width: 18px; height: 18px; margin-top: 2px; accent-color: var(--accent); flex: none; cursor: pointer;
+  }
+  .task label{ flex: 1; cursor: pointer; font-size: 0.92rem; line-height: 1.4; }
+  .task.done label{ color: var(--ink-dim); text-decoration: line-through; }
+  .task .tag{
+    font-size: 0.68rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+    padding: 2px 8px; border-radius: 999px; flex: none; align-self: center;
+  }
+  .tag.marca{ background: var(--surface-2); color: var(--accent); }
+
+  /* --- Prompt / copy blocks --- */
+  details.block{
+    border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface);
+    overflow: hidden;
+  }
+  details.block + details.block{ margin-top: 12px; }
+  details.block summary{
+    list-style: none; cursor: pointer; padding: 14px 18px; display: flex; align-items: center; gap: 12px;
+    font-weight: 700; font-size: 0.95rem;
+  }
+  details.block summary::-webkit-details-marker{ display: none; }
+  details.block summary::before{
+    content: "▸"; color: var(--accent); transition: transform .15s ease; font-size: 0.8rem;
+  }
+  details.block[open] summary::before{ transform: rotate(90deg); }
+  details.block summary .status{
+    margin-left: auto; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+    padding: 2px 9px; border-radius: 999px; background: var(--pending-bg); color: var(--pending-ink);
+  }
+  details.block summary .status.done{ background: var(--ok-bg); color: var(--ok); }
+  .block-body{ padding: 0 18px 18px; }
+  pre.copy{
+    background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px;
+    padding: 14px 16px; font-family: var(--mono); font-size: 0.82rem; line-height: 1.55;
+    white-space: pre-wrap; margin: 0 0 10px; color: var(--ink);
+  }
+  .copy-btn{
+    border: 1px solid var(--border); background: var(--surface); color: var(--ink);
+    border-radius: 7px; padding: 7px 14px; font-size: 0.8rem; font-weight: 600; cursor: pointer;
+  }
+  .copy-btn:hover{ border-color: var(--accent); color: var(--accent); }
+  .copy-btn:focus-visible, .task input:focus-visible, a:focus-visible{
+    outline: 2px solid var(--accent); outline-offset: 2px;
+  }
+  .copy-btn.copied{ color: var(--ok); border-color: var(--ok); }
+
+  /* --- Calendar table --- */
+  table.cal{ width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+  table.cal th, table.cal td{ text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+  table.cal th{ color: var(--ink-dim); font-weight: 600; font-size: 0.78rem; text-transform: uppercase; letter-spacing: .03em; }
+  table.cal td.day{ font-weight: 700; white-space: nowrap; }
+  .table-wrap{ overflow-x: auto; }
+
+  footer{ color: var(--ink-dim); font-size: 0.8rem; padding-top: 24px; border-top: 1px solid var(--border); }
+
+  /* --- Publicaciones (agrupadas por tema) --- */
+  .topic{
+    border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface-2);
+    padding: 18px; margin-bottom: 18px;
+  }
+  .topic-head{ display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .topic-head h3{ margin: 0; font-size: 1.05rem; }
+  .topic-head .pill{
+    font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+    padding: 2px 9px; border-radius: 999px; background: var(--surface); color: var(--accent);
+    border: 1px solid var(--border);
+  }
+  .topic-head .del{
+    margin-left: auto; background: none; border: none; color: var(--ink-dim); cursor: pointer;
+    font-size: 0.78rem; text-decoration: underline; padding: 4px;
+  }
+  .topic-head .del:hover{ color: var(--ink); }
+  .topic details.block{ background: var(--surface); }
+  .add-topic-btn{
+    display: inline-flex; align-items: center; gap: 8px; background: var(--accent); color: var(--accent-ink);
+    border: none; border-radius: 8px; padding: 10px 18px; font-size: 0.88rem; font-weight: 700; cursor: pointer;
+    margin-top: 4px;
+  }
+  .add-topic-btn:hover{ filter: brightness(1.06); }
+  form.new-topic{
+    display: none; flex-direction: column; gap: 12px; margin-top: 16px;
+    border: 1px dashed var(--border); border-radius: var(--radius); padding: 18px; background: var(--surface);
+  }
+  form.new-topic.open{ display: flex; }
+  form.new-topic label{ font-size: 0.82rem; font-weight: 600; color: var(--ink-dim); display: block; margin-bottom: 6px; }
+  form.new-topic input[type="text"], form.new-topic textarea{
+    width: 100%; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--ink);
+    font-family: var(--body-font); font-size: 0.88rem; padding: 9px 11px; resize: vertical;
+  }
+  form.new-topic textarea{ min-height: 90px; font-family: var(--mono); font-size: 0.82rem; }
+  form.new-topic .actions{ display: flex; gap: 10px; }
+  form.new-topic button[type="submit"]{
+    background: var(--accent); color: var(--accent-ink); border: none; border-radius: 7px;
+    padding: 9px 16px; font-weight: 700; font-size: 0.85rem; cursor: pointer;
+  }
+  form.new-topic button[type="button"]{
+    background: none; border: 1px solid var(--border); color: var(--ink-dim); border-radius: 7px;
+    padding: 9px 16px; font-weight: 600; font-size: 0.85rem; cursor: pointer;
+  }
+
+  @media (max-width: 760px){
+    body{ flex-direction: column; }
+    nav.rail{ width: 100%; height: auto; position: static; border-right: none; border-bottom: 1px solid var(--border); }
+  }
+</style>
+</head>
+<body>
+
+<div id="login-gate" style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px">
+  <form id="login-form" style="max-width:340px;width:100%;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:28px;display:flex;flex-direction:column;gap:12px">
+    <h2 style="margin:0 0 8px">Panel de contenido</h2>
+    <input type="email" id="login-email" placeholder="Email" required style="padding:9px 11px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--ink)">
+    <input type="password" id="login-pass" placeholder="Contraseña" required style="padding:9px 11px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--ink)">
+    <button type="submit" style="background:var(--accent);color:var(--accent-ink);border:none;border-radius:8px;padding:10px;font-weight:700;cursor:pointer">Entrar</button>
+    <button type="button" id="login-google" style="background:none;border:1px solid var(--border);color:var(--ink);border-radius:8px;padding:10px;font-weight:600;cursor:pointer">Entrar con Google</button>
+    <p id="login-error" style="color:#c0392b;font-size:0.82rem;margin:0"></p>
+  </form>
+</div>
+
+<nav class="rail" id="app-rail" style="display:none">
+  <div class="brand">
+    <span class="mark">AM</span>
+    <div>ANGEL MEiER<small>Panel de contenido</small></div>
+  </div>
+  <ul class="rail-links">
+    <li><a href="#marca">Marca</a></li>
+    <li><a href="#calendario">Calendario</a></li>
+    <li><a href="#prompts">Prompts <span class="count" id="count-prompts">0/0</span></a></li>
+    <li><a href="#stickers">Stickers historias</a></li>
+    <li><a href="#publicaciones">Publicaciones <span class="count" id="count-topics">0</span></a></li>
+  </ul>
+</nav>
+</nav>
+
+<main id="app-main" style="display:none">
+  <div class="top-progress">
+    <div class="label">Progreso general</div>
+    <div class="bar"><span id="overall-bar" style="width:0%"></span></div>
+    <div class="label" id="overall-label">0 / 0</div>
+  </div>
+
+  <section id="marca">
+    <h2>Marca</h2>
+    <p class="lede">Paleta y piezas de identidad de Angel Meier. Marcá cada pieza cuando la tengas descargada de ChatGPT.</p>
+    <div class="card">
+      <div class="swatches">
+        <div class="swatch"><div class="chip" style="background:#7B4FE0"></div><span>#7B4FE0</span></div>
+        <div class="swatch"><div class="chip" style="background:#000000"></div><span>#000000</span></div>
+        <div class="swatch"><div class="chip" style="background:#FFFFFF;border-color:#ccc"></div><span>#FFFFFF</span></div>
+      </div>
+    </div>
+    <div class="stack" style="margin-top:16px">
+      <div class="task"><input type="checkbox" id="m1"><label for="m1">Logo horizontal — colores normales</label><span class="tag marca">Marca</span></div>
+      <div class="task"><input type="checkbox" id="m2"><label for="m2">Logo horizontal — monotono blanco</label><span class="tag marca">Marca</span></div>
+      <div class="task"><input type="checkbox" id="m3"><label for="m3">Logo horizontal — monotono negro</label><span class="tag marca">Marca</span></div>
+      <div class="task"><input type="checkbox" id="m4"><label for="m4">Isotipo solo — violeta</label><span class="tag marca">Marca</span></div>
+      <div class="task"><input type="checkbox" id="m5"><label for="m5">Isotipo solo — blanco</label><span class="tag marca">Marca</span></div>
+      <div class="task"><input type="checkbox" id="m6"><label for="m6">Isotipo solo — negro</label><span class="tag marca">Marca</span></div>
+      <div class="task"><input type="checkbox" id="m7"><label for="m7">Foto de perfil (ícono + AM integrado)</label><span class="tag marca">Marca</span></div>
+      <div class="task"><input type="checkbox" id="m8"><label for="m8">Versión vertical/apilada</label><span class="tag marca">Marca</span></div>
+    </div>
+  </section>
+
+  <section id="calendario">
+    <h2>Calendario de contenido</h2>
+    <p class="lede">3 posteos por semana, parejo entre masajes y entrenamiento/app. El viernes rota mes a mes.</p>
+    <div class="card table-wrap">
+      <table class="cal">
+        <thead><tr><th>Día</th><th>Foco</th><th>Tipo de pieza</th></tr></thead>
+        <tbody>
+          <tr><td class="day">Lunes</td><td>Entrenamiento / App</td><td>Flyer educativo o promo de la app</td></tr>
+          <tr><td class="day">Miércoles</td><td>Masajes</td><td>Flyer educativo (dolor común, técnica)</td></tr>
+          <tr><td class="day">Viernes</td><td>Rotativo</td><td>Ver rotación de 4 semanas abajo</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="grid-2" style="margin-top:16px">
+      <div class="card"><strong>Semana 1</strong><p style="color:var(--ink-dim);margin:6px 0 0">Testimonio de cliente</p></div>
+      <div class="card"><strong>Semana 2</strong><p style="color:var(--ink-dim);margin:6px 0 0">Carrusel educativo</p></div>
+      <div class="card"><strong>Semana 3</strong><p style="color:var(--ink-dim);margin:6px 0 0">Promo directa de la app + CTA</p></div>
+      <div class="card"><strong>Semana 4</strong><p style="color:var(--ink-dim);margin:6px 0 0">Antes/después o resultado concreto</p></div>
+    </div>
+  </section>
+
+  <section id="prompts">
+    <h2>Prompts para ChatGPT</h2>
+    <p class="lede">Cada bloque tiene el prompt listo para copiar y pegar. Marcalo como hecho cuando ya tengas la pieza generada.</p>
+
+    <details class="block">
+      <summary>
+        <input type="checkbox" id="p1" style="margin-right:2px">
+        Íconos de historias destacadas
+        <span class="status" id="status-p1">Pendiente</span>
+      </summary>
+      <div class="block-body">
+        <pre class="copy" id="text-p1">Ya tengo cerrado mi logo "AM" en violeta sólido #7B4FE0, marca "ANGEL MEiER" en tipografía condensada bold blanca, slogan "MOVIMIENTO. FUERZA. BIENESTAR.". Necesito un set de íconos para historias destacadas de Instagram (highlight covers), circulares, todos con el mismo estilo entre sí para que se vean como un set cohesivo.
+
+Especificaciones:
+- Círculo relleno violeta sólido #7B4FE0 (no negro).
+- Símbolo adentro en blanco, estilo relleno simple con contorno fino, no lineart.
+- Mismo grosor de trazo y mismo tamaño relativo de símbolo dentro del círculo en los 8.
+- Flat design, sin sombras ni degradé ni efecto 3D.
+- Formato final: 1080x1080, círculo centrado con margen prolijo alrededor (no pegado al borde).
+
+Necesito estas 8 categorías, generame cada una en un mensaje separado:
+1. Masajes
+2. Entrenamiento
+3. App (suscripción a angelmeier-fit.web.app)
+4. Gift Card
+5. Turnos
+6. Opiniones / Testimonios
+7. Antes y Después
+8. Tips / Dolores comunes
+
+Pedile la primera categoría (Masajes) primero, mirá si el estilo de línea te convence, y recién ahí generá las otras 7 con ese mismo estilo ya validado.</pre>
+        <button class="copy-btn" data-copy-target="text-p1">Copiar prompt</button>
+      </div>
+    </details>
+
+    <details class="block">
+      <summary>
+        <input type="checkbox" id="p2" style="margin-right:2px">
+        Flyers de feed
+        <span class="status" id="status-p2">Pendiente</span>
+      </summary>
+      <div class="block-body">
+        <pre class="copy" id="text-p2">Ya tengo cerrado el logo y el set de íconos de destacadas. Ahora necesito piezas de feed para Instagram, formato 1080x1350, todas con el mismo template base.
+
+Template base (repetir en todas):
+- Foto realista de gimnasio/consultorio (no ilustración), iluminación tipo campaña fitness/wellness premium, ocupando el lado derecho de la pieza.
+- Panel diagonal violeta sólido #7B4FE0 sobre fondo negro cubriendo aproximadamente el tercio izquierdo, con el corte en diagonal hacia la foto.
+- Título grande en tipografía condensada bold, mayúsculas, blanco con la palabra clave en violeta.
+- 2 o 3 íconos circulares violeta rellenos (mismo estilo que el set de destacadas) con etiqueta corta al lado, debajo del título.
+- Abajo del todo: dejar un rectángulo limpio y vacío (sin logo, sin texto) para pegar mi logo real después en un editor.
+- Grilla de puntos violeta arriba a la izquierda.
+- Paleta: violeta #7B4FE0, negro, blanco.
+
+Pedime las piezas de a una, en este orden:
+1. Masajes — dolor lumbar
+2. Masajes — cervicales
+3. Masajes — deportivo/recuperación
+4. Masajes — relajación
+5. Entrenamiento — piernas/glúteos
+6. Entrenamiento — HIIT
+7. Entrenamiento — fuerza general
+8. Promo app — "Entrená donde estés"
+9. Promo app — funcionalidad (mockup de celular)
+10. Promo app — call to action "Suscribite hoy"
+11. Testimonio 1
+12. Testimonio 2
+
+Empezá por la pieza 1, y si el resultado convence, seguimos pidiendo las demás con "mismo estilo que la anterior, cambiando foto y texto a: [...]".</pre>
+        <button class="copy-btn" data-copy-target="text-p2">Copiar prompt</button>
+      </div>
+    </details>
+
+    <details class="block">
+      <summary>
+        <input type="checkbox" id="p3" style="margin-right:2px">
+        Carrusel educativo — dolor lumbar
+        <span class="status" id="status-p3">Pendiente</span>
+      </summary>
+      <div class="block-body">
+        <pre class="copy" id="text-p3">Ya tengo cerrada la identidad visual de mis piezas de Instagram: foto real de gimnasio (ambiente oscuro y premium), con un panel diagonal violeta sólido #7B4FE0 sobre fondo negro que cubre aproximadamente el tercio izquierdo de la imagen, con el corte en diagonal hacia la foto. Título en tipografía condensada bold en mayúsculas, blanco con la palabra clave del título en violeta. Debajo del título, 2 o 3 íconos circulares violeta rellenos con el símbolo en blanco adentro, cada uno con una etiqueta corta en mayúscula al lado (categoría del contenido). Dejo el rectángulo inferior de la pieza limpio y vacío (sin logo, sin texto, sin marca de agua) para pegar mi logo real después en un editor. Grilla de puntos violeta arriba a la izquierda.
+
+Necesito un carrusel educativo de 5 slides para Instagram, formato vertical 1080x1350 cada slide, mismo template visual en las 5, tema: "5 tips para aliviar el dolor lumbar".
+
+Estructura:
+1. Portada: título "5 TIPS PARA ALIVIAR EL DOLOR LUMBAR", foto/silueta de fondo, "Deslizá →" abajo. Espacio limpio y vacío en la esquina para pegar mi logo real después.
+2. Tip 1 con número grande "1", título corto y 1-2 líneas de explicación.
+3. Tip 2, mismo formato con "2".
+4. Tip 3, mismo formato con "3".
+5. Cierre: "¿Querés una sesión personalizada?" + CTA con contacto/WhatsApp, espacio limpio y vacío grande para pegar mi logo real después.
+
+Reglas: mismo fondo, mismo lugar del espacio reservado para el logo, mismo estilo de número grande.
+
+Generame primero el Slide 1 (portada) solo, para validar el estilo antes de seguir.</pre>
+        <button class="copy-btn" data-copy-target="text-p3">Copiar prompt</button>
+      </div>
+    </details>
+
+    <details class="block">
+      <summary>
+        <input type="checkbox" id="p4" style="margin-right:2px">
+        Portadas de Reels
+        <span class="status" id="status-p4">Pendiente</span>
+      </summary>
+      <div class="block-body">
+        <pre class="copy" id="text-p4">Ya tengo cerrada la identidad visual de mis piezas de Instagram: foto real de gimnasio (ambiente oscuro y premium), con un panel diagonal violeta sólido #7B4FE0 sobre fondo negro que cubre aproximadamente el tercio izquierdo de la imagen, con el corte en diagonal hacia la foto. Título en tipografía condensada bold en mayúsculas, blanco con la palabra clave del título en violeta. Debajo del título, 2 o 3 íconos circulares violeta rellenos con el símbolo en blanco adentro, cada uno con una etiqueta corta en mayúscula al lado (categoría del contenido). Dejo el rectángulo inferior de la pieza limpio y vacío (sin logo, sin texto, sin marca de agua) para pegar mi logo real después en un editor. Grilla de puntos violeta arriba a la izquierda.
+
+Necesito una plantilla de portada para Reels, formato vertical 1080x1920, pensada para que todos mis reels se vean parte de la misma marca en la grilla.
+
+Especificaciones:
+- Zona fija limpia y vacía, siempre en el mismo lugar, para pegar mi logo real después.
+- Espacio central limpio marcado como "ÁREA PARA FOTO DEL VIDEO".
+- Franja de texto para el título del reel, tipografía bold.
+- Etiqueta chica de categoría ("MASAJES", "ENTRENAMIENTO" o "APP"), mismo estilo que los íconos de destacadas.
+- Fondo negro sólido.
+
+Dame 3 variantes de layout (texto arriba/foto abajo, texto abajo/foto arriba, texto lateral), con foto placeholder, título de ejemplo "RUTINA DE 10 MINUTOS EN CASA" y etiqueta "ENTRENAMIENTO".</pre>
+        <button class="copy-btn" data-copy-target="text-p4">Copiar prompt</button>
+      </div>
+    </details>
+
+    <details class="block">
+      <summary>
+        <input type="checkbox" id="p5" style="margin-right:2px">
+        Plantilla de historias diarias
+        <span class="status" id="status-p5">Pendiente</span>
+      </summary>
+      <div class="block-body">
+        <pre class="copy" id="text-p5">Ya tengo cerrada la identidad visual de mis piezas de Instagram: foto real de gimnasio (ambiente oscuro y premium), con un panel diagonal violeta sólido #7B4FE0 sobre fondo negro que cubre aproximadamente el tercio izquierdo de la imagen, con el corte en diagonal hacia la foto. Título en tipografía condensada bold en mayúsculas, blanco con la palabra clave del título en violeta. Debajo del título, 2 o 3 íconos circulares violeta rellenos con el símbolo en blanco adentro, cada uno con una etiqueta corta en mayúscula al lado (categoría del contenido). Dejo el rectángulo inferior de la pieza limpio y vacío (sin logo, sin texto, sin marca de agua) para pegar mi logo real después en un editor. Grilla de puntos violeta arriba a la izquierda.
+
+Necesito una plantilla base para historias diarias (no destacadas), formato vertical 1080x1920, simple y rápida de reutilizar.
+
+Especificaciones:
+- Franja fija arriba o abajo, limpia y vacía, para pegar mi logo real después.
+- Espacio central marcado como "ÁREA PARA FOTO DEL DÍA".
+- Franja de texto corta para preguntas o recordatorios, tipografía bold blanca/violeta.
+- Diseño liviano, no recargado.
+
+Dame 2 variantes:
+1. Franja de texto arriba (para anuncios/preguntas).
+2. Franja de texto abajo (para pie de foto/frase corta).
+
+Mostrame cada una con foto placeholder y el texto de ejemplo: "¿Te duele la espalda después de todo el día sentado?"</pre>
+        <button class="copy-btn" data-copy-target="text-p5">Copiar prompt</button>
+      </div>
+    </details>
+  </section>
+
+  <section id="stickers">
+    <h2>Stickers de texto — historias</h2>
+    <p class="lede">Frases cortas para pegar como sticker de texto sobre videos de entrenamiento y de masajes en historias.</p>
+
+    <div class="grid-2">
+      <div class="card">
+        <strong>Entrenando</strong>
+        <div class="stack" style="margin-top:12px">
+          <div><pre class="copy" id="text-stk-e1">Cuidando el cuerpo que cuida el tuyo</pre><button class="copy-btn" data-copy-target="text-stk-e1">Copiar</button></div>
+          <div><pre class="copy" id="text-stk-e2">Antes de dar manos, las pongo a prueba</pre><button class="copy-btn" data-copy-target="text-stk-e2">Copiar</button></div>
+          <div><pre class="copy" id="text-stk-e3">Mi rutina de la semana</pre><button class="copy-btn" data-copy-target="text-stk-e3">Copiar</button></div>
+          <div><pre class="copy" id="text-stk-e4">Así me preparo para estar 100% en cada sesión</pre><button class="copy-btn" data-copy-target="text-stk-e4">Copiar</button></div>
+          <div><pre class="copy" id="text-stk-e5">Fuerza para dar, fuerza para mí</pre><button class="copy-btn" data-copy-target="text-stk-e5">Copiar</button></div>
+        </div>
+        <details class="block" style="margin-top:12px">
+          <summary>
+            <input type="checkbox" id="stk-e-img" style="margin-right:2px">
+            Prompt de imagen para ChatGPT
+            <span class="status" id="status-stk-e-img">Pendiente</span>
+          </summary>
+          <div class="block-body">
+            <pre class="copy" id="text-stk-e-img">Ya tengo cerrada la identidad visual de mis piezas de Instagram: foto real de gimnasio (ambiente oscuro y premium), con un panel diagonal violeta sólido #7B4FE0 sobre fondo negro que cubre aproximadamente el tercio izquierdo de la imagen, con el corte en diagonal hacia la foto. Título en tipografía condensada bold en mayúsculas, blanco con la palabra clave del título en violeta. Debajo del título, 2 o 3 íconos circulares violeta rellenos con el símbolo en blanco adentro, cada uno con una etiqueta corta en mayúscula al lado (categoría del contenido). Dejo el rectángulo inferior de la pieza limpio y vacío (sin logo, sin texto, sin marca de agua) para pegar mi logo real después en un editor. Grilla de puntos violeta arriba a la izquierda.
+
+Necesito una plantilla base para historias diarias (formato vertical 1080x1920) para usar de fondo cuando no tengo una foto real a mano, categoría Entrenamiento:
+- Franja fija arriba, limpia y vacía (sin logo ni texto), para pegar mi logo real después.
+- Foto placeholder central de alguien entrenando (peso corporal o funcional), estilo realista, luz natural.
+- Franja de texto abajo, tipografía bold blanca/violeta, con el texto de ejemplo: "Cuidando el cuerpo que cuida el tuyo".
+- Diseño liviano, no recargado, para que se lea bien con un sticker de Instagram (encuesta o pregunta) encima.</pre>
+            <button class="copy-btn" data-copy-target="text-stk-e-img">Copiar prompt</button>
+          </div>
+        </details>
+      </div>
+
+      <div class="card">
+        <strong>Haciendo masajes</strong>
+        <div class="stack" style="margin-top:12px">
+          <div><pre class="copy" id="text-stk-m1">Un ratito de mi día a día</pre><button class="copy-btn" data-copy-target="text-stk-m1">Copiar</button></div>
+          <div><pre class="copy" id="text-stk-m2">Técnica en acción</pre><button class="copy-btn" data-copy-target="text-stk-m2">Copiar</button></div>
+          <div><pre class="copy" id="text-stk-m3">Así cuidamos cada zona tratada</pre><button class="copy-btn" data-copy-target="text-stk-m3">Copiar</button></div>
+          <div><pre class="copy" id="text-stk-m4">Detrás de cada turno</pre><button class="copy-btn" data-copy-target="text-stk-m4">Copiar</button></div>
+          <div><pre class="copy" id="text-stk-m5">Presión justa, resultado real</pre><button class="copy-btn" data-copy-target="text-stk-m5">Copiar</button></div>
+        </div>
+        <details class="block" style="margin-top:12px">
+          <summary>
+            <input type="checkbox" id="stk-m-img" style="margin-right:2px">
+            Prompt de imagen para ChatGPT
+            <span class="status" id="status-stk-m-img">Pendiente</span>
+          </summary>
+          <div class="block-body">
+            <pre class="copy" id="text-stk-m-img">Ya tengo cerrada la identidad visual de mis piezas de Instagram: foto real de gimnasio (ambiente oscuro y premium), con un panel diagonal violeta sólido #7B4FE0 sobre fondo negro que cubre aproximadamente el tercio izquierdo de la imagen, con el corte en diagonal hacia la foto. Título en tipografía condensada bold en mayúsculas, blanco con la palabra clave del título en violeta. Debajo del título, 2 o 3 íconos circulares violeta rellenos con el símbolo en blanco adentro, cada uno con una etiqueta corta en mayúscula al lado (categoría del contenido). Dejo el rectángulo inferior de la pieza limpio y vacío (sin logo, sin texto, sin marca de agua) para pegar mi logo real después en un editor. Grilla de puntos violeta arriba a la izquierda.
+
+Necesito una plantilla base para historias diarias (formato vertical 1080x1920) para usar de fondo cuando no tengo una foto real a mano, categoría Masajes:
+- Franja fija arriba, limpia y vacía (sin logo ni texto), para pegar mi logo real después.
+- Foto placeholder central de un masaje en curso (manos aplicando técnica sobre espalda u hombros), consultorio prolijo, luz cálida.
+- Franja de texto abajo, tipografía bold blanca/violeta, con el texto de ejemplo: "Técnica en acción".
+- Diseño liviano, no recargado, para que se lea bien con un sticker de Instagram (encuesta o pregunta) encima.</pre>
+            <button class="copy-btn" data-copy-target="text-stk-m-img">Copiar prompt</button>
+          </div>
+        </details>
+      </div>
+
+      <div class="card">
+        <strong>Cruce (entrenamiento + masajes)</strong>
+        <div class="stack" style="margin-top:12px">
+          <div><pre class="copy" id="text-stk-c1">Entreno para poder cuidarte mejor</pre><button class="copy-btn" data-copy-target="text-stk-c1">Copiar</button></div>
+          <div><pre class="copy" id="text-stk-c2">De mi entrenamiento a tus manos</pre><button class="copy-btn" data-copy-target="text-stk-c2">Copiar</button></div>
+          <div><pre class="copy" id="text-stk-c3">Cuerpo fuerte, manos firmes</pre><button class="copy-btn" data-copy-target="text-stk-c3">Copiar</button></div>
+        </div>
+        <details class="block" style="margin-top:12px">
+          <summary>
+            <input type="checkbox" id="stk-c-img" style="margin-right:2px">
+            Prompt de imagen para ChatGPT
+            <span class="status" id="status-stk-c-img">Pendiente</span>
+          </summary>
+          <div class="block-body">
+            <pre class="copy" id="text-stk-c-img">Ya tengo cerrada la identidad visual de mis piezas de Instagram: foto real de gimnasio (ambiente oscuro y premium), con un panel diagonal violeta sólido #7B4FE0 sobre fondo negro que cubre aproximadamente el tercio izquierdo de la imagen, con el corte en diagonal hacia la foto. Título en tipografía condensada bold en mayúsculas, blanco con la palabra clave del título en violeta. Debajo del título, 2 o 3 íconos circulares violeta rellenos con el símbolo en blanco adentro, cada uno con una etiqueta corta en mayúscula al lado (categoría del contenido). Dejo el rectángulo inferior de la pieza limpio y vacío (sin logo, sin texto, sin marca de agua) para pegar mi logo real después en un editor. Grilla de puntos violeta arriba a la izquierda.
+
+Necesito una plantilla base para historias diarias (formato vertical 1080x1920) que combine entrenamiento y masajes en una sola imagen dividida:
+- Franja fija arriba, limpia y vacía (sin logo ni texto), para pegar mi logo real después.
+- Mitad superior de la foto: alguien entrenando. Mitad inferior de la foto: una sesión de masaje. Línea divisoria fina violeta entre ambas.
+- Franja de texto abajo, tipografía bold blanca/violeta, con el texto de ejemplo: "Entreno para poder cuidarte mejor".
+- Diseño liviano, no recargado, para que se lea bien con un sticker de Instagram encima.</pre>
+            <button class="copy-btn" data-copy-target="text-stk-c-img">Copiar prompt</button>
+          </div>
+        </details>
+      </div>
+
+      <div class="card">
+        <strong>Encuesta (Sí/No) — masajes</strong>
+        <div class="stack" style="margin-top:12px">
+          <div><pre class="copy" id="text-stk-p1">¿Te duele la espalda después de todo el día sentado?
+[Sticker de encuesta: Sí / No]</pre><button class="copy-btn" data-copy-target="text-stk-p1">Copiar</button></div>
+          <div><pre class="copy" id="text-stk-p2">¿Ya te diste una sesión de masajes este mes?
+[Sticker de encuesta: Sí / Todavía no]</pre><button class="copy-btn" data-copy-target="text-stk-p2">Copiar</button></div>
+          <div><pre class="copy" id="text-stk-p3">¿Entrenás fuerte y no te recuperás bien?
+[Sticker de encuesta: Sí / No]</pre><button class="copy-btn" data-copy-target="text-stk-p3">Copiar</button></div>
+          <div><pre class="copy" id="text-stk-p4">¿Necesitás desconectar esta semana?
+[Sticker de encuesta: Sí / No]</pre><button class="copy-btn" data-copy-target="text-stk-p4">Copiar</button></div>
+        </div>
+        <details class="block" style="margin-top:12px">
+          <summary>
+            <input type="checkbox" id="stk-pm-img" style="margin-right:2px">
+            Prompt de imagen para ChatGPT
+            <span class="status" id="status-stk-pm-img">Pendiente</span>
+          </summary>
+          <div class="block-body">
+            <pre class="copy" id="text-stk-pm-img">Ya tengo cerrada la identidad visual de mis piezas de Instagram: foto real de gimnasio (ambiente oscuro y premium), con un panel diagonal violeta sólido #7B4FE0 sobre fondo negro que cubre aproximadamente el tercio izquierdo de la imagen, con el corte en diagonal hacia la foto. Título en tipografía condensada bold en mayúsculas, blanco con la palabra clave del título en violeta. Debajo del título, 2 o 3 íconos circulares violeta rellenos con el símbolo en blanco adentro, cada uno con una etiqueta corta en mayúscula al lado (categoría del contenido). Dejo el rectángulo inferior de la pieza limpio y vacío (sin logo, sin texto, sin marca de agua) para pegar mi logo real después en un editor. Grilla de puntos violeta arriba a la izquierda.
+
+Necesito una plantilla de fondo para historia de encuesta (formato vertical 1080x1920), categoría Masajes:
+- Franja fija arriba, limpia y vacía (sin logo ni texto), para pegar mi logo real después.
+- Foto placeholder de alguien con dolor o tensión en la espalda/cuello (postura de oficina), consultorio o casa de fondo desenfocado.
+- Franja de texto en el tercio superior, tipografía bold blanca/violeta, con el texto de ejemplo: "¿Te duele la espalda después de todo el día sentado?"
+- Dejar el tercio inferior de la imagen limpio y sin texto, para poder pegar ahí el sticker nativo de encuesta de Instagram (Sí/No).</pre>
+            <button class="copy-btn" data-copy-target="text-stk-pm-img">Copiar prompt</button>
+          </div>
+        </details>
+      </div>
+
+      <div class="card">
+        <strong>Encuesta (Sí/No) — entrenamiento</strong>
+        <div class="stack" style="margin-top:12px">
+          <div><pre class="copy" id="text-stk-p5">¿Ya tenés tu app de entrenamiento?
+[Sticker de encuesta: Sí / Todavía no]</pre><button class="copy-btn" data-copy-target="text-stk-p5">Copiar</button></div>
+          <div><pre class="copy" id="text-stk-p6">¿Pensás que no tenés tiempo para entrenar?
+[Sticker de encuesta: Sí / No]</pre><button class="copy-btn" data-copy-target="text-stk-p6">Copiar</button></div>
+          <div><pre class="copy" id="text-stk-p7">¿Ya diste el primer paso hoy?
+[Sticker de encuesta: Sí / No]</pre><button class="copy-btn" data-copy-target="text-stk-p7">Copiar</button></div>
+        </div>
+        <details class="block" style="margin-top:12px">
+          <summary>
+            <input type="checkbox" id="stk-pe-img" style="margin-right:2px">
+            Prompt de imagen para ChatGPT
+            <span class="status" id="status-stk-pe-img">Pendiente</span>
+          </summary>
+          <div class="block-body">
+            <pre class="copy" id="text-stk-pe-img">Ya tengo cerrada la identidad visual de mis piezas de Instagram: foto real de gimnasio (ambiente oscuro y premium), con un panel diagonal violeta sólido #7B4FE0 sobre fondo negro que cubre aproximadamente el tercio izquierdo de la imagen, con el corte en diagonal hacia la foto. Título en tipografía condensada bold en mayúsculas, blanco con la palabra clave del título en violeta. Debajo del título, 2 o 3 íconos circulares violeta rellenos con el símbolo en blanco adentro, cada uno con una etiqueta corta en mayúscula al lado (categoría del contenido). Dejo el rectángulo inferior de la pieza limpio y vacío (sin logo, sin texto, sin marca de agua) para pegar mi logo real después en un editor. Grilla de puntos violeta arriba a la izquierda.
+
+Necesito una plantilla de fondo para historia de encuesta (formato vertical 1080x1920), categoría Entrenamiento/App:
+- Franja fija arriba, limpia y vacía (sin logo ni texto), para pegar mi logo real después.
+- Foto placeholder de un mockup de celular con la app de entrenamiento, o de alguien entrenando en casa mirando el celular apoyado cerca.
+- Franja de texto en el tercio superior, tipografía bold blanca/violeta, con el texto de ejemplo: "¿Ya tenés tu app de entrenamiento?"
+- Dejar el tercio inferior de la imagen limpio y sin texto, para poder pegar ahí el sticker nativo de encuesta de Instagram (Sí/Todavía no).</pre>
+            <button class="copy-btn" data-copy-target="text-stk-pe-img">Copiar prompt</button>
+          </div>
+        </details>
+      </div>
+
+      <div class="card">
+        <strong>Pregunta abierta (sticker "Preguntas")</strong>
+        <div class="stack" style="margin-top:12px">
+          <div><pre class="copy" id="text-stk-q1">¿Qué zona te molesta más? Contame 👇
+[Sticker de pregunta abierta]</pre><button class="copy-btn" data-copy-target="text-stk-q1">Copiar</button></div>
+          <div><pre class="copy" id="text-stk-q2">¿Cuál es tu objetivo hoy? Escribime 👇
+[Sticker de pregunta abierta]</pre><button class="copy-btn" data-copy-target="text-stk-q2">Copiar</button></div>
+          <div><pre class="copy" id="text-stk-q3">Dejame tu pregunta sobre masajes o entrenamiento 👇
+[Sticker de pregunta abierta]</pre><button class="copy-btn" data-copy-target="text-stk-q3">Copiar</button></div>
+        </div>
+        <details class="block" style="margin-top:12px">
+          <summary>
+            <input type="checkbox" id="stk-q-img" style="margin-right:2px">
+            Prompt de imagen para ChatGPT
+            <span class="status" id="status-stk-q-img">Pendiente</span>
+          </summary>
+          <div class="block-body">
+            <pre class="copy" id="text-stk-q-img">Ya tengo cerrada la identidad visual de mis piezas de Instagram: foto real de gimnasio (ambiente oscuro y premium), con un panel diagonal violeta sólido #7B4FE0 sobre fondo negro que cubre aproximadamente el tercio izquierdo de la imagen, con el corte en diagonal hacia la foto. Título en tipografía condensada bold en mayúsculas, blanco con la palabra clave del título en violeta. Debajo del título, 2 o 3 íconos circulares violeta rellenos con el símbolo en blanco adentro, cada uno con una etiqueta corta en mayúscula al lado (categoría del contenido). Dejo el rectángulo inferior de la pieza limpio y vacío (sin logo, sin texto, sin marca de agua) para pegar mi logo real después en un editor. Grilla de puntos violeta arriba a la izquierda.
+
+Necesito una plantilla de fondo para historia de pregunta abierta (formato vertical 1080x1920), que sirva tanto para masajes como para entrenamiento:
+- Franja fija arriba, limpia y vacía (sin logo ni texto), para pegar mi logo real después.
+- Foto placeholder neutra de Angel Meier trabajando (puede ser entrenando o dando un masaje, elegí la que te quede más natural), plano medio, cálido y cercano.
+- Franja de texto en el tercio superior, tipografía bold blanca/violeta, con el texto de ejemplo: "¿Qué zona te molesta más? Contame 👇"
+- Dejar el tercio inferior de la imagen limpio y sin texto, para poder pegar ahí el sticker nativo de "Preguntas" de Instagram.</pre>
+            <button class="copy-btn" data-copy-target="text-stk-q-img">Copiar prompt</button>
+          </div>
+        </details>
+      </div>
+
+      <div class="card">
+        <strong>Encuesta múltiple (opción a elegir)</strong>
+        <div class="stack" style="margin-top:12px">
+          <div><pre class="copy" id="text-stk-o1">¿Cuál es tu objetivo hoy? 💪
+[Sticker de encuesta: Bajar de peso / Ganar fuerza]</pre><button class="copy-btn" data-copy-target="text-stk-o1">Copiar</button></div>
+          <div><pre class="copy" id="text-stk-o2">¿Qué preferís hoy?
+[Sticker de encuesta: Masaje relajante / Masaje descontracturante]</pre><button class="copy-btn" data-copy-target="text-stk-o2">Copiar</button></div>
+          <div><pre class="copy" id="text-stk-o3">¿Dónde te gustaría entrenar?
+[Sticker de encuesta: En casa / Al aire libre]</pre><button class="copy-btn" data-copy-target="text-stk-o3">Copiar</button></div>
+        </div>
+        <details class="block" style="margin-top:12px">
+          <summary>
+            <input type="checkbox" id="stk-o-img" style="margin-right:2px">
+            Prompt de imagen para ChatGPT
+            <span class="status" id="status-stk-o-img">Pendiente</span>
+          </summary>
+          <div class="block-body">
+            <pre class="copy" id="text-stk-o-img">Ya tengo cerrada la identidad visual de mis piezas de Instagram: foto real de gimnasio (ambiente oscuro y premium), con un panel diagonal violeta sólido #7B4FE0 sobre fondo negro que cubre aproximadamente el tercio izquierdo de la imagen, con el corte en diagonal hacia la foto. Título en tipografía condensada bold en mayúsculas, blanco con la palabra clave del título en violeta. Debajo del título, 2 o 3 íconos circulares violeta rellenos con el símbolo en blanco adentro, cada uno con una etiqueta corta en mayúscula al lado (categoría del contenido). Dejo el rectángulo inferior de la pieza limpio y vacío (sin logo, sin texto, sin marca de agua) para pegar mi logo real después en un editor. Grilla de puntos violeta arriba a la izquierda.
+
+Necesito una plantilla de fondo para historia de encuesta con dos opciones a elegir (formato vertical 1080x1920):
+- Franja fija arriba, limpia y vacía (sin logo ni texto), para pegar mi logo real después.
+- Foto placeholder dividida en dos mitades (izquierda/derecha), representando dos opciones distintas de entrenamiento o de masaje, línea divisoria fina violeta en el medio.
+- Franja de texto en el tercio superior, tipografía bold blanca/violeta, con el texto de ejemplo: "¿Cuál es tu objetivo hoy? 💪"
+- Dejar el tercio inferior de la imagen limpio y sin texto, para poder pegar ahí el sticker nativo de encuesta con dos opciones de Instagram.</pre>
+            <button class="copy-btn" data-copy-target="text-stk-o-img">Copiar prompt</button>
+          </div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <section id="publicaciones">
+    <h2>Publicaciones</h2>
+    <p class="lede">Cada tema agrupa el copy del post, las historias, el prompt de imagen para ChatGPT y (si aplica) el texto de las slides. Ordenado por semana y día. Agregá un tema nuevo por cada publicación que armes.</p>
+
+    <div class="topic" data-topic-id="s1-lunes">
+      <div class="topic-head">
+        <h3>Semana 1 — Lunes (Entrenamiento/App)</h3>
+        <span class="pill">Post único</span>
+      </div>
+      <details class="block">
+        <summary>
+          <input type="checkbox" id="w1l-post" style="margin-right:2px">
+          Pie de foto del post
+          <span class="status" id="status-w1l-post">Pendiente</span>
+        </summary>
+        <div class="block-body">
+          <pre class="copy" id="text-w1l-post">Rutina de 15 minutos, sin excusas 💪
+
+No hace falta gimnasio ni equipamiento — con tu peso corporal y constancia alcanza para empezar.
+
+¿Querés una rutina armada para vos? Suscribite a la app — link en bio
+
+#entrenamientoencasa #appdeentrenamiento #fitness</pre>
+          <button class="copy-btn" data-copy-target="text-w1l-post">Copiar texto</button>
+        </div>
+      </details>
+      <details class="block">
+        <summary>
+          <input type="checkbox" id="w1l-stories" style="margin-right:2px">
+          Historias que acompañan el post
+          <span class="status" id="status-w1l-stories">Pendiente</span>
+        </summary>
+        <div class="block-body">
+          <pre class="copy" id="text-w1l-stories">Historia 1 (repost): Rutina nueva en el feed 💪 Deslizá al posteo 👆
+Historia 2 (CTA): ¿Ya tenés tu app de entrenamiento? Suscribite — link en bio</pre>
+          <button class="copy-btn" data-copy-target="text-w1l-stories">Copiar texto</button>
+        </div>
+      </details>
+      <details class="block">
+        <summary>
+          <input type="checkbox" id="w1l-img" style="margin-right:2px">
+          Prompt de imagen para ChatGPT
+          <span class="status" id="status-w1l-img">Pendiente</span>
+        </summary>
+        <div class="block-body">
+          <pre class="copy" id="text-w1l-img">Ya tengo cerrada la identidad visual de mis piezas de Instagram: foto real de gimnasio (ambiente oscuro y premium), con un panel diagonal violeta sólido #7B4FE0 sobre fondo negro que cubre aproximadamente el tercio izquierdo de la imagen, con el corte en diagonal hacia la foto. Título en tipografía condensada bold en mayúsculas, blanco con la palabra clave del título en violeta. Debajo del título, 2 o 3 íconos circulares violeta rellenos con el símbolo en blanco adentro, cada uno con una etiqueta corta en mayúscula al lado (categoría del contenido). Dejo el rectángulo inferior de la pieza limpio y vacío (sin logo, sin texto, sin marca de agua) para pegar mi logo real después en un editor. Grilla de puntos violeta arriba a la izquierda. Uso siempre el mismo template de flyer para el feed: foto real ocupando el lado derecho, panel diagonal violeta a la izquierda con el título, íconos circulares con etiqueta debajo del título, y un espacio limpio y vacío (sin logo, sin texto) abajo del todo para pegar mi logo real después.
+
+Generame la pieza de feed, formato 1080x1350:
+Categoría: Entrenamiento
+Título grande: "RUTINA DE 15 MINUTOS, SIN EXCUSAS"
+Foto: una persona entrenando en su casa (living o patio), haciendo un ejercicio de peso corporal (sentadilla o plancha), ambiente luminoso y prolijo, sin gimnasio de fondo.
+Ícono de categoría: Entrenamiento (el mismo de mi set de destacadas).</pre>
+          <button class="copy-btn" data-copy-target="text-w1l-img">Copiar prompt</button>
+        </div>
+      </details>
+    </div>
+
+    <div class="topic" data-topic-id="s1-miercoles">
+      <div class="topic-head">
+        <h3>Semana 1 — Miércoles (Masajes)</h3>
+        <span class="pill">Post único</span>
+      </div>
+      <details class="block">
+        <summary>
+          <input type="checkbox" id="w1m-post" style="margin-right:2px">
+          Pie de foto del post
+          <span class="status" id="status-w1m-post">Pendiente</span>
+        </summary>
+        <div class="block-body">
+          <pre class="copy" id="text-w1m-post">Adiós dolor cervical 🙌
+
+Pasar horas mirando el celular o la compu factura directo en el cuello y los hombros.
+
+Una sesión bien enfocada puede devolverte la movilidad en una sola visita.
+
+📲 Coordiná tu turno — link en bio
+
+#dolorcervical #masajesterapeuticos #dontorcuato</pre>
+          <button class="copy-btn" data-copy-target="text-w1m-post">Copiar texto</button>
+        </div>
+      </details>
+      <details class="block">
+        <summary>
+          <input type="checkbox" id="w1m-stories" style="margin-right:2px">
+          Historias que acompañan el post
+          <span class="status" id="status-w1m-stories">Pendiente</span>
+        </summary>
+        <div class="block-body">
+          <pre class="copy" id="text-w1m-stories">Historia 1 (repost + encuesta): ¿Te duele el cuello después de trabajar? [Sí/No]
+Historia 2 (CTA): Turnos disponibles esta semana — link en bio</pre>
+          <button class="copy-btn" data-copy-target="text-w1m-stories">Copiar texto</button>
+        </div>
+      </details>
+      <details class="block">
+        <summary>
+          <input type="checkbox" id="w1m-img" style="margin-right:2px">
+          Prompt de imagen para ChatGPT
+          <span class="status" id="status-w1m-img">Pendiente</span>
+        </summary>
+        <div class="block-body">
+          <pre class="copy" id="text-w1m-img">Ya tengo cerrada la identidad visual de mis piezas de Instagram: foto real de gimnasio (ambiente oscuro y premium), con un panel diagonal violeta sólido #7B4FE0 sobre fondo negro que cubre aproximadamente el tercio izquierdo de la imagen, con el corte en diagonal hacia la foto. Título en tipografía condensada bold en mayúsculas, blanco con la palabra clave del título en violeta. Debajo del título, 2 o 3 íconos circulares violeta rellenos con el símbolo en blanco adentro, cada uno con una etiqueta corta en mayúscula al lado (categoría del contenido). Dejo el rectángulo inferior de la pieza limpio y vacío (sin logo, sin texto, sin marca de agua) para pegar mi logo real después en un editor. Grilla de puntos violeta arriba a la izquierda. Uso siempre el mismo template de flyer para el feed: foto real ocupando el lado derecho, panel diagonal violeta a la izquierda con el título, íconos circulares con etiqueta debajo del título, y un espacio limpio y vacío (sin logo, sin texto) abajo del todo para pegar mi logo real después.
+
+Generame la pieza de feed, formato 1080x1350:
+Categoría: Masajes
+Título grande: "ADIÓS DOLOR CERVICAL"
+Foto: masoterapeuta aplicando masaje en el cuello y hombros de un cliente acostado boca abajo en camilla, consultorio cálido y prolijo, luz suave.
+Ícono de categoría: Masajes (el mismo de mi set de destacadas).</pre>
+          <button class="copy-btn" data-copy-target="text-w1m-img">Copiar prompt</button>
+        </div>
+      </details>
+    </div>
+
+    <div class="topic" data-topic-id="testimonio-s1">
+      <div class="topic-head">
+        <h3>Semana 1 — Testimonio (masajes)</h3>
+        <span class="pill">Post único</span>
+      </div>
+
+      <details class="block">
+        <summary>
+          <input type="checkbox" id="s1-post" style="margin-right:2px">
+          Pie de foto del post
+          <span class="status" id="status-s1-post">Pendiente</span>
+        </summary>
+        <div class="block-body">
+          <pre class="copy" id="text-s1-post">"Llegué con un dolor lumbar que no me dejaba ni sentarme bien en el auto. Después de las primeras sesiones sentí la diferencia — hoy vuelvo cada 2 semanas para mantenerme." — [Nombre del cliente]
+
+Así se sienten mis clientes después de una sesión 💜
+¿Vos hace cuánto no te das un espacio para tu cuerpo?
+
+📲 Coordiná tu turno — link en bio
+
+#testimonios #masajesterapeuticos #dontorcuato #bienestar</pre>
+          <button class="copy-btn" data-copy-target="text-s1-post">Copiar texto</button>
+        </div>
+      </details>
+
+      <details class="block">
+        <summary>
+          <input type="checkbox" id="s1-stories" style="margin-right:2px">
+          Historias que acompañan el post
+          <span class="status" id="status-s1-stories">Pendiente</span>
+        </summary>
+        <div class="block-body">
+          <pre class="copy" id="text-s1-stories">Historia 1 (repost del post):
+Otro cliente feliz 💜 Deslizá al posteo 👆
+
+Historia 2 (pregunta):
+¿Ya te diste una sesión de masajes este mes? 👀
+[Sticker de encuesta: Sí / Todavía no]
+
+Historia 3 (CTA):
+Si todavía no probaste, este es tu momento.
+📲 Turnos — link en bio</pre>
+          <button class="copy-btn" data-copy-target="text-s1-stories">Copiar texto</button>
+        </div>
+      </details>
+
+      <details class="block">
+        <summary>
+          <input type="checkbox" id="s1-img" style="margin-right:2px">
+          Prompt de imagen para ChatGPT
+          <span class="status" id="status-s1-img">Pendiente</span>
+        </summary>
+        <div class="block-body">
+          <pre class="copy" id="text-s1-img">Ya tengo cerrada la identidad visual de mis piezas de Instagram: foto real de gimnasio (ambiente oscuro y premium), con un panel diagonal violeta sólido #7B4FE0 sobre fondo negro que cubre aproximadamente el tercio izquierdo de la imagen, con el corte en diagonal hacia la foto. Título en tipografía condensada bold en mayúsculas, blanco con la palabra clave del título en violeta. Debajo del título, 2 o 3 íconos circulares violeta rellenos con el símbolo en blanco adentro, cada uno con una etiqueta corta en mayúscula al lado (categoría del contenido). Dejo el rectángulo inferior de la pieza limpio y vacío (sin logo, sin texto, sin marca de agua) para pegar mi logo real después en un editor. Grilla de puntos violeta arriba a la izquierda.
+
+Necesito una pieza de feed 1080x1350 tipo "tarjeta de testimonio":
+- Fondo negro sólido con una foto sutil de fondo (consultorio o camilla) con overlay oscuro fuerte, casi como textura, no protagonista.
+- Comillas grandes violeta #7B4FE0 arriba a la izquierda.
+- Texto del testimonio centrado, tipografía blanca bold, tamaño mediano (dejalo con placeholder): "Llegué con un dolor lumbar que no me dejaba ni sentarme bien en el auto. Después de las primeras sesiones sentí la diferencia."
+- Debajo del texto: "— Clienta de Angel Meier" en violeta, más chico.
+- 5 estrellas violeta chicas arriba del texto.
+- Espacio limpio y vacío chico abajo para pegar mi logo real después, ícono de categoría "Opiniones/Testimonios" (mismo estilo que mis íconos de destacadas).</pre>
+          <button class="copy-btn" data-copy-target="text-s1-img">Copiar prompt</button>
+        </div>
+      </details>
+
+      <p style="color:var(--pending-ink);font-size:0.82rem;margin:12px 0 0">⚠ Reemplazar "[Nombre del cliente]" por el testimonio real antes de publicar (con su autorización).</p>
+    </div>
+
+    <div class="topic" data-topic-id="s1-reel">
+      <div class="topic-head">
+        <h3>Semana 1 — Día 4 (Reel: "no sabés qué hacer")</h3>
+        <span class="pill">Reel</span>
+      </div>
+
+      <details class="block" open>
+        <summary>
+          <input type="checkbox" id="s1r-guion" style="margin-right:2px">
+          Guion del reel (hablado a cámara)
+          <span class="status" id="status-s1r-guion">Pendiente</span>
+        </summary>
+        <div class="block-body">
+          <pre class="copy" id="text-s1r-guion">[HOOK — primeros 2 segundos, mirando directo a cámara]
+"¿Vas al gimnasio y no sabés qué hacer?"
+
+[Texto en pantalla mientras seguís hablando]
+"Nadie te da bola"
+
+[DESARROLLO — enumerá rápido, cámara en mano o trípode, cambiá de plano en cada frase]
+"Te dan una rutina... y no te la cambian nunca más."
+"O querés entrenar en tu casa, pero no tenés ni idea de por dónde arrancar."
+"Y terminás yendo 2 veces y dejando, porque no ves resultados y no sabés si lo estás haciendo bien."
+"¿Sentís que no avanzás, que estás estancado o estancada hace meses?"
+
+[GIRO — acá cambia el tono, más cercano/solución]
+"Yo te puedo ayudar a mejorar eso."
+"Armé mi app de entrenamiento justamente para esto."
+"Vos me contás tu objetivo, y yo te armo la rutina — la voy actualizando cada 4 semanas, con video de cada ejercicio para que sepas hacerlo bien."
+"Entrenás en el gimnasio o en tu casa, como quieras."
+
+[CIERRE — CTA]
+"Si estás cansado de no tener un plan, el link está en mi bio."
+
+[Texto en pantalla final, grande]
+"TU RUTINA. TU APP. TU RESULTADO."</pre>
+          <button class="copy-btn" data-copy-target="text-s1r-guion">Copiar guion</button>
+        </div>
+      </details>
+
+      <details class="block">
+        <summary>
+          <input type="checkbox" id="s1r-post" style="margin-right:2px">
+          Pie de foto del post
+          <span class="status" id="status-s1r-post">Pendiente</span>
+        </summary>
+        <div class="block-body">
+          <pre class="copy" id="text-s1r-post">¿Te pasó esto? 🙋
+
+Vas al gimnasio y nadie te da bola. Te dan una rutina y la misma dura 6 meses. O querés entrenar en tu casa y no sabés ni por dónde arrancar.
+
+¿Sentís que no avanzás, que estás estancado o estancada hace tiempo? No es que no tengas voluntad — es que te falta un plan real, hecho para vos. Y ahí te puedo ayudar a mejorar.
+
+Con mi app armo tu rutina según tu objetivo, la actualizo cada 4 semanas y tenés video de cada ejercicio para no tener dudas. En el gimnasio o en tu casa.
+
+📲 Empezá hoy — link en bio
+
+#entrenamientopersonalizado #appdeentrenamiento #entrenarencasa #rutinadeentrenamiento #fitness</pre>
+          <button class="copy-btn" data-copy-target="text-s1r-post">Copiar texto</button>
+        </div>
+      </details>
+
+      <details class="block">
+        <summary>
+          <input type="checkbox" id="s1r-stories" style="margin-right:2px">
+          Historias que acompañan el reel
+          <span class="status" id="status-s1r-stories">Pendiente</span>
+        </summary>
+        <div class="block-body">
+          <pre class="copy" id="text-s1r-stories">Historia 1 (repost + encuesta): ¿Te pasó que en el gimnasio no te dan bola? 👀
+[Sticker de encuesta: Sí, todo el tiempo / No]
+
+Historia 2 (repost del reel): Nuevo reel en el feed 👆 Deslizá y contame si te pasó
+
+Historia 3 (CTA): Si estás cansado de entrenar sin un plan, el link está en mi bio</pre>
+          <button class="copy-btn" data-copy-target="text-s1r-stories">Copiar texto</button>
+        </div>
+      </details>
+
+      <details class="block">
+        <summary>
+          <input type="checkbox" id="s1r-img" style="margin-right:2px">
+          Prompt de portada para ChatGPT
+          <span class="status" id="status-s1r-img">Pendiente</span>
+        </summary>
+        <div class="block-body">
+          <pre class="copy" id="text-s1r-img">Ya tengo cerrada la identidad visual de mis piezas de Instagram: foto real de gimnasio (ambiente oscuro y premium), con un panel diagonal violeta sólido #7B4FE0 sobre fondo negro que cubre aproximadamente el tercio izquierdo de la imagen, con el corte en diagonal hacia la foto. Título en tipografía condensada bold en mayúsculas, blanco con la palabra clave del título en violeta. Debajo del título, 2 o 3 íconos circulares violeta rellenos con el símbolo en blanco adentro, cada uno con una etiqueta corta en mayúscula al lado (categoría del contenido). Dejo el rectángulo inferior de la pieza limpio y vacío (sin logo, sin texto, sin marca de agua) para pegar mi logo real después en un editor. Grilla de puntos violeta arriba a la izquierda. Ya tengo mi plantilla de portada de Reels (formato vertical 1080x1920, logo chico fijo, área central para foto del video, franja de texto bold, etiqueta chica de categoría).
+
+Generame la portada de este reel con esa misma plantilla:
+Categoría: Entrenamiento
+Título: "¿NO SABÉS QUÉ HACER EN EL GIMNASIO?"
+Foto: una persona con cara de duda/perdida parada frente a máquinas de gimnasio, o alternativamente alguien entrenando en su living mirando el celular confundido — elegí la que te parezca más impactante como portada.
+Etiqueta de categoría: "ENTRENAMIENTO".</pre>
+          <button class="copy-btn" data-copy-target="text-s1r-img">Copiar prompt</button>
+        </div>
+      </details>
+
+      <p style="color:var(--ink-dim);font-size:0.82rem;margin:12px 0 0">🎬 Grabalo hablando a cámara, en el gimnasio o en tu casa. Publicalo igual en TikTok e Instagram (mismo video, mismo copy adaptado — en TikTok podés sacar los hashtags de Instagram y usar 3-4 más genéricos de fitness).</p>
+    </div>
+
+    <div class="topic" data-topic-id="s2-lunes">
+      <div class="topic-head">
+        <h3>Semana 2 — Lunes (Entrenamiento/App)</h3>
+        <span class="pill">Post único</span>
+      </div>
+      <details class="block">
+        <summary>
+          <input type="checkbox" id="w2l-post" style="margin-right:2px">
+          Pie de foto del post
+          <span class="status" id="status-w2l-post">Pendiente</span>
+        </summary>
+        <div class="block-body">
+          <pre class="copy" id="text-w2l-post">Un core fuerte no es solo estética — es la base que protege tu espalda en cada movimiento del día.
+
+En la app tenés rutinas de core progresivas, adaptadas a tu nivel.
+
+🔗 angelmeier-fit.web.app/suscripcion
+
+#core #entrenamientopersonalizado #fuerza</pre>
+          <button class="copy-btn" data-copy-target="text-w2l-post">Copiar texto</button>
+        </div>
+      </details>
+      <details class="block">
+        <summary>
+          <input type="checkbox" id="w2l-stories" style="margin-right:2px">
+          Historias que acompañan el post
+          <span class="status" id="status-w2l-stories">Pendiente</span>
+        </summary>
+        <div class="block-body">
+          <pre class="copy" id="text-w2l-stories">Historia 1 (repost): Nueva rutina de core en el feed 👆
+Historia 2 (CTA): Sumate a la app esta semana — link en bio</pre>
+          <button class="copy-btn" data-copy-target="text-w2l-stories">Copiar texto</button>
+        </div>
+      </details>
+      <details class="block">
+        <summary>
+          <input type="checkbox" id="w2l-img" style="margin-right:2px">
+          Prompt de imagen para ChatGPT
+          <span class="status" id="status-w2l-img">Pendiente</span>
+        </summary>
+        <div class="block-body">
+          <pre class="copy" id="text-w2l-img">Ya tengo cerrada la identidad visual de mis piezas de Instagram: foto real de gimnasio (ambiente oscuro y premium), con un panel diagonal violeta sólido #7B4FE0 sobre fondo negro que cubre aproximadamente el tercio izquierdo de la imagen, con el corte en diagonal hacia la foto. Título en tipografía condensada bold en mayúsculas, blanco con la palabra clave del título en violeta. Debajo del título, 2 o 3 íconos circulares violeta rellenos con el símbolo en blanco adentro, cada uno con una etiqueta corta en mayúscula al lado (categoría del contenido). Dejo el rectángulo inferior de la pieza limpio y vacío (sin logo, sin texto, sin marca de agua) para pegar mi logo real después en un editor. Grilla de puntos violeta arriba a la izquierda. Uso siempre el mismo template de flyer para el feed: foto real ocupando el lado derecho, panel diagonal violeta a la izquierda con el título, íconos circulares con etiqueta debajo del título, y un espacio limpio y vacío (sin logo, sin texto) abajo del todo para pegar mi logo real después.
+
+Generame la pieza de feed, formato 1080x1350:
+Categoría: Entrenamiento
+Título grande: "UN CORE FUERTE PROTEGE TU ESPALDA"
+Foto: una persona haciendo un ejercicio de core (plancha o abdominales), buena forma técnica, ambiente de entrenamiento en casa o gimnasio funcional.
+Ícono de categoría: Entrenamiento (el mismo de mi set de destacadas).</pre>
+          <button class="copy-btn" data-copy-target="text-w2l-img">Copiar prompt</button>
+        </div>
+      </details>
+    </div>
+
+    <div class="topic" data-topic-id="s2-miercoles">
+      <div class="topic-head">
+        <h3>Semana 2 — Miércoles (Masajes)</h3>
+        <span class="pill">Post único</span>
+      </div>
+      <details class="block">
+        <summary>
+          <input type="checkbox" id="w2m-post" style="margin-right:2px">
+          Pie de foto del post
+          <span class="status" id="status-w2m-post">Pendiente</span>
+        </summary>
+        <div class="block-body">
+          <pre class="copy" id="text-w2m-post">Recuperación deportiva: no es un lujo, es parte del entrenamiento 🏋️
+
+Si entrenás fuerte, tu cuerpo necesita algo más que descanso — necesita recuperarse bien.
+
+📲 Reservá tu sesión de masaje deportivo — link en bio
+
+#masajedeportivo #recuperacion #rendimiento</pre>
+          <button class="copy-btn" data-copy-target="text-w2m-post">Copiar texto</button>
+        </div>
+      </details>
+      <details class="block">
+        <summary>
+          <input type="checkbox" id="w2m-stories" style="margin-right:2px">
+          Historias que acompañan el post
+          <span class="status" id="status-w2m-stories">Pendiente</span>
+        </summary>
+        <div class="block-body">
+          <pre class="copy" id="text-w2m-stories">Historia 1 (repost + encuesta): ¿Entrenás fuerte y no te recuperás bien? [Sí/No]
+Historia 2 (CTA): Turnos de masaje deportivo — link en bio</pre>
+          <button class="copy-btn" data-copy-target="text-w2m-stories">Copiar texto</button>
+        </div>
+      </details>
+      <details class="block">
+        <summary>
+          <input type="checkbox" id="w2m-img" style="margin-right:2px">
+          Prompt de imagen para ChatGPT
+          <span class="status" id="status-w2m-img">Pendiente</span>
+        </summary>
+        <div class="block-body">
+          <pre class="copy" id="text-w2m-img">Ya tengo cerrada la identidad visual de mis piezas de Instagram: foto real de gimnasio (ambiente oscuro y premium), con un panel diagonal violeta sólido #7B4FE0 sobre fondo negro que cubre aproximadamente el tercio izquierdo de la imagen, con el corte en diagonal hacia la foto. Título en tipografía condensada bold en mayúsculas, blanco con la palabra clave del título en violeta. Debajo del título, 2 o 3 íconos circulares violeta rellenos con el símbolo en blanco adentro, cada uno con una etiqueta corta en mayúscula al lado (categoría del contenido). Dejo el rectángulo inferior de la pieza limpio y vacío (sin logo, sin texto, sin marca de agua) para pegar mi logo real después en un editor. Grilla de puntos violeta arriba a la izquierda. Uso siempre el mismo template de flyer para el feed: foto real ocupando el lado derecho, panel diagonal violeta a la izquierda con el título, íconos circulares con etiqueta debajo del título, y un espacio limpio y vacío (sin logo, sin texto) abajo del todo para pegar mi logo real después.
+
+Generame la pieza de feed, formato 1080x1350:
+Categoría: Masajes
+Título grande: "RECUPERACIÓN DEPORTIVA"
+Foto: masaje deportivo en las piernas o la espalda de un cliente con ropa deportiva, técnica de amasado profunda, ambiente de recuperación post-entrenamiento.
+Ícono de categoría: Masajes (el mismo de mi set de destacadas).</pre>
+          <button class="copy-btn" data-copy-target="text-w2m-img">Copiar prompt</button>
+        </div>
+      </details>
+    </div>
+
+    <div class="topic" data-topic-id="lumbar">
+      <div class="topic-head">
+        <h3>Semana 2 — Viernes (Carrusel educativo — dolor lumbar)</h3>
+        <span class="pill">Carrusel</span>
+      </div>
+
+      <details class="block">
+        <summary>
+          <input type="checkbox" id="c1" style="margin-right:2px">
+          Pie de foto del post
+          <span class="status" id="status-c1">Pendiente</span>
+        </summary>
+        <div class="block-body">
+          <pre class="copy" id="text-c1">💥 5 TIPS PARA ALIVIAR EL DOLOR LUMBAR 💥
+
+El dolor lumbar no aparece de la nada: la mayoría de las veces es consecuencia de malos hábitos que repetimos todos los días sin darnos cuenta.
+
+Guardá este posteo y aplicá estos tips desde hoy 👇
+
+1️⃣ Movete cada 30-40 minutos, aunque sea un minuto
+2️⃣ Fortalecé el core, no solo la espalda
+3️⃣ Cuidá cómo levantás peso: flexioná rodillas, no la espalda
+
+Si ya venís con dolor hace tiempo, estos tips ayudan pero no reemplazan una sesión personalizada que trabaje la causa real.
+
+📲 Escribime y coordinamos tu turno (link en bio)
+
+.
+.
+.
+#dolorlumbar #masajesterapeuticos #entrenamientopersonalizado #bienestar #dontorcuato #vidasaludable #masajedescontracturante #saludyfitness</pre>
+          <button class="copy-btn" data-copy-target="text-c1">Copiar texto</button>
+        </div>
+      </details>
+
+      <details class="block">
+        <summary>
+          <input type="checkbox" id="c2" style="margin-right:2px">
+          Historias que acompañan el post
+          <span class="status" id="status-c2">Pendiente</span>
+        </summary>
+        <div class="block-body">
+          <pre class="copy" id="text-c2">Historia 1 (repost + sticker de encuesta):
+¿Te duele la zona lumbar seguido? 👀
+[Sticker de encuesta: Sí / No]
+
+Historia 2:
+Subí un carrusel con 5 tips para el dolor lumbar 💜
+Deslizá al posteo anterior 👆
+
+Historia 3 (tip suelto):
+Tip rápido: si pasás muchas horas sentado, tu espalda te lo va a cobrar tarde o temprano.
+Movete cada 30-40 min. Así de simple.
+
+Historia 4 (CTA directo):
+¿Ya probaste una sesión de masaje descontracturante?
+📲 Coordiná tu turno — link en bio</pre>
+          <button class="copy-btn" data-copy-target="text-c2">Copiar texto</button>
+        </div>
+      </details>
+
+      <details class="block">
+        <summary>
+          <input type="checkbox" id="c3" style="margin-right:2px">
+          Copy de las 5 slides
+          <span class="status" id="status-c3">Pendiente</span>
+        </summary>
+        <div class="block-body">
+          <pre class="copy" id="text-c3">Slide 1 — Portada:
+5 TIPS PARA ALIVIAR EL DOLOR LUMBAR
+Deslizá →
+
+Slide 2 — Tip 1:
+1. Movete cada 30-40 minutos
+Estar sentado mucho tiempo sin pausas es una de las causas más comunes de dolor lumbar. Parate, caminá un minuto y volvé.
+
+Slide 3 — Tip 2:
+2. Fortalecé el core, no solo la espalda
+Un abdomen débil sobrecarga la zona lumbar. Ejercicios simples de core hacen más que cualquier estiramiento aislado.
+
+Slide 4 — Tip 3:
+3. Cuidá cómo levantás peso
+Flexioná las rodillas, no la espalda. Acercá el objeto al cuerpo antes de levantarlo.
+
+Slide 5 — Cierre:
+¿Seguís con dolor a pesar de estos tips?
+Una sesión personalizada puede ayudarte a encontrar la causa real.
+📲 Escribime y coordinamos tu turno</pre>
+          <button class="copy-btn" data-copy-target="text-c3">Copiar texto</button>
+        </div>
+      </details>
+
+      <details class="block">
+        <summary>
+          <input type="checkbox" id="c-img" style="margin-right:2px">
+          Prompts de imagen para ChatGPT (5 slides)
+          <span class="status" id="status-c-img">Pendiente</span>
+        </summary>
+        <div class="block-body">
+          <div style="margin-bottom:14px">
+            <strong style="display:block;margin-bottom:6px;font-size:0.85rem">Slide 1 — Portada</strong>
+            <pre class="copy" id="text-c-img-1">Ya tengo cerrada la identidad visual de mis piezas de Instagram: foto real de gimnasio (ambiente oscuro y premium), con un panel diagonal violeta sólido #7B4FE0 sobre fondo negro que cubre aproximadamente el tercio izquierdo de la imagen, con el corte en diagonal hacia la foto. Título en tipografía condensada bold en mayúsculas, blanco con la palabra clave del título en violeta. Debajo del título, 2 o 3 íconos circulares violeta rellenos con el símbolo en blanco adentro, cada uno con una etiqueta corta en mayúscula al lado (categoría del contenido). Dejo el rectángulo inferior de la pieza limpio y vacío (sin logo, sin texto, sin marca de agua) para pegar mi logo real después en un editor. Grilla de puntos violeta arriba a la izquierda.
+
+Necesito la Slide 1 (portada) de un carrusel educativo de Instagram, 5 slides en total, formato vertical 1080x1350, tema "5 tips para aliviar el dolor lumbar". Esta va a ser la plantilla base que se repite en las otras 4 slides.
+
+Especificaciones de la portada:
+- Fondo negro sólido o foto real de alguien con dolor de espalda (sentado, tocándose la zona lumbar) con overlay oscuro fuerte.
+- Título grande bold blanco: "5 TIPS PARA ALIVIAR EL DOLOR LUMBAR"
+- "Deslizá →" abajo, en violeta.
+- Espacio limpio y vacío chico en la esquina para pegar mi logo real después.
+- Dejame el mismo layout (posición del espacio para el logo, del título, del "deslizá") para poder pedirte las siguientes 4 slides con el mismo estilo.</pre>
+            <button class="copy-btn" data-copy-target="text-c-img-1">Copiar prompt</button>
+          </div>
+
+          <div style="margin-bottom:14px">
+            <strong style="display:block;margin-bottom:6px;font-size:0.85rem">Slide 2 — Tip 1</strong>
+            <pre class="copy" id="text-c-img-2">Mismo estilo que la slide de portada del carrusel "5 tips para aliviar el dolor lumbar" (marca ANGEL MEiER, violeta #7B4FE0, fondo negro, flat design, espacio reservado para el logo en la esquina).
+
+Generame la Slide 2 (Tip 1), formato 1080x1350:
+- Número grande "1" en violeta, esquina superior.
+- Título: "Movete cada 30-40 minutos"
+- Texto explicativo corto: "Estar sentado mucho tiempo sin pausas es una de las causas más comunes de dolor lumbar. Parate, caminá un minuto y volvé."
+- Foto de fondo (opcional): alguien parándose de su escritorio para estirar, con overlay oscuro.
+- Mismo espacio reservado para el logo, mismo lugar, mismo estilo tipográfico que la portada.</pre>
+            <button class="copy-btn" data-copy-target="text-c-img-2">Copiar prompt</button>
+          </div>
+
+          <div style="margin-bottom:14px">
+            <strong style="display:block;margin-bottom:6px;font-size:0.85rem">Slide 3 — Tip 2</strong>
+            <pre class="copy" id="text-c-img-3">Mismo estilo que las slides anteriores del carrusel "5 tips para aliviar el dolor lumbar" (marca ANGEL MEiER, violeta #7B4FE0, fondo negro, flat design, espacio reservado para el logo en la esquina).
+
+Generame la Slide 3 (Tip 2), formato 1080x1350:
+- Número grande "2" en violeta, esquina superior.
+- Título: "Fortalecé el core, no solo la espalda"
+- Texto explicativo corto: "Un abdomen débil sobrecarga la zona lumbar. Ejercicios simples de core hacen más que cualquier estiramiento aislado."
+- Foto de fondo (opcional): alguien haciendo un ejercicio de core simple (plancha), con overlay oscuro.
+- Mismo espacio reservado para el logo, mismo lugar, mismo estilo tipográfico que las slides anteriores.</pre>
+            <button class="copy-btn" data-copy-target="text-c-img-3">Copiar prompt</button>
+          </div>
+
+          <div style="margin-bottom:14px">
+            <strong style="display:block;margin-bottom:6px;font-size:0.85rem">Slide 4 — Tip 3</strong>
+            <pre class="copy" id="text-c-img-4">Mismo estilo que las slides anteriores del carrusel "5 tips para aliviar el dolor lumbar" (marca ANGEL MEiER, violeta #7B4FE0, fondo negro, flat design, espacio reservado para el logo en la esquina).
+
+Generame la Slide 4 (Tip 3), formato 1080x1350:
+- Número grande "3" en violeta, esquina superior.
+- Título: "Cuidá cómo levantás peso"
+- Texto explicativo corto: "Flexioná las rodillas, no la espalda. Acercá el objeto al cuerpo antes de levantarlo."
+- Foto de fondo (opcional): alguien levantando una caja correctamente, flexionando rodillas, con overlay oscuro.
+- Mismo espacio reservado para el logo, mismo lugar, mismo estilo tipográfico que las slides anteriores.</pre>
+            <button class="copy-btn" data-copy-target="text-c-img-4">Copiar prompt</button>
+          </div>
+
+          <div>
+            <strong style="display:block;margin-bottom:6px;font-size:0.85rem">Slide 5 — Cierre</strong>
+            <pre class="copy" id="text-c-img-5">Mismo estilo que las slides anteriores del carrusel "5 tips para aliviar el dolor lumbar" (marca ANGEL MEiER, violeta #7B4FE0, fondo negro, flat design, espacio reservado para el logo en la esquina).
+
+Generame la Slide 5 (cierre), formato 1080x1350:
+- Título: "¿Seguís con dolor a pesar de estos tips?"
+- Texto: "Una sesión personalizada puede ayudarte a encontrar la causa real."
+- CTA destacado en violeta: "📲 Escribime y coordinamos tu turno"
+- Espacio limpio y vacío grande centrado para pegar mi logo real después, más protagonista que en las slides anteriores (es el cierre).
+- Foto de fondo (opcional): consultorio o camilla, con overlay oscuro.
+- Mismo estilo general (colores, tipografía) que las slides anteriores.</pre>
+            <button class="copy-btn" data-copy-target="text-c-img-5">Copiar prompt</button>
+          </div>
+        </div>
+      </details>
+    </div>
+
+    <div class="topic" data-topic-id="s3-lunes">
+      <div class="topic-head">
+        <h3>Semana 3 — Lunes (Entrenamiento/App)</h3>
+        <span class="pill">Post único</span>
+      </div>
+      <details class="block">
+        <summary>
+          <input type="checkbox" id="w3l-post" style="margin-right:2px">
+          Pie de foto del post
+          <span class="status" id="status-w3l-post">Pendiente</span>
+        </summary>
+        <div class="block-body">
+          <pre class="copy" id="text-w3l-post">HIIT: 20 minutos, resultados que se sienten 🔥
+
+Quemá grasa y ganá energía con entrenamientos cortos e intensos, armados para tu rutina diaria.
+
+Empezá esta semana — link en bio
+
+#hiit #quemagrasa #entrenamientopersonalizado</pre>
+          <button class="copy-btn" data-copy-target="text-w3l-post">Copiar texto</button>
+        </div>
+      </details>
+      <details class="block">
+        <summary>
+          <input type="checkbox" id="w3l-stories" style="margin-right:2px">
+          Historias que acompañan el post
+          <span class="status" id="status-w3l-stories">Pendiente</span>
+        </summary>
+        <div class="block-body">
+          <pre class="copy" id="text-w3l-stories">Historia 1 (repost): Nuevo HIIT en el feed 🔥 Deslizá 👆
+Historia 2 (CTA): 20 minutos es todo lo que necesitás hoy — link en bio</pre>
+          <button class="copy-btn" data-copy-target="text-w3l-stories">Copiar texto</button>
+        </div>
+      </details>
+      <details class="block">
+        <summary>
+          <input type="checkbox" id="w3l-img" style="margin-right:2px">
+          Prompt de imagen para ChatGPT
+          <span class="status" id="status-w3l-img">Pendiente</span>
+        </summary>
+        <div class="block-body">
+          <pre class="copy" id="text-w3l-img">Ya tengo cerrada la identidad visual de mis piezas de Instagram: foto real de gimnasio (ambiente oscuro y premium), con un panel diagonal violeta sólido #7B4FE0 sobre fondo negro que cubre aproximadamente el tercio izquierdo de la imagen, con el corte en diagonal hacia la foto. Título en tipografía condensada bold en mayúsculas, blanco con la palabra clave del título en violeta. Debajo del título, 2 o 3 íconos circulares violeta rellenos con el símbolo en blanco adentro, cada uno con una etiqueta corta en mayúscula al lado (categoría del contenido). Dejo el rectángulo inferior de la pieza limpio y vacío (sin logo, sin texto, sin marca de agua) para pegar mi logo real después en un editor. Grilla de puntos violeta arriba a la izquierda. Uso siempre el mismo template de flyer para el feed: foto real ocupando el lado derecho, panel diagonal violeta a la izquierda con el título, íconos circulares con etiqueta debajo del título, y un espacio limpio y vacío (sin logo, sin texto) abajo del todo para pegar mi logo real después.
+
+Generame la pieza de feed, formato 1080x1350:
+Categoría: Entrenamiento
+Título grande: "HIIT: 20 MINUTOS, RESULTADOS QUE SE SIENTEN"
+Foto: una persona en pleno movimiento de un ejercicio intenso (burpee o salto), transpirando, energía y esfuerzo, ambiente de entrenamiento funcional.
+Ícono de categoría: Entrenamiento (el mismo de mi set de destacadas).</pre>
+          <button class="copy-btn" data-copy-target="text-w3l-img">Copiar prompt</button>
+        </div>
+      </details>
+    </div>
+
+    <div class="topic" data-topic-id="s3-miercoles">
+      <div class="topic-head">
+        <h3>Semana 3 — Miércoles (Masajes)</h3>
+        <span class="pill">Post único</span>
+      </div>
+      <details class="block">
+        <summary>
+          <input type="checkbox" id="w3m-post" style="margin-right:2px">
+          Pie de foto del post
+          <span class="status" id="status-w3m-post">Pendiente</span>
+        </summary>
+        <div class="block-body">
+          <pre class="copy" id="text-w3m-post">A veces el cuerpo no pide fuerza, pide calma 🕊️
+
+Una sesión de relajación ayuda a bajar el estrés acumulado de la semana — para el cuerpo y para la cabeza.
+
+📲 Regalate un momento — turnos por WhatsApp, link en bio
+
+#relajacion #bienestar #saludmental</pre>
+          <button class="copy-btn" data-copy-target="text-w3m-post">Copiar texto</button>
+        </div>
+      </details>
+      <details class="block">
+        <summary>
+          <input type="checkbox" id="w3m-stories" style="margin-right:2px">
+          Historias que acompañan el post
+          <span class="status" id="status-w3m-stories">Pendiente</span>
+        </summary>
+        <div class="block-body">
+          <pre class="copy" id="text-w3m-stories">Historia 1 (repost + encuesta): ¿Necesitás desconectar esta semana? [Sí/No]
+Historia 2 (CTA): Regalate una sesión de relajación — link en bio</pre>
+          <button class="copy-btn" data-copy-target="text-w3m-stories">Copiar texto</button>
+        </div>
+      </details>
+      <details class="block">
+        <summary>
+          <input type="checkbox" id="w3m-img" style="margin-right:2px">
+          Prompt de imagen para ChatGPT
+          <span class="status" id="status-w3m-img">Pendiente</span>
+        </summary>
+        <div class="block-body">
+          <pre class="copy" id="text-w3m-img">Ya tengo cerrada la identidad visual de mis piezas de Instagram: foto real de gimnasio (ambiente oscuro y premium), con un panel diagonal violeta sólido #7B4FE0 sobre fondo negro que cubre aproximadamente el tercio izquierdo de la imagen, con el corte en diagonal hacia la foto. Título en tipografía condensada bold en mayúsculas, blanco con la palabra clave del título en violeta. Debajo del título, 2 o 3 íconos circulares violeta rellenos con el símbolo en blanco adentro, cada uno con una etiqueta corta en mayúscula al lado (categoría del contenido). Dejo el rectángulo inferior de la pieza limpio y vacío (sin logo, sin texto, sin marca de agua) para pegar mi logo real después en un editor. Grilla de puntos violeta arriba a la izquierda. Uso siempre el mismo template de flyer para el feed: foto real ocupando el lado derecho, panel diagonal violeta a la izquierda con el título, íconos circulares con etiqueta debajo del título, y un espacio limpio y vacío (sin logo, sin texto) abajo del todo para pegar mi logo real después.
+
+Generame la pieza de feed, formato 1080x1350:
+Categoría: Masajes
+Título grande: "A VECES EL CUERPO PIDE CALMA"
+Foto: ambiente de relajación en el consultorio, camilla con toalla prolija, luz tenue y cálida, tal vez una vela o piedras, sin gente en la foto o con un cliente relajado boca abajo.
+Ícono de categoría: Masajes (el mismo de mi set de destacadas).</pre>
+          <button class="copy-btn" data-copy-target="text-w3m-img">Copiar prompt</button>
+        </div>
+      </details>
+    </div>
+
+    <div class="topic" data-topic-id="promo-app-s3">
+      <div class="topic-head">
+        <h3>Semana 3 — Viernes (Promo app — CTA)</h3>
+        <span class="pill">Post único</span>
+      </div>
+
+      <details class="block">
+        <summary>
+          <input type="checkbox" id="s3-post" style="margin-right:2px">
+          Pie de foto del post
+          <span class="status" id="status-s3-post">Pendiente</span>
+        </summary>
+        <div class="block-body">
+          <pre class="copy" id="text-s3-post">Entrená donde estés, cuando quieras 💪
+
+Rutinas personalizadas, seguimiento real, sin depender de horarios de gimnasio.
+
+🔗 Suscribite hoy: angelmeier-fit.web.app/suscripcion
+
+#entrenamientopersonalizado #appdeentrenamiento #fitness #vidasaludable</pre>
+          <button class="copy-btn" data-copy-target="text-s3-post">Copiar texto</button>
+        </div>
+      </details>
+
+      <details class="block">
+        <summary>
+          <input type="checkbox" id="s3-stories" style="margin-right:2px">
+          Historias que acompañan el post
+          <span class="status" id="status-s3-stories">Pendiente</span>
+        </summary>
+        <div class="block-body">
+          <pre class="copy" id="text-s3-stories">Historia 1 (repost + sticker de link):
+Ya podés entrenar conmigo desde la app 📲
+[Sticker de link: angelmeier-fit.web.app/suscripcion]
+
+Historia 2 (cuenta regresiva u oferta si aplica):
+Sumate esta semana 💜
+[Sticker de cuenta regresiva o "Suscribite" con link]
+
+Historia 3 (objeción común):
+¿Pensás que no tenés tiempo para entrenar?
+La app se adapta a tu rutina, no al revés.</pre>
+          <button class="copy-btn" data-copy-target="text-s3-stories">Copiar texto</button>
+        </div>
+      </details>
+      <details class="block">
+        <summary>
+          <input type="checkbox" id="s3-img" style="margin-right:2px">
+          Prompt de imagen para ChatGPT
+          <span class="status" id="status-s3-img">Pendiente</span>
+        </summary>
+        <div class="block-body">
+          <pre class="copy" id="text-s3-img">Ya tengo cerrada la identidad visual de mis piezas de Instagram: foto real de gimnasio (ambiente oscuro y premium), con un panel diagonal violeta sólido #7B4FE0 sobre fondo negro que cubre aproximadamente el tercio izquierdo de la imagen, con el corte en diagonal hacia la foto. Título en tipografía condensada bold en mayúsculas, blanco con la palabra clave del título en violeta. Debajo del título, 2 o 3 íconos circulares violeta rellenos con el símbolo en blanco adentro, cada uno con una etiqueta corta en mayúscula al lado (categoría del contenido). Dejo el rectángulo inferior de la pieza limpio y vacío (sin logo, sin texto, sin marca de agua) para pegar mi logo real después en un editor. Grilla de puntos violeta arriba a la izquierda. Uso siempre el mismo template de flyer para el feed: foto real ocupando el lado derecho, panel diagonal violeta a la izquierda con el título, íconos circulares con etiqueta debajo del título, y un espacio limpio y vacío (sin logo, sin texto) abajo del todo para pegar mi logo real después.
+
+Generame la pieza de feed, formato 1080x1350, promocionando la app:
+Categoría: App
+Título grande: "ENTRENÁ DONDE ESTÉS, CUANDO QUIERAS"
+Foto/elemento: mockup realista de un celular mostrando una pantalla de rutina de entrenamiento (simple, con el nombre "ANGEL MEiER" arriba), sostenido por una persona o apoyado, de fondo un espacio de entrenamiento en casa desenfocado.
+Ícono de categoría: App (el mismo de mi set de destacadas).
+Agregar abajo un texto chico: "angelmeier-fit.web.app/suscripcion"</pre>
+          <button class="copy-btn" data-copy-target="text-s3-img">Copiar prompt</button>
+        </div>
+      </details>
+    </div>
+
+    <div class="topic" data-topic-id="s4-lunes">
+      <div class="topic-head">
+        <h3>Semana 4 — Lunes (Entrenamiento/App)</h3>
+        <span class="pill">Post único</span>
+      </div>
+      <details class="block">
+        <summary>
+          <input type="checkbox" id="w4l-post" style="margin-right:2px">
+          Pie de foto del post
+          <span class="status" id="status-w4l-post">Pendiente</span>
+        </summary>
+        <div class="block-body">
+          <pre class="copy" id="text-w4l-post">Los resultados no vienen del entrenamiento perfecto, vienen del que repetís semana tras semana.
+
+La constancia le gana a la intensidad.
+
+¿Necesitás alguien que te acompañe en ese proceso? Suscribite a la app — link en bio
+
+#constancia #habitossaludables #entrenamientopersonalizado</pre>
+          <button class="copy-btn" data-copy-target="text-w4l-post">Copiar texto</button>
+        </div>
+      </details>
+      <details class="block">
+        <summary>
+          <input type="checkbox" id="w4l-stories" style="margin-right:2px">
+          Historias que acompañan el post
+          <span class="status" id="status-w4l-stories">Pendiente</span>
+        </summary>
+        <div class="block-body">
+          <pre class="copy" id="text-w4l-stories">Historia 1 (repost): La constancia le gana a la intensidad 💪 Deslizá 👆
+Historia 2 (CTA): ¿Ya diste el primer paso? Suscribite — link en bio</pre>
+          <button class="copy-btn" data-copy-target="text-w4l-stories">Copiar texto</button>
+        </div>
+      </details>
+      <details class="block">
+        <summary>
+          <input type="checkbox" id="w4l-img" style="margin-right:2px">
+          Prompt de imagen para ChatGPT
+          <span class="status" id="status-w4l-img">Pendiente</span>
+        </summary>
+        <div class="block-body">
+          <pre class="copy" id="text-w4l-img">Ya tengo cerrada la identidad visual de mis piezas de Instagram: foto real de gimnasio (ambiente oscuro y premium), con un panel diagonal violeta sólido #7B4FE0 sobre fondo negro que cubre aproximadamente el tercio izquierdo de la imagen, con el corte en diagonal hacia la foto. Título en tipografía condensada bold en mayúsculas, blanco con la palabra clave del título en violeta. Debajo del título, 2 o 3 íconos circulares violeta rellenos con el símbolo en blanco adentro, cada uno con una etiqueta corta en mayúscula al lado (categoría del contenido). Dejo el rectángulo inferior de la pieza limpio y vacío (sin logo, sin texto, sin marca de agua) para pegar mi logo real después en un editor. Grilla de puntos violeta arriba a la izquierda. Uso siempre el mismo template de flyer para el feed: foto real ocupando el lado derecho, panel diagonal violeta a la izquierda con el título, íconos circulares con etiqueta debajo del título, y un espacio limpio y vacío (sin logo, sin texto) abajo del todo para pegar mi logo real después.
+
+Generame la pieza de feed, formato 1080x1350:
+Categoría: Entrenamiento
+Título grande: "LA CONSTANCIA LE GANA A LA INTENSIDAD"
+Foto: una persona entrenando con expresión de esfuerzo tranquilo y sostenido (no forzado), ambiente de entrenamiento en casa o gimnasio funcional, sensación de rutina, no de evento único.
+Ícono de categoría: Entrenamiento (el mismo de mi set de destacadas).</pre>
+          <button class="copy-btn" data-copy-target="text-w4l-img">Copiar prompt</button>
+        </div>
+      </details>
+    </div>
+
+    <div class="topic" data-topic-id="s4-miercoles">
+      <div class="topic-head">
+        <h3>Semana 4 — Miércoles (Masajes)</h3>
+        <span class="pill">Post único</span>
+      </div>
+      <details class="block">
+        <summary>
+          <input type="checkbox" id="w4m-post" style="margin-right:2px">
+          Pie de foto del post
+          <span class="status" id="status-w4m-post">Pendiente</span>
+        </summary>
+        <div class="block-body">
+          <pre class="copy" id="text-w4m-post">El dolor de rodilla no siempre viene de la rodilla 🦵
+
+Muchas veces el origen está en la cadera o en la postura al caminar — por eso el tratamiento no puede ser genérico.
+
+📲 Coordiná tu turno — link en bio
+
+#dolorderodilla #masajeterapeutico #tratamientodeldolor</pre>
+          <button class="copy-btn" data-copy-target="text-w4m-post">Copiar texto</button>
+        </div>
+      </details>
+      <details class="block">
+        <summary>
+          <input type="checkbox" id="w4m-stories" style="margin-right:2px">
+          Historias que acompañan el post
+          <span class="status" id="status-w4m-stories">Pendiente</span>
+        </summary>
+        <div class="block-body">
+          <pre class="copy" id="text-w4m-stories">Historia 1 (repost + encuesta): ¿Te duele la rodilla al caminar o entrenar? [Sí/No]
+Historia 2 (CTA): Turnos disponibles esta semana — link en bio</pre>
+          <button class="copy-btn" data-copy-target="text-w4m-stories">Copiar texto</button>
+        </div>
+      </details>
+      <details class="block">
+        <summary>
+          <input type="checkbox" id="w4m-img" style="margin-right:2px">
+          Prompt de imagen para ChatGPT
+          <span class="status" id="status-w4m-img">Pendiente</span>
+        </summary>
+        <div class="block-body">
+          <pre class="copy" id="text-w4m-img">Ya tengo cerrada la identidad visual de mis piezas de Instagram: foto real de gimnasio (ambiente oscuro y premium), con un panel diagonal violeta sólido #7B4FE0 sobre fondo negro que cubre aproximadamente el tercio izquierdo de la imagen, con el corte en diagonal hacia la foto. Título en tipografía condensada bold en mayúsculas, blanco con la palabra clave del título en violeta. Debajo del título, 2 o 3 íconos circulares violeta rellenos con el símbolo en blanco adentro, cada uno con una etiqueta corta en mayúscula al lado (categoría del contenido). Dejo el rectángulo inferior de la pieza limpio y vacío (sin logo, sin texto, sin marca de agua) para pegar mi logo real después en un editor. Grilla de puntos violeta arriba a la izquierda. Uso siempre el mismo template de flyer para el feed: foto real ocupando el lado derecho, panel diagonal violeta a la izquierda con el título, íconos circulares con etiqueta debajo del título, y un espacio limpio y vacío (sin logo, sin texto) abajo del todo para pegar mi logo real después.
+
+Generame la pieza de feed, formato 1080x1350:
+Categoría: Masajes
+Título grande: "EL DOLOR DE RODILLA NO SIEMPRE VIENE DE LA RODILLA"
+Foto: masaje enfocado en la zona de la rodilla o la cadera de un cliente, técnica precisa, consultorio prolijo.
+Ícono de categoría: Masajes (el mismo de mi set de destacadas).</pre>
+          <button class="copy-btn" data-copy-target="text-w4m-img">Copiar prompt</button>
+        </div>
+      </details>
+    </div>
+
+    <div class="topic" data-topic-id="antes-despues-s4">
+      <div class="topic-head">
+        <h3>Semana 4 — Viernes (Antes y Después — entrenamiento)</h3>
+        <span class="pill">Post único</span>
+      </div>
+
+      <details class="block">
+        <summary>
+          <input type="checkbox" id="s4-post" style="margin-right:2px">
+          Pie de foto del post
+          <span class="status" id="status-s4-post">Pendiente</span>
+        </summary>
+        <div class="block-body">
+          <pre class="copy" id="text-s4-post">De [punto de partida] a [resultado], entrenando con constancia y seguimiento personalizado.
+
+No es magia, es plan + disciplina + alguien que te acompañe en el proceso.
+
+¿Querés tu propio antes y después? Empezá hoy.
+🔗 Link en bio
+
+#antesydespues #transformacion #entrenamientopersonalizado</pre>
+          <button class="copy-btn" data-copy-target="text-s4-post">Copiar texto</button>
+        </div>
+      </details>
+
+      <details class="block">
+        <summary>
+          <input type="checkbox" id="s4-stories" style="margin-right:2px">
+          Historias que acompañan el post
+          <span class="status" id="status-s4-stories">Pendiente</span>
+        </summary>
+        <div class="block-body">
+          <pre class="copy" id="text-s4-stories">Historia 1 (repost):
+Mirá este antes y después 👀 Deslizá al posteo 👆
+
+Historia 2 (pregunta):
+¿Cuál es tu objetivo hoy? 💪
+[Sticker de encuesta: Bajar de peso / Ganar fuerza]
+
+Historia 3 (CTA):
+Tu progreso empieza con el primer entrenamiento.
+📲 Suscribite — link en bio</pre>
+          <button class="copy-btn" data-copy-target="text-s4-stories">Copiar texto</button>
+        </div>
+      </details>
+
+      <details class="block">
+        <summary>
+          <input type="checkbox" id="s4-img" style="margin-right:2px">
+          Prompt de imagen para ChatGPT
+          <span class="status" id="status-s4-img">Pendiente</span>
+        </summary>
+        <div class="block-body">
+          <pre class="copy" id="text-s4-img">Ya tengo cerrada la identidad visual de mis piezas de Instagram: foto real de gimnasio (ambiente oscuro y premium), con un panel diagonal violeta sólido #7B4FE0 sobre fondo negro que cubre aproximadamente el tercio izquierdo de la imagen, con el corte en diagonal hacia la foto. Título en tipografía condensada bold en mayúsculas, blanco con la palabra clave del título en violeta. Debajo del título, 2 o 3 íconos circulares violeta rellenos con el símbolo en blanco adentro, cada uno con una etiqueta corta en mayúscula al lado (categoría del contenido). Dejo el rectángulo inferior de la pieza limpio y vacío (sin logo, sin texto, sin marca de agua) para pegar mi logo real después en un editor. Grilla de puntos violeta arriba a la izquierda.
+
+Necesito una pieza de feed 1080x1350 tipo "antes y después":
+- Imagen dividida en dos mitades verticales iguales, línea divisoria fina violeta #7B4FE0 en el medio.
+- Mitad izquierda: foto placeholder de una persona entrenando (punto de partida), etiqueta "ANTES" en violeta arriba a la izquierda.
+- Mitad derecha: foto placeholder de la misma persona con mejor forma/energía (resultado), etiqueta "DESPUÉS" en violeta arriba a la derecha.
+- Ambas fotos con el mismo tratamiento de color (blanco y negro o el mismo overlay), para que se note que es comparación, no dos fotos sueltas.
+- Espacio limpio y vacío chico centrado abajo para pegar mi logo real después, ícono de categoría "Antes y Después" (mismo estilo que mis íconos de destacadas).
+- Flat design, sin sombras ni degradé.</pre>
+          <button class="copy-btn" data-copy-target="text-s4-img">Copiar prompt</button>
+        </div>
+      </details>
+
+      <p style="color:var(--pending-ink);font-size:0.82rem;margin:12px 0 0">⚠ Reemplazar "[punto de partida]" y "[resultado]" con el caso real (con autorización del cliente).</p>
+    </div>
+
+    <div class="topic" data-topic-id="lanzamiento-app">
+      <div class="topic-head">
+        <h3>Lanzamiento de la app — Planes</h3>
+        <span class="pill">Post único</span>
+      </div>
+
+      <details class="block">
+        <summary>
+          <input type="checkbox" id="lanz-post" style="margin-right:2px">
+          Pie de foto del post
+          <span class="status" id="status-lanz-post">Pendiente</span>
+        </summary>
+        <div class="block-body">
+          <pre class="copy" id="text-lanz-post">LLEGÓ MI APP DE ENTRENAMIENTO 💪
+
+Rutinas armadas por mí, seguimiento real, para entrenar cuando quieras y donde estés.
+
+En la app vas a encontrar:
+🔹 Movimiento +50 — recuperar postura, movilidad y autonomía
+🔹 Fuerza — progresiones seguras de sentadilla, peso muerto y press: técnica primero, carga después
+🔹 CrossFit / Funcional — entrenamiento variado de alta intensidad, adaptado a tu nivel
+🔹 Glúteos, piernas y composición corporal — rutinas de tren inferior para tonificar y bajar de peso
+🔹 Rendimiento — resistencia, potencia y recuperación con seguimiento semanal
+
+Por el lanzamiento, para los primeros 20 alumnos/as, precio especial:
+🔹 Plan Básico (1 programa a elección): $12.000/mes
+🔹 Plan All Access (los 3 programas): $15.000/mes
+
+Después de esos 20 cupos, pasa a $15.000 y $18.000.
+
+📲 Suscribite hoy — link en bio
+🔗 angelmeier-fit.web.app/suscripcion
+
+#appdeentrenamiento #entrenamientopersonalizado #fitness #lanzamiento</pre>
+          <button class="copy-btn" data-copy-target="text-lanz-post">Copiar texto</button>
+        </div>
+      </details>
+
+      <details class="block">
+        <summary>
+          <input type="checkbox" id="lanz-stories" style="margin-right:2px">
+          Historias que acompañan el post
+          <span class="status" id="status-lanz-stories">Pendiente</span>
+        </summary>
+        <div class="block-body">
+          <pre class="copy" id="text-lanz-stories">Historia 1 (repost + sticker de link):
+Ya lancé mi app de entrenamiento 📲 Deslizá al posteo 👆
+[Sticker de link: angelmeier-fit.web.app/suscripcion]
+
+Historia 2 (cuenta regresiva / urgencia):
+Precio de lanzamiento solo para los primeros 20 alumnos/as 💜
+[Sticker de cuenta regresiva o "Cupos limitados"]
+
+Historia 3 (detalle de planes):
+Plan Básico $12.000 (1 programa) o Plan All Access $15.000 (los 3 programas)
+📲 Link en bio</pre>
+          <button class="copy-btn" data-copy-target="text-lanz-stories">Copiar texto</button>
+        </div>
+      </details>
+
+      <details class="block">
+        <summary>
+          <input type="checkbox" id="lanz-stories-img" style="margin-right:2px">
+          Prompts de imagen para ChatGPT — historias (3)
+          <span class="status" id="status-lanz-stories-img">Pendiente</span>
+        </summary>
+        <div class="block-body">
+          <div style="margin-bottom:14px">
+            <strong style="display:block;margin-bottom:6px;font-size:0.85rem">Historia 1 — Repost + link</strong>
+            <pre class="copy" id="text-lanz-stories-img-1">Ya tengo cerrada la identidad visual de mis piezas de Instagram: foto real de gimnasio (ambiente oscuro y premium), con un panel diagonal violeta sólido #7B4FE0 sobre fondo negro que cubre aproximadamente el tercio izquierdo de la imagen, con el corte en diagonal hacia la foto. Título en tipografía condensada bold en mayúsculas, blanco con la palabra clave del título en violeta. Debajo del título, 2 o 3 íconos circulares violeta rellenos con el símbolo en blanco adentro, cada uno con una etiqueta corta en mayúscula al lado (categoría del contenido). Dejo el rectángulo inferior de la pieza limpio y vacío (sin logo, sin texto, sin marca de agua) para pegar mi logo real después en un editor. Grilla de puntos violeta arriba a la izquierda.
+
+Necesito una historia de Instagram, formato vertical 1080x1920, para anunciar el lanzamiento de mi app de entrenamiento:
+- Franja fija arriba, limpia y vacía (sin logo ni texto), para pegar mi logo real después.
+- Foto placeholder central: mockup de celular con la app o una persona entrenando en casa mirando el celular.
+- Franja de texto en el tercio superior, tipografía bold blanca/violeta, con el texto: "Ya lancé mi app de entrenamiento 📲"
+- Dejar el tercio inferior de la imagen limpio, sin texto, para pegar ahí el sticker nativo de link de Instagram.</pre>
+            <button class="copy-btn" data-copy-target="text-lanz-stories-img-1">Copiar prompt</button>
+          </div>
+
+          <div style="margin-bottom:14px">
+            <strong style="display:block;margin-bottom:6px;font-size:0.85rem">Historia 2 — Urgencia / cupos limitados</strong>
+            <pre class="copy" id="text-lanz-stories-img-2">Mismo estilo que la historia anterior de lanzamiento de la app (panel diagonal violeta #7B4FE0 sobre fondo negro, espacio reservado para el logo abajo).
+
+Necesito otra historia, formato vertical 1080x1920:
+- Franja fija arriba, limpia y vacía (sin logo ni texto), para pegar mi logo real después.
+- Fondo negro con un detalle violeta grande (por ejemplo la grilla de puntos violeta de fondo, sutil, como marca de agua).
+- Texto grande centrado, bold blanco/violeta: "Precio de lanzamiento solo para los primeros 20 alumnos/as 💜"
+- Dejar espacio limpio abajo para pegar un sticker de cuenta regresiva o de "cupos limitados" de Instagram.</pre>
+            <button class="copy-btn" data-copy-target="text-lanz-stories-img-2">Copiar prompt</button>
+          </div>
+
+          <div>
+            <strong style="display:block;margin-bottom:6px;font-size:0.85rem">Historia 3 — Detalle de planes</strong>
+            <pre class="copy" id="text-lanz-stories-img-3">Mismo estilo que las historias anteriores de lanzamiento de la app (marca ANGEL MEiER, violeta #7B4FE0, fondo negro, flat design, espacio reservado para el logo arriba).
+
+Necesito otra historia, formato vertical 1080x1920, mostrando los dos planes:
+- Franja fija arriba, limpia y vacía (sin logo ni texto), para pegar mi logo real después.
+- Título: "Elegí tu plan"
+- Dos tarjetas o filas bien diferenciadas:
+  "PLAN BÁSICO — 1 programa — $12.000/mes"
+  "PLAN ALL ACCESS — los 3 programas — $15.000/mes"
+- Texto chico abajo: "📲 Link en bio"
+- Sin foto de fondo, solo tipografía y bloques de color (negro/violeta), estilo flat.</pre>
+            <button class="copy-btn" data-copy-target="text-lanz-stories-img-3">Copiar prompt</button>
+          </div>
+        </div>
+      </details>
+
+      <details class="block">
+        <summary>
+          <input type="checkbox" id="lanz-whatsapp" style="margin-right:2px">
+          Texto para WhatsApp (enviar junto con el flyer)
+          <span class="status" id="status-lanz-whatsapp">Pendiente</span>
+        </summary>
+        <div class="block-body">
+          <pre class="copy" id="text-lanz-whatsapp">¡Hola! 👋 Te cuento que ya lancé mi app de entrenamiento 💪
+
+Vas a poder entrenar con rutinas armadas por mí, desde el celular, cuando quieras. En la app vas a encontrar:
+
+🔹 Movimiento +50 — recuperar postura, movilidad y autonomía
+🔹 Fuerza — progresiones seguras (sentadilla, peso muerto, press), técnica primero, carga después
+🔹 CrossFit / Funcional — entrenamiento variado de alta intensidad, adaptado a tu nivel
+🔹 Glúteos, piernas y composición corporal — rutinas de tren inferior para tonificar y bajar de peso
+🔹 Rendimiento — resistencia, potencia y recuperación con seguimiento semanal
+
+Por el lanzamiento, para los primeros 20 alumnos/as, tengo un precio especial:
+🔹 Plan Básico (1 programa a elección): $12.000/mes
+🔹 Plan All Access (los 3 programas): $15.000/mes
+
+Este precio es por tiempo limitado — después pasa a $15.000 y $18.000.
+
+Si querés arrancar te paso el link para suscribirte 👇
+angelmeier-fit.web.app/suscripcion
+
+Cualquier duda me escribís ✌️</pre>
+          <button class="copy-btn" data-copy-target="text-lanz-whatsapp">Copiar texto</button>
+        </div>
+      </details>
+
+      <details class="block">
+        <summary>
+          <input type="checkbox" id="lanz-img" style="margin-right:2px">
+          Prompt de imagen para ChatGPT
+          <span class="status" id="status-lanz-img">Pendiente</span>
+        </summary>
+        <div class="block-body">
+          <pre class="copy" id="text-lanz-img">Ya tengo cerrada la identidad visual de mis piezas de Instagram: foto real de gimnasio (ambiente oscuro y premium), con un panel diagonal violeta sólido #7B4FE0 sobre fondo negro que cubre aproximadamente el tercio izquierdo de la imagen, con el corte en diagonal hacia la foto. Título en tipografía condensada bold en mayúsculas, blanco con la palabra clave del título en violeta. Debajo del título, 2 o 3 íconos circulares violeta rellenos con el símbolo en blanco adentro, cada uno con una etiqueta corta en mayúscula al lado (categoría del contenido). Dejo el rectángulo inferior de la pieza limpio y vacío (sin logo, sin texto, sin marca de agua) para pegar mi logo real después en un editor. Grilla de puntos violeta arriba a la izquierda. Uso siempre el mismo template de flyer para el feed: foto real ocupando el lado derecho, panel diagonal violeta a la izquierda con el título, íconos circulares con etiqueta debajo del título, y un espacio limpio y vacío (sin logo, sin texto) abajo del todo para pegar mi logo real después.
+
+Generame un flyer de feed, formato 1080x1350, promocionando el lanzamiento de mi app de entrenamiento:
+
+Título grande: "LLEGÓ MI APP DE ENTRENAMIENTO"
+Subtítulo: "Precio de lanzamiento — primeros 20 alumnos/as"
+
+Bloque de programas disponibles (lista compacta con ícono o viñeta, tipografía chica, en la zona de texto lateral):
+- Movimiento +50
+- Fuerza
+- CrossFit / Funcional
+- Glúteos, piernas y composición corporal
+- Rendimiento
+
+Bloque de precios (dos opciones, bien diferenciadas visualmente, como dos tarjetas o dos filas, debajo de la lista de programas):
+- "PLAN BÁSICO — 1 programa — $12.000/mes"
+- "PLAN ALL ACCESS — los 3 programas — $15.000/mes"
+
+Texto chico abajo: "Cupos limitados — precio de lanzamiento"
+Foto: mockup de celular mostrando una pantalla de rutina de la app, o una persona entrenando en casa mirando el celular apoyado cerca.
+Espacio limpio y vacío chico abajo para pegar mi logo real después, con el texto "angelmeier-fit.web.app/suscripcion".</pre>
+          <button class="copy-btn" data-copy-target="text-lanz-img">Copiar prompt</button>
+        </div>
+      </details>
+
+      <p style="color:var(--pending-ink);font-size:0.82rem;margin:12px 0 0">⚠ Precio de lanzamiento válido solo para los primeros 20 alumnos/as — después sube a $15.000 / $18.000.</p>
+    </div>
+
+    <div class="topic" data-topic-id="tiktok-empezar">
+      <div class="topic-head">
+        <h3>TikTok — "Nunca entrenaste? Empezá acá"</h3>
+        <span class="pill">Video hablado a cámara</span>
+      </div>
+
+      <details class="block">
+        <summary>
+          <input type="checkbox" id="tt-guion" style="margin-right:2px">
+          Guion para grabar (30-45 seg)
+          <span class="status" id="status-tt-guion">Pendiente</span>
+        </summary>
+        <div class="block-body">
+          <pre class="copy" id="text-tt-guion">HOOK (0-3s)
+"Si nunca entrenaste y no sabés ni por dónde arrancar, esto es para vos."
+
+PROBLEMA (3-10s)
+"La mayoría no empieza a entrenar por miedo a lastimarse, a no entender los ejercicios, o directamente porque nunca pisó un gimnasio y le da vergüenza no saber qué hacer."
+
+SOLUCIÓN (10-27s)
+"Armé una app con programas de entrenamiento ya diseñados, listos para arrancar: Movimiento +50, Fuerza, CrossFit/Funcional, Glúteos y piernas, Rendimiento. Elegís el que se ajusta a tu objetivo y arrancás con ejercicios explicados con video, paso a paso, para que sepas exactamente cómo hacer cada movimiento. Y si preferís algo hecho 100% a tu medida, también armo planes personalizados."
+
+DIFERENCIAL (27-37s)
+"No es una rutina genérica de internet. Yo estoy detrás de cada plan, lo voy ajustando según cómo respondas, y me podés consultar las dudas que tengas en el camino."
+
+CTA (37-42s)
+"El link está en mi perfil. Escribime y arrancamos con una evaluación gratuita."</pre>
+          <button class="copy-btn" data-copy-target="text-tt-guion">Copiar texto</button>
+        </div>
+      </details>
+
+      <details class="block">
+        <summary>
+          <input type="checkbox" id="tt-subtitulos" style="margin-right:2px">
+          Texto en pantalla (subtítulos clave)
+          <span class="status" id="status-tt-subtitulos">Pendiente</span>
+        </summary>
+        <div class="block-body">
+          <pre class="copy" id="text-tt-subtitulos">"Nunca entrenaste? Empezá acá 👇"
+"Programas ya armados, listos para arrancar"
+"Ejercicios explicados paso a paso"
+"¿Preferís algo a tu medida? Plan personalizado"
+"Link en la bio"</pre>
+          <button class="copy-btn" data-copy-target="text-tt-subtitulos">Copiar texto</button>
+        </div>
+      </details>
+
+      <details class="block">
+        <summary>
+          <input type="checkbox" id="tt-caption" style="margin-right:2px">
+          Caption para TikTok
+          <span class="status" id="status-tt-caption">Pendiente</span>
+        </summary>
+        <div class="block-body">
+          <pre class="copy" id="text-tt-caption">Si nunca entrenaste y no sabés por dónde arrancar, no estás solo/a 💪 Armé una app con programas ya diseñados (Movimiento +50, Fuerza, CrossFit/Funcional, Glúteos y piernas, Rendimiento), cada ejercicio explicado paso a paso con video. Y si preferís algo 100% a tu medida, también armo planes personalizados. Link en mi bio para arrancar con una evaluación gratuita.</pre>
+          <button class="copy-btn" data-copy-target="text-tt-caption">Copiar texto</button>
+        </div>
+      </details>
+
+      <details class="block">
+        <summary>
+          <input type="checkbox" id="tt-hashtags" style="margin-right:2px">
+          Hashtags
+          <span class="status" id="status-tt-hashtags">Pendiente</span>
+        </summary>
+        <div class="block-body">
+          <pre class="copy" id="text-tt-hashtags">#EmpezarAEntrenar #FitnessParaPrincipiantes #EntrenamientoOnline #NuncaEsTarde #RutinaDesdeCero #EntrenadorPersonal #FitnessArgentina</pre>
+          <button class="copy-btn" data-copy-target="text-tt-hashtags">Copiar texto</button>
+        </div>
+      </details>
+
+      <p style="color:var(--ink-dim);font-size:0.82rem;margin:12px 0 0">🎬 El video lo graba Angel a cámara. CTA apunta al link de la bio (landing con WhatsApp), no directo a /suscripcion, para arrancar la conversación antes del pago.</p>
+    </div>
+
+    <div id="dynamic-topics"></div>
+
+    <button type="button" class="add-topic-btn" id="show-new-topic">+ Nuevo tema</button>
+
+    <form class="new-topic" id="new-topic-form">
+      <div>
+        <label for="nt-name">Nombre del tema (ej. "Cervicales", "Promo app semana 3")</label>
+        <input type="text" id="nt-name" required placeholder="Nombre del tema">
+      </div>
+      <div>
+        <label for="nt-post">Copy del post / carrusel (pie de foto)</label>
+        <textarea id="nt-post" placeholder="Pegá acá el texto del post..."></textarea>
+      </div>
+      <div>
+        <label for="nt-stories">Copy de historias</label>
+        <textarea id="nt-stories" placeholder="Pegá acá el texto de las historias..."></textarea>
+      </div>
+      <div>
+        <label for="nt-slides">Copy de las slides (si es carrusel, opcional)</label>
+        <textarea id="nt-slides" placeholder="Pegá acá el texto de cada slide (opcional)..."></textarea>
+      </div>
+      <div class="actions">
+        <button type="submit">Guardar tema</button>
+        <button type="button" id="cancel-new-topic">Cancelar</button>
+      </div>
+    </form>
+  </section>
+</main>
+
+<footer id="app-footer" style="display:none">Angel Meier — panel privado de contenido.</footer>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, setPersistence, browserLocalPersistence, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBc-id5nX6LCjvaYagVcR1hE3VkMZGO5Cw",
+  authDomain: "angelmeier-fit.firebaseapp.com",
+  projectId: "angelmeier-fit",
+  storageBucket: "angelmeier-fit.firebasestorage.app",
+  messagingSenderId: "931547082856",
+  appId: "1:931547082856:web:3e6b8c943c7067b23b0bdc"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+document.getElementById('login-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const email = document.getElementById('login-email').value;
+  const pass = document.getElementById('login-pass').value;
+  const errEl = document.getElementById('login-error');
+  errEl.textContent = '';
+  try {
+    await setPersistence(auth, browserLocalPersistence);
+    await signInWithEmailAndPassword(auth, email, pass);
+  } catch (err) {
+    errEl.textContent = 'No se pudo iniciar sesión. Revisá el email y la contraseña.';
+  }
+});
+
+document.getElementById('login-google').addEventListener('click', async () => {
+  try {
+    await setPersistence(auth, browserLocalPersistence);
+    await signInWithPopup(auth, new GoogleAuthProvider());
+  } catch (err) {
+    document.getElementById('login-error').textContent = 'No se pudo iniciar sesión con Google.';
+  }
+});
+
+let started = false;
+
+onAuthStateChanged(auth, (user) => {
+  const gate = document.getElementById('login-gate');
+  const rail = document.getElementById('app-rail');
+  const main = document.getElementById('app-main');
+  const footer = document.getElementById('app-footer');
+  if (user) {
+    gate.style.display = 'none';
+    rail.style.display = '';
+    main.style.display = '';
+    footer.style.display = '';
+    if (!started) { started = true; startPanel(); }
+  } else {
+    gate.style.display = 'flex';
+    rail.style.display = 'none';
+    main.style.display = 'none';
+    footer.style.display = 'none';
+  }
+});
+
+function startPanel(){
+  const stateRef = doc(db, 'contentPanel', 'state');
+  let state = {};
+  let topics = [];
+
+  function saveState(){ setDoc(stateRef, { checks: state }, { merge: true }).catch(()=>{}); }
+  function saveTopics(){ setDoc(stateRef, { topics }, { merge: true }).catch(()=>{}); }
+
+  function applyStatus(details){
+    const checkbox = details.querySelector('input[type="checkbox"]');
+    const status = details.querySelector('.status');
+    if (!checkbox || !status) return;
+    const done = !!checkbox.checked;
+    status.textContent = done ? "Hecho" : "Pendiente";
+    status.classList.toggle("done", done);
+  }
+
+  function updateCounts(){
+    const promptBoxes = document.querySelectorAll('#prompts input[type="checkbox"]');
+    const promptDone = [...promptBoxes].filter(b => b.checked).length;
+    document.getElementById('count-prompts').textContent = `${promptDone}/${promptBoxes.length}`;
+
+    const allBoxes = document.querySelectorAll('main input[type="checkbox"]');
+    const allDone = [...allBoxes].filter(b => b.checked).length;
+    const pct = allBoxes.length ? Math.round((allDone / allBoxes.length) * 100) : 0;
+    document.getElementById('overall-bar').style.width = pct + '%';
+    document.getElementById('overall-label').textContent = `${allDone} / ${allBoxes.length}`;
+  }
+
+  function applyAllChecks(){
+    document.querySelectorAll('main input[type="checkbox"]').forEach(box => {
+      box.checked = !!state[box.id];
+      const details = box.closest('details.block');
+      if (details) applyStatus(details);
+      const task = box.closest('.task');
+      if (task) task.classList.toggle('done', box.checked);
+    });
+  }
+
+  document.querySelectorAll('main input[type="checkbox"]').forEach(box => {
+    box.addEventListener('change', () => {
+      state[box.id] = box.checked;
+      saveState();
+      const details = box.closest('details.block');
+      if (details) applyStatus(details);
+      const task = box.closest('.task');
+      if (task) task.classList.toggle('done', box.checked);
+      updateCounts();
+    });
+  });
+
+  async function copyText(str){
+    if (navigator.clipboard && window.isSecureContext) {
+      try { await navigator.clipboard.writeText(str); return true; } catch (err) {}
+    }
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = str;
+      ta.style.position = 'fixed';
+      ta.style.top = '-9999px';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      const ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      return ok;
+    } catch (err) {
+      return false;
+    }
+  }
+
+  function bindCopyBtn(btn){
+    btn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      const target = document.getElementById(btn.dataset.copyTarget);
+      if (!target) return;
+      const originalLabel = btn.dataset.copyTarget.startsWith('text-p') ? 'Copiar prompt' : 'Copiar texto';
+      const ok = await copyText(target.textContent);
+      if (ok) {
+        btn.textContent = "Copiado ✓";
+        btn.classList.add('copied');
+        setTimeout(() => {
+          btn.classList.remove('copied');
+          btn.textContent = originalLabel;
+        }, 1600);
+      } else {
+        btn.textContent = "Error al copiar";
+        setTimeout(() => { btn.textContent = originalLabel; }, 1600);
+      }
+    });
+  }
+  document.querySelectorAll('.copy-btn').forEach(bindCopyBtn);
+
+  function bindCheckbox(box){
+    box.checked = !!state[box.id];
+    box.addEventListener('change', () => {
+      state[box.id] = box.checked;
+      saveState();
+      const details = box.closest('details.block');
+      if (details) applyStatus(details);
+      updateCounts();
+    });
+  }
+
+  document.querySelectorAll('details.block summary input[type="checkbox"]').forEach(box => {
+    box.addEventListener('click', (e) => e.stopPropagation());
+  });
+
+  /* --- Temas dinámicos de "Publicaciones" --- */
+
+  function blockHTML(idPrefix, label, text){
+    const safeText = text && text.trim() ? text : "(sin contenido)";
+    return `
+      <details class="block">
+        <summary>
+          <input type="checkbox" id="${idPrefix}-chk" style="margin-right:2px">
+          ${label}
+          <span class="status" id="status-${idPrefix}-chk">Pendiente</span>
+        </summary>
+        <div class="block-body">
+          <pre class="copy" id="text-${idPrefix}">${safeText.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}</pre>
+          <button class="copy-btn" data-copy-target="text-${idPrefix}">Copiar texto</button>
+        </div>
+      </details>`;
+  }
+
+  function renderTopics(){
+    const container = document.getElementById('dynamic-topics');
+    container.innerHTML = topics.map(t => `
+      <div class="topic" data-topic-id="${t.id}">
+        <div class="topic-head">
+          <h3>${t.name}</h3>
+          <span class="pill">${t.slides ? 'Carrusel' : 'Post'}</span>
+          <button type="button" class="del" data-del-topic="${t.id}">Eliminar</button>
+        </div>
+        ${blockHTML(t.id + '-post', 'Copy del post', t.post)}
+        ${blockHTML(t.id + '-stories', 'Copy de historias', t.stories)}
+        ${t.slides ? blockHTML(t.id + '-slides', 'Copy de las slides', t.slides) : ''}
+      </div>
+    `).join('');
+
+    container.querySelectorAll('input[type="checkbox"]').forEach(bindCheckbox);
+    container.querySelectorAll('details.block').forEach(applyStatus);
+    container.querySelectorAll('.copy-btn').forEach(bindCopyBtn);
+    container.querySelectorAll('details.block summary input[type="checkbox"]').forEach(box => {
+      box.addEventListener('click', (e) => e.stopPropagation());
+    });
+    container.querySelectorAll('[data-del-topic]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        topics = topics.filter(t => t.id !== btn.dataset.delTopic);
+        saveTopics();
+        renderTopics();
+        updateCounts();
+      });
+    });
+    document.getElementById('count-topics').textContent = String(topics.length + 15);
+    updateCounts();
+  }
+
+  const showBtn = document.getElementById('show-new-topic');
+  const form = document.getElementById('new-topic-form');
+  showBtn.addEventListener('click', () => { form.classList.add('open'); document.getElementById('nt-name').focus(); });
+  document.getElementById('cancel-new-topic').addEventListener('click', () => { form.reset(); form.classList.remove('open'); });
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const name = document.getElementById('nt-name').value.trim();
+    if (!name) return;
+    topics.push({
+      id: 't' + Date.now(),
+      name,
+      post: document.getElementById('nt-post').value.trim(),
+      stories: document.getElementById('nt-stories').value.trim(),
+      slides: document.getElementById('nt-slides').value.trim(),
+    });
+    saveTopics();
+    renderTopics();
+    form.reset();
+    form.classList.remove('open');
+  });
+
+  onSnapshot(stateRef, (snap) => {
+    const data = snap.exists() ? snap.data() : {};
+    state = data.checks || {};
+    topics = data.topics || [];
+    applyAllChecks();
+    renderTopics();
+    updateCounts();
+  });
+}
+</script>
+</body>
+</html>
