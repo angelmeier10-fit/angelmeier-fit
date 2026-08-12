@@ -388,13 +388,16 @@ setTimeout(()=>{
     </div>
     <button class="btn bp" id="login-main-btn" onclick="doLogin()" style="width:100%;justify-content:center">Ingresar</button>
     <div id="login-error" style="color:var(--rd);font-size:.82rem;margin-top:10px"></div>
-    <div style="display:flex;align-items:center;gap:10px;margin:16px 0;color:var(--mu);font-size:.75rem">
-      <div style="flex:1;height:1px;background:var(--bd)"></div>o<div style="flex:1;height:1px;background:var(--bd)"></div>
+    <div id="login-inapp-warning" style="display:none;background:var(--yw2,#fff3cd);color:#8a5a12;border-radius:8px;padding:10px 12px;font-size:.78rem;line-height:1.5;margin-top:14px;text-align:left">⚠️ Estás entrando desde WhatsApp/Instagram — "Continuar con Google" no funciona en este navegador. Usá email y contraseña, o abrí este link en Chrome/Safari.</div>
+    <div id="login-google-wrap">
+      <div style="display:flex;align-items:center;gap:10px;margin:16px 0;color:var(--mu);font-size:.75rem">
+        <div style="flex:1;height:1px;background:var(--bd)"></div>o<div style="flex:1;height:1px;background:var(--bd)"></div>
+      </div>
+      <button class="btn bg2" onclick="doGoogleLogin()" style="width:100%;justify-content:center;gap:8px">
+        <svg width="17" height="17" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 3l6-6C34.6 5.1 29.6 3 24 3 12.4 3 3 12.4 3 24s9.4 21 21 21 21-9.4 21-21c0-1.2-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.5 18.9 13 24 13c3.1 0 5.8 1.1 8 3l6-6C34.6 5.1 29.6 3 24 3 16.1 3 9.2 7.4 6.3 14.7z"/><path fill="#4CAF50" d="M24 45c5.5 0 10.4-1.9 14.2-5.1l-6.6-5.6c-2.1 1.5-4.7 2.4-7.6 2.4-5.2 0-9.6-3.3-11.3-8l-6.6 5.1C9.1 40.6 16 45 24 45z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.2 4.3-4.1 5.7l6.6 5.6C41.6 36.5 45 30.7 45 24c0-1.2-.1-2.4-.4-3.5z"/></svg>
+        Continuar con Google
+      </button>
     </div>
-    <button class="btn bg2" onclick="doGoogleLogin()" style="width:100%;justify-content:center;gap:8px">
-      <svg width="17" height="17" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 3l6-6C34.6 5.1 29.6 3 24 3 12.4 3 3 12.4 3 24s9.4 21 21 21 21-9.4 21-21c0-1.2-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.5 18.9 13 24 13c3.1 0 5.8 1.1 8 3l6-6C34.6 5.1 29.6 3 24 3 16.1 3 9.2 7.4 6.3 14.7z"/><path fill="#4CAF50" d="M24 45c5.5 0 10.4-1.9 14.2-5.1l-6.6-5.6c-2.1 1.5-4.7 2.4-7.6 2.4-5.2 0-9.6-3.3-11.3-8l-6.6 5.1C9.1 40.6 16 45 24 45z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.2 4.3-4.1 5.7l6.6 5.6C41.6 36.5 45 30.7 45 24c0-1.2-.1-2.4-.4-3.5z"/></svg>
-      Continuar con Google
-    </button>
     <div style="display:flex;justify-content:space-between;margin-top:16px;font-size:.8rem">
       <span onclick="toggleSignupMode()" style="color:var(--ac2);cursor:pointer" id="login-mode-toggle">Crear cuenta</span>
       <span onclick="doForgotPassword()" style="color:var(--mu);cursor:pointer">Olvidé mi contraseña</span>
@@ -1394,6 +1397,17 @@ const isAlumnoSignup=new URLSearchParams(location.search).get('alumno')==='1'||l
 const isDesafioLanding=location.pathname.replace(/\/+$/,'').endsWith('/desafio-gluteos');
 const ADMIN_EMAIL='angelmeier10@gmail.com';
 
+// Detecta navegadores embebidos (WhatsApp, Instagram, Facebook, etc.): Google
+// bloquea el login por OAuth ahí ("This browser may not be secure") sin tirar
+// un error claro atrapable — la persona queda trabada y, al reabrir el link
+// (típicamente compartido justo por WhatsApp/Instagram), vuelve a la pantalla
+// inicial como si nada de lo que cargó se hubiera guardado. Detectado en
+// producción: alumna nueva del Desafío Glúteos que entró por WhatsApp.
+function isInAppBrowser(){
+  const ua=navigator.userAgent||'';
+  return /Instagram|FBAN|FBAV|Line\/|MicroMessenger|TikTok|WhatsApp/i.test(ua);
+}
+
 // ══ DESAFÍO GLÚTEOS 21 DÍAS (gratuito, aislado del flujo de planes pagos) ══
 // El contenido vive en un "plan" de verdad (colección planes, editable desde
 // "Planes Grupales" como cualquier otro plan). Esto solo arma el contenido
@@ -1483,6 +1497,10 @@ if(!isClientLink && !isAlumnoSignup && !isDesafioLanding && localStorage.getItem
 }
 if(isAlumnoSignup){
   document.getElementById('login-subtitle').textContent='Registrate o ingresá a tu suscripción';
+}
+if(isInAppBrowser()){
+  document.getElementById('login-google-wrap').style.display='none';
+  document.getElementById('login-inapp-warning').style.display='block';
 }
 window.mostrarSignupDesafio=function(){
   document.getElementById('desafio-landing-screen').style.display='none';
