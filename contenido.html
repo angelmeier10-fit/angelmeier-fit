@@ -219,6 +219,22 @@
     padding: 9px 16px; font-weight: 600; font-size: 0.85rem; cursor: pointer;
   }
 
+  /* --- Categorías colapsables (Contenido recurrente) --- */
+  details.cat-collapse{
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    overflow: hidden;
+  }
+  details.cat-collapse summary{
+    list-style: none; cursor: pointer; padding: 14px 16px; display: flex; align-items: center; gap: 10px;
+    font-weight: 800; font-size: 0.95rem;
+  }
+  details.cat-collapse summary::-webkit-details-marker{ display: none; }
+  details.cat-collapse summary::before{
+    content: "▸"; color: var(--accent); transition: transform .15s ease; font-size: 0.8rem;
+  }
+  details.cat-collapse[open] summary::before{ transform: rotate(90deg); }
+  details.cat-collapse .cat-body{ padding: 0 16px 16px; }
+
   @media (max-width: 760px){
     body{ flex-direction: column; }
     nav.rail{
@@ -261,7 +277,7 @@
     <li><a href="#marca">Marca</a></li>
     <li><a href="#calendario">Calendario</a></li>
     <li><a href="#prompts">Prompts <span class="count" id="count-prompts">0/0</span></a></li>
-    <li><a href="#stickers">Stickers historias</a></li>
+    <li><a href="#stickers">Contenido recurrente</a></li>
     <li><a href="#publicaciones">Publicaciones <span class="count" id="count-topics">0</span></a></li>
     <li><a href="#plan-4-semanas">Plan de 4 semanas</a></li>
   </ul>
@@ -466,12 +482,13 @@ Mostrame cada una con foto placeholder y el texto de ejemplo: "¿Te duele la esp
   </section>
 
   <section id="stickers">
-    <h2>Stickers de texto — historias</h2>
-    <p class="lede">Frases cortas para pegar como sticker de texto sobre videos de entrenamiento y de masajes en historias.</p>
+    <h2>Contenido recurrente — para repostear</h2>
+    <p class="lede">Frases, tips y CTAs sueltos para usar cuando falte contenido del día — no están atados a ninguna fecha ni semana, se repiten y reciclan seguido.</p>
 
     <div class="grid-2">
-      <div class="card">
-        <strong>Entrenando</strong>
+      <details class="cat-collapse">
+        <summary>Entrenando</summary>
+        <div class="cat-body">
         <div class="stack" style="margin-top:12px">
           <div><pre class="copy" id="text-stk-e1">Cuidando el cuerpo que cuida el tuyo</pre><button class="copy-btn" data-copy-target="text-stk-e1">Copiar</button></div>
           <div><pre class="copy" id="text-stk-e2">Antes de dar manos, las pongo a prueba</pre><button class="copy-btn" data-copy-target="text-stk-e2">Copiar</button></div>
@@ -496,10 +513,12 @@ Necesito una plantilla base para historias diarias (formato vertical 1080x1920) 
             <button class="copy-btn" data-copy-target="text-stk-e-img">Copiar prompt</button>
           </div>
         </details>
-      </div>
+        </div>
+      </details>
 
-      <div class="card">
-        <strong>Haciendo masajes</strong>
+      <details class="cat-collapse">
+        <summary>Haciendo masajes</summary>
+        <div class="cat-body">
         <div class="stack" style="margin-top:12px">
           <div><pre class="copy" id="text-stk-m1">Un ratito de mi día a día</pre><button class="copy-btn" data-copy-target="text-stk-m1">Copiar</button></div>
           <div><pre class="copy" id="text-stk-m2">Técnica en acción</pre><button class="copy-btn" data-copy-target="text-stk-m2">Copiar</button></div>
@@ -524,10 +543,12 @@ Necesito una plantilla base para historias diarias (formato vertical 1080x1920) 
             <button class="copy-btn" data-copy-target="text-stk-m-img">Copiar prompt</button>
           </div>
         </details>
-      </div>
+        </div>
+      </details>
 
-      <div class="card">
-        <strong>Cruce (entrenamiento + masajes)</strong>
+      <details class="cat-collapse">
+        <summary>Cruce (entrenamiento + masajes)</summary>
+        <div class="cat-body">
         <div class="stack" style="margin-top:12px">
           <div><pre class="copy" id="text-stk-c1">Entreno para poder cuidarte mejor</pre><button class="copy-btn" data-copy-target="text-stk-c1">Copiar</button></div>
           <div><pre class="copy" id="text-stk-c2">De mi entrenamiento a tus manos</pre><button class="copy-btn" data-copy-target="text-stk-c2">Copiar</button></div>
@@ -550,10 +571,12 @@ Necesito una plantilla base para historias diarias (formato vertical 1080x1920) 
             <button class="copy-btn" data-copy-target="text-stk-c-img">Copiar prompt</button>
           </div>
         </details>
-      </div>
+        </div>
+      </details>
 
-      <div class="card">
-        <strong>Encuesta (Sí/No) — masajes</strong>
+      <details class="cat-collapse">
+        <summary>Encuesta (Sí/No) — masajes</summary>
+        <div class="cat-body">
         <div class="stack" style="margin-top:12px">
           <div><pre class="copy" id="text-stk-p1">¿Te duele la espalda después de todo el día sentado?
 [Sticker de encuesta: Sí / No]</pre><button class="copy-btn" data-copy-target="text-stk-p1">Copiar</button></div>
@@ -581,10 +604,12 @@ Necesito una plantilla de fondo para historia de encuesta (formato vertical 1080
             <button class="copy-btn" data-copy-target="text-stk-pm-img">Copiar prompt</button>
           </div>
         </details>
-      </div>
+        </div>
+      </details>
 
-      <div class="card">
-        <strong>Encuesta (Sí/No) — entrenamiento</strong>
+      <details class="cat-collapse">
+        <summary>Encuesta (Sí/No) — entrenamiento</summary>
+        <div class="cat-body">
         <div class="stack" style="margin-top:12px">
           <div><pre class="copy" id="text-stk-p5">¿Ya tenés tu app de entrenamiento?
 [Sticker de encuesta: Sí / Todavía no]</pre><button class="copy-btn" data-copy-target="text-stk-p5">Copiar</button></div>
@@ -610,10 +635,12 @@ Necesito una plantilla de fondo para historia de encuesta (formato vertical 1080
             <button class="copy-btn" data-copy-target="text-stk-pe-img">Copiar prompt</button>
           </div>
         </details>
-      </div>
+        </div>
+      </details>
 
-      <div class="card">
-        <strong>Pregunta abierta (sticker "Preguntas")</strong>
+      <details class="cat-collapse">
+        <summary>Pregunta abierta (sticker "Preguntas")</summary>
+        <div class="cat-body">
         <div class="stack" style="margin-top:12px">
           <div><pre class="copy" id="text-stk-q1">¿Qué zona te molesta más? Contame 👇
 [Sticker de pregunta abierta]</pre><button class="copy-btn" data-copy-target="text-stk-q1">Copiar</button></div>
@@ -639,10 +666,12 @@ Necesito una plantilla de fondo para historia de pregunta abierta (formato verti
             <button class="copy-btn" data-copy-target="text-stk-q-img">Copiar prompt</button>
           </div>
         </details>
-      </div>
+        </div>
+      </details>
 
-      <div class="card">
-        <strong>Encuesta múltiple (opción a elegir)</strong>
+      <details class="cat-collapse">
+        <summary>Encuesta múltiple (opción a elegir)</summary>
+        <div class="cat-body">
         <div class="stack" style="margin-top:12px">
           <div><pre class="copy" id="text-stk-o1">¿Cuál es tu objetivo hoy? 💪
 [Sticker de encuesta: Bajar de peso / Ganar fuerza]</pre><button class="copy-btn" data-copy-target="text-stk-o1">Copiar</button></div>
@@ -668,7 +697,35 @@ Necesito una plantilla de fondo para historia de encuesta con dos opciones a ele
             <button class="copy-btn" data-copy-target="text-stk-o-img">Copiar prompt</button>
           </div>
         </details>
-      </div>
+        </div>
+      </details>
+
+      <details class="cat-collapse">
+        <summary>Tips rápidos (mini-consejos)</summary>
+        <div class="cat-body">
+        <div class="stack" style="margin-top:12px">
+          <div><pre class="copy" id="text-stk-t1">Tip: activá glúteos antes de sentadilla — 15 seg de puente hace la diferencia</pre><button class="copy-btn" data-copy-target="text-stk-t1">Copiar</button></div>
+          <div><pre class="copy" id="text-stk-t2">Tip: si no sabés cuánto peso usar, empezá liviano y subí recién en la 3ra serie</pre><button class="copy-btn" data-copy-target="text-stk-t2">Copiar</button></div>
+          <div><pre class="copy" id="text-stk-t3">Tip: dolor de cuello por pantalla? Cada hora, 10 seg mirando hacia arriba</pre><button class="copy-btn" data-copy-target="text-stk-t3">Copiar</button></div>
+          <div><pre class="copy" id="text-stk-t4">Tip: descansar entre series también es parte del entrenamiento, no lo saltees</pre><button class="copy-btn" data-copy-target="text-stk-t4">Copiar</button></div>
+          <div><pre class="copy" id="text-stk-t5">Tip: tomar agua ANTES de entrenar, no solo durante</pre><button class="copy-btn" data-copy-target="text-stk-t5">Copiar</button></div>
+          <div><pre class="copy" id="text-stk-t6">Tip: si dudás de la técnica de un ejercicio, mejor bajar el peso que arriesgarte</pre><button class="copy-btn" data-copy-target="text-stk-t6">Copiar</button></div>
+        </div>
+        </div>
+      </details>
+
+      <details class="cat-collapse">
+        <summary>Recordatorios / CTA sueltos</summary>
+        <div class="cat-body">
+        <div class="stack" style="margin-top:12px">
+          <div><pre class="copy" id="text-stk-r1">¿Ya probaste la app? Link en la bio 👆</pre><button class="copy-btn" data-copy-target="text-stk-r1">Copiar</button></div>
+          <div><pre class="copy" id="text-stk-r2">Quedan pocos cupos con precio de lanzamiento — escribime</pre><button class="copy-btn" data-copy-target="text-stk-r2">Copiar</button></div>
+          <div><pre class="copy" id="text-stk-r3">¿Dudas sobre por dónde arrancar? Te respondo yo, no un cartel del gym</pre><button class="copy-btn" data-copy-target="text-stk-r3">Copiar</button></div>
+          <div><pre class="copy" id="text-stk-r4">Evaluación gratuita esta semana — link en bio</pre><button class="copy-btn" data-copy-target="text-stk-r4">Copiar</button></div>
+          <div><pre class="copy" id="text-stk-r5">Recordá: un plan simple que cumplís gana a uno perfecto que abandonás</pre><button class="copy-btn" data-copy-target="text-stk-r5">Copiar</button></div>
+        </div>
+        </div>
+      </details>
     </div>
   </section>
 
