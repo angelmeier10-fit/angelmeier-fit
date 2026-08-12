@@ -221,7 +221,21 @@
 
   @media (max-width: 760px){
     body{ flex-direction: column; }
-    nav.rail{ width: 100%; height: auto; position: static; border-right: none; border-bottom: 1px solid var(--border); }
+    nav.rail{
+      width: 100%; height: auto; position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+      border-right: none; border-bottom: 1px solid var(--border);
+      padding: 10px 14px; display: flex; align-items: center; gap: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,.08);
+    }
+    nav.rail .brand{ margin-bottom: 0; flex: none; }
+    nav.rail .brand small{ display: none; }
+    nav.rail .rail-links{
+      margin: 0; flex: 1; flex-direction: row; flex-wrap: nowrap; gap: 4px;
+      overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+    }
+    nav.rail .rail-links::-webkit-scrollbar{ display: none; }
+    nav.rail .rail-links a{ white-space: nowrap; padding: 7px 10px; }
+    main{ padding-top: calc(40px + 58px); }
   }
 </style>
 </head>
