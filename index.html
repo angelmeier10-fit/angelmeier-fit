@@ -1888,6 +1888,14 @@ async function saveExNote(personKey,exName,note){
   exHistoryCache[personKey]=cur;
   await setDoc(doc(db,'exHistory',personKey),{ex:{[key]:{note}}},{merge:true});
 }
+window.editExNote=async function(clientId,personKey,exName,dIdx){
+  const cur=exHistoryCache[personKey]?.ex?.[norm(exName).trim()]?.note||'';
+  const txt=prompt('Nota para este alumno sobre "'+exName+'":',cur);
+  if(txt===null)return; // canceló
+  await saveExNote(personKey,exName,txt.trim());
+  toast('📝 Nota guardada');
+  renderDay(clientId,dIdx);
+};
 function exHistoryRowHtml(personKey,exName){
   const h=exHistoryCache[personKey];
   if(!h)return'';
@@ -3743,8 +3751,8 @@ function renderDay(clientId,dIdx){
   day.blocks.forEach((blk,bi)=>{
     const bkey=`w${dayWeek}-${dIdx}-${bi}`;
     if(blk.kind==='warmup') html+=renderWarmupBlock(c,bkey,blk,bi);
-    else if(blk.kind==='gym') html+=renderGymBlock(c,bkey,blk,bi);
-    else if(blk.kind==='func') html+=renderFuncBlock(c,bkey,blk,bi);
+    else if(blk.kind==='gym') html+=renderGymBlock(c,bkey,blk,bi,true);
+    else if(blk.kind==='func') html+=renderFuncBlock(c,bkey,blk,bi,true);
     else html+=renderCFBlock(c,bkey,blk,bi);
   });
   // Session notes for this day
@@ -3804,7 +3812,8 @@ function renderWarmupBlock(c,bkey,blk,bi){
   </div>`;
 }
 
-function renderFuncBlock(c,bkey,blk,bi){
+function renderFuncBlock(c,bkey,blk,bi,isAdminView){
+  const dIdx=bkey.split('-')[1];
   let inner='';
   // Description
   if(blk.desc){
@@ -3833,6 +3842,7 @@ function renderFuncBlock(c,bkey,blk,bi){
       inner+=`<div class="cv-ex">
         <div class="cv-ex-name">${ex.name}${ex.reps?' <span style="color:var(--ac2);font-size:.78rem">× '+ex.reps+'</span>':''}</div>
         ${exHistoryRowHtml(exPersonKey(c.name,c.email||''),ex.name)}
+        ${isAdminView?`<button type="button" onclick="editExNote('${c.id}','${exPersonKey(c.name,c.email||'')}','${ex.name.replace(/'/g,"\\'")}',${dIdx})" style="background:none;border:none;color:var(--mu);cursor:pointer;font-size:.72rem;padding:0 0 4px">✏️ nota</button>`:''}
         ${vidHtml}
         ${timerBtn}
         <div class="plog">
@@ -3861,7 +3871,8 @@ function renderFuncBlock(c,bkey,blk,bi){
   </div>`;
 }
 
-function renderGymBlock(c,bkey,blk,bi){
+function renderGymBlock(c,bkey,blk,bi,isAdminView){
+  const dIdx=bkey.split('-')[1];
   const typeBadge=blk.type==='tri'?'<span class="badge bgr2">🟢 Triserie</span>':blk.type==='super'?'<span class="badge byw2">🟡 Superserie</span>':blk.type==='giant'?'<span class="badge" style="background:#f8717122;color:var(--rd)">🔴 Serie gigante</span>':'';
   const mainTitle=blk.exercises.map(e=>e.name).join(' + ');
   const totalSeries=blk.exercises[0]?.scheme?.length||0;
@@ -3887,6 +3898,7 @@ function renderGymBlock(c,bkey,blk,bi){
     inner+=`<div class="cv-ex">
       <div class="cv-ex-name">${activeEx.name}${activeEx.video?` <a href="${activeEx.video}" target="_blank" style="font-size:.7rem;color:var(--ac2);text-decoration:none">▶</a>`:''}</div>
       ${exHistoryRowHtml(exPersonKey(c.name,c.email||''),activeEx.name)}
+      ${isAdminView?`<button type="button" onclick="editExNote('${c.id}','${exPersonKey(c.name,c.email||'')}','${activeEx.name.replace(/'/g,"\\'")}',${dIdx})" style="background:none;border:none;color:var(--mu);cursor:pointer;font-size:.72rem;padding:0 0 4px">✏️ nota</button>`:''}
       ${variantChips}
       ${ex.obs?`<div class="cv-obs">📝 ${ex.obs}</div>`:''}`;
     let setCount=0;
