@@ -1852,6 +1852,7 @@ let isClientMode=false;
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2400)}
 function norm(s){return(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')}
 function exPersonKey(name,email){return((name||'')+'|'+(email||'')).toLowerCase().trim()}
+function jsAttr(s){return(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;')}
 let exHistoryCache={};
 async function ensureExHistory(personKey,onLoaded){
   if(exHistoryCache[personKey])return exHistoryCache[personKey];
@@ -1867,6 +1868,7 @@ async function ensureExHistory(personKey,onLoaded){
 async function recordExMax(personKey,exName,weight,reps){
   const w=parseFloat(weight);
   if(!w||w<=0)return; // sin peso no hay máximo que registrar
+  await ensureExHistory(personKey);
   const key=norm(exName).trim();
   const cur=exHistoryCache[personKey]||{ex:{}};
   const prevMax=cur.ex?.[key]?.max;
@@ -3842,7 +3844,7 @@ function renderFuncBlock(c,bkey,blk,bi,isAdminView){
       inner+=`<div class="cv-ex">
         <div class="cv-ex-name">${ex.name}${ex.reps?' <span style="color:var(--ac2);font-size:.78rem">× '+ex.reps+'</span>':''}</div>
         ${exHistoryRowHtml(exPersonKey(c.name,c.email||''),ex.name)}
-        ${isAdminView?`<button type="button" onclick="editExNote('${c.id}','${exPersonKey(c.name,c.email||'')}','${ex.name.replace(/'/g,"\\'")}',${dIdx})" style="background:none;border:none;color:var(--mu);cursor:pointer;font-size:.72rem;padding:0 0 4px">✏️ nota</button>`:''}
+        ${isAdminView?`<button type="button" onclick="editExNote('${c.id}','${jsAttr(exPersonKey(c.name,c.email||''))}','${jsAttr(ex.name)}',${dIdx})" style="background:none;border:none;color:var(--mu);cursor:pointer;font-size:.72rem;padding:0 0 4px">✏️ nota</button>`:''}
         ${vidHtml}
         ${timerBtn}
         <div class="plog">
@@ -3850,7 +3852,7 @@ function renderFuncBlock(c,bkey,blk,bi,isAdminView){
           <div class="lr">
             <input type="number" id="pw-${c.id}-${ekey}" placeholder="${lastLog?.weight?'Último: '+lastLog.weight+'kg':'Peso (kg)'}" step="0.5">
             <input type="number" id="pr-${c.id}-${ekey}" placeholder="${lastLog?.reps?'Último: '+lastLog.reps+' rep':'Reps'}">
-            <button class="btn bgr sm" onclick="logGym('${c.id}','${ekey}','${ex.name.replace(/'/g,"\\'")}')">✓</button>
+            <button class="btn bgr sm" onclick="logGym('${c.id}','${ekey}','${jsAttr(ex.name)}')">✓</button>
           </div>
           ${logs.slice(-3).reverse().map((l,ri)=>{const realIdx=logs.length-1-ri;return`<div class="lent"><span>${l.date}</span><span class="lv">${l.weight?l.weight+'kg':'—'} × ${l.reps||'—'}</span><button onclick="deleteLog('${c.id}','${ekey}',${realIdx})" style="background:none;border:none;color:var(--mu);cursor:pointer;font-size:.75rem;padding:0 4px">✕</button></div>`;}).join('')}
         </div>
@@ -3898,7 +3900,7 @@ function renderGymBlock(c,bkey,blk,bi,isAdminView){
     inner+=`<div class="cv-ex">
       <div class="cv-ex-name">${activeEx.name}${activeEx.video?` <a href="${activeEx.video}" target="_blank" style="font-size:.7rem;color:var(--ac2);text-decoration:none">▶</a>`:''}</div>
       ${exHistoryRowHtml(exPersonKey(c.name,c.email||''),activeEx.name)}
-      ${isAdminView?`<button type="button" onclick="editExNote('${c.id}','${exPersonKey(c.name,c.email||'')}','${activeEx.name.replace(/'/g,"\\'")}',${dIdx})" style="background:none;border:none;color:var(--mu);cursor:pointer;font-size:.72rem;padding:0 0 4px">✏️ nota</button>`:''}
+      ${isAdminView?`<button type="button" onclick="editExNote('${c.id}','${jsAttr(exPersonKey(c.name,c.email||''))}','${jsAttr(activeEx.name)}',${dIdx})" style="background:none;border:none;color:var(--mu);cursor:pointer;font-size:.72rem;padding:0 0 4px">✏️ nota</button>`:''}
       ${variantChips}
       ${ex.obs?`<div class="cv-obs">📝 ${ex.obs}</div>`:''}`;
     let setCount=0;
@@ -3920,7 +3922,7 @@ function renderGymBlock(c,bkey,blk,bi,isAdminView){
     const lastLog=logs.length?logs[logs.length-1]:null;
     inner+=`<div class="plog">
       <div style="font-size:.69rem;color:var(--mu);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">📊 Registrar sesión</div>
-      <div class="lr">${setCount?'':`<input type="number" id="pw-${c.id}-${ekey}" placeholder="${lastLog&&lastLog.weight?'Último: '+lastLog.weight+'kg':'Peso (kg)'}" step="0.5">`}<input type="number" id="pr-${c.id}-${ekey}" placeholder="${lastLog&&lastLog.reps?'Último: '+lastLog.reps+'rep':'Reps (opcional)'}"><input type="hidden" data-setcount="${setCount}" id="pwcount-${c.id}-${ekey}"><button class="btn bgr sm" onclick="logGym('${c.id}','${ekey}','${activeEx.name.replace(/'/g,"\\'")}')">✓ Guardar pesos</button></div>
+      <div class="lr">${setCount?'':`<input type="number" id="pw-${c.id}-${ekey}" placeholder="${lastLog&&lastLog.weight?'Último: '+lastLog.weight+'kg':'Peso (kg)'}" step="0.5">`}<input type="number" id="pr-${c.id}-${ekey}" placeholder="${lastLog&&lastLog.reps?'Último: '+lastLog.reps+'rep':'Reps (opcional)'}"><input type="hidden" data-setcount="${setCount}" id="pwcount-${c.id}-${ekey}"><button class="btn bgr sm" onclick="logGym('${c.id}','${ekey}','${jsAttr(activeEx.name)}')">✓ Guardar pesos</button></div>
       <input type="text" id="pn-${c.id}-${ekey}" placeholder="Nota (opcional): ej. usé mancuernas..." style="margin-top:5px;font-size:.78rem;padding:6px 10px;border-radius:8px;border:1px solid var(--bd);background:var(--s2);color:var(--tx);width:100%;box-sizing:border-box">
       ${logsHtml}</div></div>`;
   });

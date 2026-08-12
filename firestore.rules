@@ -143,8 +143,12 @@ service cloud.firestore {
     // distintos — ver docs/superpowers/specs/2026-08-11-historial-maximos-ejercicio-design.md).
     // Dato de baja sensibilidad (pesos/repeticiones), por eso cualquier
     // request autenticado puede leer y escribir, no solo el dueño.
+    // "list" queda restringido a admin: el docId es "nombre|email", así que
+    // permitir list a cualquier autenticado dejaría enumerar toda la
+    // colección y ver nombre+email de todos los alumnos.
     match /exHistory/{personKey} {
-      allow read, write: if isAdmin() || request.auth != null;
+      allow get, write: if request.auth != null;
+      allow list: if isAdmin();
     }
   }
 }
