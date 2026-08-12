@@ -263,6 +263,7 @@
     <li><a href="#prompts">Prompts <span class="count" id="count-prompts">0/0</span></a></li>
     <li><a href="#stickers">Stickers historias</a></li>
     <li><a href="#publicaciones">Publicaciones <span class="count" id="count-topics">0</span></a></li>
+    <li><a href="#plan-4-semanas">Plan de 4 semanas</a></li>
   </ul>
 </nav>
 </nav>
@@ -1822,7 +1823,38 @@ CTA (37-42s)
       <p style="color:var(--ink-dim);font-size:0.82rem;margin:12px 0 0">🎬 El video lo graba Angel a cámara. CTA apunta al link de la bio (landing con WhatsApp), no directo a /suscripcion, para arrancar la conversación antes del pago.</p>
     </div>
 
-    <h3 style="margin:32px 0 4px;font-size:1.15rem">📋 Plan de 4 semanas — "No sabés qué hacer"</h3>
+    <div id="dynamic-topics"></div>
+
+    <button type="button" class="add-topic-btn" id="show-new-topic">+ Nuevo tema</button>
+
+    <form class="new-topic" id="new-topic-form">
+      <div>
+        <label for="nt-name">Nombre del tema (ej. "Cervicales", "Promo app semana 3")</label>
+        <input type="text" id="nt-name" required placeholder="Nombre del tema">
+      </div>
+      <div>
+        <label for="nt-post">Copy del post / carrusel (pie de foto)</label>
+        <textarea id="nt-post" placeholder="Pegá acá el texto del post..."></textarea>
+      </div>
+      <div>
+        <label for="nt-stories">Copy de historias</label>
+        <textarea id="nt-stories" placeholder="Pegá acá el texto de las historias..."></textarea>
+      </div>
+      <div>
+        <label for="nt-slides">Copy de las slides (si es carrusel, opcional)</label>
+        <textarea id="nt-slides" placeholder="Pegá acá el texto de cada slide (opcional)..."></textarea>
+      </div>
+      <div class="actions">
+        <button type="submit">Guardar tema</button>
+        <button type="button" id="cancel-new-topic">Cancelar</button>
+      </div>
+    </form>
+  </section>
+
+  <section id="plan-4-semanas">
+    <h2>Plan de 4 semanas — "No sabés qué hacer"</h2>
+    <p class="lede">Campaña paralela de 4 semanas (3 piezas por semana), pensada como arco narrativo: Semana 1 identifica el problema, Semana 2 muestra el costo de no tener plan, Semana 3 muestra cómo funciona la app, Semana 4 empuja a convertir. Publicala en paralelo al calendario de arriba o en su lugar — vos decidís el timing.</p>
+
     <p class="lede" style="margin-bottom:16px">Campaña paralela de 4 semanas (3 piezas por semana), pensada como arco narrativo: Semana 1 identifica el problema, Semana 2 muestra el costo de no tener plan, Semana 3 muestra cómo funciona la app, Semana 4 empuja a convertir.</p>
 
     <div class="topic" data-topic-id="pln-reel">
@@ -2444,33 +2476,6 @@ Texto chico abajo, con sensación de urgencia/cierre: "Cupos limitados este mes 
 
       <p style="color:var(--ink-dim);font-size:0.82rem;margin:12px 0 0">🎯 Cierre de la campaña — CTA más directo de las 4 semanas, apoyado en todo lo publicado antes.</p>
     </div>
-
-    <div id="dynamic-topics"></div>
-
-    <button type="button" class="add-topic-btn" id="show-new-topic">+ Nuevo tema</button>
-
-    <form class="new-topic" id="new-topic-form">
-      <div>
-        <label for="nt-name">Nombre del tema (ej. "Cervicales", "Promo app semana 3")</label>
-        <input type="text" id="nt-name" required placeholder="Nombre del tema">
-      </div>
-      <div>
-        <label for="nt-post">Copy del post / carrusel (pie de foto)</label>
-        <textarea id="nt-post" placeholder="Pegá acá el texto del post..."></textarea>
-      </div>
-      <div>
-        <label for="nt-stories">Copy de historias</label>
-        <textarea id="nt-stories" placeholder="Pegá acá el texto de las historias..."></textarea>
-      </div>
-      <div>
-        <label for="nt-slides">Copy de las slides (si es carrusel, opcional)</label>
-        <textarea id="nt-slides" placeholder="Pegá acá el texto de cada slide (opcional)..."></textarea>
-      </div>
-      <div class="actions">
-        <button type="submit">Guardar tema</button>
-        <button type="button" id="cancel-new-topic">Cancelar</button>
-      </div>
-    </form>
   </section>
 </main>
 
