@@ -1888,6 +1888,19 @@ async function saveExNote(personKey,exName,note){
   exHistoryCache[personKey]=cur;
   await setDoc(doc(db,'exHistory',personKey),{ex:{[key]:{note}}},{merge:true});
 }
+function exHistoryRowHtml(personKey,exName){
+  const h=exHistoryCache[personKey];
+  if(!h)return'';
+  const e=h.ex?.[norm(exName).trim()];
+  if(!e)return'';
+  const parts=[];
+  if(e.max)parts.push(`🏆 Máx: ${e.max.weight}kg${e.max.reps?' × '+e.max.reps:''}`);
+  if(e.last)parts.push(`Último: ${e.last.weight}kg${e.last.reps?' × '+e.last.reps:''} (${e.last.date})`);
+  let html='';
+  if(parts.length)html+=`<div style="font-size:.76rem;color:var(--ac2);font-weight:700;margin:2px 0 4px">${parts.join(' · ')}</div>`;
+  if(e.note)html+=`<div style="font-size:.76rem;color:var(--mu);font-style:italic;margin-bottom:4px">📝 ${e.note}</div>`;
+  return html;
+}
 function getYTId(url){if(!url)return null;const m=url.match(/(?:shorts\/|v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);return m?m[1]:null}
 function hideLoading(){document.getElementById('loading').style.display='none'}
 
@@ -3717,6 +3730,10 @@ window.toggleDayAcc=function(clientId,idx){
 
 function renderDay(clientId,dIdx){
   const c=clients.find(cl=>cl.id===clientId);
+  if(c){
+    const pk=exPersonKey(c.name,c.email||'');
+    if(!exHistoryCache[pk])ensureExHistory(pk,()=>renderDay(clientId,dIdx));
+  }
   const day=c.days[dIdx];
   const container=document.getElementById('day-view-'+clientId);
   if(!container)return;
@@ -3815,6 +3832,7 @@ function renderFuncBlock(c,bkey,blk,bi){
       </button>`:'';
       inner+=`<div class="cv-ex">
         <div class="cv-ex-name">${ex.name}${ex.reps?' <span style="color:var(--ac2);font-size:.78rem">× '+ex.reps+'</span>':''}</div>
+        ${exHistoryRowHtml(exPersonKey(c.name,c.email||''),ex.name)}
         ${vidHtml}
         ${timerBtn}
         <div class="plog">
@@ -3868,6 +3886,7 @@ function renderGymBlock(c,bkey,blk,bi){
     </div>`:'';
     inner+=`<div class="cv-ex">
       <div class="cv-ex-name">${activeEx.name}${activeEx.video?` <a href="${activeEx.video}" target="_blank" style="font-size:.7rem;color:var(--ac2);text-decoration:none">▶</a>`:''}</div>
+      ${exHistoryRowHtml(exPersonKey(c.name,c.email||''),activeEx.name)}
       ${variantChips}
       ${ex.obs?`<div class="cv-obs">📝 ${ex.obs}</div>`:''}`;
     let setCount=0;
@@ -6069,6 +6088,8 @@ window.selectGroupCVDay=function(planId,memberId,idx){
 };
 
 function renderGroupDay(plan,member,dIdx){
+  const pk=exPersonKey(member.name,member.email||'');
+  if(!exHistoryCache[pk])ensureExHistory(pk,()=>renderGroupDay(plan,member,dIdx));
   const days=getMemberPlanDays(plan,member);
   const day=days[dIdx];
   const gkey=`${plan.id}-${member.id}`;
@@ -6076,7 +6097,7 @@ function renderGroupDay(plan,member,dIdx){
   if(!container)return;
   if(!day||!day.blocks?.length){container.innerHTML='<div style="text-align:center;padding:40px;color:var(--mu)">Sin bloques en este día.</div>';return}
   // Reuse same render functions but with plan+member as client proxy
-  const fakeClient={id:`grp::${plan.id}::${member.id}`,progress:member.progress||{},days};
+  const fakeClient={id:`grp::${plan.id}::${member.id}`,name:member.name,email:member.email||'',progress:member.progress||{},days};
   const memberWeek=getMemberCurrentWeekNum(plan,member)||1;
   let html='';
   day.blocks.forEach((blk,bi)=>{
@@ -6471,13 +6492,15 @@ window.selectAlumnoCVDay=function(idx){
 };
 
 function renderAlumnoDay(plan,member,dIdx,uid){
+  const pk=exPersonKey(member.name,member.email||'');
+  if(!exHistoryCache[pk])ensureExHistory(pk,()=>renderAlumnoDay(plan,member,dIdx,uid));
   const days=getMemberPlanDays(plan,member);
   const day=days[dIdx];
   const akey='alu-'+uid;
   const container=document.getElementById('aday-view-'+akey);
   if(!container)return;
   if(!day||!day.blocks?.length){container.innerHTML='<div style="text-align:center;padding:40px;color:var(--mu)">Sin bloques en este día.</div>';return}
-  const fakeClient={id:akey,progress:member.progress||{},days};
+  const fakeClient={id:akey,name:member.name,email:member.email||'',progress:member.progress||{},days};
   const memberWeek=getMemberCurrentWeekNum(plan,member)||1;
   let html='';
   day.blocks.forEach((blk,bi)=>{
