@@ -1851,6 +1851,43 @@ let isClientMode=false;
 
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2400)}
 function norm(s){return(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')}
+function exPersonKey(name,email){return((name||'')+'|'+(email||'')).toLowerCase().trim()}
+let exHistoryCache={};
+async function ensureExHistory(personKey,onLoaded){
+  if(exHistoryCache[personKey])return exHistoryCache[personKey];
+  let data={ex:{}};
+  try{
+    const snap=await getDoc(doc(db,'exHistory',personKey));
+    if(snap.exists())data=snap.data();
+  }catch(e){/* sin conexión: se muestra sin historial, no bloquea */}
+  exHistoryCache[personKey]=data;
+  if(onLoaded)onLoaded();
+  return data;
+}
+async function recordExMax(personKey,exName,weight,reps){
+  const w=parseFloat(weight);
+  if(!w||w<=0)return; // sin peso no hay máximo que registrar
+  const key=norm(exName).trim();
+  const cur=exHistoryCache[personKey]||{ex:{}};
+  const prevMax=cur.ex?.[key]?.max;
+  const today=new Date().toLocaleDateString('es-AR');
+  const entry={weight:w,reps:reps||'',date:today};
+  const update={};
+  update.last=entry;
+  if(!prevMax||w>prevMax.weight)update.max=entry;
+  if(!cur.ex)cur.ex={};
+  cur.ex[key]={...cur.ex[key],...update};
+  exHistoryCache[personKey]=cur;
+  await setDoc(doc(db,'exHistory',personKey),{ex:{[key]:update}},{merge:true});
+}
+async function saveExNote(personKey,exName,note){
+  const key=norm(exName).trim();
+  const cur=exHistoryCache[personKey]||{ex:{}};
+  if(!cur.ex)cur.ex={};
+  cur.ex[key]={...cur.ex[key],note};
+  exHistoryCache[personKey]=cur;
+  await setDoc(doc(db,'exHistory',personKey),{ex:{[key]:{note}}},{merge:true});
+}
 function getYTId(url){if(!url)return null;const m=url.match(/(?:shorts\/|v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);return m?m[1]:null}
 function hideLoading(){document.getElementById('loading').style.display='none'}
 
