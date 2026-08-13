@@ -4275,6 +4275,11 @@ function patchExerciseListVideo(exList,key,newName,newVideo){
   let changed=false;
   (exList||[]).forEach(e=>{
     if(norm(e.name).trim()===key){e.video=newVideo;if(newName)e.name=newName;changed=true;}
+    // Las variantes de un ejercicio (＋ Variante) guardan su propio nombre/video,
+    // independiente del ejercicio principal — hay que patchearlas también.
+    (e.variants||[]).forEach(v=>{
+      if(norm(v.name).trim()===key){v.video=newVideo;if(newName)v.name=newName;changed=true;}
+    });
   });
   return changed;
 }
@@ -4325,46 +4330,32 @@ async function propagateExerciseEdit(oldName,newName,newVideo){
 // actuales del banco, una sola vez, por nombre de ejercicio.
 window.resyncTodosLosVideos=async function(){
   if(!exDB.length){toast('❌ No hay ejercicios en el banco');return}
-  if(!confirm('Esto va a revisar todos los planes, clientes y plantillas y actualizar el video de cada ejercicio con el link que tiene ahora en el banco. ¿Continuar?'))return;
+  if(!confirm('Esto va a revisar todos los planes, clientes y plantillas y actualizar el video de cada ejercicio (y sus variantes) con el link que tiene ahora en el banco. ¿Continuar?'))return;
   toast('⏳ Sincronizando videos...');
-  const videoByName={};
-  exDB.forEach(e=>{ if(e.video) videoByName[norm(e.name)]=e.video; });
-  let plansChanged=0,clientsChanged=0,tplChanged=0;
-  for(const plan of planes){
-    let changed=false;
-    if(plan.weeks)Object.values(plan.weeks).forEach(days=>(days||[]).forEach(d=>(d.blocks||[]).forEach(blk=>{
-      if(blk.kind==='cf'){(blk.sections||[]).forEach(sec=>(sec.exercises||[]).forEach(ex=>{const v=videoByName[norm(ex.name)];if(v&&ex.video!==v){ex.video=v;changed=true;}}));}
-      else{(blk.exercises||[]).forEach(ex=>{const v=videoByName[norm(ex.name)];if(v&&ex.video!==v){ex.video=v;changed=true;}});}
-    })));
-    (plan.days||[]).forEach(d=>(d.blocks||[]).forEach(blk=>{
-      if(blk.kind==='cf'){(blk.sections||[]).forEach(sec=>(sec.exercises||[]).forEach(ex=>{const v=videoByName[norm(ex.name)];if(v&&ex.video!==v){ex.video=v;changed=true;}}));}
-      else{(blk.exercises||[]).forEach(ex=>{const v=videoByName[norm(ex.name)];if(v&&ex.video!==v){ex.video=v;changed=true;}});}
-    }));
-    if(changed){await setDoc(doc(db,'planes',plan.id),plan);plansChanged++;}
-  }
-  for(const c of clients){
-    let changed=false;
-    if(c.weeks)Object.values(c.weeks).forEach(days=>(days||[]).forEach(d=>(d.blocks||[]).forEach(blk=>{
-      if(blk.kind==='cf'){(blk.sections||[]).forEach(sec=>(sec.exercises||[]).forEach(ex=>{const v=videoByName[norm(ex.name)];if(v&&ex.video!==v){ex.video=v;changed=true;}}));}
-      else{(blk.exercises||[]).forEach(ex=>{const v=videoByName[norm(ex.name)];if(v&&ex.video!==v){ex.video=v;changed=true;}});}
-    })));
-    (c.days||[]).forEach(d=>(d.blocks||[]).forEach(blk=>{
-      if(blk.kind==='cf'){(blk.sections||[]).forEach(sec=>(sec.exercises||[]).forEach(ex=>{const v=videoByName[norm(ex.name)];if(v&&ex.video!==v){ex.video=v;changed=true;}}));}
-      else{(blk.exercises||[]).forEach(ex=>{const v=videoByName[norm(ex.name)];if(v&&ex.video!==v){ex.video=v;changed=true;}});}
-    }));
-    if(changed){await setDoc(doc(db,'clients',c.id),c);clientsChanged++;}
-  }
+  const changedPlans=new Set(),changedClients=new Set();
+  let tplChanged=false;
   const templates=await loadBloqueTemplates();
-  let tplListChanged=false;
-  templates.forEach(t=>{
-    const data=t.data;if(!data)return;
-    let changed=false;
-    (data.sections||[]).forEach(sec=>(sec.exercises||[]).forEach(ex=>{const v=videoByName[norm(ex.name)];if(v&&ex.video!==v){ex.video=v;changed=true;}}));
-    (data.exercises||[]).forEach(ex=>{const v=videoByName[norm(ex.name)];if(v&&ex.video!==v){ex.video=v;changed=true;}});
-    if(changed){tplChanged++;tplListChanged=true;}
-  });
-  if(tplListChanged){await setDoc(doc(db,'meta','bloqueTemplates'),{list:templates});bloqueTemplatesCache=templates;}
-  toast(`✅ Sincronizado: ${plansChanged} planes, ${clientsChanged} clientes, ${tplChanged} plantillas`);
+  for(const ex of exDB){
+    if(!ex.video)continue;
+    const key=norm(ex.name).trim();
+    for(const plan of planes){
+      let changed=false;
+      if(plan.weeks)Object.values(plan.weeks).forEach(days=>{if(patchDaysVideo(days,key,null,ex.video))changed=true;});
+      if(patchDaysVideo(plan.days,key,null,ex.video))changed=true;
+      if(changed)changedPlans.add(plan);
+    }
+    for(const c of clients){
+      let changed=false;
+      if(c.weeks)Object.values(c.weeks).forEach(days=>{if(patchDaysVideo(days,key,null,ex.video))changed=true;});
+      if(patchDaysVideo(c.days,key,null,ex.video))changed=true;
+      if(changed)changedClients.add(c);
+    }
+    templates.forEach(t=>{if(patchTemplateDataVideo(t.data,key,null,ex.video))tplChanged=true;});
+  }
+  for(const plan of changedPlans)await setDoc(doc(db,'planes',plan.id),plan);
+  for(const c of changedClients)await setDoc(doc(db,'clients',c.id),c);
+  if(tplChanged){await setDoc(doc(db,'meta','bloqueTemplates'),{list:templates});bloqueTemplatesCache=templates;}
+  toast(`✅ Sincronizado: ${changedPlans.size} planes, ${changedClients.size} clientes, ${tplChanged?'plantillas actualizadas':'sin cambios en plantillas'}`);
 };
 
 let savingExercise=false;
