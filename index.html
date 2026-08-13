@@ -1032,6 +1032,7 @@ setTimeout(()=>{
       <div class="fg"><label>Link de YouTube (opcional)</label><input id="em-video" placeholder="https://youtube.com/..."></div>
       <div id="em-preview" style="display:none"></div>
       <div class="fg"><label>Notas (opcional)</label><textarea id="em-notes" placeholder="Cómo ejecutarlo, técnica, errores comunes..."></textarea></div>
+      <div class="fg"><label>Ejercicio de referencia para el peso (opcional)</label><select id="em-refex"><option value="">— Usar historial propio —</option></select></div>
       <input type="hidden" id="em-id">
     </div>
     <div style="display:flex;gap:8px;margin-top:16px">
@@ -3819,8 +3820,10 @@ function renderWarmupBlock(c,bkey,blk,bi){
       });
       schemeHtml+=`</tbody></table>`;
     }
+    const exBank=exDB.find(e=>norm(e.name).trim()===norm(ex.name).trim());
     return`<div class="cv-ex" style="padding-bottom:10px;border-bottom:1px solid var(--bd);margin-bottom:10px">
       <div class="cv-ex-name">${ex.name}${ex.video?` <a href="${ex.video}" target="_blank" style="font-size:.7rem;color:var(--ac2);text-decoration:none">▶</a>`:''}</div>
+      ${exBank?.notes?`<div class="cv-obs">📖 ${exBank.notes}</div>`:''}
       ${ex.obs?`<div class="cv-obs">📝 ${ex.obs}</div>`:''}
       ${schemeHtml}
       ${vidHtml}
@@ -3874,10 +3877,12 @@ function renderFuncBlock(c,bkey,blk,bi,isAdminView){
         style="background:var(--ac)22;color:var(--ac2);border:1px solid var(--ac)44;border-radius:7px;padding:5px 12px;font-size:.78rem;font-weight:700;font-family:inherit;cursor:pointer;display:flex;align-items:center;gap:5px;margin-top:6px">
         ⏱ ${ex.reps}
       </button>`:'';
+      const exBank=exDB.find(e=>norm(e.name).trim()===norm(ex.name).trim());
       inner+=`<div class="cv-ex">
         <div class="cv-ex-name">${ex.name}${ex.reps?' <span style="color:var(--ac2);font-size:.78rem">× '+ex.reps+'</span>':''}</div>
-        ${exHistoryRowHtml(exPersonKey(c.name,c.email||''),ex.name)}
+        ${exHistoryRowHtml(exPersonKey(c.name,c.email||''),exBank?.refEx||ex.name)}
         ${isAdminView?`<button type="button" onclick="editExNote('${c.id}','${jsAttr(exPersonKey(c.name,c.email||''))}','${jsAttr(ex.name)}',${dIdx})" style="background:none;border:none;color:var(--mu);cursor:pointer;font-size:.72rem;padding:0 0 4px">✏️ nota</button>`:''}
+        ${exBank?.notes?`<div class="cv-obs">📖 ${exBank.notes}</div>`:''}
         ${vidHtml}
         ${timerBtn}
         <div class="plog">
@@ -3930,11 +3935,13 @@ function renderGymBlock(c,bkey,blk,bi,isAdminView){
       <button onclick="selectExVariant('${c.id}','${ekey}','${vk}',0)" style="font-size:.72rem;font-weight:700;padding:4px 10px;border-radius:20px;cursor:pointer;font-family:inherit;border:1px solid var(--ac2);background:${selVariant===0?'var(--ac2)':'transparent'};color:${selVariant===0?'#fff':'var(--ac2)'}">${ex.name}</button>
       ${ex.variants.map((v,vi)=>`<button onclick="selectExVariant('${c.id}','${ekey}','${vk}',${vi+1})" style="font-size:.72rem;font-weight:700;padding:4px 10px;border-radius:20px;cursor:pointer;font-family:inherit;border:1px solid var(--ac2);background:${selVariant===vi+1?'var(--ac2)':'transparent'};color:${selVariant===vi+1?'#fff':'var(--ac2)'}">${v.name}</button>`).join('')}
     </div>`:'';
+    const exBank=exDB.find(e=>norm(e.name).trim()===norm(activeEx.name).trim());
     inner+=`<div class="cv-ex">
       <div class="cv-ex-name">${activeEx.name}${activeEx.video?` <a href="${activeEx.video}" target="_blank" style="font-size:.7rem;color:var(--ac2);text-decoration:none">▶</a>`:''}</div>
-      ${exHistoryRowHtml(exPersonKey(c.name,c.email||''),activeEx.name)}
+      ${exHistoryRowHtml(exPersonKey(c.name,c.email||''),exBank?.refEx||activeEx.name)}
       ${isAdminView?`<button type="button" onclick="editExNote('${c.id}','${jsAttr(exPersonKey(c.name,c.email||''))}','${jsAttr(activeEx.name)}',${dIdx})" style="background:none;border:none;color:var(--mu);cursor:pointer;font-size:.72rem;padding:0 0 4px">✏️ nota</button>`:''}
       ${variantChips}
+      ${exBank?.notes?`<div class="cv-obs">📖 ${exBank.notes}</div>`:''}
       ${ex.obs?`<div class="cv-obs">📝 ${ex.obs}</div>`:''}`;
     let setCount=0;
     if(ex.scheme?.length){
@@ -4230,6 +4237,12 @@ function renderExDB(){
 }
 window.renderExDB=renderExDB;
 
+function populateRefExOptions(excludeId){
+  const sel=document.getElementById('em-refex');
+  const cur=sel.value;
+  sel.innerHTML='<option value="">— Usar historial propio —</option>'+exDB.filter(e=>e.id!==excludeId).slice().sort((a,b)=>a.name.localeCompare(b.name)).map(e=>`<option value="${jsAttr(e.name)}">${e.name}</option>`).join('');
+  sel.value=cur;
+}
 let pendingExTarget=null;
 window.openAddExModal=function(){
   document.getElementById('em-name').value='';
@@ -4237,6 +4250,8 @@ window.openAddExModal=function(){
   document.getElementById('em-notes').value='';
   document.getElementById('em-id').value='';
   document.getElementById('em-preview').style.display='none';
+  populateRefExOptions('');
+  document.getElementById('em-refex').value='';
   document.getElementById('ex-modal-title').textContent='Agregar ejercicio';
   document.getElementById('ex-modal').classList.add('open');
 };
@@ -4254,6 +4269,8 @@ window.openEditEx=function(id){
   document.getElementById('em-video').value=ex.video||'';
   document.getElementById('em-notes').value=ex.notes||'';
   document.getElementById('em-id').value=ex.id;
+  populateRefExOptions(ex.id);
+  document.getElementById('em-refex').value=ex.refEx||'';
   document.getElementById('ex-modal-title').textContent='Editar ejercicio';
   showVideoPreview(ex.video);
   document.getElementById('ex-modal').classList.add('open');
@@ -4368,6 +4385,7 @@ window.saveExercise=async function(){
   const cat=document.getElementById('em-cat').value;
   const video=document.getElementById('em-video').value.trim();
   const notes=document.getElementById('em-notes').value.trim();
+  const refEx=document.getElementById('em-refex').value.trim();
   const target=pendingExTarget;pendingExTarget=null;
   // Si el nombre ya existe en el catálogo (aunque se haya llegado acá por
   // "agregar" y no por el lápiz de editar), lo tratamos como edición del
@@ -4378,15 +4396,15 @@ window.saveExercise=async function(){
   if(existingId){
     const ex=exDB.find(e=>e.id===existingId);
     const oldName=ex?.name||name;
-    if(ex){ex.name=name;ex.cat=cat;ex.video=video;ex.notes=notes;}
-    await setDoc(doc(db,'exercises',existingId),{id:existingId,name,cat,video,notes});
+    if(ex){ex.name=name;ex.cat=cat;ex.video=video;ex.notes=notes;ex.refEx=refEx;}
+    await setDoc(doc(db,'exercises',existingId),{id:existingId,name,cat,video,notes,refEx});
     toast('⏳ Actualizando en rutinas existentes...');
     await propagateExerciseEdit(oldName,name,video);
     toast('✅ Ejercicio actualizado en el catálogo y en todas las rutinas');
   } else {
     const id='ex'+Date.now();
-    await setDoc(doc(db,'exercises',id),{id,name,cat,video,notes});
-    exDB.push({id,name,cat,video,notes});
+    await setDoc(doc(db,'exercises',id),{id,name,cat,video,notes,refEx});
+    exDB.push({id,name,cat,video,notes,refEx});
     toast('✅ Ejercicio agregado');
   }
   document.getElementById('ex-modal').classList.remove('open');renderExDB();populateCatFilter();
