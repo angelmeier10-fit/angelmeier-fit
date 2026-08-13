@@ -991,6 +991,7 @@ setTimeout(()=>{
     <button class="btn bg2" onclick="openCatModal()">⚙️ Categorías</button>
     <label class="btn bg2" style="cursor:pointer">📥 Importar CSV<input type="file" accept=".csv" style="display:none" onchange="importExercises(this)"></label>
     <button class="btn bg2" onclick="exportExercisesCSV()">📤 Exportar CSV</button>
+    <button class="btn bg2" onclick="resyncTodosLosVideos()">🔄 Sincronizar videos ya guardados</button>
     <input type="text" id="ex-search-db" placeholder="Buscar ejercicio..." style="flex:1;min-width:150px" oninput="renderExDB()">
     <select id="ex-cat-filter" style="width:180px" onchange="renderExDB()"><option value="">Todas las categorías</option></select>
   </div>
@@ -3202,10 +3203,24 @@ window.filtrarInsertarPlantilla=function(bodyId){
   renderInsertarPlantillaList(bodyId,filtered);
 };
 
+// Las plantillas guardan una COPIA del video de cada ejercicio (tomada al
+// momento de guardar la plantilla), igual que los planes. Si el video se
+// edita después en el banco, la plantilla queda desactualizada y nadie la
+// vuelve a tocar hasta que se inserta. Por eso, antes de insertarla,
+// refrescamos el video de cada ejercicio contra el banco actual.
+function refreshPlantillaVideos(data){
+  if(!exDB.length)return data;
+  const videoByName={};
+  exDB.forEach(e=>{ if(e.video) videoByName[norm(e.name)]=e.video; });
+  const patchList=list=>(list||[]).forEach(ex=>{ const v=videoByName[norm(ex.name)]; if(v)ex.video=v; });
+  (data.sections||[]).forEach(s=>patchList(s.exercises));
+  patchList(data.exercises);
+  return data;
+}
 window.insertarPlantilla=function(bodyId,idx){
   const t=bloqueTemplatesCache?.[idx];
   if(!t)return;
-  const data=t.data;
+  const data=refreshPlantillaVideos(t.data);
   if(data.kind==='warmup')addWarmupBlock(bodyId,data);
   else if(data.kind==='gym')addGymBlock(bodyId,data.type,data);
   else if(data.kind==='func')addFuncBlock(bodyId,data);
@@ -4274,6 +4289,16 @@ function patchDaysVideo(days,key,newName,newVideo){
   }));
   return changed;
 }
+// Las plantillas de bloque (meta/bloqueTemplates) también guardan una copia
+// del video de cada ejercicio, igual que los planes. Sin esto, editar el
+// banco no se reflejaba ahí hasta insertar la plantilla de nuevo.
+function patchTemplateDataVideo(data,key,newName,newVideo){
+  let changed=false;
+  if(!data)return changed;
+  (data.sections||[]).forEach(sec=>{if(patchExerciseListVideo(sec.exercises,key,newName,newVideo))changed=true;});
+  if(patchExerciseListVideo(data.exercises,key,newName,newVideo))changed=true;
+  return changed;
+}
 async function propagateExerciseEdit(oldName,newName,newVideo){
   const key=norm(oldName).trim();
   for(const plan of planes){
@@ -4288,7 +4313,59 @@ async function propagateExerciseEdit(oldName,newName,newVideo){
     if(patchDaysVideo(c.days,key,newName,newVideo))changed=true;
     if(changed)await setDoc(doc(db,'clients',c.id),c);
   }
+  const templates=await loadBloqueTemplates();
+  let tplChanged=false;
+  templates.forEach(t=>{if(patchTemplateDataVideo(t.data,key,newName,newVideo))tplChanged=true;});
+  if(tplChanged){await setDoc(doc(db,'meta','bloqueTemplates'),{list:templates});bloqueTemplatesCache=templates;}
 }
+
+// Backfill: los videos que se cambiaron en el banco ANTES de que existiera
+// la propagación automática (propagateExerciseEdit) quedaron desactualizados
+// en rutinas y plantillas viejas. Este resync recorre todo con los valores
+// actuales del banco, una sola vez, por nombre de ejercicio.
+window.resyncTodosLosVideos=async function(){
+  if(!exDB.length){toast('❌ No hay ejercicios en el banco');return}
+  if(!confirm('Esto va a revisar todos los planes, clientes y plantillas y actualizar el video de cada ejercicio con el link que tiene ahora en el banco. ¿Continuar?'))return;
+  toast('⏳ Sincronizando videos...');
+  const videoByName={};
+  exDB.forEach(e=>{ if(e.video) videoByName[norm(e.name)]=e.video; });
+  let plansChanged=0,clientsChanged=0,tplChanged=0;
+  for(const plan of planes){
+    let changed=false;
+    if(plan.weeks)Object.values(plan.weeks).forEach(days=>(days||[]).forEach(d=>(d.blocks||[]).forEach(blk=>{
+      if(blk.kind==='cf'){(blk.sections||[]).forEach(sec=>(sec.exercises||[]).forEach(ex=>{const v=videoByName[norm(ex.name)];if(v&&ex.video!==v){ex.video=v;changed=true;}}));}
+      else{(blk.exercises||[]).forEach(ex=>{const v=videoByName[norm(ex.name)];if(v&&ex.video!==v){ex.video=v;changed=true;}});}
+    })));
+    (plan.days||[]).forEach(d=>(d.blocks||[]).forEach(blk=>{
+      if(blk.kind==='cf'){(blk.sections||[]).forEach(sec=>(sec.exercises||[]).forEach(ex=>{const v=videoByName[norm(ex.name)];if(v&&ex.video!==v){ex.video=v;changed=true;}}));}
+      else{(blk.exercises||[]).forEach(ex=>{const v=videoByName[norm(ex.name)];if(v&&ex.video!==v){ex.video=v;changed=true;}});}
+    }));
+    if(changed){await setDoc(doc(db,'planes',plan.id),plan);plansChanged++;}
+  }
+  for(const c of clients){
+    let changed=false;
+    if(c.weeks)Object.values(c.weeks).forEach(days=>(days||[]).forEach(d=>(d.blocks||[]).forEach(blk=>{
+      if(blk.kind==='cf'){(blk.sections||[]).forEach(sec=>(sec.exercises||[]).forEach(ex=>{const v=videoByName[norm(ex.name)];if(v&&ex.video!==v){ex.video=v;changed=true;}}));}
+      else{(blk.exercises||[]).forEach(ex=>{const v=videoByName[norm(ex.name)];if(v&&ex.video!==v){ex.video=v;changed=true;}});}
+    })));
+    (c.days||[]).forEach(d=>(d.blocks||[]).forEach(blk=>{
+      if(blk.kind==='cf'){(blk.sections||[]).forEach(sec=>(sec.exercises||[]).forEach(ex=>{const v=videoByName[norm(ex.name)];if(v&&ex.video!==v){ex.video=v;changed=true;}}));}
+      else{(blk.exercises||[]).forEach(ex=>{const v=videoByName[norm(ex.name)];if(v&&ex.video!==v){ex.video=v;changed=true;}});}
+    }));
+    if(changed){await setDoc(doc(db,'clients',c.id),c);clientsChanged++;}
+  }
+  const templates=await loadBloqueTemplates();
+  let tplListChanged=false;
+  templates.forEach(t=>{
+    const data=t.data;if(!data)return;
+    let changed=false;
+    (data.sections||[]).forEach(sec=>(sec.exercises||[]).forEach(ex=>{const v=videoByName[norm(ex.name)];if(v&&ex.video!==v){ex.video=v;changed=true;}}));
+    (data.exercises||[]).forEach(ex=>{const v=videoByName[norm(ex.name)];if(v&&ex.video!==v){ex.video=v;changed=true;}});
+    if(changed){tplChanged++;tplListChanged=true;}
+  });
+  if(tplListChanged){await setDoc(doc(db,'meta','bloqueTemplates'),{list:templates});bloqueTemplatesCache=templates;}
+  toast(`✅ Sincronizado: ${plansChanged} planes, ${clientsChanged} clientes, ${tplChanged} plantillas`);
+};
 
 let savingExercise=false;
 window.saveExercise=async function(){
