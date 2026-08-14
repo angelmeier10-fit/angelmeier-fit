@@ -2408,6 +2408,17 @@ function showCFMenu(bodyId,btn){
 }
 window.showCFMenu=showCFMenu;
 
+function refExOptionsHtml(current){
+  const cur=norm(current||'').trim();
+  return'<option value="">— Usar el mismo ejercicio —</option>'+exDB.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(e=>`<option value="${jsAttr(e.name)}"${norm(e.name).trim()===cur?' selected':''}>${e.name}</option>`).join('');
+}
+function refExFieldHtml(data){
+  return`<div class="fg full" style="margin-top:2px">
+    <label style="font-size:.68rem;color:var(--mu)">Ejercicio de referencia para el peso (opcional)</label>
+    <select class="ex-refex">${refExOptionsHtml(data?.refEx)}</select>
+  </div>`;
+}
+
 function addFuncBlock(bodyId,data=null){
   const c=document.getElementById(bodyId);
   const gid='fn'+Date.now()+Math.random().toString(36).slice(2,5);
@@ -2452,7 +2463,8 @@ function addFuncEx(cid,data=null){
       <div class="ex-dd" id="${eid}-dd"></div>
     </div>
     <button class="btn bd2 xs" style="flex-shrink:0" onclick="document.getElementById('${eid}').remove()">✕</button>
-  </div>`;
+  </div>
+  ${refExFieldHtml(data)}`;
   c.appendChild(div);
 }
 window.addFuncEx=addFuncEx;
@@ -2609,6 +2621,7 @@ function addExEntry(body,data=null,removable=false,before=null){
     </div>
     ${removable?`<button class="btn bd2 xs" style="margin-top:18px;flex-shrink:0" onclick="removeGiantEx('${eid}')">✕</button>`:''}
   </div>
+  ${refExFieldHtml(data)}
   <div class="fg"><label>Observaciones</label><input type="text" class="ex-obs" value="${data?.obs||''}" placeholder="RPE, técnica..."></div>
   <div class="fg full">
     <label>Variantes (opcional — más fácil / más difícil, para que elija la alumna)</label>
@@ -2895,7 +2908,7 @@ function collectBlockData(blk){
   if(blk.dataset.kind==='func'){
     const exercises=[...blk.querySelectorAll('.ex-entry')].map(en=>{
       const inp=en.querySelector('.ex-search');
-      return{name:inp.dataset.name||inp.value,video:inp.dataset.video||'',reps:en.querySelector('.func-ex-reps')?.value||''};
+      return{name:inp.dataset.name||inp.value,video:inp.dataset.video||'',reps:en.querySelector('.func-ex-reps')?.value||'',refEx:en.querySelector('.ex-refex')?.value||''};
     }).filter(e=>e.name);
     return{
       kind:'func',
@@ -2922,7 +2935,7 @@ function collectBlockData(blk){
       const inp=en.querySelector('.ex-search');
       const scheme=[...en.querySelectorAll('.sc-row')].map(r=>({reps:r.querySelector('.sr-reps').value,load:r.querySelector('.sr-load').value}));
       const variants=[...en.querySelectorAll('.ex-variant-row')].map(vr=>{const vi=vr.querySelector('.ex-search');return{name:vi.dataset.name||vi.value,video:vi.dataset.video||''}}).filter(v=>v.name);
-      return{name:inp.dataset.name||inp.value,video:inp.dataset.video||'',obs:en.querySelector('.ex-obs').value,scheme,variants};
+      return{name:inp.dataset.name||inp.value,video:inp.dataset.video||'',obs:en.querySelector('.ex-obs').value,scheme,variants,refEx:en.querySelector('.ex-refex')?.value||''};
     }).filter(e=>e.name);
     const pauses=[...blk.querySelectorAll('.ex-sep-pause-inp')].map(i=>i.value);
     return{kind:'gym',type,rest,exercises,pauses};
@@ -3880,7 +3893,7 @@ function renderFuncBlock(c,bkey,blk,bi,isAdminView){
       const exBank=exDB.find(e=>norm(e.name).trim()===norm(ex.name).trim());
       inner+=`<div class="cv-ex">
         <div class="cv-ex-name">${ex.name}${ex.reps?' <span style="color:var(--ac2);font-size:.78rem">× '+ex.reps+'</span>':''}</div>
-        ${exHistoryRowHtml(exPersonKey(c.name,c.email||''),exBank?.refEx||ex.name)}
+        ${exHistoryRowHtml(exPersonKey(c.name,c.email||''),ex.refEx||exBank?.refEx||ex.name)}
         ${isAdminView?`<button type="button" onclick="editExNote('${c.id}','${jsAttr(exPersonKey(c.name,c.email||''))}','${jsAttr(ex.name)}',${dIdx})" style="background:none;border:none;color:var(--mu);cursor:pointer;font-size:.72rem;padding:0 0 4px">✏️ nota</button>`:''}
         ${exBank?.notes?`<div class="cv-obs">📖 ${exBank.notes}</div>`:''}
         ${vidHtml}
@@ -3890,7 +3903,7 @@ function renderFuncBlock(c,bkey,blk,bi,isAdminView){
           <div class="lr">
             <input type="number" id="pw-${c.id}-${ekey}" placeholder="${lastLog?.weight?'Último: '+lastLog.weight+'kg':'Peso (kg)'}" step="0.5">
             <input type="number" id="pr-${c.id}-${ekey}" placeholder="${lastLog?.reps?'Último: '+lastLog.reps+' rep':'Reps'}">
-            <button class="btn bgr sm" onclick="logGym('${c.id}','${ekey}','${jsAttr(exBank?.refEx||ex.name)}')">✓</button>
+            <button class="btn bgr sm" onclick="logGym('${c.id}','${ekey}','${jsAttr(ex.refEx||exBank?.refEx||ex.name)}')">✓</button>
           </div>
           ${logs.slice(-3).reverse().map((l,ri)=>{const realIdx=logs.length-1-ri;return`<div class="lent"><span>${l.date}</span><span class="lv">${l.weight?l.weight+'kg':'—'} × ${l.reps||'—'}</span><button onclick="deleteLog('${c.id}','${ekey}',${realIdx})" style="background:none;border:none;color:var(--mu);cursor:pointer;font-size:.75rem;padding:0 4px">✕</button></div>`;}).join('')}
         </div>
@@ -3938,7 +3951,7 @@ function renderGymBlock(c,bkey,blk,bi,isAdminView){
     const exBank=exDB.find(e=>norm(e.name).trim()===norm(activeEx.name).trim());
     inner+=`<div class="cv-ex">
       <div class="cv-ex-name">${activeEx.name}${activeEx.video?` <a href="${activeEx.video}" target="_blank" style="font-size:.7rem;color:var(--ac2);text-decoration:none">▶</a>`:''}</div>
-      ${exHistoryRowHtml(exPersonKey(c.name,c.email||''),exBank?.refEx||activeEx.name)}
+      ${exHistoryRowHtml(exPersonKey(c.name,c.email||''),ex.refEx||exBank?.refEx||activeEx.name)}
       ${isAdminView?`<button type="button" onclick="editExNote('${c.id}','${jsAttr(exPersonKey(c.name,c.email||''))}','${jsAttr(activeEx.name)}',${dIdx})" style="background:none;border:none;color:var(--mu);cursor:pointer;font-size:.72rem;padding:0 0 4px">✏️ nota</button>`:''}
       ${variantChips}
       ${exBank?.notes?`<div class="cv-obs">📖 ${exBank.notes}</div>`:''}
@@ -3962,7 +3975,7 @@ function renderGymBlock(c,bkey,blk,bi,isAdminView){
     const lastLog=logs.length?logs[logs.length-1]:null;
     inner+=`<div class="plog">
       <div style="font-size:.69rem;color:var(--mu);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">📊 Registrar sesión</div>
-      <div class="lr">${setCount?'':`<input type="number" id="pw-${c.id}-${ekey}" placeholder="${lastLog&&lastLog.weight?'Último: '+lastLog.weight+'kg':'Peso (kg)'}" step="0.5">`}<input type="number" id="pr-${c.id}-${ekey}" placeholder="${lastLog&&lastLog.reps?'Último: '+lastLog.reps+'rep':'Reps (opcional)'}"><input type="hidden" data-setcount="${setCount}" id="pwcount-${c.id}-${ekey}"><button class="btn bgr sm" onclick="logGym('${c.id}','${ekey}','${jsAttr(exBank?.refEx||activeEx.name)}')">✓ Guardar pesos</button></div>
+      <div class="lr">${setCount?'':`<input type="number" id="pw-${c.id}-${ekey}" placeholder="${lastLog&&lastLog.weight?'Último: '+lastLog.weight+'kg':'Peso (kg)'}" step="0.5">`}<input type="number" id="pr-${c.id}-${ekey}" placeholder="${lastLog&&lastLog.reps?'Último: '+lastLog.reps+'rep':'Reps (opcional)'}"><input type="hidden" data-setcount="${setCount}" id="pwcount-${c.id}-${ekey}"><button class="btn bgr sm" onclick="logGym('${c.id}','${ekey}','${jsAttr(ex.refEx||exBank?.refEx||activeEx.name)}')">✓ Guardar pesos</button></div>
       <input type="text" id="pn-${c.id}-${ekey}" placeholder="Nota (opcional): ej. usé mancuernas..." style="margin-top:5px;font-size:.78rem;padding:6px 10px;border-radius:8px;border:1px solid var(--bd);background:var(--s2);color:var(--tx);width:100%;box-sizing:border-box">
       ${logsHtml}</div></div>`;
   });
@@ -5217,7 +5230,7 @@ async function updatePlan(){
     name:db2.querySelector('.day-name-input').value,
     blocks:[...document.getElementById(db2.id+'-body').children].filter(el=>el.dataset.kind).map(blk=>{
       if(blk.dataset.kind==='func'){
-        const exercises=[...blk.querySelectorAll('.ex-entry')].map(en=>{const inp=en.querySelector('.ex-search');return{name:inp.dataset.name||inp.value,video:inp.dataset.video||'',reps:en.querySelector('.func-ex-reps')?.value||''};}).filter(e=>e.name);
+        const exercises=[...blk.querySelectorAll('.ex-entry')].map(en=>{const inp=en.querySelector('.ex-search');return{name:inp.dataset.name||inp.value,video:inp.dataset.video||'',reps:en.querySelector('.func-ex-reps')?.value||'',refEx:en.querySelector('.ex-refex')?.value||''};}).filter(e=>e.name);
         return{kind:'func',title:blk.querySelector('.func-title').value,desc:blk.querySelector('.func-desc').value,reps:blk.querySelector('.func-reps').value,rest:blk.querySelector('.func-rest').value,sets:blk.querySelector('.func-sets').value,exercises};
       } else if(blk.dataset.kind==='warmup'){
         const duration=blk.querySelector('.wu-duration')?.value||'10 min';
@@ -5230,7 +5243,7 @@ async function updatePlan(){
         return{kind:'warmup',duration,series,exercises};
       } else if(blk.dataset.kind==='gym'){
         const type=blk.dataset.type;const rest=blk.querySelector('.sg-rest').value;
-        const exercises=[...blk.querySelectorAll('.ex-entry')].map(en=>{const inp=en.querySelector('.ex-search');const scheme=[...en.querySelectorAll('.sc-row')].map(r=>({reps:r.querySelector('.sr-reps').value,load:r.querySelector('.sr-load').value}));const variants=[...en.querySelectorAll('.ex-variant-row')].map(vr=>{const vi=vr.querySelector('.ex-search');return{name:vi.dataset.name||vi.value,video:vi.dataset.video||''}}).filter(v=>v.name);return{name:inp.dataset.name||inp.value,video:inp.dataset.video||'',obs:en.querySelector('.ex-obs').value,scheme,variants};}).filter(e=>e.name);
+        const exercises=[...blk.querySelectorAll('.ex-entry')].map(en=>{const inp=en.querySelector('.ex-search');const scheme=[...en.querySelectorAll('.sc-row')].map(r=>({reps:r.querySelector('.sr-reps').value,load:r.querySelector('.sr-load').value}));const variants=[...en.querySelectorAll('.ex-variant-row')].map(vr=>{const vi=vr.querySelector('.ex-search');return{name:vi.dataset.name||vi.value,video:vi.dataset.video||''}}).filter(v=>v.name);return{name:inp.dataset.name||inp.value,video:inp.dataset.video||'',obs:en.querySelector('.ex-obs').value,scheme,variants,refEx:en.querySelector('.ex-refex')?.value||''};}).filter(e=>e.name);
         const pauses=[...blk.querySelectorAll('.ex-sep-pause-inp')].map(i=>i.value);
         return{kind:'gym',type,rest,exercises,pauses};
       } else {
