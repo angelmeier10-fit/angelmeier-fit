@@ -3949,9 +3949,10 @@ function renderGymBlock(c,bkey,blk,bi,isAdminView){
       ${ex.variants.map((v,vi)=>`<button onclick="selectExVariant('${c.id}','${ekey}','${vk}',${vi+1})" style="font-size:.72rem;font-weight:700;padding:4px 10px;border-radius:20px;cursor:pointer;font-family:inherit;border:1px solid var(--ac2);background:${selVariant===vi+1?'var(--ac2)':'transparent'};color:${selVariant===vi+1?'#fff':'var(--ac2)'}">${v.name}</button>`).join('')}
     </div>`:'';
     const exBank=exDB.find(e=>norm(e.name).trim()===norm(activeEx.name).trim());
+    const refName=ex.refEx||exBank?.refEx||activeEx.name;
     inner+=`<div class="cv-ex">
       <div class="cv-ex-name">${activeEx.name}${activeEx.video?` <a href="${activeEx.video}" target="_blank" style="font-size:.7rem;color:var(--ac2);text-decoration:none">▶</a>`:''}</div>
-      ${exHistoryRowHtml(exPersonKey(c.name,c.email||''),ex.refEx||exBank?.refEx||activeEx.name)}
+      ${exHistoryRowHtml(exPersonKey(c.name,c.email||''),refName)}
       ${isAdminView?`<button type="button" onclick="editExNote('${c.id}','${jsAttr(exPersonKey(c.name,c.email||''))}','${jsAttr(activeEx.name)}',${dIdx})" style="background:none;border:none;color:var(--mu);cursor:pointer;font-size:.72rem;padding:0 0 4px">✏️ nota</button>`:''}
       ${variantChips}
       ${exBank?.notes?`<div class="cv-obs">📖 ${exBank.notes}</div>`:''}
@@ -3966,7 +3967,7 @@ function renderGymBlock(c,bkey,blk,bi,isAdminView){
       const restSecs=parseRestToSeconds(blk.rest);
       const pauseSecs=isLastEx?0:parseRestToSeconds((blk.pauses||[])[ei]||'');
       ex.scheme.forEach((s,si)=>{const rk=`${c.id}-${ekey}-${si}`;const done=c.progress[rk]||false;
-        inner+=`<tr id="sr-${rk}" class="${done?'done-row':''}"><td>Serie ${si+1}</td><td>${s.reps||'—'}</td><td>${s.load||'—'}</td><td><input type="number" id="sw-${c.id}-${ekey}-${si}" placeholder="${lastWeights[si]?lastWeights[si]+'kg':'kg'}" step="0.5" style="width:62px;font-size:.78rem;padding:4px 6px"></td><td><button class="ckbtn ${done?'done':''}" onclick="toggleSerie('${c.id}','${ekey}',${si},'${rk}',${isLastEx},${restSecs},${pauseSecs})">✓</button></td></tr>`});
+        inner+=`<tr id="sr-${rk}" class="${done?'done-row':''}"><td>Serie ${si+1}</td><td>${s.reps||'—'}</td><td>${s.load||'—'}</td><td><input type="number" id="sw-${c.id}-${ekey}-${si}" placeholder="${lastWeights[si]?lastWeights[si]+'kg':'kg'}" step="0.5" style="width:62px;font-size:.78rem;padding:4px 6px" onchange="autoSaveGym('${c.id}','${ekey}','${jsAttr(refName)}')"></td><td><button class="ckbtn ${done?'done':''}" onclick="toggleSerie('${c.id}','${ekey}',${si},'${rk}',${isLastEx},${restSecs},${pauseSecs})">✓</button></td></tr>`});
       inner+=`</tbody></table></div>`;
     }
     inner+=vidHtml;
@@ -3974,9 +3975,9 @@ function renderGymBlock(c,bkey,blk,bi,isAdminView){
     const logsHtml=logs.slice(-5).reverse().map((l,ri)=>{const realIdx=logs.length-1-ri;const wTxt=(l.weights&&l.weights.length)?l.weights.map(w=>w||'—').join(' / ')+'kg':(l.weight?l.weight+'kg':'—');return`<div class="lent"><span>${l.date}</span><span class="lv">${wTxt} × ${l.reps||'—'}</span><button onclick="deleteLog('${c.id}','${ekey}',${realIdx})" style="background:none;border:none;color:var(--mu);cursor:pointer;font-size:.75rem;padding:0 4px;opacity:.6" title="Borrar">✕</button>${l.note?`<div style="font-size:.72rem;color:var(--mu);font-style:italic;margin-top:2px;grid-column:1/-1">📝 ${l.note}</div>`:''}</div>`;}).join('');
     const lastLog=logs.length?logs[logs.length-1]:null;
     inner+=`<div class="plog">
-      <div style="font-size:.69rem;color:var(--mu);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">📊 Registrar sesión</div>
-      <div class="lr">${setCount?'':`<input type="number" id="pw-${c.id}-${ekey}" placeholder="${lastLog&&lastLog.weight?'Último: '+lastLog.weight+'kg':'Peso (kg)'}" step="0.5">`}<input type="number" id="pr-${c.id}-${ekey}" placeholder="${lastLog&&lastLog.reps?'Último: '+lastLog.reps+'rep':'Reps (opcional)'}"><input type="hidden" data-setcount="${setCount}" id="pwcount-${c.id}-${ekey}"><button class="btn bgr sm" onclick="logGym('${c.id}','${ekey}','${jsAttr(ex.refEx||exBank?.refEx||activeEx.name)}')">✓ Guardar pesos</button></div>
-      <input type="text" id="pn-${c.id}-${ekey}" placeholder="Nota (opcional): ej. usé mancuernas..." style="margin-top:5px;font-size:.78rem;padding:6px 10px;border-radius:8px;border:1px solid var(--bd);background:var(--s2);color:var(--tx);width:100%;box-sizing:border-box">
+      <div style="font-size:.69rem;color:var(--mu);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">📊 Registro de sesión — se guarda solo al completar cada campo</div>
+      <div class="lr">${setCount?'':`<input type="number" id="pw-${c.id}-${ekey}" placeholder="${lastLog&&lastLog.weight?'Último: '+lastLog.weight+'kg':'Peso (kg)'}" step="0.5" onchange="autoSaveGym('${c.id}','${ekey}','${jsAttr(refName)}')">`}<input type="number" id="pr-${c.id}-${ekey}" placeholder="${lastLog&&lastLog.reps?'Último: '+lastLog.reps+'rep':'Reps (opcional)'}" onchange="autoSaveGym('${c.id}','${ekey}','${jsAttr(refName)}')"><input type="hidden" data-setcount="${setCount}" id="pwcount-${c.id}-${ekey}"></div>
+      <input type="text" id="pn-${c.id}-${ekey}" placeholder="Nota (opcional): ej. usé mancuernas..." onchange="autoSaveGym('${c.id}','${ekey}','${jsAttr(refName)}')" style="margin-top:5px;font-size:.78rem;padding:6px 10px;border-radius:8px;border:1px solid var(--bd);background:var(--s2);color:var(--tx);width:100%;box-sizing:border-box">
       ${logsHtml}</div></div>`;
   });
   return`<div class="cvg" id="cvg-${c.id}-${bkey}">
@@ -4122,6 +4123,46 @@ function clearSetWeights(cId,ekey,setCount){
     const inp=document.getElementById(`sw-${cId}-${ekey}-${si}`);if(inp)inp.value='';
   }
 }
+// Guarda cada campo (peso de una serie, reps, nota) apenas se completa, sin
+// esperar a un botón aparte — antes el ✓ de cada serie solo marcaba "hecha"
+// y el peso se perdía si no se apretaba también "Guardar pesos" más abajo.
+function todayStr(){return new Date().toLocaleDateString('es-AR')}
+function mergeTodayLog(logsArr,patch){
+  const today=todayStr();
+  let last=logsArr[logsArr.length-1];
+  if(!last||last.date!==today){last={date:today};logsArr.push(last);}
+  if(patch.weights&&patch.weights.some(w=>w)){
+    const w=last.weights?last.weights.slice():[];
+    patch.weights.forEach((val,i)=>{if(val)w[i]=val});
+    last.weights=w;
+    const lastNonEmpty=[...w].reverse().find(x=>x);
+    if(lastNonEmpty)last.weight=lastNonEmpty;
+  }
+  if(patch.singleW)last.weight=patch.singleW;
+  if(patch.reps)last.reps=patch.reps;
+  if(patch.note)last.note=patch.note;
+  return last;
+}
+window.autoSaveGym=async function(cId,ekey,exName){
+  const c=clients.find(cl=>cl.id===cId);if(!c)return;
+  const weights=collectSetWeights(cId,ekey);
+  const singleW=document.getElementById('pw-'+cId+'-'+ekey)?.value||'';
+  const r=document.getElementById('pr-'+cId+'-'+ekey)?.value||'';
+  const n=(document.getElementById('pn-'+cId+'-'+ekey)?.value||'').trim();
+  if(!weights.some(w=>w)&&!singleW&&!r&&!n)return;
+  const key=cId+'-'+ekey+'-logs';
+  if(!c.progress[key])c.progress[key]=[];
+  mergeTodayLog(c.progress[key],{weights,singleW,reps:r,note:n});
+  try{
+    await updateDoc(doc(db,'clients',cId),{progress:c.progress});
+  }catch(e){
+    toast('⚠️ No se pudo guardar, probá de nuevo');
+    return;
+  }
+  const w=singleW||weights.filter(x=>x).slice(-1)[0]||'';
+  if(exName&&w)recordExMax(exPersonKey(c.name,c.email||''),exName,w,r).catch(()=>{});
+  toast('💾 Guardado');
+};
 window.logGym=async function(cId,ekey,exName){
   const c=clients.find(cl=>cl.id===cId);
   const weights=collectSetWeights(cId,ekey);
@@ -6317,6 +6358,56 @@ window.toggleSerie=async function(cId,ekey,si,rk,isLast,blockRest,pauseSecs){
     return;
   }
   origToggleSerie(cId,ekey,si,rk,isLast,blockRest,pauseSecs);
+};
+
+const origAutoSaveGym=window.autoSaveGym;
+window.autoSaveGym=async function(cId,ekey,exName){
+  if(cId.startsWith('alu-')){
+    const weights=collectSetWeights(cId,ekey);
+    const singleW=document.getElementById('pw-'+cId+'-'+ekey)?.value||'';
+    const r=document.getElementById('pr-'+cId+'-'+ekey)?.value||'';
+    const n=(document.getElementById('pn-'+cId+'-'+ekey)?.value||'').trim();
+    if(!weights.some(w=>w)&&!singleW&&!r&&!n)return;
+    if(!alumnoState.sub.progress)alumnoState.sub.progress={};
+    const key=cId+'-'+ekey+'-logs';
+    if(!alumnoState.sub.progress[key])alumnoState.sub.progress[key]=[];
+    mergeTodayLog(alumnoState.sub.progress[key],{weights,singleW,reps:r,note:n});
+    try{
+      await persistAlumnoProgress();
+    }catch(e){
+      toast('⚠️ No se pudo guardar, probá de nuevo');
+      return;
+    }
+    const w=singleW||weights.filter(x=>x).slice(-1)[0]||'';
+    if(exName&&w)recordExMax(exPersonKey(alumnoState.sub.name,alumnoState.sub.email||''),exName,w,r).catch(()=>{});
+    toast('💾 Guardado');
+    return;
+  }
+  if(cId.startsWith('grp::')){
+    const[,planId,memberId]=cId.split('::');
+    const plan=planes.find(p=>p.id===planId);if(!plan)return;
+    const member=resolveGroupMember(plan,memberId);if(!member)return;
+    const weights=collectSetWeights(cId,ekey);
+    const singleW=document.getElementById('pw-'+cId+'-'+ekey)?.value||'';
+    const r=document.getElementById('pr-'+cId+'-'+ekey)?.value||'';
+    const n=(document.getElementById('pn-'+cId+'-'+ekey)?.value||'').trim();
+    if(!weights.some(w=>w)&&!singleW&&!r&&!n)return;
+    if(!member.progress)member.progress={};
+    const key=cId+'-'+ekey+'-logs';
+    if(!member.progress[key])member.progress[key]=[];
+    mergeTodayLog(member.progress[key],{weights,singleW,reps:r,note:n});
+    try{
+      await setDoc(doc(db,'planes',planId,'progreso',memberId),{progress:member.progress});
+    }catch(e){
+      toast('⚠️ No se pudo guardar, probá de nuevo');
+      return;
+    }
+    const w=singleW||weights.filter(x=>x).slice(-1)[0]||'';
+    if(exName&&w)recordExMax(exPersonKey(member.name,member.email||''),exName,w,r).catch(()=>{});
+    toast('💾 Guardado');
+    return;
+  }
+  origAutoSaveGym(cId,ekey,exName);
 };
 
 const origLogGym=window.logGym;
