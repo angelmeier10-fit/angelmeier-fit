@@ -814,6 +814,10 @@ Necesito una plantilla de fondo para historia de encuesta con dos opciones a ele
         <label for="nt-slides">Copy de las slides (si es carrusel, opcional)</label>
         <textarea id="nt-slides" placeholder="Pegá acá el texto de cada slide (opcional)..."></textarea>
       </div>
+      <div>
+        <label for="nt-img">Prompt de imagen para ChatGPT</label>
+        <textarea id="nt-img" placeholder="Pegá acá el prompt de imagen..."></textarea>
+      </div>
       <div class="actions">
         <button type="submit" id="save-topic-btn">Guardar tema</button>
         <button type="button" id="cancel-new-topic">Cancelar</button>
@@ -908,19 +912,97 @@ function startPanel(){
   let seeded = false;
   const REC_CAT_IDS = ['entrenando','masajes','cruce','encuesta-masajes','encuesta-entrenamiento','pregunta-abierta','encuesta-multiple','tips','recordatorios'];
 
+  const IMG_BASE = 'Ya tengo cerrada la identidad visual de mis piezas de Instagram: foto real de gimnasio (ambiente oscuro y premium), con un panel diagonal violeta sólido #7B4FE0 sobre fondo negro que cubre aproximadamente el tercio izquierdo de la imagen, con el corte en diagonal hacia la foto. Título en tipografía condensada bold en mayúsculas, blanco con la palabra clave del título en violeta. Debajo del título, 2 o 3 íconos circulares violeta rellenos con el símbolo en blanco adentro, cada uno con una etiqueta corta en mayúscula al lado (categoría del contenido). Dejo el rectángulo inferior de la pieza limpio y vacío (sin logo, sin texto, sin marca de agua) para pegar mi logo real después en un editor. Grilla de puntos violeta arriba a la izquierda. Uso siempre el mismo template de flyer para el feed: foto real ocupando el lado derecho, panel diagonal violeta a la izquierda con el título, íconos circulares con etiqueta debajo del título, y un espacio limpio y vacío (sin logo, sin texto) abajo del todo para pegar mi logo real después.';
+
+  function imgPrompt(categoria, titulo, foto){
+    return `${IMG_BASE}\n\nGenerame la pieza de feed, formato 1080x1350:\nCategoría: ${categoria}\nTítulo grande: "${titulo}"\nFoto: ${foto}\nÍcono de categoría: ${categoria} (el mismo de mi set de destacadas).`;
+  }
+
   const SEED_TOPICS = [
-    { id: 's1-lunes', name: 'Semana 1 — Lunes (Entrenamiento)', post: '', stories: '', slides: '' },
-    { id: 's1-miercoles', name: 'Semana 1 — Miércoles (Masajes)', post: '', stories: '', slides: '' },
-    { id: 's1-viernes', name: 'Semana 1 — Viernes (Entrenamiento)', post: '', stories: '', slides: '' },
-    { id: 's2-lunes', name: 'Semana 2 — Lunes (Masajes)', post: '', stories: '', slides: '' },
-    { id: 's2-miercoles', name: 'Semana 2 — Miércoles (Entrenamiento)', post: '', stories: '', slides: '' },
-    { id: 's2-viernes', name: 'Semana 2 — Viernes (Masajes)', post: '', stories: '', slides: '' },
-    { id: 's3-lunes', name: 'Semana 3 — Lunes (Entrenamiento)', post: '', stories: '', slides: '' },
-    { id: 's3-miercoles', name: 'Semana 3 — Miércoles (Masajes)', post: '', stories: '', slides: '' },
-    { id: 's3-viernes', name: 'Semana 3 — Viernes (Entrenamiento)', post: '', stories: '', slides: '' },
-    { id: 's4-lunes', name: 'Semana 4 — Lunes (Masajes)', post: '', stories: '', slides: '' },
-    { id: 's4-miercoles', name: 'Semana 4 — Miércoles (Entrenamiento)', post: '', stories: '', slides: '' },
-    { id: 's4-viernes', name: 'Semana 4 — Viernes (Masajes)', post: '', stories: '', slides: '' },
+    {
+      id: 's1-lunes', name: 'Semana 1 — Lunes (Entrenamiento)',
+      post: 'Rutina de 15 minutos, sin excusas 💪\n\nNo hace falta gimnasio ni equipamiento — con tu peso corporal y constancia alcanza para empezar.\n\n¿Querés una rutina armada para vos? Suscribite a la app — link en bio\n\n#entrenamientoencasa #appdeentrenamiento #fitness',
+      stories: 'Historia 1 (repost): Rutina nueva en el feed 💪 Deslizá al posteo 👆\nHistoria 2 (CTA): ¿Ya tenés tu app de entrenamiento? Suscribite — link en bio',
+      slides: '',
+      img: imgPrompt('Entrenamiento', 'RUTINA DE 15 MINUTOS, SIN EXCUSAS', 'una persona entrenando en su casa (living o patio), haciendo un ejercicio de peso corporal (sentadilla o plancha), ambiente luminoso y prolijo, sin gimnasio de fondo.'),
+    },
+    {
+      id: 's1-miercoles', name: 'Semana 1 — Miércoles (Masajes)',
+      post: 'Adiós dolor cervical 🙌\n\nPasar horas mirando el celular o la compu factura directo en el cuello y los hombros.\n\nUna sesión bien enfocada puede devolverte la movilidad en una sola visita.\n\n📲 Coordiná tu turno — link en bio\n\n#dolorcervical #masajesterapeuticos #bienestar',
+      stories: 'Historia 1 (repost + encuesta): ¿Te duele el cuello después de trabajar? [Sí/No]\nHistoria 2 (CTA): Turnos disponibles esta semana — link en bio',
+      slides: '',
+      img: imgPrompt('Masajes', 'ADIÓS DOLOR CERVICAL', 'masoterapeuta aplicando masaje en el cuello y hombros de un cliente acostado boca abajo en camilla, consultorio cálido y prolijo, luz suave.'),
+    },
+    {
+      id: 's1-viernes', name: 'Semana 1 — Viernes (Carrusel — dolor lumbar, Masajes)',
+      post: '💥 5 TIPS PARA ALIVIAR EL DOLOR LUMBAR 💥\n\nEl dolor lumbar no aparece de la nada: la mayoría de las veces es consecuencia de malos hábitos que repetimos todos los días sin darnos cuenta.\n\nGuardá este posteo y aplicá estos tips desde hoy 👇\n\n1️⃣ Movete cada 30-40 minutos, aunque sea un minuto\n2️⃣ Fortalecé el core, no solo la espalda\n3️⃣ Cuidá cómo levantás peso: flexioná rodillas, no la espalda\n\nSi ya venís con dolor hace tiempo, estos tips ayudan pero no reemplazan una sesión personalizada que trabaje la causa real.\n\n📲 Escribime y coordinamos tu turno (link en bio)\n\n#dolorlumbar #masajesterapeuticos #entrenamientopersonalizado #bienestar',
+      stories: 'Historia 1 (repost + sticker de encuesta): ¿Te duele la zona lumbar seguido? [Sí/No]\nHistoria 2: Subí un carrusel con 5 tips para el dolor lumbar 💜 Deslizá al posteo anterior 👆\nHistoria 3 (tip suelto): Si pasás muchas horas sentado, tu espalda te lo va a cobrar tarde o temprano. Movete cada 30-40 min.\nHistoria 4 (CTA): ¿Ya probaste una sesión de masaje descontracturante? 📲 Coordiná tu turno — link en bio',
+      slides: 'Slide 1 — Portada:\n5 TIPS PARA ALIVIAR EL DOLOR LUMBAR\nDeslizá →\n\nSlide 2 — Tip 1:\n1. Movete cada 30-40 minutos\nEstar sentado mucho tiempo sin pausas es una de las causas más comunes de dolor lumbar. Parate, caminá un minuto y volvé.\n\nSlide 3 — Tip 2:\n2. Fortalecé el core, no solo la espalda\nUn abdomen débil sobrecarga la zona lumbar. Ejercicios simples de core hacen más que cualquier estiramiento aislado.\n\nSlide 4 — Tip 3:\n3. Cuidá cómo levantás peso\nFlexioná las rodillas, no la espalda. Acercá el objeto al cuerpo antes de levantarlo.\n\nSlide 5 — Cierre:\n¿Seguís con dolor a pesar de estos tips?\nUna sesión personalizada puede ayudarte a encontrar la causa real.\n📲 Escribime y coordinamos tu turno',
+      img: `${IMG_BASE}\n\nCarrusel educativo de 5 slides, formato vertical 1080x1350 cada una, tema "5 tips para aliviar el dolor lumbar", mismo template visual en las 5:\n\nSlide 1 (portada): fondo negro o foto real de alguien con dolor de espalda con overlay oscuro. Título "5 TIPS PARA ALIVIAR EL DOLOR LUMBAR". "Deslizá →" abajo en violeta.\n\nSlide 2 (Tip 1): número grande "1" en violeta, título "Movete cada 30-40 minutos", foto de alguien parándose del escritorio para estirar.\n\nSlide 3 (Tip 2): número "2", título "Fortalecé el core, no solo la espalda", foto de alguien haciendo plancha.\n\nSlide 4 (Tip 3): número "3", título "Cuidá cómo levantás peso", foto de alguien levantando una caja flexionando rodillas.\n\nSlide 5 (cierre): título "¿Seguís con dolor a pesar de estos tips?", CTA violeta "📲 Escribime y coordinamos tu turno", espacio más grande para el logo.\n\nGenerame primero la Slide 1 para validar el estilo antes de seguir con las otras 4.`,
+    },
+    {
+      id: 's2-lunes', name: 'Semana 2 — Lunes (Entrenamiento)',
+      post: 'Un core fuerte no es solo estética — es la base que protege tu espalda en cada movimiento del día.\n\nEn la app tenés rutinas de core progresivas, adaptadas a tu nivel.\n\n🔗 angelmeier-fit.web.app/suscripcion\n\n#core #entrenamientopersonalizado #fuerza',
+      stories: 'Historia 1 (repost): Nueva rutina de core en el feed 👆\nHistoria 2 (CTA): Sumate a la app esta semana — link en bio',
+      slides: '',
+      img: imgPrompt('Entrenamiento', 'UN CORE FUERTE PROTEGE TU ESPALDA', 'una persona haciendo un ejercicio de core (plancha o abdominales), buena forma técnica, ambiente de entrenamiento en casa o gimnasio funcional.'),
+    },
+    {
+      id: 's2-miercoles', name: 'Semana 2 — Miércoles (Masajes)',
+      post: 'Recuperación deportiva: no es un lujo, es parte del entrenamiento 🏋️\n\nSi entrenás fuerte, tu cuerpo necesita algo más que descanso — necesita recuperarse bien.\n\n📲 Reservá tu sesión de masaje deportivo — link en bio\n\n#masajedeportivo #recuperacion #rendimiento',
+      stories: 'Historia 1 (repost + encuesta): ¿Entrenás fuerte y no te recuperás bien? [Sí/No]\nHistoria 2 (CTA): Turnos de masaje deportivo — link en bio',
+      slides: '',
+      img: imgPrompt('Masajes', 'RECUPERACIÓN DEPORTIVA', 'masaje deportivo en las piernas o la espalda de un cliente con ropa deportiva, técnica de amasado profunda, ambiente de recuperación post-entrenamiento.'),
+    },
+    {
+      id: 's2-viernes', name: 'Semana 2 — Viernes (Promo app, Entrenamiento)',
+      post: 'Entrená donde estés, cuando quieras 💪\n\nRutinas personalizadas, seguimiento real, sin depender de horarios de gimnasio.\n\n🔗 Suscribite hoy: angelmeier-fit.web.app/suscripcion\n\n#entrenamientopersonalizado #appdeentrenamiento #fitness #vidasaludable',
+      stories: 'Historia 1 (repost + sticker de link): Ya podés entrenar conmigo desde la app 📲 [Sticker de link: angelmeier-fit.web.app/suscripcion]\nHistoria 2 (oferta si aplica): Sumate esta semana 💜\nHistoria 3 (objeción común): ¿Pensás que no tenés tiempo para entrenar? La app se adapta a tu rutina, no al revés.',
+      slides: '',
+      img: `${IMG_BASE}\n\nGenerame la pieza de feed, formato 1080x1350, promocionando la app:\nCategoría: App\nTítulo grande: "ENTRENÁ DONDE ESTÉS, CUANDO QUIERAS"\nFoto/elemento: mockup realista de un celular mostrando una pantalla de rutina de entrenamiento (con el nombre "ANGEL MEiER" arriba), sostenido por una persona o apoyado, de fondo un espacio de entrenamiento en casa desenfocado.\nÍcono de categoría: App (el mismo de mi set de destacadas).\nAgregar abajo un texto chico: "angelmeier-fit.web.app/suscripcion"`,
+    },
+    {
+      id: 's3-lunes', name: 'Semana 3 — Lunes (Entrenamiento)',
+      post: 'HIIT: 20 minutos, resultados que se sienten 🔥\n\nQuemá grasa y ganá energía con entrenamientos cortos e intensos, armados para tu rutina diaria.\n\nEmpezá esta semana — link en bio\n\n#hiit #quemagrasa #entrenamientopersonalizado',
+      stories: 'Historia 1 (repost): Nuevo HIIT en el feed 🔥 Deslizá 👆\nHistoria 2 (CTA): 20 minutos es todo lo que necesitás hoy — link en bio',
+      slides: '',
+      img: imgPrompt('Entrenamiento', 'HIIT: 20 MINUTOS, RESULTADOS QUE SE SIENTEN', 'una persona en pleno movimiento de un ejercicio intenso (burpee o salto), transpirando, energía y esfuerzo, ambiente de entrenamiento funcional.'),
+    },
+    {
+      id: 's3-miercoles', name: 'Semana 3 — Miércoles (Masajes)',
+      post: 'A veces el cuerpo no pide fuerza, pide calma 🕊️\n\nUna sesión de relajación ayuda a bajar el estrés acumulado de la semana — para el cuerpo y para la cabeza.\n\n📲 Regalate un momento — turnos por WhatsApp, link en bio\n\n#relajacion #bienestar #saludmental',
+      stories: 'Historia 1 (repost + encuesta): ¿Necesitás desconectar esta semana? [Sí/No]\nHistoria 2 (CTA): Regalate una sesión de relajación — link en bio',
+      slides: '',
+      img: imgPrompt('Masajes', 'A VECES EL CUERPO PIDE CALMA', 'ambiente de relajación en el consultorio, camilla con toalla prolija, luz tenue y cálida, sin gente en la foto o con un cliente relajado boca abajo.'),
+    },
+    {
+      id: 's3-viernes', name: 'Semana 3 — Viernes (Relajante vs. descontracturante, Masajes)',
+      post: '¿Masaje relajante o descontracturante? No es lo mismo 🙌\n\nEl relajante baja el estrés y la tensión general. El descontracturante ataca puntos específicos de dolor y contractura.\n\nContame qué necesitás y armamos la sesión ideal para vos.\n\n📲 Coordiná tu turno — link en bio\n\n#masajerelajante #masajedescontracturante #bienestar',
+      stories: 'Historia 1 (repost + encuesta): ¿Qué preferís hoy? [Sticker: Masaje relajante / Masaje descontracturante]\nHistoria 2 (CTA): Contame qué te duele y armamos tu sesión — link en bio',
+      slides: '',
+      img: imgPrompt('Masajes', 'RELAJANTE O DESCONTRACTURANTE?', 'manos aplicando dos técnicas distintas de masaje en la espalda de un cliente, mostrando precisión y cuidado, consultorio prolijo.'),
+    },
+    {
+      id: 's4-lunes', name: 'Semana 4 — Lunes (Entrenamiento)',
+      post: 'Los resultados no vienen del entrenamiento perfecto, vienen del que repetís semana tras semana.\n\nLa constancia le gana a la intensidad.\n\n¿Necesitás alguien que te acompañe en ese proceso? Suscribite a la app — link en bio\n\n#constancia #habitossaludables #entrenamientopersonalizado',
+      stories: 'Historia 1 (repost): La constancia le gana a la intensidad 💪 Deslizá 👆\nHistoria 2 (CTA): ¿Ya diste el primer paso? Suscribite — link en bio',
+      slides: '',
+      img: imgPrompt('Entrenamiento', 'LA CONSTANCIA LE GANA A LA INTENSIDAD', 'una persona entrenando con expresión de esfuerzo tranquilo y sostenido (no forzado), ambiente de entrenamiento en casa o gimnasio funcional, sensación de rutina, no de evento único.'),
+    },
+    {
+      id: 's4-miercoles', name: 'Semana 4 — Miércoles (Masajes)',
+      post: 'El dolor de rodilla no siempre viene de la rodilla 🦵\n\nMuchas veces el origen está en la cadera o en la postura al caminar — por eso el tratamiento no puede ser genérico.\n\n📲 Coordiná tu turno — link en bio\n\n#dolorderodilla #masajeterapeutico #tratamientodeldolor',
+      stories: 'Historia 1 (repost + encuesta): ¿Te duele la rodilla al caminar o entrenar? [Sí/No]\nHistoria 2 (CTA): Turnos disponibles esta semana — link en bio',
+      slides: '',
+      img: imgPrompt('Masajes', 'EL DOLOR DE RODILLA NO SIEMPRE VIENE DE LA RODILLA', 'masaje enfocado en la zona de la rodilla o la cadera de un cliente, técnica precisa, consultorio prolijo.'),
+    },
+    {
+      id: 's4-viernes', name: 'Semana 4 — Viernes (Entrenamiento)',
+      post: 'El progreso no se ve de un día para el otro — se nota semana a semana, entrenamiento a entrenamiento 📈\n\nLo que hoy te cuesta, en unas semanas va a ser tu calentamiento.\n\n¿Ya diste el primer paso? Suscribite a la app y arrancá esta semana — link en bio\n\n#progreso #entrenamientopersonalizado #constancia',
+      stories: 'Historia 1 (repost): El progreso se nota semana a semana 📈 Deslizá al posteo 👆\nHistoria 2 (CTA): ¿Ya diste el primer paso hoy? Suscribite — link en bio',
+      slides: '',
+      img: imgPrompt('Entrenamiento', 'EL PROGRESO SE NOTA SEMANA A SEMANA', 'persona entrenando con expresión de esfuerzo y satisfacción, ambiente que transmite rutina sostenida en el tiempo, no un evento único.'),
+    },
   ];
 
   function saveState(){ setDoc(stateRef, { checks: state }, { merge: true }).catch(()=>{}); }
@@ -1143,6 +1225,7 @@ function startPanel(){
         ${blockHTML(t.id + '-post', 'Copy del post', t.post)}
         ${blockHTML(t.id + '-stories', 'Copy de historias', t.stories)}
         ${t.slides ? blockHTML(t.id + '-slides', 'Copy de las slides', t.slides) : ''}
+        ${t.img ? blockHTML(t.id + '-img', 'Prompt de imagen para ChatGPT', t.img) : ''}
       </div>
     `).join('');
 
@@ -1184,6 +1267,7 @@ function startPanel(){
     document.getElementById('nt-post').value = t ? t.post : '';
     document.getElementById('nt-stories').value = t ? t.stories : '';
     document.getElementById('nt-slides').value = t ? t.slides : '';
+    document.getElementById('nt-img').value = t ? (t.img || '') : '';
     saveTopicBtn.textContent = t ? 'Guardar cambios' : 'Guardar tema';
     form.classList.add('open');
     document.getElementById('nt-name').focus();
@@ -1204,6 +1288,7 @@ function startPanel(){
       post: document.getElementById('nt-post').value.trim(),
       stories: document.getElementById('nt-stories').value.trim(),
       slides: document.getElementById('nt-slides').value.trim(),
+      img: document.getElementById('nt-img').value.trim(),
     };
     if (editingTopicId) {
       const t = topics.find(x => x.id === editingTopicId);
@@ -1269,10 +1354,22 @@ function startPanel(){
     topics = data.topics || [];
     recurrentes = data.recurrentes || {};
     links = data.links || [];
-    if (!seeded && !data.topics) {
+    if (!seeded) {
       seeded = true;
-      topics = SEED_TOPICS.map(t => ({ ...t }));
-      saveTopics();
+      if (!data.topics) {
+        topics = SEED_TOPICS.map(t => ({ ...t }));
+        saveTopics();
+      } else {
+        let changed = false;
+        SEED_TOPICS.forEach(seed => {
+          const t = topics.find(x => x.id === seed.id);
+          if (t && !t.post && !t.stories && !t.img) {
+            Object.assign(t, seed);
+            changed = true;
+          }
+        });
+        if (changed) saveTopics();
+      }
     }
     applyAllChecks();
     renderTopics();
