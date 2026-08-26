@@ -338,8 +338,9 @@ textarea{resize:vertical;min-height:80px}
 
   <div class="success" id="success-msg">
     <div style="font-size:3rem;margin-bottom:12px">✅</div>
-    <h2>¡Listo! Anamnesis enviada</h2>
+    <h2 id="success-title">¡Listo! Anamnesis enviada</h2>
     <p style="color:var(--mu);font-size:.88rem">Angel va a revisar tu información y se va a poner en contacto a la brevedad.</p>
+    <button type="button" id="edit-now-btn" style="margin-top:16px;background:var(--s2);border:1px solid var(--bd);color:var(--tx);border-radius:8px;padding:9px 16px;font-size:.84rem;font-weight:600;cursor:pointer">✏️ Me equivoqué, quiero corregir algo</button>
   </div>
 </div>
 
@@ -384,7 +385,7 @@ document.querySelectorAll('.radio-item').forEach(item=>{
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBc-icBnX6LCjvaYagVcR1hE3VkMZG05Cw",
@@ -407,6 +408,54 @@ if(planNombre){
   banner.style.display = 'block';
 }
 
+// Permite corregir respuestas: guardamos localmente el id + los datos de la
+// última anamnesis enviada desde este dispositivo/navegador, para poder
+// reabrir el formulario precargado y actualizar el mismo documento.
+let editDocId = null;
+const STORAGE_KEY = 'anamnesis_sol';
+
+function loadStoredSolicitud(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  }catch(e){ return null; }
+}
+
+function fillFormFromData(d){
+  const form = document.getElementById('anamnesis-form');
+  Object.keys(d).forEach(key=>{
+    const val = d[key];
+    if(val==null || val==='') return;
+    // Radios/checkbox agrupados: marcar los que coincidan con los valores guardados.
+    const groupInputs = form.querySelectorAll(`[data-name="${key}"] input[name="${key}"]`);
+    if(groupInputs.length){
+      const values = String(val).split(',').map(v=>v.trim()).filter(Boolean);
+      groupInputs.forEach(inp=>{
+        if(values.includes(inp.value)){
+          inp.checked = true;
+          inp.closest('.checkbox-item,.radio-item')?.classList.add('selected');
+        }
+      });
+      return;
+    }
+    const plain = form.elements[key];
+    if(plain && !plain.length) plain.value = val;
+  });
+}
+
+const storedBanner = document.getElementById('plan-banner');
+const stored = loadStoredSolicitud();
+if(stored && stored.docId && !planNombre){
+  storedBanner.style.display = 'block';
+  storedBanner.innerHTML = `Ya completaste esta anamnesis antes. <button type="button" id="edit-prev-btn" style="background:var(--ac2);color:#fff;border:none;border-radius:7px;padding:5px 12px;font-size:.82rem;font-weight:600;cursor:pointer;margin-left:6px">✏️ Editar mis respuestas</button>`;
+  document.getElementById('edit-prev-btn').addEventListener('click',()=>{
+    editDocId = stored.docId;
+    fillFormFromData(stored.data||{});
+    storedBanner.style.display = 'none';
+    document.querySelector('.submit-btn').textContent = '💾 Guardar cambios';
+  });
+}
+
 document.getElementById('anamnesis-form').addEventListener('submit', function(e) {
   e.preventDefault();
   const data = new FormData(this);
@@ -420,12 +469,15 @@ document.getElementById('anamnesis-form').addEventListener('submit', function(e)
   const nombre = data.get('nombre') || 'alguien';
 
   // Abrir WhatsApp con mensaje corto — SINCRÓNICO antes de cualquier await
-  const waMsg = `Hola Angel! Soy ${nombre} y acabo de completar la anamnesis${planNombre?` para inscribirme en ${planNombre}`:''}. Quedo a tu disposición 💪`;
+  const waMsg = editDocId
+    ? `Hola Angel! Soy ${nombre} y acabo de corregir mi anamnesis${planNombre?` para inscribirme en ${planNombre}`:''}. Quedo a tu disposición 💪`
+    : `Hola Angel! Soy ${nombre} y acabo de completar la anamnesis${planNombre?` para inscribirme en ${planNombre}`:''}. Quedo a tu disposición 💪`;
   window.open(`https://wa.me/5491172399988?text=${encodeURIComponent(waMsg)}`, '_blank');
 
   // Mostrar confirmación
   document.getElementById('anamnesis-form').style.display = 'none';
   document.getElementById('success-msg').style.display = 'block';
+  document.getElementById('success-title').textContent = editDocId ? '¡Listo! Respuestas actualizadas' : '¡Listo! Anamnesis enviada';
 
   // Guardar en Firebase
   const solicitud = {
@@ -469,7 +521,32 @@ document.getElementById('anamnesis-form').addEventListener('submit', function(e)
     como_conocio: data.get('como_conocio') || '',
   };
 
-  addDoc(collection(db, 'solicitudes'), solicitud).catch(err => console.error('Error guardando en Firebase:', err));
+  if(editDocId){
+    // Edición: no pisar id/createdAt originales, mantener status "pendiente".
+    const { id, createdAt, createdAtISO, ...campos } = solicitud;
+    updateDoc(doc(db, 'solicitudes', editDocId), { ...campos, status:'pendiente' })
+      .then(()=>{
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ docId: editDocId, data: solicitud }));
+      })
+      .catch(err => console.error('Error actualizando en Firebase:', err));
+  }else{
+    addDoc(collection(db, 'solicitudes'), solicitud)
+      .then(ref=>{
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ docId: ref.id, data: solicitud }));
+      })
+      .catch(err => console.error('Error guardando en Firebase:', err));
+  }
+});
+
+document.getElementById('edit-now-btn').addEventListener('click', ()=>{
+  const s = loadStoredSolicitud();
+  if(!s || !s.docId) return;
+  editDocId = s.docId;
+  document.getElementById('success-msg').style.display = 'none';
+  const form = document.getElementById('anamnesis-form');
+  form.style.display = '';
+  fillFormFromData(s.data||{});
+  document.querySelector('.submit-btn').textContent = '💾 Guardar cambios';
 });
 </script>
 </body>

@@ -8057,11 +8057,85 @@ window.verAnamnesis=function(docId){
     ${row('Consideraciones',s.consideraciones)}
     ${row('Cómo conoció a Angel',s.como_conocio)}
     <div style="margin-top:18px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn bg2" onclick="editarAnamnesis('${docId}')">✏️ Editar respuestas</button>
       <button class="btn bp" onclick="convertirEnSuscriptor('${docId}');document.getElementById('modal-bg').style.display='none'">🔔 Dar de alta como suscriptor</button>
       <button class="btn bpu" onclick="asignarAPlanGrupal('${docId}')">👥 Asignar a plan grupal</button>
       ${(s.whatsapp||'').replace(/[^0-9]/g,'')?`<a href="https://wa.me/${(s.whatsapp||'').replace(/[^0-9]/g,'')}" target="_blank" class="btn bgr">💬 WhatsApp</a>`:''}
     </div>
   </div>`;
+};
+
+const ANAMNESIS_FIELDS=[
+  {k:'nombre',l:'Nombre completo'},
+  {k:'email',l:'Email'},
+  {k:'whatsapp',l:'WhatsApp'},
+  {k:'nacimiento',l:'Nacimiento'},
+  {k:'sexo',l:'Sexo'},
+  {k:'peso',l:'Peso (kg)'},
+  {k:'altura',l:'Altura (cm)'},
+  {k:'ocupacion',l:'Ocupación'},
+  {k:'objetivo',l:'Objetivo'},
+  {k:'objetivo_especifico',l:'Objetivo específico',ta:1},
+  {k:'nivel',l:'Nivel'},
+  {k:'deportes',l:'Deportes / actividades'},
+  {k:'dias',l:'Días por semana'},
+  {k:'duracion',l:'Duración de sesión'},
+  {k:'horario',l:'Horario'},
+  {k:'lugar',l:'Lugar de entrenamiento'},
+  {k:'equipamiento',l:'Equipamiento',ta:1},
+  {k:'condiciones',l:'Condiciones de salud'},
+  {k:'lesiones',l:'Lesiones',ta:1},
+  {k:'restricciones',l:'Restricciones',ta:1},
+  {k:'tratamiento',l:'Bajo tratamiento'},
+  {k:'tipo_tratamiento',l:'Tipo de tratamiento'},
+  {k:'medicacion',l:'Medicación'},
+  {k:'alimentacion',l:'Alimentación'},
+  {k:'nutricion',l:'Plan nutricional'},
+  {k:'sueno',l:'Sueño'},
+  {k:'estres',l:'Estrés'},
+  {k:'tabaco',l:'Tabaco'},
+  {k:'gustos',l:'Le gusta',ta:1},
+  {k:'no_gustos',l:'No le gusta',ta:1},
+  {k:'consideraciones',l:'Consideraciones',ta:1},
+  {k:'como_conocio',l:'Cómo conoció a Angel'},
+];
+
+window.editarAnamnesis=function(docId){
+  const s=solicitudes.find(x=>x._docId===docId);
+  if(!s)return;
+  const field=f=>`<div style="margin-bottom:12px">
+    <label style="display:block;font-size:.72rem;color:var(--mu);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">${f.l}</label>
+    ${f.ta?`<textarea id="edit-anam-${f.k}" style="width:100%;min-height:60px;background:var(--s2);border:1px solid var(--bd);color:var(--tx);border-radius:8px;padding:8px 10px;font-size:.86rem;font-family:inherit">${s[f.k]||''}</textarea>`
+      :`<input type="text" id="edit-anam-${f.k}" value="${(s[f.k]||'').replace(/"/g,'&quot;')}" style="width:100%;background:var(--s2);border:1px solid var(--bd);color:var(--tx);border-radius:8px;padding:8px 10px;font-size:.86rem;font-family:inherit">`}
+  </div>`;
+  const modal=document.getElementById('modal-bg');
+  modal.style.display='flex';
+  modal.innerHTML=`<div style="background:var(--s1);border-radius:16px;padding:24px;width:100%;max-width:600px;max-height:90vh;overflow-y:auto;position:relative">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+      <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.1rem">✏️ Editar anamnesis</div>
+      <button onclick="document.getElementById('modal-bg').style.display='none'" style="background:none;border:none;color:var(--mu);font-size:1.4rem;cursor:pointer;padding:4px">✕</button>
+    </div>
+    ${ANAMNESIS_FIELDS.map(field).join('')}
+    <div style="margin-top:18px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn bp" onclick="guardarAnamnesis('${docId}')">💾 Guardar cambios</button>
+      <button class="btn bg2" onclick="verAnamnesis('${docId}')">Cancelar</button>
+    </div>
+  </div>`;
+};
+
+window.guardarAnamnesis=async function(docId){
+  const s=solicitudes.find(x=>x._docId===docId);
+  if(!s)return;
+  const updates={};
+  ANAMNESIS_FIELDS.forEach(f=>{
+    const el=document.getElementById('edit-anam-'+f.k);
+    if(el)updates[f.k]=el.value;
+  });
+  await updateDoc(doc(db,'solicitudes',docId),updates);
+  Object.assign(s,updates);
+  toast('✅ Respuestas actualizadas');
+  verAnamnesis(docId);
+  renderSolicitudes();
 };
 
 window.marcarVista=async function(docId){
