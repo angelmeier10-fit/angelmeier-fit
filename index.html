@@ -376,6 +376,7 @@ setTimeout(()=>{
     <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.3rem;margin-bottom:4px">Angel Meier</div>
     <div id="login-subtitle" style="color:var(--mu);font-size:.85rem;margin-bottom:24px">Panel de entrenador</div>
     <input id="login-name" type="text" placeholder="Nombre" style="display:none;margin-bottom:10px">
+    <input id="login-whatsapp" type="tel" placeholder="Celular (WhatsApp)" style="display:none;margin-bottom:10px" autocomplete="tel">
     <input id="login-email" type="email" placeholder="Email" style="margin-bottom:10px" autocomplete="username">
     <div style="position:relative;margin-bottom:5px">
       <input id="login-pass" type="password" placeholder="Contraseña" style="padding-right:42px" autocomplete="current-password" oninput="checkPassReqs()" onkeydown="if(event.key==='Enter')doLogin()">
@@ -415,6 +416,42 @@ setTimeout(()=>{
     <div id="alumno-objetivo-screen" style="display:none">
       <p class="sub" style="text-align:center;margin-bottom:16px">¿Cuál es tu objetivo?</p>
       <div style="display:flex;flex-direction:column;gap:10px" id="alumno-objetivo-list"></div>
+    </div>
+
+    <div id="alumno-nivel-screen" style="display:none">
+      <p class="sub" style="text-align:center;margin-bottom:16px">¿Cuál es tu nivel de experiencia?</p>
+      <div style="display:flex;flex-direction:column;gap:10px" id="alumno-nivel-list"></div>
+    </div>
+
+    <div id="alumno-dias-screen" style="display:none">
+      <p class="sub" style="text-align:center;margin-bottom:16px">¿Cuántos días por semana podés entrenar?</p>
+      <div style="display:flex;flex-direction:column;gap:10px" id="alumno-dias-list"></div>
+    </div>
+
+    <div id="alumno-lugar-screen" style="display:none">
+      <p class="sub" style="text-align:center;margin-bottom:16px">¿Dónde vas a entrenar?</p>
+      <div style="display:flex;flex-direction:column;gap:10px" id="alumno-lugar-list"></div>
+    </div>
+
+    <div id="alumno-lesion-screen" style="display:none">
+      <p class="sub" style="text-align:center;margin-bottom:16px">¿Tenés alguna lesión o molestia?</p>
+      <div style="display:flex;flex-direction:column;gap:10px" id="alumno-lesion-choice">
+        <div class="card" style="cursor:pointer;padding:16px" onclick="elegirLesionAlumno(false)"><div style="font-weight:600">No</div></div>
+        <div class="card" style="cursor:pointer;padding:16px" onclick="elegirLesionAlumno(true)"><div style="font-weight:600">Sí</div></div>
+      </div>
+      <div id="alumno-lesion-detalle-wrap" style="display:none;margin-top:14px">
+        <textarea id="alumno-lesion-detalle" placeholder="Contanos brevemente..." style="width:100%;min-height:80px"></textarea>
+        <button class="btn bp" onclick="confirmarLesionAlumno()" style="width:100%;justify-content:center;margin-top:10px">Continuar</button>
+      </div>
+    </div>
+
+    <div id="alumno-confirm-screen" style="display:none">
+      <p class="sub" style="text-align:center;margin-bottom:16px">¡Ya casi! Así funcionan los precios</p>
+      <div id="alumno-confirm-precios" style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px"></div>
+      <p class="sub" style="text-align:center;margin-bottom:16px;font-size:.82rem">Angel va a revisar tus respuestas y te asigna el plan que mejor te queda. Te contactamos por WhatsApp para coordinar el pago.</p>
+      <button class="btn bp" onclick="enviarRespuestasAlumno()" style="width:100%;justify-content:center;margin-bottom:10px">Enviar mis respuestas</button>
+      <a href="https://wa.me/5491172399988" target="_blank" class="btn bcy" style="width:100%;justify-content:center">💬 Escribir por WhatsApp</a>
+      <div id="alumno-confirm-error" style="color:var(--rd);font-size:.82rem;margin-top:10px;text-align:center"></div>
     </div>
 
     <div id="alumno-categoria-screen" style="display:none">
@@ -1170,6 +1207,7 @@ window.toggleSignupMode=function(){
   document.getElementById('login-pass-reqs').style.display=signupMode?'block':'none';
   document.getElementById('login-pass2-wrap').style.display=signupMode?'block':'none';
   document.getElementById('login-pass2').value='';
+  document.getElementById('login-whatsapp').style.display=(signupMode&&isAlumnoSignup)?'block':'none';
   checkPassReqs();
 };
 window.doLogin=async function(){
@@ -1182,8 +1220,11 @@ window.doLogin=async function(){
     if(!passReqsOk(pass)){errEl.textContent='La contraseña no cumple los requisitos de arriba.';return}
     const pass2=document.getElementById('login-pass2').value;
     if(pass!==pass2){errEl.textContent='Las contraseñas no coinciden.';return}
+    const whatsapp=document.getElementById('login-whatsapp').value.trim();
+    if(isAlumnoSignup&&!whatsapp){errEl.textContent='Completá tu número de celular.';return}
     try{
       await createUserWithEmailAndPassword(auth,email,pass);
+      window.__signupWhatsapp=whatsapp;
     }catch(err){
       const msgs={
         'auth/email-already-in-use':'Ese email ya tiene una cuenta creada.',
@@ -1366,7 +1407,7 @@ window.handleAlumnoLogoutClick=function(){
 window.cerrarPreviewAlumno=function(){
   previewAlumnoMode=false;
   document.getElementById('view-alumno').style.display='none';
-  ['alumno-narrow-wrap','alumno-active-wrap','alumno-objetivo-screen','alumno-categoria-screen','alumno-pending-screen','alumno-expired-screen'].forEach(id=>{
+  ['alumno-narrow-wrap','alumno-active-wrap','alumno-objetivo-screen','alumno-nivel-screen','alumno-dias-screen','alumno-lugar-screen','alumno-lesion-screen','alumno-confirm-screen','alumno-categoria-screen','alumno-pending-screen','alumno-expired-screen'].forEach(id=>{
     const el=document.getElementById(id);if(el)el.style.display='none';
   });
   document.getElementById('alumno-preview-banner').style.display='none';
@@ -1706,7 +1747,10 @@ async function initAlumno(user){
   }
 }
 
-const OBJETIVOS_ALUMNO=['Bajar de peso','Tonificar','Ganar masa muscular'];
+const OBJETIVOS_ALUMNO=['Bajar de peso','Tonificar','Ganar masa muscular','Corrección postural'];
+const NIVELES_ALUMNO=['Principiante','Intermedio','Avanzado'];
+const DIAS_ALUMNO=['2 a 3 días','4 a 5 días','6 o más días'];
+const LUGARES_ALUMNO=['Gimnasio','Casa con equipamiento','Casa sin equipamiento'];
 
 window.sendWhatsAppPlanPersonalizado=function(){
   const objetivo=window.__objetivoElegido||'';
@@ -1738,10 +1782,108 @@ async function renderCategoriasAlumno(){
   `;
 }
 
-window.elegirObjetivoAlumno=async function(objetivo){
+// ══ Cadena de preguntas del autoregistro (/suscripcion) ══
+// Reemplaza la elección de categoría/plan: el alumno solo responde, y es
+// Angel quien le asigna la categoría/plan después desde su panel (ver
+// cambiarCategoriaSuscriptorManual). renderCategoriasAlumno más abajo queda
+// solo para los flujos de reingreso ya existentes (fuera de este alcance).
+window.elegirObjetivoAlumno=function(objetivo){
   window.__objetivoElegido=objetivo;
   document.getElementById('alumno-objetivo-screen').style.display='none';
-  await renderCategoriasAlumno();
+  document.getElementById('alumno-nivel-screen').style.display='block';
+  document.getElementById('alumno-nivel-list').innerHTML=NIVELES_ALUMNO.map(n=>`
+    <div class="card" style="cursor:pointer;padding:16px" onclick="elegirNivelAlumno('${n}')"><div style="font-weight:600">${n}</div></div>
+  `).join('');
+};
+
+window.elegirNivelAlumno=function(nivel){
+  window.__nivelElegido=nivel;
+  document.getElementById('alumno-nivel-screen').style.display='none';
+  document.getElementById('alumno-dias-screen').style.display='block';
+  document.getElementById('alumno-dias-list').innerHTML=DIAS_ALUMNO.map(d=>`
+    <div class="card" style="cursor:pointer;padding:16px" onclick="elegirDiasAlumno('${d}')"><div style="font-weight:600">${d}</div></div>
+  `).join('');
+};
+
+window.elegirDiasAlumno=function(dias){
+  window.__diasElegido=dias;
+  document.getElementById('alumno-dias-screen').style.display='none';
+  document.getElementById('alumno-lugar-screen').style.display='block';
+  document.getElementById('alumno-lugar-list').innerHTML=LUGARES_ALUMNO.map(l=>`
+    <div class="card" style="cursor:pointer;padding:16px" onclick="elegirLugarAlumno('${l}')"><div style="font-weight:600">${l}</div></div>
+  `).join('');
+};
+
+window.elegirLugarAlumno=function(lugar){
+  window.__lugarElegido=lugar;
+  document.getElementById('alumno-lugar-screen').style.display='none';
+  document.getElementById('alumno-lesion-screen').style.display='block';
+};
+
+window.elegirLesionAlumno=function(tiene){
+  if(!tiene){
+    window.__lesionElegida='';
+    document.getElementById('alumno-lesion-screen').style.display='none';
+    renderConfirmAlumno();
+    return;
+  }
+  document.getElementById('alumno-lesion-choice').style.display='none';
+  document.getElementById('alumno-lesion-detalle-wrap').style.display='block';
+};
+
+window.confirmarLesionAlumno=function(){
+  window.__lesionElegida=document.getElementById('alumno-lesion-detalle').value.trim();
+  document.getElementById('alumno-lesion-screen').style.display='none';
+  renderConfirmAlumno();
+};
+
+// Muestra precios orientativos (no elegibles): el más bajo entre categorías
+// individuales y el de la suscripción global, para que sepa qué esperar sin
+// tener que elegir plan él mismo.
+async function renderConfirmAlumno(){
+  document.getElementById('alumno-confirm-screen').style.display='block';
+  const cats=await getCategoriasSuscripcion();
+  const individualPrices=cats.filter(c=>c.id!=='global').map(c=>planes.find(p=>p.id===c.planId)?.price).filter(Boolean).map(Number);
+  const unPlanPrecio=individualPrices.length?Math.min(...individualPrices):null;
+  const globalPrecio=cats.find(c=>c.id==='global')?.price||null;
+  const priceRow=(label,desc,price)=>`
+    <div class="card" style="padding:16px">
+      <div style="font-weight:600">${label}</div>
+      <div class="sub">${desc}</div>
+      ${price?`<div style="font-weight:700;color:var(--ac2);margin-top:4px">Desde $${parseInt(price).toLocaleString('es-AR')}</div>`:''}
+    </div>`;
+  document.getElementById('alumno-confirm-precios').innerHTML=
+    priceRow('Un plan','Acceso a una sola categoría de entrenamiento',unPlanPrecio)+
+    priceRow('Todos los planes','Suscripción global, acceso a todas las categorías',globalPrecio);
+}
+
+window.enviarRespuestasAlumno=async function(){
+  const user=auth.currentUser;
+  const errEl=document.getElementById('alumno-confirm-error');
+  try{
+    const payload={
+      email:user.email,
+      name:user.displayName||'',
+      categoria:null,
+      objetivo:window.__objetivoElegido||null,
+      nivel:window.__nivelElegido||null,
+      dias:window.__diasElegido||null,
+      lugar:window.__lugarElegido||null,
+      lesion:window.__lesionElegida||null,
+      status:'pending',
+      planId:null,
+      startDate:null,
+      startWeek:null,
+      progress:{}
+    };
+    if(window.__signupWhatsapp)payload.whatsapp=window.__signupWhatsapp;
+    await setDoc(doc(db,'subscribers',user.uid),payload,{merge:true});
+    document.getElementById('alumno-confirm-screen').style.display='none';
+    document.getElementById('alumno-pending-screen').style.display='block';
+  }catch(err){
+    if(errEl)errEl.textContent='No se pudo guardar tus respuestas. Probá de nuevo.';
+    toast('⚠️ No se pudo guardar tus respuestas. Probá de nuevo.');
+  }
 };
 
 window.elegirCategoriaAlumno=async function(categoria){
@@ -1750,7 +1892,7 @@ window.elegirCategoriaAlumno=async function(categoria){
   try{
     // merge:true porque esto también se usa para el reingreso de una alumna
     // ya existente (plan vencido) — no queremos pisarle activo/otros campos.
-    await setDoc(doc(db,'subscribers',user.uid),{
+    const payload={
       email:user.email,
       name:user.displayName||'',
       categoria,
@@ -1760,7 +1902,9 @@ window.elegirCategoriaAlumno=async function(categoria){
       startDate:null,
       startWeek:null,
       progress:{}
-    },{merge:true});
+    };
+    if(window.__signupWhatsapp)payload.whatsapp=window.__signupWhatsapp;
+    await setDoc(doc(db,'subscribers',user.uid),payload,{merge:true});
     document.getElementById('alumno-categoria-screen').style.display='none';
     document.getElementById('alumno-pending-screen').style.display='block';
   }catch(err){
@@ -2140,6 +2284,8 @@ function initNewClient(){
   document.getElementById('nc-days').value=4;
   ncWeeklyData={1:[]};
   ncCurrentWeek=1;
+  ncSavedId=null;
+  clearTimeout(ncAutosaveTimer);
   setupWeekSelector('nc',1);
   buildDays('days-container',4);
 }
@@ -2154,6 +2300,15 @@ let npWeeklyData={1:[]};
 let npCurrentWeek=1;
 let epWeeklyData={};
 let epCurrentWeek=1;
+let ncSavedId=null; // id del doc mientras se arma un cliente nuevo (autoguardado reusa el mismo)
+let ncAutosaveTimer=null;
+let ecAutosaveTimer=null;
+function scheduleNcAutosave(){clearTimeout(ncAutosaveTimer);ncAutosaveTimer=setTimeout(()=>saveClient({silent:true}),2500)}
+function scheduleEcAutosave(){clearTimeout(ecAutosaveTimer);ecAutosaveTimer=setTimeout(()=>updateClient({silent:true}),2500)}
+document.getElementById('panel-new').addEventListener('input',scheduleNcAutosave);
+document.getElementById('panel-new').addEventListener('click',e=>{const b=e.target.closest('button');if(b&&b.getAttribute('onclick')!=='saveClient()')scheduleNcAutosave()});
+document.getElementById('panel-edit').addEventListener('input',scheduleEcAutosave);
+document.getElementById('panel-edit').addEventListener('click',e=>{const b=e.target.closest('button');if(b&&b.getAttribute('onclick')!=='updateClient()')scheduleEcAutosave()});
 
 function weekStoreFor(prefix){
   const stores={
@@ -3416,11 +3571,13 @@ window.guardarPlantillaDesdeEditor=async function(){
 };
 
 // ══ SAVE CLIENT ══
-async function saveClient(){
+async function saveClient(opts={}){
+  const silent=!!opts.silent;
   const name=document.getElementById('nc-name').value.trim();
-  if(!name){alert('Ingresá el nombre del cliente.');return}
+  if(!name){if(!silent)alert('Ingresá el nombre del cliente.');return}
   const count=parseInt(document.getElementById('nc-days').value)||4;
-  const id='c'+Date.now();
+  const id=ncSavedId||('c'+Date.now());
+  ncSavedId=id;
   // Save current week's days into weeklyData before building client
   ncWeeklyData[ncCurrentWeek]=collectDays('days-container',count);
   const client={id,name,age:document.getElementById('nc-age').value,weight:document.getElementById('nc-weight').value,level:document.getElementById('nc-level').value,goal:document.getElementById('nc-goal').value,routineName:document.getElementById('nc-rname').value||'PROGRAMA',notes:document.getElementById('nc-notes').value,email:document.getElementById('nc-email').value.trim(),whatsapp:document.getElementById('nc-whatsapp').value.trim(),
@@ -3428,15 +3585,18 @@ async function saveClient(){
     weeks:ncWeeklyData,activeWeek:ncCurrentWeek,
     days:ncWeeklyData[ncCurrentWeek],progress:{},createdAt:new Date().toLocaleDateString('es-AR')};
   await setDoc(doc(db,'clients',id),client);
-  clients.push(client);
-  toast('✅ Cliente guardado en la nube');
-  showPanel('alumnosuni',document.getElementById('it-alumnosuni'));
+  const idx=clients.findIndex(c=>c.id===id);
+  if(idx>=0)clients[idx]=client;else clients.push(client);
+  if(silent){toast('💾 Guardado automático')}
+  else{toast('✅ Cliente guardado en la nube');showPanel('alumnosuni',document.getElementById('it-alumnosuni'))}
 }
 window.saveClient=saveClient;
 
 // ══ UPDATE CLIENT ══
-async function updateClient(){
+async function updateClient(opts={}){
+  const silent=!!opts.silent;
   const c=clients.find(cl=>cl.id===editingId);
+  if(!c)return;
   c.name=document.getElementById('ec-name').value;
   c.age=document.getElementById('ec-age').value;
   c.weight=document.getElementById('ec-weight').value;
@@ -3459,8 +3619,8 @@ async function updateClient(){
   c.activeWeek=ecCurrentWeek;
   c.days=ecWeeklyData[ecCurrentWeek];
   await setDoc(doc(db,'clients',editingId),c);
-  toast('✅ Cliente actualizado en la nube');
-  showPanel('alumnosuni',document.getElementById('it-alumnosuni'));
+  if(silent){toast('💾 Guardado automático')}
+  else{toast('✅ Cliente actualizado en la nube');showPanel('alumnosuni',document.getElementById('it-alumnosuni'))}
 }
 window.updateClient=updateClient;
 
@@ -4950,6 +5110,13 @@ async function renderProgramaUnificadoHtml(prog,cats){
     if(expired)return` <span class="badge" style="background:#f8717122;color:var(--rd)">🍑 Desafío vencido</span>`;
     return'';
   })();
+  // Respuestas del cuestionario de autoregistro (ver enviarRespuestasAlumno):
+  // solo existen para alumnos que se dieron de alta solos por /suscripcion,
+  // por eso se muestran nada más cuando hay al menos un dato cargado.
+  const respuestasHtml=(s.objetivo||s.nivel||s.dias||s.lugar||s.lesion)?`
+    <div style="font-size:.76rem;color:var(--mu);margin-top:3px">
+      🎯 ${s.objetivo||'—'} · 📊 ${s.nivel||'—'} · 📅 ${s.dias||'—'} · 🏠 ${s.lugar||'—'}${s.lesion?` · 🩹 ${s.lesion}`:''}
+    </div>`:'';
   return`<div style="padding:8px 0;border-bottom:1px solid var(--bd)">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
       <div style="font-size:.84rem"><b>🔔 Suscripción — ${catTxt}</b> · ${acceso.label} ${weekBadgeS}${extraDesafioBadge}</div>
@@ -4961,6 +5128,7 @@ async function renderProgramaUnificadoHtml(prog,cats){
         ${accionBtn}
       </div>
     </div>
+    ${respuestasHtml}
     ${progressHtml}
   </div>`;
 }
