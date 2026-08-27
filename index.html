@@ -413,36 +413,31 @@ setTimeout(()=>{
       <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.25rem">Suscripción Angel Meier</div>
     </div>
 
-    <div id="alumno-objetivo-screen" style="display:none">
-      <p class="sub" style="text-align:center;margin-bottom:16px">¿Cuál es tu objetivo?</p>
-      <div style="display:flex;flex-direction:column;gap:10px" id="alumno-objetivo-list"></div>
-    </div>
+    <div id="alumno-survey-screen" style="display:none">
+      <p class="sub" style="text-align:center;margin-bottom:16px">Contanos un poco de vos</p>
 
-    <div id="alumno-nivel-screen" style="display:none">
-      <p class="sub" style="text-align:center;margin-bottom:16px">¿Cuál es tu nivel de experiencia?</p>
+      <p style="font-weight:600;margin-bottom:10px">¿Cuál es tu objetivo?</p>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:8px" id="alumno-objetivo-list"></div>
+      <div id="alumno-objetivo-otro-wrap" style="display:none;margin-bottom:16px">
+        <input id="alumno-objetivo-otro" placeholder="Contanos cuál" oninput="onObjetivoOtroInput()" style="width:100%">
+      </div>
+
+      <p style="font-weight:600;margin:20px 0 10px">¿Cuál es tu nivel de experiencia?</p>
       <div style="display:flex;flex-direction:column;gap:10px" id="alumno-nivel-list"></div>
-    </div>
 
-    <div id="alumno-dias-screen" style="display:none">
-      <p class="sub" style="text-align:center;margin-bottom:16px">¿Cuántos días por semana podés entrenar?</p>
+      <p style="font-weight:600;margin:20px 0 10px">¿Cuántos días por semana podés entrenar?</p>
       <div style="display:flex;flex-direction:column;gap:10px" id="alumno-dias-list"></div>
-    </div>
 
-    <div id="alumno-lugar-screen" style="display:none">
-      <p class="sub" style="text-align:center;margin-bottom:16px">¿Dónde vas a entrenar?</p>
+      <p style="font-weight:600;margin:20px 0 10px">¿Dónde vas a entrenar?</p>
       <div style="display:flex;flex-direction:column;gap:10px" id="alumno-lugar-list"></div>
-    </div>
 
-    <div id="alumno-lesion-screen" style="display:none">
-      <p class="sub" style="text-align:center;margin-bottom:16px">¿Tenés alguna lesión o molestia?</p>
-      <div style="display:flex;flex-direction:column;gap:10px" id="alumno-lesion-choice">
-        <div class="card" style="cursor:pointer;padding:16px" onclick="elegirLesionAlumno(false)"><div style="font-weight:600">No</div></div>
-        <div class="card" style="cursor:pointer;padding:16px" onclick="elegirLesionAlumno(true)"><div style="font-weight:600">Sí</div></div>
+      <p style="font-weight:600;margin:20px 0 10px">¿Tenés alguna lesión o molestia?</p>
+      <div style="display:flex;flex-direction:column;gap:10px" id="alumno-lesion-choice"></div>
+      <div id="alumno-lesion-detalle-wrap" style="display:none;margin-top:10px">
+        <textarea id="alumno-lesion-detalle" placeholder="Contanos brevemente..." oninput="onLesionDetalleInput()" style="width:100%;min-height:80px"></textarea>
       </div>
-      <div id="alumno-lesion-detalle-wrap" style="display:none;margin-top:14px">
-        <textarea id="alumno-lesion-detalle" placeholder="Contanos brevemente..." style="width:100%;min-height:80px"></textarea>
-        <button class="btn bp" onclick="confirmarLesionAlumno()" style="width:100%;justify-content:center;margin-top:10px">Continuar</button>
-      </div>
+
+      <button class="btn bp" id="alumno-survey-continuar" onclick="continuarSurveyAlumno()" disabled style="width:100%;justify-content:center;margin-top:24px">Continuar</button>
     </div>
 
     <div id="alumno-confirm-screen" style="display:none">
@@ -1407,7 +1402,7 @@ window.handleAlumnoLogoutClick=function(){
 window.cerrarPreviewAlumno=function(){
   previewAlumnoMode=false;
   document.getElementById('view-alumno').style.display='none';
-  ['alumno-narrow-wrap','alumno-active-wrap','alumno-objetivo-screen','alumno-nivel-screen','alumno-dias-screen','alumno-lugar-screen','alumno-lesion-screen','alumno-confirm-screen','alumno-categoria-screen','alumno-pending-screen','alumno-expired-screen'].forEach(id=>{
+  ['alumno-narrow-wrap','alumno-active-wrap','alumno-survey-screen','alumno-confirm-screen','alumno-categoria-screen','alumno-pending-screen','alumno-expired-screen'].forEach(id=>{
     const el=document.getElementById(id);if(el)el.style.display='none';
   });
   document.getElementById('alumno-preview-banner').style.display='none';
@@ -1690,12 +1685,7 @@ async function initAlumno(user){
   const snap=await getDoc(ref);
   if(!snap.exists()){
     document.getElementById('alumno-narrow-wrap').style.display='block';
-    document.getElementById('alumno-objetivo-screen').style.display='block';
-    document.getElementById('alumno-objetivo-list').innerHTML=OBJETIVOS_ALUMNO.map(o=>`
-      <div class="card" style="cursor:pointer;padding:16px" onclick="elegirObjetivoAlumno('${o}')">
-        <div style="font-weight:600">${o}</div>
-      </div>
-    `).join('');
+    initSurveyAlumno();
     return;
   }
   const data=snap.data();
@@ -1747,7 +1737,7 @@ async function initAlumno(user){
   }
 }
 
-const OBJETIVOS_ALUMNO=['Bajar de peso','Tonificar','Ganar masa muscular','Corrección postural'];
+const OBJETIVOS_ALUMNO=['Bajar de peso','Tonificar','Ganar masa muscular','Corrección postural','Otro'];
 const NIVELES_ALUMNO=['Principiante','Intermedio','Avanzado'];
 const DIAS_ALUMNO=['2 a 3 días','4 a 5 días','6 o más días'];
 const LUGARES_ALUMNO=['Gimnasio','Casa con equipamiento','Casa sin equipamiento'];
@@ -1782,58 +1772,122 @@ async function renderCategoriasAlumno(){
   `;
 }
 
-// ══ Cadena de preguntas del autoregistro (/suscripcion) ══
+// ══ Encuesta única del autoregistro (/suscripcion) ══
 // Reemplaza la elección de categoría/plan: el alumno solo responde, y es
 // Angel quien le asigna la categoría/plan después desde su panel (ver
 // cambiarCategoriaSuscriptorManual). renderCategoriasAlumno más abajo queda
 // solo para los flujos de reingreso ya existentes (fuera de este alcance).
-window.elegirObjetivoAlumno=function(objetivo){
-  window.__objetivoElegido=objetivo;
-  document.getElementById('alumno-objetivo-screen').style.display='none';
-  document.getElementById('alumno-nivel-screen').style.display='block';
-  document.getElementById('alumno-nivel-list').innerHTML=NIVELES_ALUMNO.map(n=>`
-    <div class="card" style="cursor:pointer;padding:16px" onclick="elegirNivelAlumno('${n}')"><div style="font-weight:600">${n}</div></div>
+// Todas las preguntas se muestran juntas en una sola pantalla (alumno-survey-screen)
+// para que el alumno pueda revisar y corregir cualquier respuesta antes de enviar.
+function pintarSeleccionCards(listId,valor){
+  document.querySelectorAll(`#${listId} .card`).forEach(c=>{
+    const on=c.dataset.val===valor;
+    c.style.borderColor=on?'var(--ac2)':'';
+    c.style.background=on?'var(--ac2)14':'';
+  });
+}
+
+function initSurveyAlumno(){
+  window.__objetivoElegido=null;
+  window.__nivelElegido=null;
+  window.__diasElegido=null;
+  window.__lugarElegido=null;
+  window.__lesionTiene=null;
+  window.__lesionElegida='';
+  document.getElementById('alumno-survey-screen').style.display='block';
+
+  document.getElementById('alumno-objetivo-list').innerHTML=OBJETIVOS_ALUMNO.map(o=>`
+    <div class="card" data-val="${o}" style="cursor:pointer;padding:16px" onclick="elegirObjetivoAlumno('${o}')"><div style="font-weight:600">${o}</div></div>
   `).join('');
+  document.getElementById('alumno-nivel-list').innerHTML=NIVELES_ALUMNO.map(n=>`
+    <div class="card" data-val="${n}" style="cursor:pointer;padding:16px" onclick="elegirNivelAlumno('${n}')"><div style="font-weight:600">${n}</div></div>
+  `).join('');
+  document.getElementById('alumno-dias-list').innerHTML=DIAS_ALUMNO.map(d=>`
+    <div class="card" data-val="${d}" style="cursor:pointer;padding:16px" onclick="elegirDiasAlumno('${d}')"><div style="font-weight:600">${d}</div></div>
+  `).join('');
+  document.getElementById('alumno-lugar-list').innerHTML=LUGARES_ALUMNO.map(l=>`
+    <div class="card" data-val="${l}" style="cursor:pointer;padding:16px" onclick="elegirLugarAlumno('${l}')"><div style="font-weight:600">${l}</div></div>
+  `).join('');
+  document.getElementById('alumno-lesion-choice').innerHTML=`
+    <div class="card" data-val="no" style="cursor:pointer;padding:16px" onclick="elegirLesionAlumno(false)"><div style="font-weight:600">No</div></div>
+    <div class="card" data-val="si" style="cursor:pointer;padding:16px" onclick="elegirLesionAlumno(true)"><div style="font-weight:600">Sí</div></div>
+  `;
+  document.getElementById('alumno-objetivo-otro-wrap').style.display='none';
+  document.getElementById('alumno-objetivo-otro').value='';
+  document.getElementById('alumno-lesion-detalle-wrap').style.display='none';
+  document.getElementById('alumno-lesion-detalle').value='';
+  actualizarSurveyContinuar();
+}
+
+window.elegirObjetivoAlumno=function(objetivo){
+  const otroWrap=document.getElementById('alumno-objetivo-otro-wrap');
+  if(objetivo==='Otro'){
+    otroWrap.style.display='block';
+    window.__objetivoElegido=document.getElementById('alumno-objetivo-otro').value.trim()||null;
+  }else{
+    otroWrap.style.display='none';
+    window.__objetivoElegido=objetivo;
+  }
+  pintarSeleccionCards('alumno-objetivo-list',objetivo);
+  actualizarSurveyContinuar();
+};
+
+window.onObjetivoOtroInput=function(){
+  window.__objetivoElegido=document.getElementById('alumno-objetivo-otro').value.trim()||null;
+  actualizarSurveyContinuar();
 };
 
 window.elegirNivelAlumno=function(nivel){
   window.__nivelElegido=nivel;
-  document.getElementById('alumno-nivel-screen').style.display='none';
-  document.getElementById('alumno-dias-screen').style.display='block';
-  document.getElementById('alumno-dias-list').innerHTML=DIAS_ALUMNO.map(d=>`
-    <div class="card" style="cursor:pointer;padding:16px" onclick="elegirDiasAlumno('${d}')"><div style="font-weight:600">${d}</div></div>
-  `).join('');
+  pintarSeleccionCards('alumno-nivel-list',nivel);
+  actualizarSurveyContinuar();
 };
 
 window.elegirDiasAlumno=function(dias){
   window.__diasElegido=dias;
-  document.getElementById('alumno-dias-screen').style.display='none';
-  document.getElementById('alumno-lugar-screen').style.display='block';
-  document.getElementById('alumno-lugar-list').innerHTML=LUGARES_ALUMNO.map(l=>`
-    <div class="card" style="cursor:pointer;padding:16px" onclick="elegirLugarAlumno('${l}')"><div style="font-weight:600">${l}</div></div>
-  `).join('');
+  pintarSeleccionCards('alumno-dias-list',dias);
+  actualizarSurveyContinuar();
 };
 
 window.elegirLugarAlumno=function(lugar){
   window.__lugarElegido=lugar;
-  document.getElementById('alumno-lugar-screen').style.display='none';
-  document.getElementById('alumno-lesion-screen').style.display='block';
+  pintarSeleccionCards('alumno-lugar-list',lugar);
+  actualizarSurveyContinuar();
 };
 
 window.elegirLesionAlumno=function(tiene){
+  window.__lesionTiene=tiene;
+  pintarSeleccionCards('alumno-lesion-choice',tiene?'si':'no');
+  const detalleWrap=document.getElementById('alumno-lesion-detalle-wrap');
   if(!tiene){
     window.__lesionElegida='';
-    document.getElementById('alumno-lesion-screen').style.display='none';
-    renderConfirmAlumno();
-    return;
+    detalleWrap.style.display='none';
+  }else{
+    detalleWrap.style.display='block';
+    window.__lesionElegida=document.getElementById('alumno-lesion-detalle').value.trim();
   }
-  document.getElementById('alumno-lesion-choice').style.display='none';
-  document.getElementById('alumno-lesion-detalle-wrap').style.display='block';
+  actualizarSurveyContinuar();
 };
 
-window.confirmarLesionAlumno=function(){
+window.onLesionDetalleInput=function(){
   window.__lesionElegida=document.getElementById('alumno-lesion-detalle').value.trim();
-  document.getElementById('alumno-lesion-screen').style.display='none';
+  actualizarSurveyContinuar();
+};
+
+function surveyAlumnoCompleta(){
+  if(!window.__objetivoElegido||!window.__nivelElegido||!window.__diasElegido||!window.__lugarElegido)return false;
+  if(window.__lesionTiene===null||window.__lesionTiene===undefined)return false;
+  if(window.__lesionTiene && !window.__lesionElegida)return false;
+  return true;
+}
+
+function actualizarSurveyContinuar(){
+  document.getElementById('alumno-survey-continuar').disabled=!surveyAlumnoCompleta();
+}
+
+window.continuarSurveyAlumno=function(){
+  if(!surveyAlumnoCompleta())return;
+  document.getElementById('alumno-survey-screen').style.display='none';
   renderConfirmAlumno();
 };
 
