@@ -1221,8 +1221,21 @@ window.doLogin=async function(){
       await createUserWithEmailAndPassword(auth,email,pass);
       window.__signupWhatsapp=whatsapp;
     }catch(err){
+      // Si el email ya tiene cuenta de Auth pero nunca terminó de enviar sus
+      // respuestas (no llegó a crearse el doc en subscribers), probamos
+      // iniciar sesión con la misma contraseña: initAlumno la va a mandar
+      // directo a la encuesta de nuevo en vez de trabarla acá.
+      if(err.code==='auth/email-already-in-use'){
+        try{
+          await signInWithEmailAndPassword(auth,email,pass);
+          window.__signupWhatsapp=whatsapp;
+          return;
+        }catch(err2){
+          errEl.textContent='Ese email ya tiene una cuenta creada. Si es tuya, iniciá sesión con tu contraseña.';
+          return;
+        }
+      }
       const msgs={
-        'auth/email-already-in-use':'Ese email ya tiene una cuenta creada.',
         'auth/invalid-email':'El email no es válido.',
         'auth/weak-password':'La contraseña es muy débil.',
         'auth/operation-not-allowed':'El acceso por email/contraseña no está habilitado en Firebase. Activalo en Authentication → Sign-in method.',
