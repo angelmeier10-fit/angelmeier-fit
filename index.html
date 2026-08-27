@@ -4118,8 +4118,6 @@ function renderFuncBlock(c,bkey,blk,bi,isAdminView){
         ⏱ ${ex.reps}
       </button>`:'';
       const exBank=exDB.find(e=>norm(e.name).trim()===norm(ex.name).trim());
-      const doneRk=c.id+'-'+ekey+'-done';
-      const doneVal=(c.progress||{})[doneRk]||false;
       inner+=`<div class="cv-ex">
         <div class="cv-ex-name">${ex.name}${ex.reps?' <span style="color:var(--ac2);font-size:.78rem">× '+ex.reps+'</span>':''}</div>
         ${exHistoryRowHtml(exPersonKey(c.name,c.email||''),ex.refEx||exBank?.refEx||ex.name)}
@@ -4127,10 +4125,6 @@ function renderFuncBlock(c,bkey,blk,bi,isAdminView){
         ${exBank?.notes?`<div class="cv-obs">📖 ${exBank.notes}</div>`:''}
         ${vidHtml}
         ${timerBtn}
-        <div id="sr-${doneRk}" style="display:flex;align-items:center;gap:8px;margin-top:8px">
-          <button class="ckbtn ${doneVal?'done':''}" onclick="toggleSerie('${c.id}','${ekey}',0,'${doneRk}',false,0,0)">✓</button>
-          <span style="font-size:.82rem;color:var(--mu)">Marcar como hecho</span>
-        </div>
         <div class="plog">
           <div style="font-size:.69rem;color:var(--mu);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">📊 Registrar</div>
           <div class="lr">
@@ -4142,6 +4136,25 @@ function renderFuncBlock(c,bkey,blk,bi,isAdminView){
         </div>
       </div>`;
     });
+  }
+  // Rondas del circuito: un check por ronda a nivel de todo el bloque (no
+  // por ejercicio), ya que el circuito se hace completo y se repite N veces
+  // según "Series". Si "Series" no es un número usable, no se muestran.
+  const numRondas=parseInt(blk.sets)||0;
+  if(numRondas>0){
+    const restSecs=parseRestToSeconds(blk.rest);
+    inner+=`<div style="font-size:.7rem;color:var(--mu);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin:14px 0 7px">Rondas completadas</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">`;
+    for(let ri=0;ri<numRondas;ri++){
+      const rk=c.id+'-'+bkey+'-round'+ri;
+      const done=(c.progress||{})[rk]||false;
+      const isLast=ri===numRondas-1;
+      inner+=`<div id="sr-${rk}" style="display:flex;align-items:center;gap:6px">
+        <button class="ckbtn ${done?'done':''}" onclick="toggleSerie('${c.id}','${bkey}',${ri},'${rk}',${isLast},${restSecs},${restSecs})">✓</button>
+        <span style="font-size:.82rem;color:var(--mu)">Ronda ${ri+1}</span>
+      </div>`;
+    }
+    inner+='</div>';
   }
   return`<div class="cvg cvg-func" id="cvg-${c.id}-${bkey}">
     <div class="cvg-hdr" onclick="toggleG('cvg-${c.id}-${bkey}')">
