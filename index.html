@@ -2707,7 +2707,8 @@ function addFuncEx(cid,data=null){
     </div>
     <button class="btn bd2 xs" style="flex-shrink:0" onclick="document.getElementById('${eid}').remove()">✕</button>
   </div>
-  ${refExFieldHtml(data)}`;
+  ${refExFieldHtml(data)}
+  <div class="fg full" style="margin-top:2px"><label>Observaciones</label><input type="text" class="ex-obs" value="${data?.obs||''}" placeholder="Intensidad, técnica..."></div>`;
   c.appendChild(div);
 }
 window.addFuncEx=addFuncEx;
@@ -3151,7 +3152,7 @@ function collectBlockData(blk){
   if(blk.dataset.kind==='func'){
     const exercises=[...blk.querySelectorAll('.ex-entry')].map(en=>{
       const inp=en.querySelector('.ex-search');
-      return{name:inp.dataset.name||inp.value,video:inp.dataset.video||'',reps:en.querySelector('.func-ex-reps')?.value||'',refEx:en.querySelector('.ex-refex')?.value||''};
+      return{name:inp.dataset.name||inp.value,video:inp.dataset.video||'',reps:en.querySelector('.func-ex-reps')?.value||'',refEx:en.querySelector('.ex-refex')?.value||'',obs:en.querySelector('.ex-obs')?.value||''};
     }).filter(e=>e.name);
     return{
       kind:'func',
@@ -4144,6 +4145,7 @@ function renderFuncBlock(c,bkey,blk,bi,isAdminView){
         ${exHistoryRowHtml(exPersonKey(c.name,c.email||''),ex.refEx||exBank?.refEx||ex.name)}
         ${isAdminView?`<button type="button" onclick="editExNote('${c.id}','${jsAttr(exPersonKey(c.name,c.email||''))}','${jsAttr(ex.name)}',${dIdx})" style="background:none;border:none;color:var(--mu);cursor:pointer;font-size:.72rem;padding:0 0 4px">✏️ nota</button>`:''}
         ${exBank?.notes?`<div class="cv-obs">📖 ${exBank.notes}</div>`:''}
+        ${ex.obs?`<div class="cv-obs">📝 ${ex.obs}</div>`:''}
         ${vidHtml}
         ${timerBtn}
         <div class="plog">
@@ -5551,7 +5553,7 @@ async function updatePlan(){
     name:db2.querySelector('.day-name-input').value,
     blocks:[...document.getElementById(db2.id+'-body').children].filter(el=>el.dataset.kind).map(blk=>{
       if(blk.dataset.kind==='func'){
-        const exercises=[...blk.querySelectorAll('.ex-entry')].map(en=>{const inp=en.querySelector('.ex-search');return{name:inp.dataset.name||inp.value,video:inp.dataset.video||'',reps:en.querySelector('.func-ex-reps')?.value||'',refEx:en.querySelector('.ex-refex')?.value||''};}).filter(e=>e.name);
+        const exercises=[...blk.querySelectorAll('.ex-entry')].map(en=>{const inp=en.querySelector('.ex-search');return{name:inp.dataset.name||inp.value,video:inp.dataset.video||'',reps:en.querySelector('.func-ex-reps')?.value||'',refEx:en.querySelector('.ex-refex')?.value||'',obs:en.querySelector('.ex-obs')?.value||''};}).filter(e=>e.name);
         return{kind:'func',title:blk.querySelector('.func-title').value,desc:blk.querySelector('.func-desc').value,reps:blk.querySelector('.func-reps').value,rest:blk.querySelector('.func-rest').value,sets:blk.querySelector('.func-sets').value,exercises};
       } else if(blk.dataset.kind==='warmup'){
         const duration=blk.querySelector('.wu-duration')?.value||'10 min';
