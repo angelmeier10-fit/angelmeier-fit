@@ -5158,9 +5158,15 @@ async function renderProgramaUnificadoHtml(prog,cats,hasSubscription){
   const{exerciseLogs,notes}=buildProgressSummary(s.progress||{},days,`alu-${uid}`,subWeek);
   const acceso=estadoAccesoAlumno(s);
   const vencido=acceso.clave==='vencido';
+  // "plan:{id}" asigna un plan grupal puntual por afuera del mapeo de
+  // categorías fijas (planesFijos): el alumno pasa a ver nada más ese plan,
+  // sin necesitar que esté mapeado a ninguna categoría de suscripción.
+  const planesGrupalesOptions=planes.filter(p=>p.kind!=='personal')
+    .map(p=>`<option value="plan:${p.id}"${s.categoria===''&&s.planId===p.id?' selected':''}>${p.name}</option>`).join('');
   const catOptions=cats.map(c=>`<option value="${c.id}"${c.id===s.categoria?' selected':''}>${c.label}</option>`).join('')
     +`<option value="__personal__"${s.categoria==='__personal__'?' selected':''}>🎯 Plan personalizado</option>`
-    +`<option value="desafio-gluteos-21"${s.categoria==='desafio-gluteos-21'?' selected':''}>🍑 Desafío Glúteos 21 días</option>`;
+    +`<option value="desafio-gluteos-21"${s.categoria==='desafio-gluteos-21'?' selected':''}>🍑 Desafío Glúteos 21 días</option>`
+    +(planesGrupalesOptions?`<optgroup label="📋 Planes grupales">${planesGrupalesOptions}</optgroup>`:'');
   // Activar/desactivar y el vencimiento ya no viven acá: es un solo control
   // en el header de la ficha (ver activoSwitch en renderAlumnosUnificado),
   // para no repetir el mismo id de input en dos lugares del DOM.
@@ -7153,7 +7159,14 @@ window.toggleAlumnoActivo=async function(uid,currentActivo,ai){
 
 window.cambiarCategoriaSuscriptorManual=async function(uid){
   const categoria=document.getElementById('susc-cat-'+uid).value;
-  if(categoria==='__personal__'){
+  if(categoria.startsWith('plan:')){
+    // Plan grupal puntual, elegido directo por afuera del mapeo de
+    // categorías fijas: el alumno pasa a ver nada más ese plan (planId),
+    // sin depender de que esté mapeado a ninguna categoría de suscripción.
+    const planId=categoria.slice('plan:'.length);
+    await updateDoc(doc(db,'subscribers',uid),{categoria:'',planId});
+    toast('✅ Asignado a ese plan');
+  } else if(categoria==='__personal__'){
     const subSnap=await getDoc(doc(db,'subscribers',uid));
     const sub=subSnap.data();
     // Si ya figura como personal, solo bloqueamos el reemplazo cuando el plan
