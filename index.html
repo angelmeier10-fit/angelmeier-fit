@@ -5153,38 +5153,18 @@ async function renderProgramaUnificadoHtml(prog,cats){
   const{exerciseLogs,notes}=buildProgressSummary(s.progress||{},days,`alu-${uid}`,subWeek);
   const acceso=estadoAccesoAlumno(s);
   const vencido=acceso.clave==='vencido';
-  const defaultExp=new Date();defaultExp.setDate(defaultExp.getDate()+30);
   const catOptions=cats.map(c=>`<option value="${c.id}"${c.id===s.categoria?' selected':''}>${c.label}</option>`).join('')
     +`<option value="__personal__"${s.categoria==='__personal__'?' selected':''}>🎯 Plan personalizado</option>`
     +`<option value="desafio-gluteos-21"${s.categoria==='desafio-gluteos-21'?' selected':''}>🍑 Desafío Glúteos 21 días</option>`;
-  let startWeekHtml='';
-  if((s.status!=='active'||vencido)&&s.categoria&&s.categoria!=='global'&&planData&&!planData.continuo){
-    const weekNums=planWeekNums(planData);
-    if(weekNums.length>1)startWeekHtml=`<select id="susc-week-${uid}" style="width:auto">${weekNums.map(w=>`<option value="${w}"${w===s.startWeek?' selected':''}>Empieza semana ${w}</option>`).join('')}</select>`;
-  }
-  // Una sola zona de acción por estado combinado, para no repetir el bug de
-  // mostrar dos controles contradictorios (ver estadoAccesoAlumno arriba).
-  let accionBtn;
-  if(acceso.clave==='inactivo'){
-    const necesitaDatos=s.status!=='active'||vencido;
-    accionBtn=necesitaDatos?`
-    <input type="date" id="susc-exp-${uid}" value="${defaultExp.toISOString().split('T')[0]}" style="width:auto;font-size:.78rem">
-    <label style="font-size:.72rem;display:flex;align-items:center;gap:3px"><input type="checkbox" id="susc-noexp-${uid}" onchange="document.getElementById('susc-exp-${uid}').disabled=this.checked">Sin vencimiento</label>
-    ${startWeekHtml}
-    <button class="btn bgr xs" onclick="reactivarAlumnoCompleto('${uid}')">🔵 Reactivar alumno</button>`:
-    `<button class="btn bgr xs" onclick="reactivarAlumnoCompleto('${uid}')">🔵 Reactivar alumno</button>`;
-  }else if(acceso.clave==='pendiente'||vencido){
-    accionBtn=`
-    <input type="date" id="susc-exp-${uid}" value="${defaultExp.toISOString().split('T')[0]}" style="width:auto;font-size:.78rem">
-    <label style="font-size:.72rem;display:flex;align-items:center;gap:3px"><input type="checkbox" id="susc-noexp-${uid}" onchange="document.getElementById('susc-exp-${uid}').disabled=this.checked">Sin vencimiento</label>
-    ${startWeekHtml}
-    <button class="btn bgr xs" onclick="activarSuscriptorManual('${uid}')">${vencido?'🔁 Renovar':'✅ Confirmar pago y activar'}</button>`;
-  }else{
+  // Activar ya no vive acá: es un solo botón en el header de la ficha
+  // (ver activoSwitch en renderAlumnosUnificado → activarAlumnoDirecto).
+  // Este bloque queda solo para el ajuste fino de un alumno ya activo.
+  let accionBtn='';
+  if(acceso.clave==='activo'){
     accionBtn=`
     <input type="date" id="susc-exp-${uid}" value="${s.expiry||''}" ${s.expiry?'':'disabled'} style="width:auto;font-size:.78rem">
     <label style="font-size:.72rem;display:flex;align-items:center;gap:3px"><input type="checkbox" id="susc-noexp-${uid}" ${s.expiry?'':'checked'} onchange="document.getElementById('susc-exp-${uid}').disabled=this.checked">Sin vencimiento</label>
-    <button class="btn bg2 xs" onclick="editarVencimientoSuscriptor('${uid}')">💾 Guardar vencimiento</button>
-    <button class="btn bd2 xs" onclick="toggleAlumnoActivo('${uid}',true)">⛔ Desactivar</button>`;
+    <button class="btn bg2 xs" onclick="editarVencimientoSuscriptor('${uid}')">💾 Guardar vencimiento</button>`;
   }
   // Cambiar la semana que ve el alumno en cualquier momento (no solo al
   // reactivarlo): elige una semana del plan y reinicia startDate a hoy para
@@ -5272,12 +5252,12 @@ async function renderAlumnosUnificado(searchTerm){
     const activoSwitch=(()=>{
       if(!subProg)return'';
       const acceso=estadoAccesoAlumno(subProg.sub);
-      // Solo el estado "todo en orden" se puede apagar con un click directo
-      // (no requiere datos extra). Cualquier otro estado necesita completar
-      // fecha/plan, así que el click expande la ficha en vez de reactivar a
-      // ciegas — ver bloque de detalle en renderProgramaUnificadoHtml.
+      // Un solo botón de acceso por alumno, siempre en el header: activa o
+      // desactiva con un click, sin pedir elegir categoría ni expandir la
+      // ficha (activarAlumnoDirecto usa la categoría/plan que ya tiene y un
+      // vencimiento default de 30 días, ajustable después desde el detalle).
       if(acceso.clave==='activo')return`<button class="btn bgr xs" onclick="event.stopPropagation();toggleAlumnoActivo('${subProg.uid}',true)" title="Click para desactivar todo su acceso">${acceso.label}</button>`;
-      return`<span class="badge" style="font-size:.72rem" title="Expandí la ficha para completar los datos y reactivar">${acceso.label}</span>`;
+      return`<button class="btn bg2 xs" onclick="event.stopPropagation();activarAlumnoDirecto('${subProg.uid}')" title="Activa con acceso por 30 días desde hoy">✅ Activar</button>`;
     })();
     const passBtn=(subProg&&a.email)?`<button class="btn bg2 xs" onclick="event.stopPropagation();cambiarPasswordAlumnoAdmin('${a.email.replace(/'/g,"\\'")}','${a.name.replace(/'/g,"\\'")}')" title="Mandarle email para cambiar la contraseña">🔑 Contraseña</button>`:'';
     return`<div class="card">
@@ -7088,42 +7068,6 @@ async function poblarCategoriaSelect(id){
   sel.dataset.loaded='1';
 }
 
-window.activarSuscriptorManual=async function(uid){
-  const sinVencimiento=document.getElementById('susc-noexp-'+uid)?.checked;
-  const expiry=sinVencimiento?'':document.getElementById('susc-exp-'+uid).value;
-  if(!sinVencimiento&&!expiry){toast('⚠️ Elegí una fecha de vencimiento o marcá "Sin vencimiento"');return}
-  const confirmMsg=expiry?'¿Activar acceso hasta el '+new Date(expiry+'T00:00:00').toLocaleDateString('es-AR')+'?':'¿Activar acceso sin restricción de vencimiento?';
-  if(!confirm(confirmMsg))return;
-  const subRef=doc(db,'subscribers',uid);
-  const subSnap=await getDoc(subRef);
-  if(!subSnap.exists())return;
-  const sub=subSnap.data();
-  // Si tiene plan personalizado (o suscripción global), el planId ya está
-  // asignado a mano y no viene de planesFijos: no tocarlo, o se lo pisa con
-  // null y el alumno pierde el plan que tenía cargado.
-  let planId=sub.planId||null;
-  if(sub.categoria&&sub.categoria!=='global'&&sub.categoria!=='__personal__'){
-    const fijoSnap=await getDoc(doc(db,'planesFijos',sub.categoria));
-    planId=fijoSnap.exists()?fijoSnap.data().planId||null:null;
-  }
-  const updates={status:'active',expiry,lastPaymentId:'manual',planId};
-  const weekSel=document.getElementById('susc-week-'+uid);
-  if(weekSel){
-    // El selector de semana está siempre editable: cada vez que se usa,
-    // reinicia el punto de partida (startDate) para que el cálculo de
-    // "semana actual" arranque bien desde la semana elegida.
-    updates.startDate=new Date().toISOString().split('T')[0];
-    updates.startWeek=parseInt(weekSel.value);
-  }else if(!sub.startDate){
-    updates.startDate=new Date().toISOString().split('T')[0];
-    updates.startWeek=1;
-  }
-  await updateDoc(subRef,updates);
-  toast('✅ Suscripción activada');
-  suscriptoresCache=null;
-  refreshSuscriptorPanels();
-};
-
 // Permite forzar en cualquier momento la semana que ve un alumno con plan
 // personalizado (sin desactivarlo/reactivarlo). Reinicia startDate a hoy
 // para que el cálculo de "semana actual" arranque desde la semana elegida
@@ -7147,6 +7091,36 @@ window.editarVencimientoSuscriptor=async function(uid){
   if(!sinVencimiento&&!expiry){toast('⚠️ Elegí una fecha de vencimiento o marcá "Sin vencimiento"');return}
   await updateDoc(doc(db,'subscribers',uid),{expiry});
   toast(expiry?'✅ Vencimiento actualizado':'✅ Ahora sin restricción de vencimiento');
+  suscriptoresCache=null;
+  refreshSuscriptorPanels();
+};
+
+// Botón único de "Activar" en el header de cada ficha de Alumnos: usa la
+// categoría/plan que el alumno ya tiene guardado (no pide elegirla) y un
+// vencimiento default de 30 días desde hoy. Reemplaza a las 3 formas viejas
+// de activar (reactivarAlumnoCompleto, activarSuscriptorManual y la mitad
+// "activar" de toggleAlumnoActivo) por una sola acción directa; el ajuste
+// fino de vencimiento/semana/categoría sigue disponible en la ficha expandida.
+window.activarAlumnoDirecto=async function(uid){
+  if(!confirm('¿Activar a este alumno con acceso por 30 días desde hoy?'))return;
+  const subRef=doc(db,'subscribers',uid);
+  const subSnap=await getDoc(subRef);
+  if(!subSnap.exists())return;
+  const sub=subSnap.data();
+  let planId=sub.planId||null;
+  if(sub.categoria&&sub.categoria!=='global'&&sub.categoria!=='__personal__'){
+    const fijoSnap=await getDoc(doc(db,'planesFijos',sub.categoria));
+    planId=fijoSnap.exists()?fijoSnap.data().planId||null:null;
+  }
+  const expDate=new Date();expDate.setDate(expDate.getDate()+30);
+  const updates={
+    activo:true,status:'active',lastPaymentId:'manual',planId,
+    expiry:expDate.toISOString().split('T')[0],
+    startDate:new Date().toISOString().split('T')[0],
+    startWeek:sub.startWeek||1
+  };
+  await updateDoc(subRef,updates);
+  toast('✅ Alumno activado (30 días)');
   suscriptoresCache=null;
   refreshSuscriptorPanels();
 };
@@ -7208,44 +7182,6 @@ window.borrarPlanSuscriptor=async function(uid,planId){
   planes=planes.filter(p=>p.id!==planId);
   await updateDoc(doc(db,'subscribers',uid),{categoria:'',planId:null,status:'pending',progress:{}});
   toast('🗑️ Plan borrado — elegí una nueva categoría y guardá');
-  suscriptoresCache=null;
-  refreshSuscriptorPanels();
-};
-
-// Reactiva a un alumno marcado como "Inactivo" (activo:false). Si su
-// suscripción también necesitaba fecha/plan (pendiente o vencida), completa
-// todo en una sola escritura para no dejarlo "activo" pero sin acceso real
-// (mismo bug que se quiso evitar unificando el estado combinado).
-window.reactivarAlumnoCompleto=async function(uid){
-  const subRef=doc(db,'subscribers',uid);
-  const subSnap=await getDoc(subRef);
-  if(!subSnap.exists())return;
-  const sub=subSnap.data();
-  const vencido=sub.status==='active'&&sub.expiry&&new Date(sub.expiry+'T00:00:00')<new Date();
-  const necesitaDatos=sub.status!=='active'||vencido;
-  const updates={activo:true};
-  if(necesitaDatos){
-    const sinVencimiento=document.getElementById('susc-noexp-'+uid)?.checked;
-    const expiry=sinVencimiento?'':document.getElementById('susc-exp-'+uid)?.value;
-    if(!sinVencimiento&&!expiry){toast('⚠️ Elegí una fecha de vencimiento o marcá "Sin vencimiento"');return}
-    let planId=sub.planId||null;
-    if(sub.categoria&&sub.categoria!=='global'&&sub.categoria!=='__personal__'){
-      const fijoSnap=await getDoc(doc(db,'planesFijos',sub.categoria));
-      planId=fijoSnap.exists()?fijoSnap.data().planId||null:null;
-    }
-    Object.assign(updates,{status:'active',expiry,lastPaymentId:'manual',planId});
-    const weekSel=document.getElementById('susc-week-'+uid);
-    if(weekSel){
-      updates.startDate=new Date().toISOString().split('T')[0];
-      updates.startWeek=parseInt(weekSel.value);
-    }else if(!sub.startDate){
-      updates.startDate=new Date().toISOString().split('T')[0];
-      updates.startWeek=1;
-    }
-  }
-  if(!confirm('¿Reactivar a este alumno? Recupera acceso a todos sus programas.'))return;
-  await updateDoc(subRef,updates);
-  toast('🟢 Alumno reactivado');
   suscriptoresCache=null;
   refreshSuscriptorPanels();
 };
