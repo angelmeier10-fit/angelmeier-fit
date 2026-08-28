@@ -375,7 +375,7 @@ setTimeout(()=>{
     <div style="margin-bottom:10px"><svg width="44" height="44" viewBox="0 0 100 100"><defs><linearGradient id="amlogo-g1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#c084fc"/><stop offset="100%" stop-color="#7c5cbf"/></linearGradient></defs><circle cx="48" cy="22" r="12" fill="url(#amlogo-g1)"/><path d="M88,38 C76,58 60,64 44,56 C30,49 18,54 8,74 C22,66 36,63 48,67 C64,72 78,64 88,38 Z" fill="url(#amlogo-g1)"/></svg></div>
     <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.3rem;margin-bottom:4px">Angel Meier</div>
     <div id="login-subtitle" style="color:var(--mu);font-size:.85rem;margin-bottom:24px">Panel de entrenador</div>
-    <input id="login-name" type="text" placeholder="Nombre" style="display:none;margin-bottom:10px">
+    <input id="login-name" type="text" placeholder="Nombre y apellido" style="display:none;margin-bottom:10px">
     <input id="login-whatsapp" type="tel" placeholder="Celular (WhatsApp)" style="display:none;margin-bottom:10px" autocomplete="tel">
     <input id="login-email" type="email" placeholder="Email" style="margin-bottom:10px" autocomplete="username">
     <div style="position:relative;margin-bottom:5px">
@@ -1205,6 +1205,7 @@ window.toggleSignupMode=function(){
   document.getElementById('login-pass2-wrap').style.display=signupMode?'block':'none';
   document.getElementById('login-pass2').value='';
   document.getElementById('login-whatsapp').style.display=(signupMode&&isAlumnoSignup)?'block':'none';
+  document.getElementById('login-name').style.display=(signupMode&&isAlumnoSignup)?'block':'none';
   checkPassReqs();
 };
 window.doLogin=async function(){
@@ -1218,10 +1219,13 @@ window.doLogin=async function(){
     const pass2=document.getElementById('login-pass2').value;
     if(pass!==pass2){errEl.textContent='Las contraseñas no coinciden.';return}
     const whatsapp=document.getElementById('login-whatsapp').value.trim();
+    const name=document.getElementById('login-name').value.trim();
     if(isAlumnoSignup&&!whatsapp){errEl.textContent='Completá tu número de celular.';return}
+    if(isAlumnoSignup&&!name){errEl.textContent='Completá tu nombre y apellido.';return}
     try{
       await createUserWithEmailAndPassword(auth,email,pass);
       window.__signupWhatsapp=whatsapp;
+      window.__signupName=name;
     }catch(err){
       // Si el email ya tiene cuenta de Auth pero nunca terminó de enviar sus
       // respuestas (no llegó a crearse el doc en subscribers), probamos
@@ -1231,6 +1235,7 @@ window.doLogin=async function(){
         try{
           await signInWithEmailAndPassword(auth,email,pass);
           window.__signupWhatsapp=whatsapp;
+          window.__signupName=name;
           return;
         }catch(err2){
           errEl.textContent='Ese email ya tiene una cuenta creada. Si es tuya, iniciá sesión con tu contraseña.';
@@ -1944,7 +1949,7 @@ window.enviarRespuestasAlumno=async function(){
   try{
     const payload={
       email:user.email,
-      name:user.displayName||'',
+      name:window.__signupName||user.displayName||'',
       categoria:null,
       objetivo:window.__objetivoElegido||null,
       nivel:window.__nivelElegido||null,
