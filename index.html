@@ -5044,7 +5044,7 @@ async function buildAlumnosUnificadoGroups(){
   return groups;
 }
 
-async function renderProgramaUnificadoHtml(prog,cats){
+async function renderProgramaUnificadoHtml(prog,cats,hasSubscription){
   const catLabel=Object.fromEntries(cats.map(c=>[c.id,c.label]));
   if(prog.type==='personal'){
     const c=prog.client;
@@ -5082,20 +5082,25 @@ async function renderProgramaUnificadoHtml(prog,cats){
     const days=getMemberPlanDays(plan,m);
     const memberWeek=getMemberCurrentWeekNum(plan,m)||1;
     const{exerciseLogs,notes}=buildProgressSummary(m.progress||{},days,`${plan.id}-${m.id}`,memberWeek);
-    const expired=m.expiry&&(new Date(m.expiry+'T00:00:00')<new Date());
-    const statusBadge=m.status==='active'&&!expired?'<span class="badge bgr2">✅ Activo</span>':expired?'<span class="badge" style="background:#f8717122;color:var(--rd)">⏰ Vencido</span>':'<span class="badge byw2">⏳ Pendiente</span>';
     const progressHtml=renderProgressDetailBlock(`${plan.id}-${m.id}`,exerciseLogs,days,notes)||'<div style="font-size:.78rem;color:var(--mu)">Sin registros todavía.</div>';
     const weekNumsG=planWeekNums(plan);
     const weekBadgeG=plan.continuo?`<span class="badge bgr2">🔥 ${days.length} días</span>`:weekNumsG.length?`<span class="badge bgr2">Semana ${memberWeek} de ${weekNumsG.length}</span>`:'';
     const weekSelectHtmlG=(!plan.continuo&&weekNumsG.length>1)?`<select id="mw-week-${m.id}" style="width:auto;font-size:.78rem">${weekNumsG.map(w=>`<option value="${w}"${w===m.startWeek?' selected':''}>Semana ${w}</option>`).join('')}</select>
     <button class="btn bg2 xs" onclick="cambiarSemanaMiembro('${plan.id}','${m.id}')">📅 Cambiar semana</button>`:'';
+    // El acceso/vencimiento de este alumno se controla en un solo lugar (el
+    // switch del header), no acá. Si todavía no tiene cuenta propia
+    // (hasSubscription false), este es su único control real y se mantiene.
+    const expired=m.expiry&&(new Date(m.expiry+'T00:00:00')<new Date());
+    const statusBadge=hasSubscription?'':(m.status==='active'&&!expired?'<span class="badge bgr2">✅ Activo</span>':expired?'<span class="badge" style="background:#f8717122;color:var(--rd)">⏰ Vencido</span>':'<span class="badge byw2">⏳ Pendiente</span>');
+    const vencimientoHtmlG=hasSubscription?'':`
+          <input type="date" id="alu-exp-${plan.id}-${m.id}" value="${m.expiry||''}" style="font-size:.78rem;padding:4px 6px">
+          <button class="btn bcy xs" onclick="updateMemberExpiry('${plan.id}','${m.id}')">💾 Vencimiento</button>`;
     return`<div style="padding:8px 0;border-bottom:1px solid var(--bd)">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
         <div style="font-size:.84rem"><b>${plan.name}</b> ${statusBadge} ${weekBadgeG}</div>
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
           ${weekSelectHtmlG}
-          <input type="date" id="alu-exp-${plan.id}-${m.id}" value="${m.expiry||''}" style="font-size:.78rem;padding:4px 6px">
-          <button class="btn bcy xs" onclick="updateMemberExpiry('${plan.id}','${m.id}')">💾 Vencimiento</button>
+          ${vencimientoHtmlG}
           <button class="btn bd2 xs" onclick="removeMemberFromAlumnos('${plan.id}','${m.id}')">✕ Sacar</button>
         </div>
       </div>
@@ -5231,9 +5236,9 @@ async function renderAlumnosUnificado(searchTerm){
   }
   const [cats]=await Promise.all([getCategoriasSuscripcion(),loadPlanesFijos()]);
   const cardsArr=await Promise.all(alumnos.map(async(a,ai)=>{
-    const progRows=await Promise.all(a.programs.map(prog=>renderProgramaUnificadoHtml(prog,cats)));
-    const bodyId=`uni-body-${ai}`;
     const hasSubscription=a.programs.some(p=>p.type==='subscription');
+    const progRows=await Promise.all(a.programs.map(prog=>renderProgramaUnificadoHtml(prog,cats,hasSubscription)));
+    const bodyId=`uni-body-${ai}`;
     const convertBtn=hasSubscription?'':`<button class="btn bcy xs" onclick="event.stopPropagation();precargarAltaSuscriptor(${ai})">🔔 Convertir en suscriptor</button>`;
     const availablePlans=planes.filter(p=>p.kind!=='personal'&&!a.programs.some(pr=>pr.type==='group'&&pr.plan.id===p.id));
     const addPlanForm=availablePlans.length?`<div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--bd)">
@@ -5250,16 +5255,25 @@ async function renderAlumnosUnificado(searchTerm){
       </div>`:'';
     const subProg=a.programs.find(p=>p.type==='subscription');
     const activoSwitch=(()=>{
-      if(!subProg)return'';
-      const acceso=estadoAccesoAlumno(subProg.sub);
-      // Un solo botón de acceso por alumno, siempre en el header: activa o
-      // desactiva con un click, sin pedir elegir categoría ni expandir la
-      // ficha (activarAlumnoDirecto usa la categoría/plan que ya tiene y un
-      // vencimiento default de 30 días, ajustable después desde el detalle).
-      // La fecha exacta de vencimiento no se repite acá: se ve y se edita en
-      // un solo lugar, la fila de "Suscripción" dentro de la ficha expandida.
-      if(acceso.clave==='activo')return`<button class="btn bgr xs" onclick="event.stopPropagation();toggleAlumnoActivo('${subProg.uid}',true)" title="Click para desactivar todo su acceso">🟢 Activo</button>`;
-      return`<button class="btn bg2 xs" onclick="event.stopPropagation();activarAlumnoDirecto('${subProg.uid}')" title="Activa con acceso por 30 días desde hoy">✅ Activar</button>`;
+      if(subProg){
+        const acceso=estadoAccesoAlumno(subProg.sub);
+        // Un solo botón de acceso por alumno, siempre en el header: activa o
+        // desactiva con un click, sin pedir elegir categoría ni expandir la
+        // ficha (activarAlumnoDirecto usa la categoría/plan que ya tiene y un
+        // vencimiento default de 30 días, ajustable después desde el detalle).
+        // La fecha exacta de vencimiento no se repite acá: se ve y se edita
+        // en un solo lugar, la fila de "Suscripción" de la ficha expandida.
+        if(acceso.clave==='activo')return`<button class="btn bgr xs" onclick="event.stopPropagation();toggleAlumnoActivo('${subProg.uid}',true)" title="Click para desactivar todo su acceso">🟢 Activo</button>`;
+        return`<button class="btn bg2 xs" onclick="event.stopPropagation();activarAlumnoDirecto('${subProg.uid}')" title="Activa con acceso por 30 días desde hoy">✅ Activar</button>`;
+      }
+      // Todavía no tiene cuenta propia (entra por link, sin login): no hay
+      // ningún subscribers/{uid} donde aplicar el switch único. Se ofrece
+      // crear la cuenta acá mismo — una vez creada, aparece el switch normal.
+      const personalProg=a.programs.find(p=>p.type==='personal');
+      if(personalProg)return`<button class="btn bpu xs" onclick="event.stopPropagation();migrarClienteAAlumno('${personalProg.client.id}')" title="Crea una cuenta de login para controlar su acceso con un solo switch">🔗 Crear cuenta</button>`;
+      const groupProg=a.programs.find(p=>p.type==='group');
+      if(groupProg)return`<button class="btn bpu xs" onclick="event.stopPropagation();migrarMiembroGrupalASuscriptor('${groupProg.plan.id}','${groupProg.member.id}')" title="Crea una cuenta de login para controlar su acceso con un solo switch">🔗 Crear cuenta</button>`;
+      return'';
     })();
     const passBtn=(subProg&&a.email)?`<button class="btn bg2 xs" onclick="event.stopPropagation();cambiarPasswordAlumnoAdmin('${a.email.replace(/'/g,"\\'")}','${a.name.replace(/'/g,"\\'")}')" title="Mandarle email para cambiar la contraseña">🔑 Contraseña</button>`:'';
     return`<div class="card">
@@ -7334,6 +7348,49 @@ window.migrarClienteAAlumno=async function(clientId){
       'auth/network-request-failed':'Sin conexión. Revisá tu internet e intentá de nuevo.'
     };
     toast('⚠️ '+(msgs[err.code]||('No se pudo migrar la cuenta ('+err.code+').')));
+  }
+};
+
+// Igual que migrarClienteAAlumno pero para un alumno que hoy solo está en
+// un plan grupal, sin cuenta propia (accedía por link público del plan, sin
+// login). Crea una cuenta de usuario/contraseña + subscribers/{uid} apuntando
+// a ese mismo plan, para que tenga el mismo switch único de arriba que el
+// resto — sin esto, un alumno solo-grupal no tiene forma de aparecer con el
+// switch porque no existe ningún subscribers/{uid} para él.
+window.migrarMiembroGrupalASuscriptor=async function(planId,memberId){
+  const plan=planes.find(p=>p.id===planId);
+  const m=plan?.members?.find(mm=>mm.id===memberId);
+  if(!m)return;
+  if(!m.email){toast('⚠️ Este alumno no tiene email cargado, necesario para crear la cuenta. Agregaselo primero.');return}
+  if(!confirm(`¿Crear una cuenta con usuario y contraseña para ${m.name}? Vas a elegir vos la contraseña y de ahí en más lo controlás con un solo switch.`))return;
+  const tempPass=window.prompt(`Contraseña para la cuenta de ${m.name} (mínimo 6 caracteres):`);
+  if(!tempPass)return;
+  if(tempPass.length<6){toast('⚠️ La contraseña tiene que tener al menos 6 caracteres');return}
+  try{
+    const sAuth=getSecondaryAuth();
+    const cred=await createUserWithEmailAndPassword(sAuth,m.email,tempPass);
+    const uid=cred.user.uid;
+    await signOut(sAuth);
+    // categoria vacía (no '__personal__' ni una fija): planId queda tal cual,
+    // sin que activarAlumnoDirecto intente resolverlo contra planesFijos.
+    await setDoc(doc(db,'subscribers',uid),{
+      email:m.email,name:m.name,categoria:'',planId,
+      status:m.status==='active'?'active':'pending',
+      expiry:m.expiry||'',activo:m.status==='active',
+      startDate:m.startDate||new Date().toISOString().split('T')[0],
+      startWeek:m.startWeek||1
+    });
+    await sendPasswordResetEmail(auth,m.email);
+    toast('✅ Cuenta creada — le llegó un email para definir su contraseña.');
+    suscriptoresCache=null;
+    renderAlumnosUnificado(document.getElementById('uni-search')?.value);
+  }catch(err){
+    const msgs={
+      'auth/email-already-in-use':'Ese email ya tiene una cuenta creada (puede que ya esté migrado o sea suscriptor).',
+      'auth/invalid-email':'El email no es válido.',
+      'auth/network-request-failed':'Sin conexión. Revisá tu internet e intentá de nuevo.'
+    };
+    toast('⚠️ '+(msgs[err.code]||('No se pudo crear la cuenta ('+err.code+').')));
   }
 };
 
