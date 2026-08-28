@@ -444,6 +444,7 @@ setTimeout(()=>{
       <p class="sub" style="text-align:center;margin-bottom:16px">¡Ya casi! Así funcionan los precios</p>
       <div id="alumno-confirm-precios" style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px"></div>
       <p class="sub" style="text-align:center;margin-bottom:16px;font-size:.82rem">Angel va a revisar tus respuestas y te asigna el plan que mejor te queda. Te contactamos por WhatsApp para coordinar el pago.</p>
+      <input id="alumno-confirm-whatsapp" type="tel" placeholder="Celular (WhatsApp)" style="display:none;margin-bottom:10px" autocomplete="tel">
       <button class="btn bp" onclick="enviarRespuestasAlumno()" style="width:100%;justify-content:center;margin-bottom:10px">Enviar mis respuestas</button>
       <a href="https://wa.me/5491172399988" target="_blank" class="btn bcy" style="width:100%;justify-content:center">💬 Escribir por WhatsApp</a>
       <div id="alumno-confirm-error" style="color:var(--rd);font-size:.82rem;margin-top:10px;text-align:center"></div>
@@ -451,6 +452,7 @@ setTimeout(()=>{
 
     <div id="alumno-categoria-screen" style="display:none">
       <p class="sub" style="text-align:center;margin-bottom:16px">Elegí tu categoría</p>
+      <input id="alumno-categoria-whatsapp" type="tel" placeholder="Celular (WhatsApp)" style="display:none;margin-bottom:10px" autocomplete="tel">
       <div style="display:flex;flex-direction:column;gap:10px" id="alumno-categorias-list"></div>
       <div id="alumno-categoria-error" style="color:var(--rd);font-size:.82rem;margin-top:10px;text-align:center"></div>
     </div>
@@ -1536,6 +1538,11 @@ function startAppOnce(){if(!appStarted){appStarted=true;init()}}
 let recoveringFromAuthError=false;
 window.addEventListener('unhandledrejection',e=>{
   if(e.reason?.code!=='permission-denied'||recoveringFromAuthError)return;
+  // Si sos el entrenador (admin) autenticado, un permission-denied nunca es
+  // por token vencido — es un bug real de reglas/datos. Forzar logout ahí
+  // solo te tira afuera de la sesión sin arreglar nada; lo dejamos pasar
+  // (queda en consola) para poder reintentar la acción que falló.
+  if(auth.currentUser?.email===ADMIN_EMAIL){console.error('permission-denied (admin)',e.reason);return;}
   recoveringFromAuthError=true;
   e.preventDefault();
   localStorage.removeItem('amfit-had-session');
@@ -1707,7 +1714,7 @@ async function initAlumno(user){
   // selector de plan directo, sin repetir la pregunta de objetivo.
   if(!data.categoria){
     document.getElementById('alumno-narrow-wrap').style.display='block';
-    await renderCategoriasAlumno();
+    await renderCategoriasAlumno(data.whatsapp);
     return;
   }
   // Corte de acceso también en frontend: si venció, se trata como expired aunque
@@ -1720,7 +1727,7 @@ async function initAlumno(user){
     document.getElementById('alumno-narrow-wrap').style.display='block';
     document.getElementById('alumno-categoria-screen').style.display='block';
     document.querySelector('#alumno-categoria-screen p.sub').textContent='Tu Desafío Glúteos terminó 🎉 Para seguir, suscribite a uno de estos planes o escribinos';
-    await renderCategoriasAlumno();
+    await renderCategoriasAlumno(data.whatsapp);
     return;
   }
   if(data.status==='active' && !vencido && data.activo!==false){
@@ -1764,8 +1771,11 @@ window.sendWhatsAppPlanPersonalizado=function(){
 // Arma la lista de categorías/planes para elegir. La usan tanto el alta
 // nueva (después de elegir objetivo) como el reingreso de una alumna cuyo
 // plan venció y quedó sin categoría (ver expiración del Desafío Glúteos).
-async function renderCategoriasAlumno(){
+async function renderCategoriasAlumno(existingWhatsapp){
   document.getElementById('alumno-categoria-screen').style.display='block';
+  // Reingreso de una cuenta vieja que nunca guardó WhatsApp (ej. alta por
+  // Google antes de este fix): lo pedimos acá antes de elegir plan.
+  document.getElementById('alumno-categoria-whatsapp').style.display=existingWhatsapp?'none':'block';
   const cats=await getCategoriasSuscripcion();
   const priceHtml=c=>{
     const price=c.id==='global'?c.price:planes.find(p=>p.id===c.planId)?.price;
@@ -1909,6 +1919,10 @@ window.continuarSurveyAlumno=function(){
 // tener que elegir plan él mismo.
 async function renderConfirmAlumno(){
   document.getElementById('alumno-confirm-screen').style.display='block';
+  // El alta por email/contraseña ya pidió el WhatsApp en la pantalla de login
+  // (window.__signupWhatsapp). El alta con Google nunca lo pide ahí, así que
+  // acá es el único lugar donde lo podemos capturar para esas alumnas.
+  document.getElementById('alumno-confirm-whatsapp').style.display=window.__signupWhatsapp?'none':'block';
   const cats=await getCategoriasSuscripcion();
   const individualPrices=cats.filter(c=>c.id!=='global').map(c=>planes.find(p=>p.id===c.planId)?.price).filter(Boolean).map(Number);
   const unPlanPrecio=individualPrices.length?Math.min(...individualPrices):null;
@@ -1943,7 +1957,8 @@ window.enviarRespuestasAlumno=async function(){
       startWeek:null,
       progress:{}
     };
-    if(window.__signupWhatsapp)payload.whatsapp=window.__signupWhatsapp;
+    const whatsapp=window.__signupWhatsapp||document.getElementById('alumno-confirm-whatsapp').value.trim();
+    if(whatsapp)payload.whatsapp=whatsapp;
     await setDoc(doc(db,'subscribers',user.uid),payload,{merge:true});
     document.getElementById('alumno-confirm-screen').style.display='none';
     document.getElementById('alumno-pending-screen').style.display='block';
@@ -1970,7 +1985,8 @@ window.elegirCategoriaAlumno=async function(categoria){
       startWeek:null,
       progress:{}
     };
-    if(window.__signupWhatsapp)payload.whatsapp=window.__signupWhatsapp;
+    const whatsapp=window.__signupWhatsapp||document.getElementById('alumno-categoria-whatsapp').value.trim();
+    if(whatsapp)payload.whatsapp=whatsapp;
     await setDoc(doc(db,'subscribers',user.uid),payload,{merge:true});
     document.getElementById('alumno-categoria-screen').style.display='none';
     document.getElementById('alumno-pending-screen').style.display='block';

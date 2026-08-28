@@ -138,6 +138,15 @@ service cloud.firestore {
             && request.resource.data.categoria == 'desafio-gluteos-21'
             && request.resource.data.status == 'active'
             && request.resource.data.planId == resource.data.planId
+            && request.resource.data.lastPaymentId == resource.data.get('lastPaymentId', null))
+        // Reingreso: alumna existente sin "categoria" (plan vencido y
+        // reseteado por el admin/webhook) puede elegir una categoría nueva
+        // y vuelve a pending. No puede tocar expiry/lastPaymentId por su
+        // cuenta, esos los sigue manejando el admin/webhook de pago.
+        || (isOwner(uid)
+            && resource.data.get('categoria', null) == null
+            && request.resource.data.status == 'pending'
+            && request.resource.data.expiry == resource.data.get('expiry', null)
             && request.resource.data.lastPaymentId == resource.data.get('lastPaymentId', null));
       allow delete: if isAdmin();
     }
