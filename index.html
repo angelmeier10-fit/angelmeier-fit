@@ -5125,11 +5125,11 @@ async function renderProgramaUnificadoHtml(prog,cats,hasSubscription){
       if(!plan.continuo&&weekNumsD.length>1)weekSelectHtml=`<select id="susc-changeweek-${uid}" style="width:auto;font-size:.78rem">${weekNumsD.map(w=>`<option value="${w}"${w===s.startWeek?' selected':''}>Semana ${w}</option>`).join('')}</select>
       <button class="btn bg2 xs" onclick="cambiarSemanaAlumno('${uid}')">📅 Cambiar semana</button>`;
     }
+    // El vencimiento editable vive solo arriba, en el header del alumno
+    // (mismo uid) — acá queda nada más el texto informativo, sin repetir
+    // el input (chocaría de id con el del header).
     const expTxtD=s.expiry?new Date(s.expiry+'T00:00:00').toLocaleDateString('es-AR'):'Sin vencimiento';
-    const expHtmlD=`<span style="font-size:.72rem;color:var(--mu)">Vence: ${expTxtD}</span>
-      <input type="date" id="susc-exp-${uid}" value="${s.expiry||''}" ${s.expiry?'':'disabled'} style="width:auto;font-size:.78rem">
-      <label style="font-size:.72rem;display:flex;align-items:center;gap:3px"><input type="checkbox" id="susc-noexp-${uid}" ${s.expiry?'':'checked'} onchange="document.getElementById('susc-exp-${uid}').disabled=this.checked">Sin vencimiento</label>
-      <button class="btn bg2 xs" onclick="editarVencimientoSuscriptor('${uid}')">💾 Vencimiento</button>`;
+    const expHtmlD=`<span style="font-size:.72rem;color:var(--mu)">Vence: ${expTxtD}</span>`;
     return`<div style="padding:8px 0;border-bottom:1px solid var(--bd)">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
         <div style="font-size:.84rem"><b>🍑 Desafío Glúteos 21 días</b> ${badge}</div>
@@ -5161,16 +5161,10 @@ async function renderProgramaUnificadoHtml(prog,cats,hasSubscription){
   const catOptions=cats.map(c=>`<option value="${c.id}"${c.id===s.categoria?' selected':''}>${c.label}</option>`).join('')
     +`<option value="__personal__"${s.categoria==='__personal__'?' selected':''}>🎯 Plan personalizado</option>`
     +`<option value="desafio-gluteos-21"${s.categoria==='desafio-gluteos-21'?' selected':''}>🍑 Desafío Glúteos 21 días</option>`;
-  // Activar ya no vive acá: es un solo botón en el header de la ficha
-  // (ver activoSwitch en renderAlumnosUnificado → activarAlumnoDirecto).
-  // Este bloque queda solo para el ajuste fino de un alumno ya activo.
-  let accionBtn='';
-  if(acceso.clave==='activo'){
-    accionBtn=`
-    <input type="date" id="susc-exp-${uid}" value="${s.expiry||''}" ${s.expiry?'':'disabled'} style="width:auto;font-size:.78rem">
-    <label style="font-size:.72rem;display:flex;align-items:center;gap:3px"><input type="checkbox" id="susc-noexp-${uid}" ${s.expiry?'':'checked'} onchange="document.getElementById('susc-exp-${uid}').disabled=this.checked">Sin vencimiento</label>
-    <button class="btn bg2 xs" onclick="editarVencimientoSuscriptor('${uid}')">💾 Guardar vencimiento</button>`;
-  }
+  // Activar/desactivar y el vencimiento ya no viven acá: es un solo control
+  // en el header de la ficha (ver activoSwitch en renderAlumnosUnificado),
+  // para no repetir el mismo id de input en dos lugares del DOM.
+  const accionBtn='';
   // Cambiar la semana que ve el alumno en cualquier momento (no solo al
   // reactivarlo): elige una semana del plan y reinicia startDate a hoy para
   // que el cálculo de "semana actual" arranque desde ahí y siga avanzando.
@@ -5254,17 +5248,24 @@ async function renderAlumnosUnificado(searchTerm){
         </div>
       </div>`:'';
     const subProg=a.programs.find(p=>p.type==='subscription');
+    // Único control de acceso por alumno, siempre en el header (una sola
+    // fila, sin expandir la ficha): activar/desactivar + la fecha exacta de
+    // vencimiento, todo junto. No queda ningún otro lugar en la ficha
+    // expandida donde tocar esto.
     const activoSwitch=(()=>{
       if(subProg){
         const acceso=estadoAccesoAlumno(subProg.sub);
-        // Un solo botón de acceso por alumno, siempre en el header: activa o
-        // desactiva con un click, sin pedir elegir categoría ni expandir la
-        // ficha (activarAlumnoDirecto usa la categoría/plan que ya tiene y un
-        // vencimiento default de 30 días, ajustable después desde el detalle).
-        // La fecha exacta de vencimiento no se repite acá: se ve y se edita
-        // en un solo lugar, la fila de "Suscripción" de la ficha expandida.
-        if(acceso.clave==='activo')return`<button class="btn bgr xs" onclick="event.stopPropagation();toggleAlumnoActivo('${subProg.uid}',true)" title="Click para desactivar todo su acceso">🟢 Activo</button>`;
-        return`<button class="btn bg2 xs" onclick="event.stopPropagation();activarAlumnoDirecto('${subProg.uid}')" title="Activa con acceso por 30 días desde hoy">✅ Activar</button>`;
+        const uid=subProg.uid;
+        if(acceso.clave==='activo'){
+          const exp=subProg.sub.expiry||'';
+          return`<span onclick="event.stopPropagation()" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+            <input type="date" id="susc-exp-${uid}" value="${exp}" ${exp?'':'disabled'} style="width:auto;font-size:.78rem">
+            <label style="font-size:.7rem;display:flex;align-items:center;gap:3px"><input type="checkbox" id="susc-noexp-${uid}" ${exp?'':'checked'} onchange="document.getElementById('susc-exp-${uid}').disabled=this.checked">Sin vto.</label>
+            <button class="btn bg2 xs" onclick="editarVencimientoSuscriptor('${uid}')">💾</button>
+            <button class="btn bgr xs" onclick="toggleAlumnoActivo('${uid}',true)" title="Click para desactivar todo su acceso">🟢 Activo</button>
+          </span>`;
+        }
+        return`<button class="btn bg2 xs" onclick="event.stopPropagation();activarAlumnoDirecto('${uid}')" title="Activa con acceso por 30 días desde hoy">✅ Activar</button>`;
       }
       // Todavía no tiene cuenta propia (entra por link, sin login): no hay
       // ningún subscribers/{uid} donde aplicar el switch único. Se ofrece
