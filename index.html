@@ -6849,7 +6849,9 @@ async function renderAlumnoPlanView(sub,uid){
   let cats=null;
   if(categoria==='global'){
     cats=await getCategoriasSuscripcion();
-    categoria=alumnoState.categoria||cats.filter(c=>c.id!=='global')[0]?.id;
+    // No auto-elegir la primera categoría: con suscripción global se arranca
+    // sin nada seleccionado hasta que se toque uno de los botones de arriba.
+    categoria=alumnoState.categoria||null;
     if(categoria){
       const fijoSnap=await getDoc(doc(db,'planesFijos',categoria));
       planId=fijoSnap.exists()?fijoSnap.data().planId:null;
@@ -6878,6 +6880,15 @@ async function renderAlumnoPlanView(sub,uid){
 
   const contentEl=document.getElementById('alumno-cv-content');
   if(!planId){
+    // Suscripción global sin categoría elegida todavía (preview del admin):
+    // no buscar planes grupales ni mostrar "no está listo", solo pedir que
+    // se toque uno de los botones de arriba.
+    if(sub.categoria==='global'&&!categoria){
+      contentEl.innerHTML=`<div class="card" style="text-align:center;padding:30px 20px">
+        <p class="sub">Elegí una categoría arriba para ver ese plan.</p>
+      </div>`;
+      return;
+    }
     // Sin plan individual propio: puede que igual tenga acceso a planes
     // grupales asignados aparte — mostrar el primero en vez de "no listo".
     const gruposSinIndividual=findAllProgramsForAlumno(uid,sub.name,sub.email,null);
