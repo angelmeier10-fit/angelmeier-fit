@@ -2392,12 +2392,19 @@ let epCurrentWeek=1;
 let ncSavedId=null; // id del doc mientras se arma un cliente nuevo (autoguardado reusa el mismo)
 let ncAutosaveTimer=null;
 let ecAutosaveTimer=null;
+let epAutosaveTimer=null;
 function scheduleNcAutosave(){clearTimeout(ncAutosaveTimer);ncAutosaveTimer=setTimeout(()=>saveClient({silent:true}),2500)}
 function scheduleEcAutosave(){clearTimeout(ecAutosaveTimer);ecAutosaveTimer=setTimeout(()=>updateClient({silent:true}),2500)}
+function scheduleEpAutosave(){clearTimeout(epAutosaveTimer);epAutosaveTimer=setTimeout(()=>updatePlan({silent:true}),2500)}
 document.getElementById('panel-new').addEventListener('input',scheduleNcAutosave);
 document.getElementById('panel-new').addEventListener('click',e=>{const b=e.target.closest('button');if(b&&b.getAttribute('onclick')!=='saveClient()')scheduleNcAutosave()});
 document.getElementById('panel-edit').addEventListener('input',scheduleEcAutosave);
 document.getElementById('panel-edit').addEventListener('click',e=>{const b=e.target.closest('button');if(b&&b.getAttribute('onclick')!=='updateClient()')scheduleEcAutosave()});
+// "Editar plan" (planes-panel-edit) es la pantalla usada tanto para planes
+// grupales como para el plan personalizado 1:1 de un alumno — nunca tuvo
+// autoguardado, solo el botón manual "Guardar cambios".
+document.getElementById('planes-panel-edit').addEventListener('input',scheduleEpAutosave);
+document.getElementById('planes-panel-edit').addEventListener('click',e=>{const b=e.target.closest('button');if(b&&b.getAttribute('onclick')!=='updatePlan()')scheduleEpAutosave()});
 // El autoguardado espera 2.5s de inactividad. Si el usuario navega a otro
 // panel/alumno o cierra/oculta la pestaña antes de eso, el timer nunca
 // llegaba a disparar y el cambio se perdía. Forzamos el guardado pendiente
@@ -2405,6 +2412,7 @@ document.getElementById('panel-edit').addEventListener('click',e=>{const b=e.tar
 function flushPendingAutosave(){
   if(ncAutosaveTimer){clearTimeout(ncAutosaveTimer);ncAutosaveTimer=null;saveClient({silent:true})}
   if(ecAutosaveTimer){clearTimeout(ecAutosaveTimer);ecAutosaveTimer=null;updateClient({silent:true})}
+  if(epAutosaveTimer){clearTimeout(epAutosaveTimer);epAutosaveTimer=null;updatePlan({silent:true})}
 }
 document.addEventListener('visibilitychange',()=>{if(document.hidden)flushPendingAutosave()});
 window.addEventListener('pagehide',flushPendingAutosave);
@@ -5052,6 +5060,7 @@ async function ensurePlanesLoadedForAlumno(){
 }
 
 function showPlanesPanel(p,btn){
+  flushPendingAutosave();
   ['list','new','edit','members','macro'].forEach(id=>{
     const el=document.getElementById('planes-panel-'+id);if(el)el.style.display='none';
   });
@@ -5588,8 +5597,10 @@ async function savePlan(){
 }
 window.savePlan=savePlan;
 
-async function updatePlan(){
+async function updatePlan(opts={}){
+  const silent=!!opts.silent;
   const plan=planes.find(p=>p.id===editingPlanId);
+  if(!plan)return;
   plan.name=document.getElementById('ep-name').value;
   plan.desc=document.getElementById('ep-desc').value;
   plan.price=document.getElementById('ep-price').value;
@@ -5636,6 +5647,7 @@ async function updatePlan(){
   plan.activeWeek=epCurrentWeek;
   plan.days=epWeeklyData[epCurrentWeek];
   await setDoc(doc(db,'planes',editingPlanId),plan);
+  if(silent){toast('💾 Guardado automático');return}
   toast('✅ Plan actualizado');
   if(editingPersonalPlan){
     volverAAlumnosDesdeEdicion();
@@ -5785,6 +5797,7 @@ function renderPlanesList(){
 }
 
 function openEditPlan(id){
+  flushPendingAutosave();
   editingPlanId=id;
   const plan=planes.find(p=>p.id===id);
   document.getElementById('edit-plan-title').textContent='Editando: '+plan.name;
@@ -5826,6 +5839,7 @@ function openEditPlan(id){
 window.openEditPlan=openEditPlan;
 
 window.volverAAlumnosDesdeEdicion=function(){
+  flushPendingAutosave();
   editingPersonalPlan=false;
   document.getElementById('itp-list').style.display='inline-block';
   document.getElementById('itp-new').style.display='inline-block';
