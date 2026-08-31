@@ -45,7 +45,7 @@ label{font-size:.73rem;color:var(--mu);font-weight:500;text-transform:uppercase;
 input,textarea,select{background:var(--s2);border:1px solid var(--bd);color:var(--tx);border-radius:8px;padding:8px 11px;font-size:.86rem;font-family:inherit;transition:border-color .2s;width:100%}
 input:focus,textarea:focus,select:focus{outline:none;border-color:var(--ac2)}
 textarea{resize:vertical;min-height:52px}
-.btn{padding:8px 16px;border-radius:9px;border:none;cursor:pointer;font-size:.83rem;font-weight:600;font-family:inherit;transition:all .18s;display:inline-flex;align-items:center;gap:5px}
+.btn{padding:8px 16px;border-radius:9px;border:none;cursor:pointer;font-size:.83rem;font-weight:600;font-family:inherit;transition:all .18s;display:inline-flex;align-items:center;gap:5px;max-width:100%;overflow-wrap:break-word}
 .bp{background:linear-gradient(135deg,var(--ac),#818cf8);color:#fff}.bp:hover{opacity:.9;transform:translateY(-1px)}
 .bd2{background:#ff4d6d18;color:var(--rd);border:1px solid #ff4d6d33}.bd2:hover{background:#ff4d6d33}
 .bg2{background:var(--s2);color:var(--mu)}.bg2:hover{color:var(--tx)}
@@ -84,9 +84,9 @@ textarea{resize:vertical;min-height:52px}
 .day-title{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1rem;display:flex;align-items:center;gap:8px}
 .day-toggle-arr{color:var(--mu);font-size:.82rem;transition:transform .22s;margin-left:4px}
 .day-block.collapsed .day-toggle-arr{transform:rotate(-90deg)}
-.day-name-input{background:transparent;border:none;border-bottom:1px solid var(--bd);color:var(--tx);font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.95rem;padding:2px 6px;width:180px}
+.day-name-input{background:transparent;border:none;border-bottom:1px solid var(--bd);color:var(--tx);font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:.95rem;padding:2px 6px;width:180px;max-width:100%}
 .day-name-input:focus{outline:none;border-color:var(--ac2)}
-.day-actions{display:flex;gap:5px;flex-wrap:wrap}
+.day-actions{display:flex;gap:5px;flex-wrap:wrap;min-width:0;max-width:100%}
 .day-block.collapsed .day-actions{display:none}
 .day-body{padding:14px 16px}
 .day-block.collapsed .day-body{display:none}
