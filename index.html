@@ -2349,6 +2349,7 @@ function compareDates(a,b){
 }
 
 function showPanel(p,btn){
+  flushPendingAutosave();
   ['new','edit','macro','alumnosuni'].forEach(id=>{const el=document.getElementById('panel-'+id);if(el)el.style.display='none';});
   document.getElementById('panel-'+p).style.display='block';
   document.querySelectorAll('.itab').forEach(t=>t.classList.remove('active'));
@@ -2397,6 +2398,16 @@ document.getElementById('panel-new').addEventListener('input',scheduleNcAutosave
 document.getElementById('panel-new').addEventListener('click',e=>{const b=e.target.closest('button');if(b&&b.getAttribute('onclick')!=='saveClient()')scheduleNcAutosave()});
 document.getElementById('panel-edit').addEventListener('input',scheduleEcAutosave);
 document.getElementById('panel-edit').addEventListener('click',e=>{const b=e.target.closest('button');if(b&&b.getAttribute('onclick')!=='updateClient()')scheduleEcAutosave()});
+// El autoguardado espera 2.5s de inactividad. Si el usuario navega a otro
+// panel/alumno o cierra/oculta la pestaña antes de eso, el timer nunca
+// llegaba a disparar y el cambio se perdía. Forzamos el guardado pendiente
+// en esos momentos de salida.
+function flushPendingAutosave(){
+  if(ncAutosaveTimer){clearTimeout(ncAutosaveTimer);ncAutosaveTimer=null;saveClient({silent:true})}
+  if(ecAutosaveTimer){clearTimeout(ecAutosaveTimer);ecAutosaveTimer=null;updateClient({silent:true})}
+}
+document.addEventListener('visibilitychange',()=>{if(document.hidden)flushPendingAutosave()});
+window.addEventListener('pagehide',flushPendingAutosave);
 
 function weekStoreFor(prefix){
   const stores={
@@ -3776,6 +3787,7 @@ async function duplicateClient(id){
 window.duplicateClient=duplicateClient;
 
 function openEdit(id){
+  flushPendingAutosave();
   editingId=id;const c=clients.find(cl=>cl.id===id);
   // Switch to trainer view first
   document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
