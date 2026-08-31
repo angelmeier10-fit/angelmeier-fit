@@ -1477,6 +1477,11 @@ const isClientLink=new URLSearchParams(location.search).get('plan')||new URLSear
 const isAlumnoSignup=new URLSearchParams(location.search).get('alumno')==='1'||location.pathname.replace(/\/+$/,'').endsWith('/suscripcion');
 const isDesafioLanding=location.pathname.replace(/\/+$/,'').endsWith('/desafio-gluteos');
 const ADMIN_EMAIL='angelmeier10@gmail.com';
+// Google puede devolver el email con mayúsculas/espacios distintos a como
+// quedó tipeado acá; comparar con === hacía que el login con Google fallara
+// en silencio (mandaba al entrenador a la vista de alumno) aunque hubiera
+// elegido la cuenta correcta.
+function isAdminEmail(email){return (email||'').trim().toLowerCase()===ADMIN_EMAIL}
 
 // Detecta navegadores embebidos (WhatsApp, Instagram, Facebook, etc.): Google
 // bloquea el login por OAuth ahí ("This browser may not be secure") sin tirar
@@ -1570,7 +1575,7 @@ window.addEventListener('unhandledrejection',e=>{
   // por token vencido — es un bug real de reglas/datos. Forzar logout ahí
   // solo te tira afuera de la sesión sin arreglar nada; lo dejamos pasar
   // (queda en consola) para poder reintentar la acción que falló.
-  if(auth.currentUser?.email===ADMIN_EMAIL){console.error('permission-denied (admin)',e.reason);return;}
+  if(isAdminEmail(auth.currentUser?.email)){console.error('permission-denied (admin)',e.reason);return;}
   recoveringFromAuthError=true;
   e.preventDefault();
   localStorage.removeItem('amfit-had-session');
@@ -1603,7 +1608,7 @@ onAuthStateChanged(auth,async(user)=>{
   }
   if(isDesafioLanding){
     if(user){
-      if(user.email===ADMIN_EMAIL){
+      if(isAdminEmail(user.email)){
         // Igual que en isAlumnoSignup: no usar location.pathname para evitar
         // loops, y no mezclar la sesión del entrenador con esta vista pública.
         hideLoading();
@@ -1690,7 +1695,7 @@ onAuthStateChanged(auth,async(user)=>{
   }
   if(isAlumnoSignup){
     if(user){
-      if(user.email===ADMIN_EMAIL){
+      if(isAdminEmail(user.email)){
         // No usar location.pathname acá: si vino por /suscripcion, redirigir a
         // esa misma ruta causaría un loop infinito (isAlumnoSignup seguiría en true).
         location.href=location.pathname;
@@ -1706,7 +1711,7 @@ onAuthStateChanged(auth,async(user)=>{
     return;
   }
   if(user){
-    if(user.email!==ADMIN_EMAIL){
+    if(!isAdminEmail(user.email)){
       // Alguien que no es el entrenador inició sesión por la URL raíz (no
       // vino por /suscripcion ni ?alumno=1): antes esto igual arrancaba el
       // panel de entrenador (los datos fallaban por permisos, pero la
@@ -3925,7 +3930,7 @@ async function renderCV(clientId){
   // Email verification (se salta si es el entrenador viendo su propio
   // simulador de vista de cliente: ya está autenticado, no tiene sentido
   // pedirle el email/celular del cliente para poder previsualizar).
-  const isTrainerPreview=auth.currentUser?.email===ADMIN_EMAIL;
+  const isTrainerPreview=isAdminEmail(auth.currentUser?.email);
   if((c.email||c.whatsapp)&&!isTrainerPreview){
     const verified=localStorage.getItem('verified-'+clientId);
     if(!verified){
