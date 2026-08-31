@@ -1140,7 +1140,7 @@ function toggleTheme(){
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, getDoc, getDocs, getDocFromCache, getDocsFromCache, getDocFromServer, getDocsFromServer, setDoc, updateDoc, deleteDoc, addDoc, collection, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence, GoogleAuthProvider, signInWithPopup, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 /* r3 */
 (async()=>{
@@ -1265,10 +1265,22 @@ window.doLogin=async function(){
     errEl.textContent=msgs[err.code]||('Usuario o contraseña incorrectos ('+err.code+').');
   }
 };
+// En mobile (Chrome Android/iOS), signInWithPopup falla seguido en silencio
+// -el popup no puede devolver el resultado a la pestaña que lo abrió- y el
+// usuario simplemente vuelve al login sin ningún error visible. signInWithRedirect
+// evita el popup: navega afuera y vuelve, y el resultado se procesa más abajo
+// con getRedirectResult(). En desktop seguimos con popup (mejor UX, no navega).
+function isMobileUA(){
+  return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent||'');
+}
 window.doGoogleLogin=async function(){
   const errEl=document.getElementById('login-error');
   errEl.style.color='var(--rd)';
   try{
+    if(isMobileUA()){
+      await signInWithRedirect(auth,new GoogleAuthProvider());
+      return;
+    }
     await signInWithPopup(auth,new GoogleAuthProvider());
   }catch(err){
     const msgs={
@@ -1279,6 +1291,17 @@ window.doGoogleLogin=async function(){
     errEl.textContent=msgs[err.code]||('No se pudo iniciar sesión con Google ('+err.code+').');
   }
 };
+getRedirectResult(auth).catch(err=>{
+  const errEl=document.getElementById('login-error');
+  if(!errEl||!err||err.code==='auth/no-auth-event')return;
+  const msgs={
+    'auth/operation-not-allowed':'Google no está habilitado en Firebase. Activalo en Authentication → Sign-in method.',
+    'auth/network-request-failed':'Sin conexión. Revisá tu internet e intentá de nuevo.',
+    'auth/account-exists-with-different-credential':'Ese email ya tiene una cuenta creada con contraseña. Ingresá con email y contraseña.'
+  };
+  errEl.style.color='var(--rd)';
+  errEl.textContent=msgs[err.code]||('No se pudo iniciar sesión con Google ('+err.code+').');
+});
 window.doForgotPassword=async function(){
   const email=document.getElementById('login-email').value.trim();
   const errEl=document.getElementById('login-error');
