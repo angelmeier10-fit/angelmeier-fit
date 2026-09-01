@@ -159,7 +159,8 @@ textarea{resize:vertical;min-height:52px}
 .sc-add:hover{text-decoration:underline}
 .cf-blk{border:2px solid var(--bd);border-radius:11px;margin-bottom:10px;overflow:hidden}
 .cf-hdr{padding:11px 14px;display:flex;align-items:center;justify-content:space-between;gap:7px;flex-wrap:wrap}
-.cf-lbl{font-family:'Space Grotesk',sans-serif;font-size:.9rem;font-weight:700;display:flex;align-items:center;gap:7px}
+.cf-lbl{font-family:'Space Grotesk',sans-serif;font-size:.9rem;font-weight:700;display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 7px}
+.cf-lbl-desc{flex-basis:100%}
 .cf-body{padding:13px 14px;display:flex;flex-direction:column;gap:9px}
 .cf-meta{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
 .cf-section{border:1.5px dashed var(--bd);border-radius:9px;padding:11px;margin-bottom:9px;display:flex;flex-direction:column;gap:9px}
@@ -2791,8 +2792,8 @@ function addGymBlock(bodyId,type,data=null){
   const div=document.createElement('div');div.className='blk';div.id=gid;div.dataset.kind='gym';div.dataset.type=type;
   div.innerHTML=`<div class="blk-hdr" onclick="toggleBlk('${gid}',event)">
     <span class="blk-type ${tc}">${typeName}</span>
-    <span class="blk-ex-names" id="${gid}-names" style="font-size:.78rem;color:var(--mu);margin-left:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
-    <div style="display:flex;align-items:center;gap:6px;flex:1;margin-left:8px;flex-wrap:wrap" onclick="event.stopPropagation()">
+    <span class="blk-ex-names" id="${gid}-names" style="font-size:.78rem;color:var(--mu);margin-left:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:30px"></span>
+    <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;margin-left:8px" onclick="event.stopPropagation()">
       <label style="font-size:.7rem;color:var(--mu);white-space:nowrap">Descanso:</label>
       <input type="text" value="${data?.rest||(type==='simple'?'60s':'90s')}" class="sg-rest" style="max-width:70px;font-size:.78rem;padding:4px 8px">
     </div>
@@ -3020,7 +3021,7 @@ function addCFBlock(bodyId,cftype,data=null){
   const bid='cf'+Date.now()+Math.random().toString(36).slice(2,5);
   const div=document.createElement('div');div.className='cf-blk';div.id=bid;div.dataset.kind='cf';div.dataset.cftype=cftype;
   div.innerHTML=`<div class="cf-hdr" style="background:${cfg.color}11;border-bottom:1px solid ${cfg.color}33" onclick="toggleBlk('${bid}',event)">
-    <div class="cf-lbl">${cfg.icon} <span style="color:${cfg.color}">${cfg.label}</span> <span style="font-size:.72rem;color:var(--mu);font-weight:400">${cfg.desc}</span></div>
+    <div class="cf-lbl">${cfg.icon} <span style="color:${cfg.color}">${cfg.label}</span> <span class="cf-lbl-desc" style="font-size:.72rem;color:var(--mu);font-weight:400">${cfg.desc}</span></div>
     <button class="btn bg2 xs" onclick="event.stopPropagation();guardarBloqueComoPlantilla('${bid}')" title="Guardar como plantilla">💾</button>
     <button class="btn bg2 xs" onclick="event.stopPropagation();moveBlk('${bid}',-1)" title="Mover arriba">↑</button>
     <button class="btn bg2 xs" onclick="event.stopPropagation();moveBlk('${bid}',1)" title="Mover abajo">↓</button>
