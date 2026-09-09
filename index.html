@@ -10,7 +10,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="AM Fit">
-<link rel="apple-touch-icon" href="icons/icon-192.svg">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <style>
 
 
@@ -336,7 +336,15 @@ textarea{resize:vertical;min-height:52px}
 </head>
 <body>
 
-
+<div id="install-banner" style="display:none;position:fixed;left:0;right:0;bottom:0;z-index:10000;background:var(--s1);border-top:1px solid var(--bd);padding:12px 16px;align-items:center;gap:12px;box-shadow:0 -4px 16px rgba(0,0,0,.2)">
+  <svg width="30" height="30" viewBox="0 0 100 100" style="flex-shrink:0"><defs><linearGradient id="installlogo-g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#c084fc"/><stop offset="100%" stop-color="#7c5cbf"/></linearGradient></defs><circle cx="48" cy="22" r="12" fill="url(#installlogo-g)"/><path d="M88,38 C76,58 60,64 44,56 C30,49 18,54 8,74 C22,66 36,63 48,67 C64,72 78,64 88,38 Z" fill="url(#installlogo-g)"/></svg>
+  <div style="flex:1;min-width:0">
+    <div style="font-weight:600;font-size:.9rem">Instalá la app</div>
+    <div id="install-banner-text" style="color:var(--mu);font-size:.78rem">Accedé más rápido, sin pasar por el navegador.</div>
+  </div>
+  <button id="install-banner-btn" class="btn bp sm" style="flex-shrink:0">Instalar</button>
+  <button id="install-banner-close" aria-label="Cerrar" style="flex-shrink:0;background:none;border:none;color:var(--mu);font-size:1.3rem;line-height:1;cursor:pointer;padding:4px">×</button>
+</div>
 
 <div id="loading">
   <div class="spin"></div>
@@ -540,9 +548,9 @@ setTimeout(()=>{
     </div>
     <div class="card" style="margin-bottom:16px;padding:16px">
       <h3 style="margin-bottom:10px;font-size:.95rem">➕ Dar de alta un alumno vos mismo</h3>
-      <p class="sub" style="margin-bottom:10px">Para alguien que te paga en persona y no quiere/puede registrarse solo. Le creás la cuenta con una contraseña que elegís vos y le pasás el link para que ingrese.</p>
-      <div class="fg full" style="margin-bottom:8px"><label>Nombre</label><input id="uni-new-name" placeholder="Nombre y apellido"></div>
-      <div class="fg full" style="margin-bottom:8px"><label>Email</label><input id="uni-new-email" type="email" placeholder="alumno@gmail.com"></div>
+      <p class="sub" style="margin-bottom:10px">Para alguien que te paga en persona y no quiere/puede registrarse solo. Le creás la cuenta con una contraseña que elegís vos y le pasás el link para que ingrese. El email se autocompleta con tu Gmail + el nombre (así el reseteo de contraseña te llega siempre a vos).</p>
+      <div class="fg full" style="margin-bottom:8px"><label>Nombre</label><input id="uni-new-name" placeholder="Nombre y apellido" oninput="sugerirEmailAlumno()"></div>
+      <div class="fg full" style="margin-bottom:8px"><label>Email</label><input id="uni-new-email" type="email" placeholder="alumno@gmail.com" oninput="marcarEmailAlumnoEditadoManual()"></div>
       <div class="fg full" style="margin-bottom:8px"><label>Contraseña</label><input id="uni-new-pass" type="text" placeholder="Mínimo 6 caracteres"></div>
       <div class="fg full" style="margin-bottom:10px"><label>Categoría</label><select id="uni-new-cat"></select></div>
       <button class="btn bp" onclick="altaManualAlumno('uni-new-name','uni-new-email','uni-new-pass','uni-new-cat',renderAlumnosUnificado)" style="width:100%;justify-content:center">Crear alumno</button>
@@ -7357,6 +7365,30 @@ async function crearPlanPersonalVacio(nombreAlumno){
   return planId;
 }
 
+// Autocompleta el email del alta manual con un alias "+nombre" sobre el
+// Gmail del propio Angel (ej. angelmeier10+mariagomez@gmail.com). Gmail
+// ignora todo lo que va después del "+" al entregar el correo, así que estas
+// direcciones son únicas para Firebase Auth pero el mail de "restablecer
+// contraseña" siempre le llega a Angel — no depende de que el alumno tenga
+// un email real ni de que lo recuerde.
+const ALUMNO_EMAIL_ALIAS_BASE='angelmeier10@gmail.com';
+// true en cuanto el admin toca el campo de email a mano: deja de autogenerarlo
+// hasta que lo vacíe (o se limpie el form al crear el alumno).
+let emailAlumnoEditadoManual=false;
+window.sugerirEmailAlumno=function(){
+  const nameEl=document.getElementById('uni-new-name');
+  const emailEl=document.getElementById('uni-new-email');
+  if(!nameEl||!emailEl)return;
+  if(emailAlumnoEditadoManual && emailEl.value.trim())return;
+  emailAlumnoEditadoManual=false;
+  const slug=nameEl.value.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'');
+  const [user,domain]=ALUMNO_EMAIL_ALIAS_BASE.split('@');
+  emailEl.value=slug?`${user}+${slug}@${domain}`:'';
+};
+window.marcarEmailAlumnoEditadoManual=function(){
+  emailAlumnoEditadoManual=true;
+};
+
 window.altaManualAlumno=async function(nameId,emailId,passId,catId,refreshFn){
   nameId=nameId||'uni-new-name';emailId=emailId||'uni-new-email';passId=passId||'uni-new-pass';catId=catId||'uni-new-cat';
   refreshFn=refreshFn||(()=>renderAlumnosUnificado(document.getElementById('uni-search')?.value));
@@ -7382,6 +7414,7 @@ window.altaManualAlumno=async function(nameId,emailId,passId,catId,refreshFn){
     document.getElementById(nameId).value='';
     document.getElementById(emailId).value='';
     document.getElementById(passId).value='';
+    if(emailId==='uni-new-email')emailAlumnoEditadoManual=false;
     toast('✅ Alumno creado — pasale el link y la contraseña. Activalo abajo cuando pague.');
     suscriptoresCache=null;
     refreshFn();
@@ -9108,6 +9141,49 @@ if('serviceWorker' in navigator){
     location.reload();
   });
 }
+
+// Banner "Instalar app": Chrome/Android disparan beforeinstallprompt;
+// iOS Safari no tiene ese evento, así que ahí mostramos instrucciones manuales.
+(function(){
+  const banner=document.getElementById('install-banner');
+  const banterText=document.getElementById('install-banner-text');
+  const btn=document.getElementById('install-banner-btn');
+  const closeBtn=document.getElementById('install-banner-close');
+  if(!banner)return;
+
+  const yaInstalada=window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone===true;
+  const cerradoAntes=localStorage.getItem('install-banner-dismissed')==='1';
+  if(yaInstalada || cerradoAntes)return;
+
+  const esIOS=/iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+  let deferredPrompt=null;
+
+  function ocultar(){
+    banner.style.display='none';
+    localStorage.setItem('install-banner-dismissed','1');
+  }
+  closeBtn.addEventListener('click',ocultar);
+
+  if(esIOS){
+    banterText.textContent='Tocá Compartir y luego "Agregar a inicio".';
+    btn.style.display='none';
+    banner.style.display='flex';
+  }else{
+    window.addEventListener('beforeinstallprompt',(e)=>{
+      e.preventDefault();
+      deferredPrompt=e;
+      banner.style.display='flex';
+    });
+    btn.addEventListener('click',async ()=>{
+      if(!deferredPrompt)return;
+      deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+      deferredPrompt=null;
+      ocultar();
+    });
+    window.addEventListener('appinstalled',ocultar);
+  }
+})();
 </script>
 </body>
 </html>
