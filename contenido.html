@@ -1057,9 +1057,9 @@ function startPanel(){
     },
     {
       id: 'video-lo-que-nadie-te-dice', name: 'Video — Lo que nadie te dice antes de empezar a entrenar (Entrenamiento)',
-      post: 'Guion para hablar a cámara (45-60 seg), adaptado a personas sedentarias y adultos mayores que están por arrancar:\n\n[0-4s] Hook:\n"Nadie te dice esto antes de empezar a entrenar. Te lo voy a decir yo."\n\n[4-12s]\n"Vas a tener dolor muscular en lugares que ni sabías que existían. Es normal, no significa que te lastimaste."\n\n[12-20s]\n"El primer mes no vas a ver ningún cambio físico. Pero vas a dormir mejor, vas a estar de mejor humor, vas a tener más paciencia. Eso también es progreso."\n\n[20-28s]\n"Vas a faltar días. Vas a fallar semanas. Y eso no borra nada de lo que ya avanzaste."\n\n[28-36s]\n"Lo difícil no es el gimnasio ni la rutina. Lo difícil es decidir moverte el día que no tenés ganas."\n\n[36-44s]\n"Por eso armé un programa pensado para arrancar de cero, sin exigencias imposibles: 30 minutos, 3 veces por semana, a tu ritmo."\n\n[44-50s] CTA:\n"Si estabas esperando una señal para empezar, esta es. Escribime y arrancamos."\n\nSugerencia visual: hablás a cámara con cortes cada 1-2 frases, texto en pantalla reforzando cada punto clave, música tranquila de fondo.',
+      post: 'Lo que nadie te dice antes de empezar a entrenar 🎥\n\nDolor en lugares que ni sabías que existían. Un mes sin ver cambios físicos, pero durmiendo mejor y con más paciencia. Días que vas a faltar y semanas que vas a fallar — y eso no borra nada de lo que avanzaste.\n\nLo difícil no es el gimnasio ni la rutina. Lo difícil es decidir moverte el día que no tenés ganas.\n\nPor eso armé un programa para arrancar de cero, sin exigencias imposibles: 30 minutos, 3 veces por semana, a tu ritmo.\n\nSi estabas esperando una señal para empezar, esta es 👇 Escribime y arrancamos — link en bio\n\n#empezarAentrenar #adultosmayores #entrenamientopersonalizado #constancia',
       stories: 'Historia 1 (repost + sticker de encuesta): ¿Estás por arrancar a entrenar? [Sí, ya arranqué / Todavía no]\nHistoria 2: Subí un video con lo que nadie te dice antes de empezar a entrenar 💜 Mirá el reel 👆\nHistoria 3 (CTA): Si estabas esperando una señal para empezar, esta es. Escribime y arrancamos — link en bio',
-      slides: '',
+      slides: 'Guion para hablar a cámara (45-60 seg), adaptado a personas sedentarias y adultos mayores que están por arrancar:\n\n[0-4s] Hook:\n"Nadie te dice esto antes de empezar a entrenar. Te lo voy a decir yo."\n\n[4-12s]\n"Vas a tener dolor muscular en lugares que ni sabías que existían. Es normal, no significa que te lastimaste."\n\n[12-20s]\n"El primer mes no vas a ver ningún cambio físico. Pero vas a dormir mejor, vas a estar de mejor humor, vas a tener más paciencia. Eso también es progreso."\n\n[20-28s]\n"Vas a faltar días. Vas a fallar semanas. Y eso no borra nada de lo que ya avanzaste."\n\n[28-36s]\n"Lo difícil no es el gimnasio ni la rutina. Lo difícil es decidir moverte el día que no tenés ganas."\n\n[36-44s]\n"Por eso armé un programa pensado para arrancar de cero, sin exigencias imposibles: 30 minutos, 3 veces por semana, a tu ritmo."\n\n[44-50s] CTA:\n"Si estabas esperando una señal para empezar, esta es. Escribime y arrancamos."\n\nSugerencia visual: hablás a cámara con cortes cada 1-2 frases, texto en pantalla reforzando cada punto clave, música tranquila de fondo.',
       img: `Identidad visual de mis piezas de Instagram/TikTok:\n- Foto real de gimnasio o consultorio (no ilustración), iluminación premium con tono violeta.\n- Panel diagonal violeta sólido #7B4FE0 sobre fondo negro, cubriendo aproximadamente el 40-45% izquierdo de la pieza, con corte diagonal pronunciado hacia la foto que ocupa el resto.\n- Grilla de puntos violeta chica arriba a la izquierda.\n- Debajo del título, lista vertical de 2-3 íconos circulares violeta rellenos con símbolo blanco simple adentro, cada uno con etiqueta corta en mayúsculas a la derecha.\n- Abajo a la izquierda: logo real — marca "AM" en violeta, línea vertical fina separadora, "ANGEL MEIER" en blanco bold, y debajo tagline "ENTRENAMIENTO PERSONALIZADO" en violeta chico.\n- Paleta estricta: violeta #7B4FE0, negro, blanco. Sin gradientes ni efecto 3D.\n\nNecesito la portada para un reel/video sobre "lo que nadie te dice antes de empezar a entrenar", pensado para adultos sedentarios que están arrancando.\n\nContenido de esta pieza:\n- Foto: una persona mayor o sedentaria (no atleta), en ropa deportiva cómoda, en pose de arranque/estiramiento, gesto de esfuerzo genuino pero seguro, en el lado derecho de la imagen.\n- Título en tipografía condensada bold, mayúsculas, en 3 líneas: "LO QUE NADIE TE DICE ANTES DE EMPEZAR A ENTRENAR", con la palabra "NADIE" en violeta y el resto en blanco. Línea divisoria violeta fina debajo del título.\n- Lista de 3 íconos verticales con etiquetas: "CONSTANCIA", "PACIENCIA", "RESULTADOS REALES".\n\nFormato: generame dos versiones — 1080x1350 (feed Instagram) y 1080x1920 (TikTok / reel), mismo diseño adaptado a cada proporción.`,
     },
   ];
@@ -1444,6 +1444,17 @@ function startPanel(){
           topics.push({ ...SEED_TOPICS.find(s => s.id === 'video-lo-que-nadie-te-dice') });
         }
         setDoc(stateRef, { addedVideoLoQueNadie: true }, { merge: true }).catch(()=>{});
+        saveTopics();
+      }
+      // Corrección puntual: el guion estaba en el campo "post" en vez de "slides", y faltaba el copy real del post.
+      if (!data.fixedVideoLoQueNadiePost) {
+        const t = topics.find(x => x.id === 'video-lo-que-nadie-te-dice');
+        const seed = SEED_TOPICS.find(s => s.id === 'video-lo-que-nadie-te-dice');
+        if (t && seed) {
+          t.post = seed.post;
+          t.slides = seed.slides;
+        }
+        setDoc(stateRef, { fixedVideoLoQueNadiePost: true }, { merge: true }).catch(()=>{});
         saveTopics();
       }
       if (!data.recurrentes) {
