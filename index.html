@@ -386,7 +386,7 @@ setTimeout(()=>{
     <div id="login-subtitle" style="color:var(--mu);font-size:.85rem;margin-bottom:24px">Panel de entrenador</div>
     <input id="login-name" type="text" placeholder="Nombre y apellido" style="display:none;margin-bottom:10px">
     <input id="login-whatsapp" type="tel" placeholder="Celular (WhatsApp)" style="display:none;margin-bottom:10px" autocomplete="tel">
-    <input id="login-email" type="email" placeholder="Email" style="margin-bottom:10px" autocomplete="username">
+    <input id="login-email" type="text" placeholder="Email o usuario" style="margin-bottom:10px" autocomplete="username">
     <div style="position:relative;margin-bottom:5px">
       <input id="login-pass" type="password" placeholder="Contraseña" style="padding-right:42px" autocomplete="current-password" oninput="checkPassReqs()" onkeydown="if(event.key==='Enter')doLogin()">
       <span onclick="togglePassVisibility()" id="pass-eye" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;color:var(--mu);font-size:1rem">👁️</span>
@@ -1217,12 +1217,26 @@ window.toggleSignupMode=function(){
   document.getElementById('login-name').style.display=(signupMode&&isAlumnoSignup)?'block':'none';
   checkPassReqs();
 };
+// Alias de email para alumnos dados de alta a mano por Angel (ver
+// window.altaManualAlumno / sugerirEmailAlumno más abajo): en vez de pedirles
+// que tipeen "angelmeier10+maria@gmail.com" completo para entrar, alcanza con
+// que escriban "maria" — acá se reconstruye el email completo antes de
+// llamar a Firebase Auth. No hace falta consultar Firestore (sería inseguro
+// sin estar ya logueado): es pura transformación de texto sobre el mismo
+// alias de Gmail que ya se usa para el reseteo de contraseña.
+const ALUMNO_EMAIL_ALIAS_BASE='angelmeier10@gmail.com';
+function slugUsuarioAlumno(s){return (s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'');}
+function emailAliasAlumno(usuario){const [user,domain]=ALUMNO_EMAIL_ALIAS_BASE.split('@');return `${user}+${usuario}@${domain}`;}
+
 window.doLogin=async function(){
-  const email=document.getElementById('login-email').value.trim();
+  const emailInput=document.getElementById('login-email').value.trim();
   const pass=document.getElementById('login-pass').value;
   const errEl=document.getElementById('login-error');
   errEl.style.color='var(--rd)';
-  if(!email||!pass){errEl.textContent='Completá email y contraseña.';return}
+  if(!emailInput||!pass){errEl.textContent='Completá email y contraseña.';return}
+  // Solo para iniciar sesión (no en alta nueva): si lo que escribió no tiene
+  // "@", lo tratamos como nombre de usuario en vez de email completo.
+  const email=(!signupMode && !emailInput.includes('@'))?emailAliasAlumno(slugUsuarioAlumno(emailInput)):emailInput;
   if(signupMode){
     if(!passReqsOk(pass)){errEl.textContent='La contraseña no cumple los requisitos de arriba.';return}
     const pass2=document.getElementById('login-pass2').value;
@@ -1312,9 +1326,10 @@ getRedirectResult(auth).catch(err=>{
   errEl.textContent=msgs[err.code]||('No se pudo iniciar sesión con Google ('+err.code+').');
 });
 window.doForgotPassword=async function(){
-  const email=document.getElementById('login-email').value.trim();
+  const emailInput=document.getElementById('login-email').value.trim();
   const errEl=document.getElementById('login-error');
-  if(!email){errEl.style.color='var(--rd)';errEl.textContent='Escribí tu email arriba y tocá de nuevo "Olvidé mi contraseña".';return}
+  if(!emailInput){errEl.style.color='var(--rd)';errEl.textContent='Escribí tu email arriba y tocá de nuevo "Olvidé mi contraseña".';return}
+  const email=emailInput.includes('@')?emailInput:emailAliasAlumno(slugUsuarioAlumno(emailInput));
   try{
     await sendPasswordResetEmail(auth,email);
     errEl.style.color='var(--gr)';
@@ -7366,12 +7381,8 @@ async function crearPlanPersonalVacio(nombreAlumno){
 }
 
 // Autocompleta el email del alta manual con un alias "+nombre" sobre el
-// Gmail del propio Angel (ej. angelmeier10+mariagomez@gmail.com). Gmail
-// ignora todo lo que va después del "+" al entregar el correo, así que estas
-// direcciones son únicas para Firebase Auth pero el mail de "restablecer
-// contraseña" siempre le llega a Angel — no depende de que el alumno tenga
-// un email real ni de que lo recuerde.
-const ALUMNO_EMAIL_ALIAS_BASE='angelmeier10@gmail.com';
+// Gmail del propio Angel (ej. angelmeier10+mariagomez@gmail.com) — ver
+// ALUMNO_EMAIL_ALIAS_BASE / emailAliasAlumno junto a doLogin más arriba.
 // true en cuanto el admin toca el campo de email a mano: deja de autogenerarlo
 // hasta que lo vacíe (o se limpie el form al crear el alumno).
 let emailAlumnoEditadoManual=false;
@@ -7381,9 +7392,8 @@ window.sugerirEmailAlumno=function(){
   if(!nameEl||!emailEl)return;
   if(emailAlumnoEditadoManual && emailEl.value.trim())return;
   emailAlumnoEditadoManual=false;
-  const slug=nameEl.value.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'');
-  const [user,domain]=ALUMNO_EMAIL_ALIAS_BASE.split('@');
-  emailEl.value=slug?`${user}+${slug}@${domain}`:'';
+  const slug=slugUsuarioAlumno(nameEl.value);
+  emailEl.value=slug?emailAliasAlumno(slug):'';
 };
 window.marcarEmailAlumnoEditadoManual=function(){
   emailAlumnoEditadoManual=true;
