@@ -1,12 +1,13 @@
-const CACHE = 'amfit-v10';
+const CACHE = 'amfit-v11';
 const ASSETS = [
   './',
   './index.html',
   './anamnesis_digital.html',
   './manifest.json',
-  './icons/icon-192.svg',
-  './icons/icon-512.svg',
-  './icons/icon-maskable.svg',
+  './icons/icon-192.png',
+  './icons/icon-512.png',
+  './icons/icon-maskable.png',
+  './icons/apple-touch-icon.png',
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js',
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js',
   'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js'
