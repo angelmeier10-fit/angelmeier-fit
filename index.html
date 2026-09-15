@@ -3772,11 +3772,15 @@ async function saveClient(opts={}){
     mpLink:document.getElementById('nc-mp').value.trim(),payStatus:document.getElementById('nc-paid').value,expiry:document.getElementById('nc-expiry').value||'',startDate:(document.getElementById('nc-startdate')||{}).value||'',totalWeeks:parseInt((document.getElementById('nc-totalweeks')||{}).value)||12,mesoWeeks:parseInt((document.getElementById('nc-mesoweeks')||{}).value)||4,currentWeekManual:parseInt((document.getElementById('nc-currentweek')||{}).value)||null,
     weeks:ncWeeklyData,activeWeek:ncCurrentWeek,
     days:ncWeeklyData[ncCurrentWeek],progress:{},createdAt:new Date().toLocaleDateString('es-AR')};
-  await setDoc(doc(db,'clients',id),client);
+  try{
+    await setDoc(doc(db,'clients',id),client);
+  }catch(err){
+    toast('⚠️ No se pudo guardar (revisá tu conexión)');
+    return;
+  }
   const idx=clients.findIndex(c=>c.id===id);
   if(idx>=0)clients[idx]=client;else clients.push(client);
-  if(silent){toast('💾 Guardado automático')}
-  else{toast('✅ Cliente guardado en la nube');showPanel('alumnosuni',document.getElementById('it-alumnosuni'))}
+  if(!silent){toast('✅ Cliente guardado en la nube');showPanel('alumnosuni',document.getElementById('it-alumnosuni'))}
 }
 window.saveClient=saveClient;
 
@@ -3806,9 +3810,13 @@ async function updateClient(opts={}){
   c.weeks=ecWeeklyData;
   c.activeWeek=ecCurrentWeek;
   c.days=ecWeeklyData[ecCurrentWeek];
-  await setDoc(doc(db,'clients',editingId),c);
-  if(silent){toast('💾 Guardado automático')}
-  else{toast('✅ Cliente actualizado en la nube');showPanel('alumnosuni',document.getElementById('it-alumnosuni'))}
+  try{
+    await setDoc(doc(db,'clients',editingId),c);
+  }catch(err){
+    toast('⚠️ No se pudo guardar (revisá tu conexión)');
+    return;
+  }
+  if(!silent){toast('✅ Cliente actualizado en la nube');showPanel('alumnosuni',document.getElementById('it-alumnosuni'))}
 }
 window.updateClient=updateClient;
 
@@ -5698,8 +5706,13 @@ async function updatePlan(opts={}){
   plan.weeks=epWeeklyData;
   plan.activeWeek=epCurrentWeek;
   plan.days=epWeeklyData[epCurrentWeek];
-  await setDoc(doc(db,'planes',editingPlanId),plan);
-  if(silent){toast('💾 Guardado automático');return}
+  try{
+    await setDoc(doc(db,'planes',editingPlanId),plan);
+  }catch(err){
+    toast('⚠️ No se pudo guardar (revisá tu conexión)');
+    return;
+  }
+  if(silent)return;
   toast('✅ Plan actualizado');
   if(editingPersonalPlan){
     volverAAlumnosDesdeEdicion();
