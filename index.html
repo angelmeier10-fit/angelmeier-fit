@@ -425,6 +425,9 @@ setTimeout(()=>{
     <div id="alumno-survey-screen" style="display:none">
       <p class="sub" style="text-align:center;margin-bottom:16px">Contanos un poco de vos</p>
 
+      <p style="font-weight:600;margin-bottom:10px">¿Qué programa te interesa?</p>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:8px" id="alumno-programa-list"></div>
+
       <p style="font-weight:600;margin-bottom:10px">¿Cuál es tu objetivo?</p>
       <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:8px" id="alumno-objetivo-list"></div>
       <div id="alumno-objetivo-otro-wrap" style="display:none;margin-bottom:16px">
@@ -1816,6 +1819,7 @@ async function initAlumno(user){
   }
 }
 
+const PROGRAMAS_ALUMNO=['Programa +50 (adultos mayores)','Entrenamiento general'];
 const OBJETIVOS_ALUMNO=['Bajar de peso','Tonificar','Ganar masa muscular','Corrección postural','Otro'];
 const NIVELES_ALUMNO=['Principiante','Intermedio','Avanzado'];
 const DIAS_ALUMNO=['2 a 3 días','4 a 5 días','6 o más días'];
@@ -1870,6 +1874,7 @@ function pintarSeleccionCards(listId,valor){
 }
 
 function initSurveyAlumno(){
+  window.__programaElegido=null;
   window.__objetivoElegido=null;
   window.__nivelElegido=null;
   window.__diasElegido=null;
@@ -1878,6 +1883,9 @@ function initSurveyAlumno(){
   window.__lesionElegida='';
   document.getElementById('alumno-survey-screen').style.display='block';
 
+  document.getElementById('alumno-programa-list').innerHTML=PROGRAMAS_ALUMNO.map(p=>`
+    <div class="card" data-val="${p}" style="cursor:pointer;padding:16px" onclick="elegirProgramaAlumno('${p}')"><div style="font-weight:600">${p}</div></div>
+  `).join('');
   document.getElementById('alumno-objetivo-list').innerHTML=OBJETIVOS_ALUMNO.map(o=>`
     <div class="card" data-val="${o}" style="cursor:pointer;padding:16px" onclick="elegirObjetivoAlumno('${o}')"><div style="font-weight:600">${o}</div></div>
   `).join('');
@@ -1900,6 +1908,12 @@ function initSurveyAlumno(){
   document.getElementById('alumno-lesion-detalle').value='';
   actualizarSurveyContinuar();
 }
+
+window.elegirProgramaAlumno=function(programa){
+  window.__programaElegido=programa;
+  pintarSeleccionCards('alumno-programa-list',programa);
+  actualizarSurveyContinuar();
+};
 
 window.elegirObjetivoAlumno=function(objetivo){
   const otroWrap=document.getElementById('alumno-objetivo-otro-wrap');
@@ -1957,6 +1971,7 @@ window.onLesionDetalleInput=function(){
 };
 
 function surveyAlumnoCompleta(){
+  if(!window.__programaElegido)return false;
   if(!window.__objetivoElegido||!window.__nivelElegido||!window.__diasElegido||!window.__lugarElegido)return false;
   if(window.__lesionTiene===null||window.__lesionTiene===undefined)return false;
   if(window.__lesionTiene && !window.__lesionElegida)return false;
@@ -2005,6 +2020,7 @@ window.enviarRespuestasAlumno=async function(){
       email:user.email,
       name:window.__signupName||user.displayName||'',
       categoria:null,
+      programa:window.__programaElegido||null,
       objetivo:window.__objetivoElegido||null,
       nivel:window.__nivelElegido||null,
       dias:window.__diasElegido||null,
@@ -5332,9 +5348,9 @@ async function renderProgramaUnificadoHtml(prog,cats,hasSubscription){
   // Respuestas del cuestionario de autoregistro (ver enviarRespuestasAlumno):
   // solo existen para alumnos que se dieron de alta solos por /suscripcion,
   // por eso se muestran nada más cuando hay al menos un dato cargado.
-  const respuestasHtml=(s.objetivo||s.nivel||s.dias||s.lugar||s.lesion)?`
+  const respuestasHtml=(s.programa||s.objetivo||s.nivel||s.dias||s.lugar||s.lesion)?`
     <div style="font-size:.76rem;color:var(--mu);margin-top:3px">
-      🎯 ${s.objetivo||'—'} · 📊 ${s.nivel||'—'} · 📅 ${s.dias||'—'} · 🏠 ${s.lugar||'—'}${s.lesion?` · 🩹 ${s.lesion}`:''}
+      ${s.programa?`<b>${s.programa}</b> · `:''}🎯 ${s.objetivo||'—'} · 📊 ${s.nivel||'—'} · 📅 ${s.dias||'—'} · 🏠 ${s.lugar||'—'}${s.lesion?` · 🩹 ${s.lesion}`:''}
     </div>`:'';
   return`<div style="padding:8px 0;border-bottom:1px solid var(--bd)">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
