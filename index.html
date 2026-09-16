@@ -2022,13 +2022,16 @@ async function renderConfirmAlumno(){
       <div class="sub">${desc}</div>
       ${price?`<div style="font-weight:700;color:var(--ac2);margin-top:4px">Desde $${parseInt(price).toLocaleString('es-AR')}</div>`:''}
     </div>`;
-  // Si eligió Programa +50, mostrar solo ese plan (con su precio real) en vez
-  // de la lista genérica de "un plan"/"todos los planes" — ya sabe qué quiere.
-  const mas50Cat=cats.find(c=>c.id==='adultos_mayores');
-  if(window.__programaElegido===PROGRAMA_MAS50 && mas50Cat){
-    const price=planes.find(p=>p.id===mas50Cat.planId)?.price||null;
+  // Si eligió Programa +50, mostrar solo la info de ese plan en vez de la
+  // lista genérica de "un plan"/"todos los planes" — ya sabe qué quiere. Si
+  // existe la categoría 'adultos_mayores' en Planes fijos se usa su precio
+  // real; si no, se muestra el precio informativo de la landing (mismo dato
+  // que ve en angelmeier-fit.web.app/landing.html).
+  if(window.__programaElegido===PROGRAMA_MAS50){
+    const mas50Cat=cats.find(c=>c.id==='adultos_mayores');
+    const price=mas50Cat?(planes.find(p=>p.id===mas50Cat.planId)?.price||null):30000;
     document.getElementById('alumno-confirm-precios').innerHTML=
-      priceRow(mas50Cat.label,mas50Cat.desc||'Programa +50',price);
+      priceRow('Programa +50','Movimiento y fuerza funcional para adultos mayores — sesiones guiadas y seguimiento mensual',price);
     return;
   }
   const individualPrices=cats.filter(c=>c.id!=='global').map(c=>planes.find(p=>p.id===c.planId)?.price).filter(Boolean).map(Number);
