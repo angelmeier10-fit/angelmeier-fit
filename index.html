@@ -428,25 +428,27 @@ setTimeout(()=>{
       <p style="font-weight:600;margin-bottom:10px">¿Qué programa te interesa?</p>
       <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:8px" id="alumno-programa-list"></div>
 
-      <p style="font-weight:600;margin-bottom:10px">¿Cuál es tu objetivo?</p>
-      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:8px" id="alumno-objetivo-list"></div>
-      <div id="alumno-objetivo-otro-wrap" style="display:none;margin-bottom:16px">
-        <input id="alumno-objetivo-otro" placeholder="Contanos cuál" oninput="onObjetivoOtroInput()" style="width:100%">
-      </div>
+      <div id="alumno-resto-survey">
+        <p style="font-weight:600;margin-bottom:10px">¿Cuál es tu objetivo?</p>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:8px" id="alumno-objetivo-list"></div>
+        <div id="alumno-objetivo-otro-wrap" style="display:none;margin-bottom:16px">
+          <input id="alumno-objetivo-otro" placeholder="Contanos cuál" oninput="onObjetivoOtroInput()" style="width:100%">
+        </div>
 
-      <p style="font-weight:600;margin:20px 0 10px">¿Cuál es tu nivel de experiencia?</p>
-      <div style="display:flex;flex-direction:column;gap:10px" id="alumno-nivel-list"></div>
+        <p style="font-weight:600;margin:20px 0 10px">¿Cuál es tu nivel de experiencia?</p>
+        <div style="display:flex;flex-direction:column;gap:10px" id="alumno-nivel-list"></div>
 
-      <p style="font-weight:600;margin:20px 0 10px">¿Cuántos días por semana podés entrenar?</p>
-      <div style="display:flex;flex-direction:column;gap:10px" id="alumno-dias-list"></div>
+        <p style="font-weight:600;margin:20px 0 10px">¿Cuántos días por semana podés entrenar?</p>
+        <div style="display:flex;flex-direction:column;gap:10px" id="alumno-dias-list"></div>
 
-      <p style="font-weight:600;margin:20px 0 10px">¿Dónde vas a entrenar?</p>
-      <div style="display:flex;flex-direction:column;gap:10px" id="alumno-lugar-list"></div>
+        <p style="font-weight:600;margin:20px 0 10px">¿Dónde vas a entrenar?</p>
+        <div style="display:flex;flex-direction:column;gap:10px" id="alumno-lugar-list"></div>
 
-      <p style="font-weight:600;margin:20px 0 10px">¿Tenés alguna lesión o molestia?</p>
-      <div style="display:flex;flex-direction:column;gap:10px" id="alumno-lesion-choice"></div>
-      <div id="alumno-lesion-detalle-wrap" style="display:none;margin-top:10px">
-        <textarea id="alumno-lesion-detalle" placeholder="Contanos brevemente..." oninput="onLesionDetalleInput()" style="width:100%;min-height:80px"></textarea>
+        <p style="font-weight:600;margin:20px 0 10px">¿Tenés alguna lesión o molestia?</p>
+        <div style="display:flex;flex-direction:column;gap:10px" id="alumno-lesion-choice"></div>
+        <div id="alumno-lesion-detalle-wrap" style="display:none;margin-top:10px">
+          <textarea id="alumno-lesion-detalle" placeholder="Contanos brevemente..." oninput="onLesionDetalleInput()" style="width:100%;min-height:80px"></textarea>
+        </div>
       </div>
 
       <button class="btn bp" id="alumno-survey-continuar" onclick="continuarSurveyAlumno()" disabled style="width:100%;justify-content:center;margin-top:24px">Continuar</button>
@@ -1819,7 +1821,8 @@ async function initAlumno(user){
   }
 }
 
-const PROGRAMAS_ALUMNO=['Programa +50 (adultos mayores)','Entrenamiento general'];
+const PROGRAMA_MAS50='Programa +50 (adultos mayores)';
+const PROGRAMAS_ALUMNO=[PROGRAMA_MAS50,'Entrenamiento general'];
 const OBJETIVOS_ALUMNO=['Bajar de peso','Tonificar','Ganar masa muscular','Corrección postural','Otro'];
 const NIVELES_ALUMNO=['Principiante','Intermedio','Avanzado'];
 const DIAS_ALUMNO=['2 a 3 días','4 a 5 días','6 o más días'];
@@ -1882,6 +1885,7 @@ function initSurveyAlumno(){
   window.__lesionTiene=null;
   window.__lesionElegida='';
   document.getElementById('alumno-survey-screen').style.display='block';
+  document.getElementById('alumno-resto-survey').style.display='block';
 
   document.getElementById('alumno-programa-list').innerHTML=PROGRAMAS_ALUMNO.map(p=>`
     <div class="card" data-val="${p}" style="cursor:pointer;padding:16px" onclick="elegirProgramaAlumno('${p}')"><div style="font-weight:600">${p}</div></div>
@@ -1910,8 +1914,15 @@ function initSurveyAlumno(){
 }
 
 window.elegirProgramaAlumno=function(programa){
-  window.__programaElegido=programa;
-  pintarSeleccionCards('alumno-programa-list',programa);
+  // Toclable: si tocan de nuevo la misma tarjeta, se destilda (por si eligieron
+  // por error) y vuelve a mostrar el resto de la encuesta.
+  const yaElegido=window.__programaElegido===programa;
+  window.__programaElegido=yaElegido?null:programa;
+  pintarSeleccionCards('alumno-programa-list',window.__programaElegido);
+  // El Programa +50 no necesita el resto de las preguntas (objetivo/nivel/etc.):
+  // ocultarlas evita confundir a alguien mayor con pasos que no le aplican.
+  const restoWrap=document.getElementById('alumno-resto-survey');
+  restoWrap.style.display=(window.__programaElegido===PROGRAMA_MAS50)?'none':'block';
   actualizarSurveyContinuar();
 };
 
@@ -1972,6 +1983,7 @@ window.onLesionDetalleInput=function(){
 
 function surveyAlumnoCompleta(){
   if(!window.__programaElegido)return false;
+  if(window.__programaElegido===PROGRAMA_MAS50)return true;
   if(!window.__objetivoElegido||!window.__nivelElegido||!window.__diasElegido||!window.__lugarElegido)return false;
   if(window.__lesionTiene===null||window.__lesionTiene===undefined)return false;
   if(window.__lesionTiene && !window.__lesionElegida)return false;
