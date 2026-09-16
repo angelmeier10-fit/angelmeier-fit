@@ -455,6 +455,7 @@ setTimeout(()=>{
     </div>
 
     <div id="alumno-confirm-screen" style="display:none">
+      <span onclick="volverASurveyAlumno()" style="color:var(--mu);cursor:pointer;font-size:.82rem;display:inline-block;margin-bottom:14px">← Volver</span>
       <p class="sub" style="text-align:center;margin-bottom:16px">¡Ya casi! Así funcionan los precios</p>
       <div id="alumno-confirm-precios" style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px"></div>
       <p class="sub" style="text-align:center;margin-bottom:16px;font-size:.82rem">Angel va a revisar tus respuestas y te asigna el plan que mejor te queda. Te contactamos por WhatsApp para coordinar el pago.</p>
@@ -2000,6 +2001,11 @@ window.continuarSurveyAlumno=function(){
   renderConfirmAlumno();
 };
 
+window.volverASurveyAlumno=function(){
+  document.getElementById('alumno-confirm-screen').style.display='none';
+  document.getElementById('alumno-survey-screen').style.display='block';
+};
+
 // Muestra precios orientativos (no elegibles): el más bajo entre categorías
 // individuales y el de la suscripción global, para que sepa qué esperar sin
 // tener que elegir plan él mismo.
@@ -2010,15 +2016,24 @@ async function renderConfirmAlumno(){
   // acá es el único lugar donde lo podemos capturar para esas alumnas.
   document.getElementById('alumno-confirm-whatsapp').style.display=window.__signupWhatsapp?'none':'block';
   const cats=await getCategoriasSuscripcion();
-  const individualPrices=cats.filter(c=>c.id!=='global').map(c=>planes.find(p=>p.id===c.planId)?.price).filter(Boolean).map(Number);
-  const unPlanPrecio=individualPrices.length?Math.min(...individualPrices):null;
-  const globalPrecio=cats.find(c=>c.id==='global')?.price||null;
   const priceRow=(label,desc,price)=>`
     <div class="card" style="padding:16px">
       <div style="font-weight:600">${label}</div>
       <div class="sub">${desc}</div>
       ${price?`<div style="font-weight:700;color:var(--ac2);margin-top:4px">Desde $${parseInt(price).toLocaleString('es-AR')}</div>`:''}
     </div>`;
+  // Si eligió Programa +50, mostrar solo ese plan (con su precio real) en vez
+  // de la lista genérica de "un plan"/"todos los planes" — ya sabe qué quiere.
+  const mas50Cat=cats.find(c=>c.id==='adultos_mayores');
+  if(window.__programaElegido===PROGRAMA_MAS50 && mas50Cat){
+    const price=planes.find(p=>p.id===mas50Cat.planId)?.price||null;
+    document.getElementById('alumno-confirm-precios').innerHTML=
+      priceRow(mas50Cat.label,mas50Cat.desc||'Programa +50',price);
+    return;
+  }
+  const individualPrices=cats.filter(c=>c.id!=='global').map(c=>planes.find(p=>p.id===c.planId)?.price).filter(Boolean).map(Number);
+  const unPlanPrecio=individualPrices.length?Math.min(...individualPrices):null;
+  const globalPrecio=cats.find(c=>c.id==='global')?.price||null;
   document.getElementById('alumno-confirm-precios').innerHTML=
     priceRow('Un plan','Acceso a una sola categoría de entrenamiento',unPlanPrecio)+
     priceRow('Todos los planes','Suscripción global, acceso a todas las categorías',globalPrecio);
