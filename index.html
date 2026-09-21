@@ -2786,7 +2786,7 @@ function refExFieldHtml(data){
 function addFuncBlock(bodyId,data=null){
   const c=document.getElementById(bodyId);
   const gid='fn'+Date.now()+Math.random().toString(36).slice(2,5);
-  const div=document.createElement('div');div.className='blk';div.id=gid;div.dataset.kind='func';
+  const div=document.createElement('div');div.className='blk';div.id=gid;div.dataset.kind='func';if(data?.tplId)div.dataset.tplId=data.tplId;
   div.innerHTML=`<div class="blk-hdr" onclick="toggleBlk('${gid}',event)">
     <span class="blk-type t-warmup">Actividad funcional</span>
     <button class="btn bg2 xs" onclick="event.stopPropagation();guardarBloqueComoPlantilla('${gid}')" title="Guardar como plantilla">💾</button>
@@ -2837,7 +2837,7 @@ window.addFuncEx=addFuncEx;
 function addNoteBlock(bodyId,data=null){
   const c=document.getElementById(bodyId);
   const gid='nt'+Date.now()+Math.random().toString(36).slice(2,5);
-  const div=document.createElement('div');div.className='blk';div.id=gid;div.dataset.kind='note';
+  const div=document.createElement('div');div.className='blk';div.id=gid;div.dataset.kind='note';if(data?.tplId)div.dataset.tplId=data.tplId;
   div.innerHTML=`<div class="blk-hdr" onclick="toggleBlk('${gid}',event)">
     <span class="blk-type t-warmup">📝 Nota</span>
     <button class="btn bg2 xs" onclick="event.stopPropagation();guardarBloqueComoPlantilla('${gid}')" title="Guardar como plantilla">💾</button>
@@ -2860,7 +2860,7 @@ function addGymBlock(bodyId,type,data=null){
   const exCount=type==='tri'?3:type==='super'?2:isGiant?Math.max(data?.exercises?.length||4,4):1;
   const typeName=type==='tri'?'Triserie':type==='super'?'Superserie':isGiant?'Serie gigante':'Ejercicio';
   const tc=type==='tri'?'t-tri':type==='super'?'t-super':isGiant?'t-giant':'t-simple';
-  const div=document.createElement('div');div.className='blk';div.id=gid;div.dataset.kind='gym';div.dataset.type=type;
+  const div=document.createElement('div');div.className='blk';div.id=gid;div.dataset.kind='gym';div.dataset.type=type;if(data?.tplId)div.dataset.tplId=data.tplId;
   div.innerHTML=`<div class="blk-hdr" onclick="toggleBlk('${gid}',event)">
     <span class="blk-type ${tc}">${typeName}</span>
     <span class="blk-ex-names" id="${gid}-names" style="font-size:.78rem;color:var(--mu);margin-left:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:30px"></span>
@@ -2929,7 +2929,7 @@ window.removeGiantEx=removeGiantEx;
 function addWarmupBlock(bodyId,data=null){
   const c=document.getElementById(bodyId);
   const gid='w'+Date.now()+Math.random().toString(36).slice(2,5);
-  const div=document.createElement('div');div.className='blk';div.id=gid;div.dataset.kind='warmup';
+  const div=document.createElement('div');div.className='blk';div.id=gid;div.dataset.kind='warmup';if(data?.tplId)div.dataset.tplId=data.tplId;
   div.innerHTML=`<div class="blk-hdr" onclick="toggleBlk('${gid}',event)">
     <span class="blk-type t-warmup">🔥 Entrada en calor</span>
     <button class="btn bg2 xs" onclick="event.stopPropagation();guardarBloqueComoPlantilla('${gid}')" title="Guardar como plantilla">💾</button>
@@ -3090,7 +3090,7 @@ function addCFBlock(bodyId,cftype,data=null){
   const c=document.getElementById(bodyId);
   const cfg=CF_TYPES[cftype];
   const bid='cf'+Date.now()+Math.random().toString(36).slice(2,5);
-  const div=document.createElement('div');div.className='cf-blk';div.id=bid;div.dataset.kind='cf';div.dataset.cftype=cftype;
+  const div=document.createElement('div');div.className='cf-blk';div.id=bid;div.dataset.kind='cf';div.dataset.cftype=cftype;if(data?.tplId)div.dataset.tplId=data.tplId;
   div.innerHTML=`<div class="cf-hdr" style="background:${cfg.color}11;border-bottom:1px solid ${cfg.color}33" onclick="toggleBlk('${bid}',event)">
     <div class="cf-lbl">${cfg.icon} <span style="color:${cfg.color}">${cfg.label}</span> <span class="cf-lbl-desc" style="font-size:.72rem;color:var(--mu);font-weight:400">${cfg.desc}</span></div>
     <button class="btn bg2 xs" onclick="event.stopPropagation();guardarBloqueComoPlantilla('${bid}')" title="Guardar como plantilla">💾</button>
@@ -3289,6 +3289,11 @@ function collectCFSections(blk,cfg){
   });
 }
 function collectBlockData(blk){
+  const data=collectBlockDataRaw(blk);
+  if(blk.dataset.tplId)data.tplId=blk.dataset.tplId;
+  return data;
+}
+function collectBlockDataRaw(blk){
   if(blk.dataset.kind==='func'){
     const exercises=[...blk.querySelectorAll('.ex-entry')].map(en=>{
       const inp=en.querySelector('.ex-search');
@@ -3487,6 +3492,7 @@ window.confirmarGuardarBloqueComoPlantilla=async function(blockId){
   if(!blk||!name){toast('❌ Poné un nombre para la plantilla');return}
   const categoria=document.getElementById('qtpl-cat').value;
   const data=collectBlockData(blk);
+  delete data.tplId;
   const list=await loadBloqueTemplates();
   list.push({id:'tpl'+Date.now(),name,categoria,data});
   await setDoc(doc(db,'meta','bloqueTemplates'),{list});
@@ -3624,7 +3630,7 @@ function refreshPlantillaVideos(data){
 window.insertarPlantilla=function(bodyId,idx){
   const t=bloqueTemplatesCache?.[idx];
   if(!t)return;
-  const data=refreshPlantillaVideos(t.data);
+  const data={...refreshPlantillaVideos(t.data),tplId:t.id};
   if(data.kind==='warmup')addWarmupBlock(bodyId,data);
   else if(data.kind==='gym')addGymBlock(bodyId,data.type,data);
   else if(data.kind==='func')addFuncBlock(bodyId,data);
@@ -3634,10 +3640,33 @@ window.insertarPlantilla=function(bodyId,idx){
   toast('✅ Plantilla insertada');
 };
 
+// Los bloques insertados desde una plantilla guardan su tplId. Al editar o
+// borrar la plantilla se reemplaza/quita ese bloque en planes y alumnos.
+async function propagarPlantilla(id,newData){
+  const patch=days=>{
+    let changed=false;
+    (days||[]).forEach(d=>{
+      if(!(d.blocks||[]).some(b=>b.tplId===id))return;
+      changed=true;
+      d.blocks=newData?d.blocks.map(b=>b.tplId===id?{...JSON.parse(JSON.stringify(newData)),tplId:id}:b):d.blocks.filter(b=>b.tplId!==id);
+    });
+    return changed;
+  };
+  for(const [col,items] of [['planes',planes],['clients',clients]]){
+    for(const it of items){
+      let changed=false;
+      if(it.weeks)Object.values(it.weeks).forEach(days=>{if(patch(days))changed=true;});
+      if(patch(it.days))changed=true;
+      if(changed)await setDoc(doc(db,col,it.id),it);
+    }
+  }
+}
+
 async function borrarPlantillaPorId(id){
   const list=(await loadBloqueTemplates()).filter(t=>t.id!==id);
   await setDoc(doc(db,'meta','bloqueTemplates'),{list});
   bloqueTemplatesCache=list;
+  await propagarPlantilla(id,null);
 }
 
 window.eliminarPlantilla=async function(idx){
@@ -3650,7 +3679,7 @@ window.eliminarPlantilla=async function(idx){
 };
 
 // ══ GESTIÓN DE PLANTILLAS (vista dedicada) ══
-const TPL_KIND_LABEL={warmup:'🔥 Calentamiento',gym:'🏋️ Gym',func:'Funcional',cf:'🔥 CF / WOD'};
+const TPL_KIND_LABEL={warmup:'🔥 Calentamiento',gym:'🏋️ Gym',func:'Funcional',note:'📝 Nota',cf:'🔥 CF / WOD'};
 function templateSummary(t){
   const d=t.data;
   if(d.kind==='cf'){
@@ -3658,6 +3687,7 @@ function templateSummary(t){
     const nEx=(d.sections||[]).reduce((n,s)=>n+(s.exercises?.length||0),0);
     return `${cfg?.label||d.cftype} · ${nEx} ejercicio${nEx===1?'':'s'}`;
   }
+  if(d.kind==='note')return TPL_KIND_LABEL.note;
   const nEx=(d.exercises||[]).length;
   return `${TPL_KIND_LABEL[d.kind]||d.kind} · ${nEx} ejercicio${nEx===1?'':'s'}`;
 }
@@ -3707,6 +3737,7 @@ const TPL_KIND_OPTIONS=[
   {value:'gym:super',label:'🏋️ Gym — Superserie'},
   {value:'gym:giant',label:'🏋️ Gym — Serie gigante'},
   {value:'func',label:'Funcional'},
+  {value:'note',label:'📝 Nota'},
   ...Object.keys(CF_TYPES).map(k=>({value:'cf:'+k,label:`${CF_TYPES[k].icon} CF — ${CF_TYPES[k].label}`})),
 ];
 
@@ -3720,6 +3751,7 @@ function renderTplEditorBody(kindVal,data){
   if(kind==='warmup')addWarmupBlock(cid,data);
   else if(kind==='gym')addGymBlock(cid,sub,data);
   else if(kind==='func')addFuncBlock(cid,data);
+  else if(kind==='note')addNoteBlock(cid,data);
   else if(kind==='cf')addCFBlock(cid,sub,data);
 }
 
@@ -3796,6 +3828,7 @@ window.guardarPlantillaDesdeEditor=async function(){
   if(id){
     const i=list.findIndex(t=>t.id===id);
     if(i>=0)list[i]={id,name,categoria,data};
+    await propagarPlantilla(id,data);
   }else{
     list.push({id:'tpl'+Date.now()+Math.random().toString(36).slice(2,7),name,categoria,data});
   }
@@ -5724,32 +5757,7 @@ async function updatePlan(opts={}){
   const blocks=[...document.getElementById('ep-days-container').querySelectorAll('.day-block')];
   epWeeklyData[epCurrentWeek]=blocks.map(db2=>({
     name:db2.querySelector('.day-name-input').value,
-    blocks:[...document.getElementById(db2.id+'-body').children].filter(el=>el.dataset.kind).map(blk=>{
-      if(blk.dataset.kind==='func'){
-        const exercises=[...blk.querySelectorAll('.ex-entry')].map(en=>{const inp=en.querySelector('.ex-search');return{name:inp.dataset.name||inp.value,video:inp.dataset.video||'',reps:en.querySelector('.func-ex-reps')?.value||'',refEx:en.querySelector('.ex-refex')?.value||'',obs:en.querySelector('.ex-obs')?.value||''};}).filter(e=>e.name);
-        return{kind:'func',title:blk.querySelector('.func-title').value,desc:blk.querySelector('.func-desc').value,reps:blk.querySelector('.func-reps').value,rest:blk.querySelector('.func-rest').value,sets:blk.querySelector('.func-sets').value,exercises};
-      } else if(blk.dataset.kind==='note'){
-        return{kind:'note',text:blk.querySelector('.note-text')?.value||''};
-      } else if(blk.dataset.kind==='warmup'){
-        const duration=blk.querySelector('.wu-duration')?.value||'10 min';
-        const series=blk.querySelector('.wu-series')?.value||'';
-        const exercises=[...blk.querySelectorAll('.ex-entry')].map(en=>{
-          const inp=en.querySelector('.ex-search');
-          const scheme=[...en.querySelectorAll('.sc-row')].map(r=>({reps:r.querySelector('.sr-reps').value,load:r.querySelector('.sr-load').value}));
-          return{name:inp.dataset.name||inp.value,video:inp.dataset.video||'',obs:en.querySelector('.ex-obs')?.value||'',scheme};
-        }).filter(e=>e.name);
-        return{kind:'warmup',duration,series,exercises};
-      } else if(blk.dataset.kind==='gym'){
-        const type=blk.dataset.type;const rest=blk.querySelector('.sg-rest').value;
-        const exercises=[...blk.querySelectorAll('.ex-entry')].map(en=>{const inp=en.querySelector('.ex-search');const scheme=[...en.querySelectorAll('.sc-row')].map(r=>({reps:r.querySelector('.sr-reps').value,load:r.querySelector('.sr-load').value}));const variants=[...en.querySelectorAll('.ex-variant-row')].map(vr=>{const vi=vr.querySelector('.ex-search');return{name:vi.dataset.name||vi.value,video:vi.dataset.video||''}}).filter(v=>v.name);return{name:inp.dataset.name||inp.value,video:inp.dataset.video||'',obs:en.querySelector('.ex-obs').value,scheme,variants,refEx:en.querySelector('.ex-refex')?.value||''};}).filter(e=>e.name);
-        const pauses=[...blk.querySelectorAll('.ex-sep-pause-inp')].map(i=>i.value);
-        return{kind:'gym',type,rest,exercises,pauses};
-      } else {
-        const cftype=blk.dataset.cftype;const cfg=CF_TYPES[cftype];
-        const sections=collectCFSections(blk,cfg);
-        return{kind:'cf',cftype,sections,notes:blk.querySelector('.cf-notes')?.value||''};
-      }
-    })
+    blocks:[...document.getElementById(db2.id+'-body').children].filter(el=>el.dataset.kind).map(collectBlockData)
   }));
   plan.weeks=epWeeklyData;
   plan.activeWeek=epCurrentWeek;
