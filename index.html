@@ -604,6 +604,9 @@ setTimeout(()=>{
         </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
           <button class="btn bcy sm" onclick="duplicateWeek('nc')">📋 Duplicar esta semana</button>
+          <button class="btn bcy sm" onclick="copiarSemana('nc')">📤 Copiar semana</button>
+          <button class="btn bcy sm" onclick="pegarSemana('nc')">📥 Pegar semana</button>
+          <button class="btn bcy sm" onclick="pegarDia('nc')">📥 Pegar día</button>
           <button class="btn bg2 sm" onclick="renumberWeek('nc')">🔢 Renumerar</button>
           <button class="btn bd2 sm" onclick="deleteWeek('nc')">🗑️ Borrar semana</button>
         </div>
@@ -678,6 +681,9 @@ setTimeout(()=>{
         </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
           <button class="btn bcy sm" onclick="duplicateWeek('ec')">📋 Duplicar esta semana</button>
+          <button class="btn bcy sm" onclick="copiarSemana('ec')">📤 Copiar semana</button>
+          <button class="btn bcy sm" onclick="pegarSemana('ec')">📥 Pegar semana</button>
+          <button class="btn bcy sm" onclick="pegarDia('ec')">📥 Pegar día</button>
           <button class="btn bg2 sm" onclick="renumberWeek('ec')">🔢 Renumerar</button>
           <button class="btn bd2 sm" onclick="deleteWeek('ec')">🗑️ Borrar semana</button>
         </div>
@@ -910,6 +916,9 @@ setTimeout(()=>{
         </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
           <button class="btn bcy sm" onclick="duplicateWeek('np')">📋 Duplicar esta semana</button>
+          <button class="btn bcy sm" onclick="copiarSemana('np')">📤 Copiar semana</button>
+          <button class="btn bcy sm" onclick="pegarSemana('np')">📥 Pegar semana</button>
+          <button class="btn bcy sm" onclick="pegarDia('np')">📥 Pegar día</button>
           <button class="btn bg2 sm" onclick="renumberWeek('np')">🔢 Renumerar</button>
           <button class="btn bd2 sm" onclick="deleteWeek('np')">🗑️ Borrar semana</button>
         </div>
@@ -964,6 +973,9 @@ setTimeout(()=>{
         </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
           <button class="btn bcy sm" onclick="duplicateWeek('ep')">📋 Duplicar esta semana</button>
+          <button class="btn bcy sm" onclick="copiarSemana('ep')">📤 Copiar semana</button>
+          <button class="btn bcy sm" onclick="pegarSemana('ep')">📥 Pegar semana</button>
+          <button class="btn bcy sm" onclick="pegarDia('ep')">📥 Pegar día</button>
           <button class="btn bg2 sm" onclick="renumberWeek('ep')">🔢 Renumerar</button>
           <button class="btn bd2 sm" onclick="deleteWeek('ep')">🗑️ Borrar semana</button>
         </div>
@@ -2628,6 +2640,54 @@ window.deleteWeek=function(prefix){
   toast('🗑️ Semana '+curWeek+' borrada');
 };
 
+// Portapapeles de días/semanas: vive en localStorage para poder copiar en un
+// alumno o plan y pegar en otro (incluso desde otra pestaña).
+const CLIP_KEY='ampClipboard';
+function setClip(type,data,label){
+  try{localStorage.setItem(CLIP_KEY,JSON.stringify({type,data,label}));return true}
+  catch(e){toast('❌ No se pudo copiar');return false}
+}
+function getClip(type){
+  try{const c=JSON.parse(localStorage.getItem(CLIP_KEY)||'null');return c&&c.type===type?c:null}
+  catch(e){return null}
+}
+function rebuildWeekDays(prefix,days){
+  const{containerId,countId}=weekStoreFor(prefix);
+  document.getElementById(countId).value=days.length||1;
+  buildDays(containerId,days.length||1,days);
+}
+function collectCurrentWeekDays(prefix){
+  const{containerId,countId}=weekStoreFor(prefix);
+  return collectDays(containerId,parseInt(document.getElementById(countId).value)||1);
+}
+window.copiarDia=function(did){
+  const body=document.getElementById(did+'-body');if(!body)return;
+  const name=document.getElementById(did).querySelector('.day-name-input')?.value||'Día';
+  const blocks=[...body.children].filter(el=>el.dataset.kind).map(collectBlockData);
+  if(setClip('day',{name,blocks},name))toast('📤 Día "'+name+'" copiado — pegalo en otro alumno o plan');
+};
+window.copiarSemana=function(prefix){
+  const days=collectCurrentWeekDays(prefix);
+  const label='Semana '+weekStoreFor(prefix).getCur();
+  if(setClip('week',days,label))toast('📤 '+label+' copiada — pegala en otro alumno o plan');
+};
+window.pegarDia=function(prefix){
+  const clip=getClip('day');
+  if(!clip){toast('⚠️ Primero copiá un día');return}
+  const days=collectCurrentWeekDays(prefix);
+  days.push(JSON.parse(JSON.stringify(clip.data)));
+  rebuildWeekDays(prefix,days);
+  toast('📥 Día "'+clip.label+'" agregado al final');
+};
+window.pegarSemana=function(prefix){
+  const clip=getClip('week');
+  if(!clip){toast('⚠️ Primero copiá una semana');return}
+  const hasContent=collectCurrentWeekDays(prefix).some(d=>d.blocks.length);
+  if(hasContent&&!confirm('Esto reemplaza toda la rutina de la semana actual por la copiada ('+clip.label+'). ¿Continuar?'))return;
+  rebuildWeekDays(prefix,JSON.parse(JSON.stringify(clip.data)));
+  toast('📥 Semana pegada');
+};
+
 window.duplicateWeek=function(prefix){
   const store=weekStoreFor(prefix);
   const{containerId,countId,data}=store;
@@ -2673,6 +2733,7 @@ function buildOneDay(cid,idx,data=null){
       <button class="btn bpu sm" onclick="addFuncBlock('${did}-body')">+ Actividad funcional</button>
       <button class="btn byw sm" onclick="addNoteBlock('${did}-body')">📝 + Nota</button>
       <button class="btn bcy sm" onclick="abrirInsertarPlantilla('${did}-body')">📥 Insertar plantilla</button>
+      <button class="btn bcy sm" onclick="copiarDia('${did}')">📤 Copiar día</button>
       <button class="btn bg2 sm" onclick="moveDayBlock('${did}',-1)" title="Mover arriba">↑</button>
       <button class="btn bg2 sm" onclick="moveDayBlock('${did}',1)" title="Mover abajo">↓</button>
       <button class="btn bd2 sm" onclick="deleteDayBlock('${did}')" title="Borrar día">🗑️</button>
