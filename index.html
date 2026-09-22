@@ -2486,6 +2486,7 @@ function initNewClient(){
   ncWeeklyData={1:[]};
   ncCurrentWeek=1;
   ncSavedId=null;
+  ncFromSolicitudId=null;
   clearTimeout(ncAutosaveTimer);
   setupWeekSelector('nc',1);
   buildDays('days-container',4);
@@ -2502,6 +2503,7 @@ let npCurrentWeek=1;
 let epWeeklyData={};
 let epCurrentWeek=1;
 let ncSavedId=null; // id del doc mientras se arma un cliente nuevo (autoguardado reusa el mismo)
+let ncFromSolicitudId=null; // docId de la solicitud de origen, si el cliente nuevo viene de "Convertir en cliente"
 let ncAutosaveTimer=null;
 let ecAutosaveTimer=null;
 let epAutosaveTimer=null;
@@ -3922,7 +3924,17 @@ async function saveClient(opts={}){
   }
   const idx=clients.findIndex(c=>c.id===id);
   if(idx>=0)clients[idx]=client;else clients.push(client);
-  if(!silent){toast('✅ Cliente guardado en la nube');showPanel('alumnosuni',document.getElementById('it-alumnosuni'))}
+  if(!silent){
+    if(ncFromSolicitudId){
+      const solId=ncFromSolicitudId;
+      ncFromSolicitudId=null;
+      try{
+        await deleteDoc(doc(db,'solicitudes',solId));
+        solicitudes=solicitudes.filter(s=>s._docId!==solId);
+      }catch(e){}
+    }
+    toast('✅ Cliente guardado en la nube');showPanel('alumnosuni',document.getElementById('it-alumnosuni'))
+  }
 }
 window.saveClient=saveClient;
 
@@ -8640,8 +8652,8 @@ window.convertirEnCliente=async function(docId){
     const daysContainer=document.getElementById('days-container');
     daysContainer.parentNode.insertBefore(wrap,daysContainer);
     toast('✅ Datos pre-cargados — revisá y completá la rutina');
-    // Mark solicitud as converted
-    updateDoc(doc(db,'solicitudes',docId),{status:'convertida'});
+    // La solicitud se borra al guardar el cliente (ver saveClient)
+    ncFromSolicitudId=docId;
   },300);
 }
 
