@@ -2467,7 +2467,7 @@ function showPanel(p,btn){
   document.querySelectorAll('.itab').forEach(t=>t.classList.remove('active'));
   if(btn)btn.classList.add('active');
   if(p==='new')initNewClient();
-  if(p==='alumnosuni')renderAlumnosUnificado();
+  if(p==='alumnosuni'){uniFromSolicitudId=null;renderAlumnosUnificado();}
   if(p==='macro'&&editingId){
     const mc=document.getElementById('macro-content');
     if(mc){
@@ -2504,6 +2504,7 @@ let epWeeklyData={};
 let epCurrentWeek=1;
 let ncSavedId=null; // id del doc mientras se arma un cliente nuevo (autoguardado reusa el mismo)
 let ncFromSolicitudId=null; // docId de la solicitud de origen, si el cliente nuevo viene de "Convertir en cliente"
+let uniFromSolicitudId=null; // docId de la solicitud de origen, si el alumno nuevo viene de "Dar de alta como suscriptor"
 let ncAutosaveTimer=null;
 let ecAutosaveTimer=null;
 let epAutosaveTimer=null;
@@ -3929,8 +3930,9 @@ async function saveClient(opts={}){
       const solId=ncFromSolicitudId;
       ncFromSolicitudId=null;
       try{
-        await deleteDoc(doc(db,'solicitudes',solId));
-        solicitudes=solicitudes.filter(s=>s._docId!==solId);
+        await updateDoc(doc(db,'solicitudes',solId),{status:'convertida'});
+        const si=solicitudes.findIndex(s=>s._docId===solId);
+        if(si>=0)solicitudes[si].status='convertida';
       }catch(e){}
     }
     toast('✅ Cliente guardado en la nube');showPanel('alumnosuni',document.getElementById('it-alumnosuni'))
@@ -7567,6 +7569,15 @@ window.altaManualAlumno=async function(nameId,emailId,passId,catId,refreshFn){
     document.getElementById(emailId).value='';
     document.getElementById(passId).value='';
     if(emailId==='uni-new-email')emailAlumnoEditadoManual=false;
+    if(nameId==='uni-new-name' && uniFromSolicitudId){
+      const solId=uniFromSolicitudId;
+      uniFromSolicitudId=null;
+      try{
+        await updateDoc(doc(db,'solicitudes',solId),{status:'convertida'});
+        const si=solicitudes.findIndex(s=>s._docId===solId);
+        if(si>=0)solicitudes[si].status='convertida';
+      }catch(e){}
+    }
     toast('✅ Alumno creado — pasale el link y la contraseña. Activalo abajo cuando pague.');
     suscriptoresCache=null;
     refreshFn();
@@ -8437,6 +8448,7 @@ function buildSolCard(s,isNew){
         ${waNum?`<a href="https://wa.me/${waNum}" target="_blank" class="btn bgr sm">💬 WhatsApp</a>`:''}
         <button class="btn bpu sm" onclick="asignarAPlanGrupal('${s._docId}')">👥 Asignar a plan grupal</button>
         <button class="btn bcy sm" onclick="convertirEnSuscriptor('${s._docId}')">🔔 Dar de alta como suscriptor</button>
+        ${isNew?`<button class="btn bg2 sm" onclick="marcarSolicitudProcesada('${s._docId}')">✅ Marcar como procesada</button>`:''}
         <button class="btn bd2 sm" onclick="eliminarSolicitud('${s._docId}')">🗑️</button>
       </div>
     </div>
@@ -8575,6 +8587,14 @@ window.marcarVista=async function(docId){
   renderSolicitudes();
 };
 
+window.marcarSolicitudProcesada=async function(docId){
+  await updateDoc(doc(db,'solicitudes',docId),{status:'convertida'});
+  const si=solicitudes.findIndex(s=>s._docId===docId);
+  if(si>=0)solicitudes[si].status='convertida';
+  toast('✅ Marcada como procesada');
+  renderSolicitudes();
+};
+
 window.eliminarSolicitud=async function(docId){
   if(!confirm('¿Eliminar esta solicitud?'))return;
   await deleteDoc(doc(db,'solicitudes',docId));
@@ -8669,6 +8689,7 @@ window.convertirEnSuscriptor=function(docId){
   setTimeout(()=>{
     document.getElementById('uni-new-name').value=s.nombre||'';
     document.getElementById('uni-new-email').value=s.email||'';
+    uniFromSolicitudId=docId;
     toast('📝 Datos precargados — elegí la categoría y creá el alumno');
   },100);
 };
