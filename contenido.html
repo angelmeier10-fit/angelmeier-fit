@@ -790,6 +790,10 @@ Necesito una plantilla de fondo para historia de encuesta con dos opciones a ele
         <input type="text" id="nt-name" required placeholder="Nombre del tema">
       </div>
       <div>
+        <label for="nt-guion">Guion para grabar (si es reel/video, opcional)</label>
+        <textarea id="nt-guion" placeholder="Pegá acá el guion (HOOK, PROBLEMA, SOLUCIÓN, CTA...)..."></textarea>
+      </div>
+      <div>
         <label for="nt-post">Copy del post / carrusel (pie de foto)</label>
         <textarea id="nt-post" placeholder="Pegá acá el texto del post..."></textarea>
       </div>
@@ -1281,6 +1285,7 @@ function startPanel(){
           <button type="button" class="del" data-edit-topic="${t.id}">Editar</button>
           <button type="button" class="del" data-del-topic="${t.id}">Eliminar</button>
         </div>
+        ${t.guion ? blockHTML(t.id + '-guion', 'Guion para grabar', t.guion) : ''}
         ${blockHTML(t.id + '-post', 'Copy del post', t.post)}
         ${blockHTML(t.id + '-stories', 'Copy de historias', t.stories)}
         ${t.slides ? blockHTML(t.id + '-slides', 'Copy de las slides', t.slides) : ''}
@@ -1323,6 +1328,7 @@ function startPanel(){
     editingTopicId = topicId || null;
     const t = topicId ? topics.find(x => x.id === topicId) : null;
     document.getElementById('nt-name').value = t ? t.name : '';
+    document.getElementById('nt-guion').value = t ? (t.guion || '') : '';
     document.getElementById('nt-post').value = t ? t.post : '';
     document.getElementById('nt-stories').value = t ? t.stories : '';
     document.getElementById('nt-slides').value = t ? t.slides : '';
@@ -1344,6 +1350,7 @@ function startPanel(){
     if (!name) return;
     const data = {
       name,
+      guion: document.getElementById('nt-guion').value.trim(),
       post: document.getElementById('nt-post').value.trim(),
       stories: document.getElementById('nt-stories').value.trim(),
       slides: document.getElementById('nt-slides').value.trim(),
