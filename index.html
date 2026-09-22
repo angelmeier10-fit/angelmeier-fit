@@ -5570,6 +5570,7 @@ async function renderAlumnosUnificado(searchTerm){
     })();
     const passBtn=(subProg&&a.email)?`<button class="btn bg2 xs" onclick="event.stopPropagation();cambiarPasswordAlumnoAdmin('${a.email.replace(/'/g,"\\'")}','${a.name.replace(/'/g,"\\'")}')" title="Mandarle email para cambiar la contraseña">🔑 Contraseña</button>`:'';
     const nombreBtn=subProg?`<button class="btn bg2 xs" onclick="event.stopPropagation();editarNombreAlumno('${subProg.uid}','${a.name.replace(/'/g,"\\'")}')" title="Editar su nombre">✏️ Nombre</button>`:'';
+    const anamBtn=a.email?`<button class="btn bg2 xs" onclick="event.stopPropagation();verAnamnesisDeAlumno('${a.email.replace(/'/g,"\\'")}')" title="Ver las respuestas que dio en la anamnesis">📋 Anamnesis</button>`:'';
     return`<div class="card">
       <div style="display:flex;align-items:center;gap:10px;cursor:pointer;flex-wrap:wrap" onclick="document.getElementById('${bodyId}').classList.toggle('collapsed');this.querySelector('.card-toggle').style.transform=document.getElementById('${bodyId}').classList.contains('collapsed')?'rotate(-90deg)':''">
         <div class="member-av">${a.name.charAt(0).toUpperCase()}</div>
@@ -5578,6 +5579,7 @@ async function renderAlumnosUnificado(searchTerm){
         ${convertBtn}
         ${nombreBtn}
         ${passBtn}
+        ${anamBtn}
         <button class="btn bd2 xs" onclick="event.stopPropagation();deleteAlumnoCompleto(${ai})" title="Borrar alumno">🗑️ Borrar</button>
         <span class="card-toggle" style="transition:transform .2s;transform:rotate(-90deg)">▼</span>
       </div>
@@ -8455,6 +8457,19 @@ function buildSolCard(s,isNew){
     <button class="btn bg2 sm" onclick="verAnamnesis('${s._docId}')" style="margin-top:4px">📋 Ver anamnesis completa</button>
   </div>`;
 }
+
+window.verAnamnesisDeAlumno=async function(email){
+  if(!email){toast('⚠️ No hay email cargado para buscar la anamnesis');return}
+  const emailLc=email.toLowerCase();
+  let s=solicitudes.find(x=>(x.email||'').toLowerCase()===emailLc);
+  if(!s){
+    const snap=await getDocsSafe(collection(db,'solicitudes'));
+    solicitudes=snap.docs.map(d=>({...d.data(),_docId:d.id}));
+    s=solicitudes.find(x=>(x.email||'').toLowerCase()===emailLc);
+  }
+  if(!s){toast('⚠️ No se encontró una anamnesis con ese email');return}
+  verAnamnesis(s._docId);
+};
 
 window.verAnamnesis=function(docId){
   const s=solicitudes.find(x=>x._docId===docId);
