@@ -628,7 +628,11 @@ setTimeout(()=>{
   <div id="panel-edit" style="display:none">
     <div class="card" id="edit-client-data">
       <div class="collapsible-card-hdr" onclick="document.getElementById('edit-client-data').classList.toggle('collapsed');this.querySelector('.card-toggle').style.transform=document.getElementById('edit-client-data').classList.contains('collapsed')?'rotate(-90deg)':''">
-        <h2 id="edit-client-title">Editando cliente</h2><span class="card-toggle">▼</span>
+        <h2 id="edit-client-title">Editando cliente</h2>
+        <span style="display:flex;align-items:center;gap:8px">
+          <button type="button" class="btn bg2 xs" onclick="event.stopPropagation();verAnamnesisDeAlumno(document.getElementById('ec-email').value.trim())" title="Ver las respuestas que dio en la anamnesis">📋 Anamnesis</button>
+          <span class="card-toggle">▼</span>
+        </span>
       </div>
       <div class="collapsible-card-body"><div class="grid2">
         <div class="fg"><label>Nombre completo</label><input id="ec-name"></div>
