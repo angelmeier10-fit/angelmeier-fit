@@ -84,6 +84,12 @@ nav {
 .price-includes .item { display: flex; align-items: flex-start; gap: 10px; font-size: .95rem; color: var(--tx); }
 .price-includes .item::before { content: '✓'; color: var(--ac); font-weight: 700; flex-shrink: 0; }
 .price-guarantee { font-size: .85rem; color: var(--mu); margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border); }
+.presencial-card { max-width: 620px; margin: 24px auto 0; background: var(--s1); border: 1px solid var(--border); border-radius: 24px; padding: 36px 40px; }
+.presencial-card h3 { font-family: 'Playfair Display', serif; font-size: 1.4rem; font-weight: 700; margin-bottom: 14px; }
+.presencial-card .price-value { font-size: 2.2rem; margin-bottom: 20px; }
+.presencial-card .price-includes { margin-bottom: 20px; }
+.presencial-link { color: var(--ac); font-weight: 700; text-decoration: none; font-size: .95rem; }
+.presencial-link:hover { text-decoration: underline; }
 .price-alt-note { font-size: .82rem; color: var(--mu); margin-top: 24px; }
 .price-alt-note a { color: var(--ac); font-weight: 600; text-decoration: none; }
 
@@ -238,6 +244,7 @@ footer { padding: 32px 64px; display: flex; flex-direction: column; align-items:
       <p class="price-note">(USD 30 para quienes están fuera de Argentina)</p>
       <div class="price-includes">
         <div class="item">Plan de ejercicios progresivo: postura, fuerza funcional, movilidad y equilibrio</div>
+        <div class="item">Tu plan en la app, con cada ejercicio explicado paso a paso</div>
         <div class="item">Grupo de WhatsApp exclusivo de alumnos</div>
         <div class="item">1 encuentro en vivo por semana para corregir forma y resolver dudas</div>
         <div class="item">Seguimiento y ajuste mensual del plan según cómo responde tu cuerpo</div>
@@ -247,6 +254,18 @@ footer { padding: 32px 64px; display: flex; flex-direction: column; align-items:
         Quiero sumarme a la membresía
       </a>
       <p class="price-guarantee">🛡️ Garantía de 7 días: si no te sirve, te devolvemos el 100%, sin vueltas.</p>
+    </div>
+    <div class="presencial-card">
+      <div class="eyebrow">¿Preferís presencial?</div>
+      <h3>Clases personalizadas en Zona Norte</h3>
+      <div class="price-value">$40.000<span> /clase</span></div>
+      <div class="price-includes">
+        <div class="item">Si vienen 2 personas, se divide: $20.000 cada una</div>
+        <div class="item">Grupos de 3 o 4: precio promocional</div>
+        <div class="item">Mínimo 8 clases por mes</div>
+        <div class="item">Corrección postural en tiempo real e integración del masaje terapéutico</div>
+      </div>
+      <a class="presencial-link" href="https://wa.me/541172399988?text=Hola%20Angel%2C%20quiero%20consultar%20disponibilidad%20para%20clases%20presenciales%20%2B50%20en%20Zona%20Norte." target="_blank">Consultar disponibilidad →</a>
     </div>
   </div>
 </section>
@@ -316,7 +335,11 @@ footer { padding: 32px 64px; display: flex; flex-direction: column; align-items:
       </div>
       <div class="faq-item">
         <button class="faq-q" onclick="toggleFaq(this)">¿Las sesiones son presenciales o virtuales? <span class="faq-icon">+</span></button>
-        <div class="faq-a">Trabajo de las dos formas. Las sesiones presenciales tienen la ventaja de la corrección postural en tiempo real y la integración del masaje terapéutico. Las virtuales son ideales para quienes no pueden movilizarse fácilmente o prefieren entrenar desde casa.</div>
+        <div class="faq-a">Trabajo de las dos formas. Las sesiones presenciales son en Zona Norte y tienen la ventaja de la corrección postural en tiempo real y la integración del masaje terapéutico. Las virtuales son ideales para quienes no pueden movilizarse fácilmente o prefieren entrenar desde casa.</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)">¿Cuánto cuestan las clases presenciales? <span class="faq-icon">+</span></button>
+        <div class="faq-a">$40.000 por clase, con un mínimo de 8 clases por mes. Si vienen 2 personas, el precio se divide ($20.000 cada una), y para grupos de 3 o 4 hay precio promocional. Ideal para venir con tu pareja o con amigos.</div>
       </div>
       <div class="faq-item">
         <button class="faq-q" onclick="toggleFaq(this)">¿Cuánto tiempo hasta ver resultados? <span class="faq-icon">+</span></button>
