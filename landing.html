@@ -76,7 +76,9 @@ nav {
 
 .app-sec { background: var(--s1); }
 .app-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: center; }
-.app-shot { width: 100%; max-width: 420px; justify-self: center; border-radius: 24px; border: 8px solid var(--tx); box-shadow: 0 24px 64px rgba(0,0,0,.14); }
+.app-shots { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+.app-shot { width: 100%; border-radius: 20px; border: 6px solid var(--tx); box-shadow: 0 24px 64px rgba(0,0,0,.14); }
+.app-shot:last-child { margin-top: 48px; }
 .membresia { background: var(--warm); }
 .price-card { max-width: 620px; margin: 48px auto 0; background: var(--bg); border: 2px solid var(--ac); border-radius: 24px; padding: 44px 40px; text-align: center; position: relative; }
 .price-badge { display: inline-block; background: var(--ac); color: #fff; font-size: .72rem; font-weight: 700; padding: 5px 14px; border-radius: 20px; letter-spacing: .05em; text-transform: uppercase; margin-bottom: 20px; }
@@ -98,7 +100,7 @@ nav {
 
 .sobre { background: var(--warm); }
 .sobre-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 72px; align-items: center; }
-.sobre-photo { border-radius: 24px; overflow: hidden; aspect-ratio: 3/4; background: url('https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=700&q=80') center/cover no-repeat; box-shadow: 0 24px 64px rgba(0,0,0,.12); }
+.sobre-photo { border-radius: 24px; overflow: hidden; aspect-ratio: 3/4; background: url('img/angel-peso-muerto.jpg') 40% center/cover no-repeat; box-shadow: 0 24px 64px rgba(0,0,0,.12); }
 .sobre-text h2 { font-family: 'Playfair Display', serif; font-size: clamp(1.8rem,3vw,2.6rem); font-weight: 700; margin-bottom: 20px; }
 .sobre-text p { color: var(--mu); font-size: .95rem; line-height: 1.8; margin-bottom: 14px; }
 .creds { display: flex; flex-direction: column; gap: 10px; margin-top: 24px; }
@@ -250,7 +252,10 @@ footer { padding: 32px 64px; display: flex; flex-direction: column; align-items:
         <div class="item">Se instala en tu celular en un toque, sin pasar por la tienda</div>
       </div>
     </div>
-    <img class="app-shot" src="img/app-rutina.jpg" alt="Pantalla de la app con los ejercicios del día" loading="lazy">
+    <div class="app-shots">
+      <img class="app-shot" src="img/app-rutina.jpg" alt="Pantalla de la app con los ejercicios del día" loading="lazy">
+      <img class="app-shot" src="img/app-ejercicio.jpg" alt="Ejercicio abierto en la app con series, cargas y video" loading="lazy">
+    </div>
   </div>
 </section>
 

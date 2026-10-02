@@ -43,7 +43,7 @@ nav {
 .hero h1 span { color: var(--ac); }
 .hero-desc { font-size: 1.05rem; color: #c9c4bb; line-height: 1.75; max-width: 440px; margin-bottom: 38px; font-family: 'Inter'; text-transform: none; }
 .hero-sub { font-size: .78rem; color: #8a857c; margin-top: 14px; }
-.hero-img { height: 90vh; background: url('https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=900&q=80') center/cover no-repeat; }
+.hero-img { height: 90vh; background: url('img/angel-remo.jpg') center 45%/cover no-repeat; }
 
 .flyer-desafio { background: var(--dark); padding: 40px 64px; }
 .flyer-inner { max-width: 1000px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; border: 1px solid #ff5a1f45; background: #ff5a1f0f; border-radius: 14px; padding: 28px 32px; }
@@ -85,7 +85,9 @@ nav {
 
 .app-sec { background: var(--s1); }
 .app-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: center; }
-.app-shot { width: 100%; max-width: 420px; justify-self: center; border-radius: 20px; border: 8px solid var(--dark); box-shadow: 0 24px 64px rgba(0,0,0,.18); }
+.app-shots { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+.app-shot { width: 100%; border-radius: 18px; border: 6px solid var(--dark); box-shadow: 0 24px 64px rgba(0,0,0,.18); }
+.app-shot:last-child { margin-top: 48px; }
 .modalidades { background: var(--bg); }
 .mod-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 48px; }
 .mod-card { border-radius: 12px; padding: 36px; border: 2px solid var(--border); position: relative; transition: border-color .2s; background: var(--s1); }
@@ -105,7 +107,7 @@ nav {
 
 .sobre { background: var(--warm); }
 .sobre-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 72px; align-items: center; }
-.sobre-photo { border-radius: 12px; overflow: hidden; aspect-ratio: 3/4; background: url('https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=700&q=80') center/cover no-repeat; }
+.sobre-photo { border-radius: 12px; overflow: hidden; aspect-ratio: 3/4; background: url('img/angel-peso-muerto.jpg') 40% center/cover no-repeat; }
 .sobre-text h2 { font-size: clamp(1.8rem,3vw,2.6rem); font-weight: 700; margin-bottom: 20px; }
 .sobre-text p { color: var(--mu); font-size: .95rem; line-height: 1.8; margin-bottom: 14px; font-family: 'Inter'; }
 .creds { display: flex; flex-direction: column; gap: 10px; margin-top: 24px; }
@@ -249,7 +251,10 @@ footer { padding: 32px 64px; display: flex; flex-direction: column; gap: 10px; a
         <div class="mod-feature">Se instala en tu celular en un toque, sin pasar por la tienda</div>
       </div>
     </div>
-    <img class="app-shot" src="img/app-rutina.jpg" alt="Pantalla de la app con la rutina del día" loading="lazy">
+    <div class="app-shots">
+      <img class="app-shot" src="img/app-rutina.jpg" alt="Pantalla de la app con la rutina del día" loading="lazy">
+      <img class="app-shot" src="img/app-ejercicio.jpg" alt="Ejercicio abierto en la app con series, cargas y video" loading="lazy">
+    </div>
   </div>
 </section>
 
