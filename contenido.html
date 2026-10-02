@@ -1421,6 +1421,9 @@ img: pieza({ cat: 'entrenamiento', foto: 'Hombre principiante (no atleta) hacien
 
   function renderTopics(){
     const container = document.getElementById('dynamic-topics');
+    // Cada guardado vuelve a renderizar: recordar qué estaba abierto para no cerrarlo al tildar.
+    const openTopics = new Set([...container.querySelectorAll('.topic:not(.collapsed)')].map(el => el.dataset.topicId));
+    const openBlocks = new Set([...container.querySelectorAll('details.block[open] summary input[type="checkbox"]')].map(el => el.id));
     container.innerHTML = topics.map(t => `
       <div class="topic" data-topic-id="${t.id}">
         <div class="topic-head">
@@ -1459,6 +1462,12 @@ img: pieza({ cat: 'entrenamiento', foto: 'Hombre principiante (no atleta) hacien
       });
     });
     bindTopicCollapse(container);
+    container.querySelectorAll('.topic').forEach(el => {
+      if (openTopics.has(el.dataset.topicId)) el.classList.remove('collapsed');
+    });
+    container.querySelectorAll('details.block summary input[type="checkbox"]').forEach(box => {
+      if (openBlocks.has(box.id)) box.closest('details.block').open = true;
+    });
     document.getElementById('count-topics').textContent = String(topics.length);
     updateCounts();
   }
