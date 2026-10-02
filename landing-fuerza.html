@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Angel Meier — Fuerza, CrossFit y Composición Corporal</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
@@ -161,21 +161,73 @@ footer { padding: 32px 64px; display: flex; flex-direction: column; gap: 10px; a
   .cta-final { padding: 64px 24px; }
   footer { padding: 24px; }
 }
+
+.nav-right { display: flex; align-items: center; gap: 14px; }
+.menu-btn { width: 44px; height: 44px; border: none; background: transparent; cursor: pointer; display: flex; flex-direction: column; justify-content: center; gap: 6px; padding: 10px; }
+.menu-btn span { display: block; height: 2px; background: var(--tx); border-radius: 2px; }
+.menu-overlay { position: fixed; inset: 0; z-index: 300; display: grid; grid-template-columns: minmax(260px, 22%) 1fr; opacity: 0; visibility: hidden; transition: opacity .35s, visibility .35s; }
+.menu-overlay.open { opacity: 1; visibility: visible; }
+.menu-side { background: var(--menu-grad); color: #fff; display: flex; flex-direction: column; justify-content: space-between; align-items: center; padding: 56px 32px; text-align: center; }
+.menu-logo { font-family: var(--menu-font); font-weight: 700; font-size: 1.2rem; letter-spacing: .04em; text-transform: uppercase; }
+.menu-claim { font-family: var(--menu-font); font-weight: 800; font-size: clamp(1.6rem, 2.2vw, 2.2rem); line-height: 1.05; text-transform: uppercase; margin-bottom: 28px; }
+.menu-cta { display: inline-block; border: 1.5px solid #fff; color: #fff; border-radius: 50px; padding: 16px 34px; text-decoration: none; font-weight: 600; transition: background .2s, color .2s; }
+.menu-cta:hover { background: #fff; color: #141414; }
+.menu-main { position: relative; overflow: hidden; background: #121212; color: #fff; padding: 56px 72px; display: flex; flex-direction: column; }
+.menu-main::before { content: ''; position: absolute; inset: -40px; background: var(--menu-photo) center/cover no-repeat; filter: blur(18px) brightness(.35); }
+.menu-main > * { position: relative; }
+.menu-top { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+.menu-tagline { font-family: 'Inter', sans-serif; font-size: 1.35rem; font-weight: 300; color: #d8d3cc; }
+.menu-close { background: none; border: none; color: #fff; font-size: 2.6rem; line-height: 1; cursor: pointer; width: 48px; height: 48px; flex-shrink: 0; }
+.menu-links { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+.menu-links a { display: flex; align-items: baseline; gap: 24px; color: #9a948c; text-decoration: none; font-family: 'Inter', sans-serif; font-weight: 300; font-size: min(8.5vh, 6.5vw); line-height: 1.12; letter-spacing: -.02em; transition: color .2s, transform .2s; }
+.menu-links a:hover { color: #fff; transform: translateX(8px); }
+.menu-links a small { font-size: 1rem; font-weight: 400; color: #8a857c; min-width: 28px; letter-spacing: 0; }
+body.menu-open { overflow: hidden; }
+@media (max-width: 768px) {
+  .menu-overlay { display: flex; flex-direction: column; }
+  .menu-main { flex: 1; padding: 24px; }
+  .menu-side { order: 2; padding: 20px 24px; }
+  .menu-logo, .menu-claim, .menu-side-end { display: none; }
+  .menu-side-mid, .menu-cta { width: 100%; }
+  .menu-links a { font-size: clamp(2rem, 9vw, 3rem); gap: 14px; }
+  .menu-tagline { font-size: 1rem; }
+}
 </style>
 </head>
 <body>
 
 <nav>
   <div class="nav-logo">Angel Meier</div>
-  <div class="nav-links">
-    <a href="#objetivos">Objetivos</a>
-    <a href="#programa">El programa</a>
-    <a href="#modalidades">Modalidades</a>
-    <a href="#sobre-mi">Sobre mí</a>
-    <a href="#faq">Preguntas</a>
+  <div class="nav-right">
     <a class="nav-cta" href="https://wa.me/5491172399988?text=Hola%20Angel%2C%20vi%20tu%20p%C3%A1gina%20y%20quiero%20entrenar%20fuerza%2FCrossFit." target="_blank">Hablemos</a>
+    <button class="menu-btn" type="button" aria-label="Abrir menú" onclick="toggleMenu(true)"><span></span><span></span><span></span></button>
   </div>
 </nav>
+
+<div class="menu-overlay" id="menu" aria-hidden="true" style="--menu-grad:linear-gradient(to bottom, #141414 0%, #3d1a0b 40%, #b8401a 75%, #ff5a1f 100%);--menu-photo:url('img/angel-remo.jpg');--menu-font:'Oswald', sans-serif">
+  <div class="menu-side">
+    <div class="menu-logo">Angel Meier</div>
+    <div class="menu-side-mid">
+      <div class="menu-claim">Entrenemos<br>juntos</div>
+      <a class="menu-cta" href="https://wa.me/5491172399988?text=Hola%20Angel%2C%20vi%20tu%20p%C3%A1gina%20y%20quiero%20entrenar%20fuerza%2FCrossFit." target="_blank">Contactame</a>
+    </div>
+    <div class="menu-side-end"></div>
+  </div>
+  <div class="menu-main">
+    <div class="menu-top">
+      <span class="menu-tagline">Dejá de <em>postergarte</em>.</span>
+      <button class="menu-close" type="button" aria-label="Cerrar menú" onclick="toggleMenu(false)">&times;</button>
+    </div>
+    <div class="menu-links">
+      <a href="#objetivos" onclick="toggleMenu(false)"><small>01</small>Objetivos</a>
+      <a href="#app" onclick="toggleMenu(false)"><small>02</small>La app</a>
+      <a href="#modalidades" onclick="toggleMenu(false)"><small>03</small>Modalidades</a>
+      <a href="#sobre-mi" onclick="toggleMenu(false)"><small>04</small>Sobre mí</a>
+      <a href="#faq" onclick="toggleMenu(false)"><small>05</small>Preguntas</a>
+      <a href="https://wa.me/5491172399988?text=Hola%20Angel%2C%20vi%20tu%20p%C3%A1gina%20y%20quiero%20entrenar%20fuerza%2FCrossFit." target="_blank" onclick="toggleMenu(false)"><small>06</small>Contacto</a>
+    </div>
+  </div>
+</div>
 
 <section class="hero">
   <div class="hero-text">
@@ -404,6 +456,13 @@ footer { padding: 32px 64px; display: flex; flex-direction: column; gap: 10px; a
 </a>
 
 <script>
+function toggleMenu(open) {
+  var m = document.getElementById('menu');
+  m.classList.toggle('open', open);
+  m.setAttribute('aria-hidden', String(!open));
+  document.body.classList.toggle('menu-open', open);
+}
+document.addEventListener('keydown', function(e) { if (e.key === 'Escape') toggleMenu(false); });
 function toggleFaq(btn) {
   var item = btn.parentElement;
   var isOpen = item.classList.contains('open');
