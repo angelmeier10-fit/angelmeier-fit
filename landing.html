@@ -168,6 +168,8 @@ footer { padding: 32px 64px; display: flex; flex-direction: column; align-items:
 .menu-logo { font-family: var(--menu-font); font-weight: 700; font-size: 1.2rem; letter-spacing: .04em; text-transform: uppercase; }
 .menu-claim { font-family: var(--menu-font); font-weight: 800; font-size: clamp(1.6rem, 2.2vw, 2.2rem); line-height: 1.05; text-transform: uppercase; margin-bottom: 28px; }
 .menu-cta { display: inline-block; border: 1.5px solid #fff; color: #fff; border-radius: 50px; padding: 16px 34px; text-decoration: none; font-weight: 600; transition: background .2s, color .2s; }
+.menu-social { color: #fff; display: inline-flex; opacity: .85; transition: opacity .2s; }
+.menu-social:hover { opacity: 1; }
 .menu-cta:hover { background: #fff; color: #141414; }
 .menu-main { position: relative; overflow: hidden; background: #121212; color: #fff; padding: 56px 72px; display: flex; flex-direction: column; }
 .menu-main::before { content: ''; position: absolute; inset: -40px; background: var(--menu-photo) center/cover no-repeat; filter: blur(18px) brightness(.35); }
@@ -184,7 +186,8 @@ body.menu-open { overflow: hidden; }
   .menu-overlay { display: flex; flex-direction: column; }
   .menu-main { flex: 1; padding: 24px; }
   .menu-side { order: 2; padding: 20px 24px; }
-  .menu-logo, .menu-claim, .menu-side-end { display: none; }
+  .menu-logo, .menu-claim { display: none; }
+  .menu-side-end { margin-top: 14px; }
   .menu-side-mid, .menu-cta { width: 100%; }
   .menu-links a { font-size: clamp(2rem, 9vw, 3rem); gap: 14px; }
   .menu-tagline { font-size: 1rem; }
@@ -208,7 +211,9 @@ body.menu-open { overflow: hidden; }
       <div class="menu-claim">Movete con<br>confianza</div>
       <a class="menu-cta" href="https://wa.me/5491172399988?text=Hola%20Angel%2C%20quiero%20empezar%20el%20programa%20%2B50%20con%20la%20garant%C3%ADa%20de%207%20d%C3%ADas." target="_blank">Contactame</a>
     </div>
-    <div class="menu-side-end"></div>
+    <div class="menu-side-end">
+      <a class="menu-social" href="https://instagram.com/angelmeier.fit" target="_blank" aria-label="Instagram de Angel Meier"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg></a>
+    </div>
   </div>
   <div class="menu-main">
     <div class="menu-top">
