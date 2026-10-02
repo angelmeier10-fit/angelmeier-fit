@@ -351,7 +351,16 @@
 
   <section id="prompts">
     <h2>Prompts para ChatGPT</h2>
-    <p class="lede">Cada bloque tiene el prompt listo para copiar y pegar. Marcalo como hecho cuando ya tengas la pieza generada.</p>
+    <p class="lede">Cada bloque tiene el prompt listo para copiar y pegar. Marcalo como hecho cuando ya tengas la pieza generada. Todos los prompts de imagen (también los de Historias y Publicaciones) incluyen siempre la identidad visual fija.</p>
+
+    <details class="block">
+      <summary>Identidad visual fija — instrucciones para ChatGPT</summary>
+      <div class="block-body">
+        <p style="color:var(--ink-dim);margin:0 0 10px">Pegalo en las instrucciones de un Proyecto de ChatGPT (o en "Personalizar ChatGPT") para que siempre trabaje con esta identidad.</p>
+        <pre class="copy" id="text-identidad"></pre>
+        <button class="copy-btn" data-copy-target="text-identidad">Copiar texto</button>
+      </div>
+    </details>
 
     <details class="block">
       <summary>
@@ -360,26 +369,7 @@
         <span class="status" id="status-p1">Pendiente</span>
       </summary>
       <div class="block-body">
-        <pre class="copy" id="text-p1">Ya tengo cerrado mi logo "AM" en violeta sólido #7B4FE0, marca "ANGEL MEIER" en tipografía condensada bold blanca, slogan "MOVIMIENTO. FUERZA. BIENESTAR.". Necesito un set de íconos para historias destacadas de Instagram (highlight covers), circulares, todos con el mismo estilo entre sí para que se vean como un set cohesivo.
-
-Especificaciones:
-- Círculo relleno violeta sólido #7B4FE0 (no negro).
-- Símbolo adentro en blanco, estilo relleno simple con contorno fino, no lineart.
-- Mismo grosor de trazo y mismo tamaño relativo de símbolo dentro del círculo en los 8.
-- Flat design, sin sombras ni degradé ni efecto 3D.
-- Formato final: 1080x1080, círculo centrado con margen prolijo alrededor (no pegado al borde).
-
-Necesito estas 8 categorías, generame cada una en un mensaje separado:
-1. Masajes
-2. Entrenamiento
-3. App (suscripción a angelmeier-fit.web.app)
-4. Gift Card
-5. Turnos
-6. Opiniones / Testimonios
-7. Antes y Después
-8. Tips / Dolores comunes
-
-Pedile la primera categoría (Masajes) primero, mirá si el estilo de línea te convence, y recién ahí generá las otras 7 con ese mismo estilo ya validado.</pre>
+        <pre class="copy" id="text-p1"></pre>
         <button class="copy-btn" data-copy-target="text-p1">Copiar prompt</button>
       </div>
     </details>
@@ -391,33 +381,7 @@ Pedile la primera categoría (Masajes) primero, mirá si el estilo de línea te 
         <span class="status" id="status-p2">Pendiente</span>
       </summary>
       <div class="block-body">
-        <pre class="copy" id="text-p2">Ya tengo cerrado el logo y el set de íconos de destacadas. Ahora necesito piezas de feed para Instagram, formato 1080x1350, todas con el mismo template base.
-
-Template base (repetir en todas):
-- Foto realista de gimnasio/consultorio (no ilustración), iluminación tipo campaña fitness/wellness premium, ocupando el lado derecho de la pieza.
-- Panel diagonal violeta sólido #7B4FE0 sobre fondo negro cubriendo aproximadamente el 40-45% izquierdo, con corte diagonal pronunciado hacia la foto.
-- Título grande en tipografía condensada bold, mayúsculas, blanco con la(s) palabra(s) clave en violeta, en 2-3 líneas. Línea divisoria violeta fina debajo del título.
-- Lista VERTICAL de 2-3 íconos circulares violeta rellenos (mismo estilo que el set de destacadas) con etiqueta corta en mayúsculas a la derecha de cada uno, uno debajo del otro.
-- Abajo a la izquierda: logo real "AM" en violeta + línea vertical separadora + "ANGEL MEIER" en blanco bold + tagline en violeta chico debajo (ej. "ENTRENAMIENTO PERSONALIZADO" o "MASAJES TERAPÉUTICOS" según el tema de la pieza).
-- Si la pieza forma parte de una serie/carrusel: 3 flechas chevron (»»») en violeta arriba a la derecha.
-- Grilla de puntos violeta arriba a la izquierda.
-- Paleta: violeta #7B4FE0, negro, blanco.
-
-Pedime las piezas de a una, en este orden:
-1. Masajes — dolor lumbar
-2. Masajes — cervicales
-3. Masajes — deportivo/recuperación
-4. Masajes — relajación
-5. Entrenamiento — piernas/glúteos
-6. Entrenamiento — HIIT
-7. Entrenamiento — fuerza general
-8. Promo app — "Entrená donde estés"
-9. Promo app — funcionalidad (mockup de celular)
-10. Promo app — call to action "Suscribite hoy"
-11. Testimonio 1
-12. Testimonio 2
-
-Empezá por la pieza 1, y si el resultado convence, seguimos pidiendo las demás con "mismo estilo que la anterior, cambiando foto y texto a: [...]".</pre>
+        <pre class="copy" id="text-p2"></pre>
         <button class="copy-btn" data-copy-target="text-p2">Copiar prompt</button>
       </div>
     </details>
@@ -429,20 +393,7 @@ Empezá por la pieza 1, y si el resultado convence, seguimos pidiendo las demás
         <span class="status" id="status-p3">Pendiente</span>
       </summary>
       <div class="block-body">
-        <pre class="copy" id="text-p3">Ya tengo cerrada la identidad visual de mis piezas de Instagram: foto real de gimnasio (ambiente oscuro y premium), con un panel diagonal violeta sólido #7B4FE0 sobre fondo negro que cubre aproximadamente el 40-45% izquierdo de la imagen, con corte diagonal pronunciado hacia la foto. Título en tipografía condensada bold en mayúsculas, blanco con la(s) palabra(s) clave en violeta, en 2-3 líneas, con línea divisoria violeta fina debajo. Debajo del título, lista VERTICAL de 2-3 íconos circulares violeta rellenos con símbolo blanco adentro, cada uno con etiqueta corta en mayúscula a la derecha (uno debajo del otro). Abajo a la izquierda: logo real "AM" en violeta + línea vertical separadora + "ANGEL MEIER" en blanco bold + tagline chico en violeta debajo. Arriba a la derecha: 3 flechas chevron (»»») en violeta indicando que se puede deslizar (en todas las slides salvo la última). Grilla de puntos violeta arriba a la izquierda.
-
-Necesito un carrusel educativo de 5 slides para Instagram, formato vertical 1080x1350 cada slide, mismo template visual en las 5, tema: "5 tips para aliviar el dolor lumbar".
-
-Estructura:
-1. Portada: título "5 TIPS PARA ALIVIAR EL DOLOR LUMBAR", foto de fondo, "Deslizá →" abajo, flechas chevron arriba a la derecha, logo real abajo a la izquierda.
-2. Tip 1 con número grande "1", título corto y 1-2 líneas de explicación, flechas chevron, logo real.
-3. Tip 2, mismo formato con "2".
-4. Tip 3, mismo formato con "3".
-5. Cierre: "¿Querés una sesión personalizada?" + CTA con contacto/WhatsApp, logo real más grande, sin flechas chevron (es la última slide).
-
-Reglas: mismo fondo, mismo lugar del logo real, mismo estilo de número grande.
-
-Generame primero el Slide 1 (portada) solo, para validar el estilo antes de seguir.</pre>
+        <pre class="copy" id="text-p3"></pre>
         <button class="copy-btn" data-copy-target="text-p3">Copiar prompt</button>
       </div>
     </details>
@@ -454,19 +405,7 @@ Generame primero el Slide 1 (portada) solo, para validar el estilo antes de segu
         <span class="status" id="status-p4">Pendiente</span>
       </summary>
       <div class="block-body">
-        <pre class="copy" id="text-p4">Ya tengo cerrada la identidad visual de mis piezas de Instagram: foto real de gimnasio (ambiente oscuro y premium), con un panel diagonal violeta sólido #7B4FE0 sobre fondo negro que cubre aproximadamente el 40-45% izquierdo de la imagen, con corte diagonal pronunciado hacia la foto. Título en tipografía condensada bold en mayúsculas, blanco con la(s) palabra(s) clave en violeta, con línea divisoria violeta fina debajo. Debajo del título, lista VERTICAL de 2-3 íconos circulares violeta rellenos con símbolo blanco adentro, cada uno con etiqueta corta en mayúscula a la derecha. Abajo a la izquierda: logo real "AM" en violeta + línea vertical separadora + "ANGEL MEIER" en blanco bold + tagline chico en violeta debajo. Grilla de puntos violeta arriba a la izquierda.
-
-Necesito una plantilla de portada para Reels, formato vertical 1080x1920, pensada para que todos mis reels se vean parte de la misma marca en la grilla.
-
-Especificaciones:
-- Logo real siempre en el mismo lugar (abajo a la izquierda), no un espacio vacío.
-- Espacio central marcado como "ÁREA PARA FOTO DEL VIDEO".
-- Franja de texto para el título del reel, tipografía bold.
-- Etiqueta chica de categoría ("MASAJES", "ENTRENAMIENTO" o "APP"), mismo estilo que los íconos de destacadas.
-- Fondo negro sólido.
-- Sin flechas chevron (no es carrusel).
-
-Dame 3 variantes de layout (texto arriba/foto abajo, texto abajo/foto arriba, texto lateral), con foto placeholder, título de ejemplo "RUTINA DE 10 MINUTOS EN CASA" y etiqueta "ENTRENAMIENTO".</pre>
+        <pre class="copy" id="text-p4"></pre>
         <button class="copy-btn" data-copy-target="text-p4">Copiar prompt</button>
       </div>
     </details>
@@ -478,29 +417,7 @@ Dame 3 variantes de layout (texto arriba/foto abajo, texto abajo/foto arriba, te
         <span class="status" id="status-p5">Pendiente</span>
       </summary>
       <div class="block-body">
-        <pre class="copy" id="text-p5">Identidad visual de mis piezas de Instagram:
-- Foto real de gimnasio o consultorio (no ilustración), iluminación premium con tono violeta.
-- Panel diagonal violeta sólido #7B4FE0 sobre fondo negro, cubriendo aproximadamente el 40-45% izquierdo de la pieza, con corte diagonal pronunciado hacia la foto que ocupa el resto.
-- Grilla de puntos violeta chica arriba a la izquierda.
-- Título en tipografía condensada bold, todo en mayúsculas, en 2-3 líneas: blanco con la(s) palabra(s) clave en violeta. Línea divisoria violeta fina debajo del título.
-- Debajo del título, lista VERTICAL de 2-3 íconos circulares violeta rellenos con símbolo blanco simple adentro (flat design, sin sombras ni 3D), cada uno con su etiqueta corta en mayúsculas a la derecha (uno debajo del otro, no en fila).
-- Abajo a la izquierda: logo real — marca "AM" en violeta, línea vertical fina separadora, "ANGEL MEIER" en blanco bold, y debajo tagline en violeta chico (ajustar texto del tagline al contexto: "ENTRENAMIENTO PERSONALIZADO", "MASAJES TERAPÉUTICOS", etc.).
-- Si la pieza es parte de un carrusel o hay que indicar que se puede seguir viendo contenido: 3 flechas tipo chevron (»»») en violeta, arriba a la derecha.
-- Paleta estricta: violeta #7B4FE0, negro, blanco. Sin gradientes ni efecto 3D.
-
-Necesito una plantilla base para historias diarias (no destacadas), formato vertical 1080x1920, simple y rápida de reutilizar.
-
-Especificaciones:
-- Logo real siempre en el mismo lugar (abajo a la izquierda).
-- Espacio central marcado como "ÁREA PARA FOTO DEL DÍA".
-- Franja de texto corta para preguntas o recordatorios, tipografía bold blanca/violeta.
-- Diseño liviano, no recargado.
-
-Dame 2 variantes:
-1. Franja de texto arriba (para anuncios/preguntas).
-2. Franja de texto abajo (para pie de foto/frase corta).
-
-Mostrame cada una con foto placeholder y el texto de ejemplo: "¿Te duele la espalda después de todo el día sentado?"</pre>
+        <pre class="copy" id="text-p5"></pre>
         <button class="copy-btn" data-copy-target="text-p5">Copiar prompt</button>
       </div>
     </details>
@@ -521,20 +438,7 @@ Mostrame cada una con foto placeholder y el texto de ejemplo: "¿Te duele la esp
             <span class="status" id="status-stk-e-img">Pendiente</span>
           </summary>
           <div class="block-body">
-            <pre class="copy" id="text-stk-e-img">Identidad visual de mis piezas de Instagram:
-- Foto real de gimnasio o consultorio (no ilustración), iluminación premium con tono violeta.
-- Panel diagonal violeta sólido #7B4FE0 sobre fondo negro, cubriendo aproximadamente el 40-45% izquierdo de la pieza, con corte diagonal pronunciado hacia la foto que ocupa el resto.
-- Grilla de puntos violeta chica arriba a la izquierda.
-- Título en tipografía condensada bold, todo en mayúsculas, en 2-3 líneas: blanco con la(s) palabra(s) clave en violeta. Línea divisoria violeta fina debajo del título.
-- Debajo del título, lista VERTICAL de 2-3 íconos circulares violeta rellenos con símbolo blanco simple adentro (flat design, sin sombras ni 3D), cada uno con su etiqueta corta en mayúsculas a la derecha (uno debajo del otro, no en fila).
-- Abajo a la izquierda: logo real — marca "AM" en violeta, línea vertical fina separadora, "ANGEL MEIER" en blanco bold, y debajo tagline en violeta chico "ENTRENAMIENTO PERSONALIZADO".
-- Paleta estricta: violeta #7B4FE0, negro, blanco. Sin gradientes ni efecto 3D.
-
-Necesito una plantilla base para historias diarias (formato vertical 1080x1920) para usar de fondo cuando no tengo una foto real a mano, categoría Entrenamiento:
-- Foto placeholder central de alguien entrenando (peso corporal o funcional), estilo realista, luz natural.
-- Franja de texto abajo, tipografía bold blanca/violeta, con el texto de ejemplo: "Cuidando el cuerpo que cuida el tuyo".
-- Logo real abajo a la izquierda.
-- Diseño liviano, no recargado, para que se lea bien con un sticker de Instagram (encuesta o pregunta) encima.</pre>
+            <pre class="copy" id="text-stk-e-img"></pre>
             <button class="copy-btn" data-copy-target="text-stk-e-img">Copiar prompt</button>
           </div>
         </details>
@@ -556,20 +460,7 @@ Necesito una plantilla base para historias diarias (formato vertical 1080x1920) 
             <span class="status" id="status-stk-m-img">Pendiente</span>
           </summary>
           <div class="block-body">
-            <pre class="copy" id="text-stk-m-img">Identidad visual de mis piezas de Instagram:
-- Foto real de gimnasio o consultorio (no ilustración), iluminación premium con tono violeta.
-- Panel diagonal violeta sólido #7B4FE0 sobre fondo negro, cubriendo aproximadamente el 40-45% izquierdo de la pieza, con corte diagonal pronunciado hacia la foto que ocupa el resto.
-- Grilla de puntos violeta chica arriba a la izquierda.
-- Título en tipografía condensada bold, todo en mayúsculas, en 2-3 líneas: blanco con la(s) palabra(s) clave en violeta. Línea divisoria violeta fina debajo del título.
-- Debajo del título, lista VERTICAL de 2-3 íconos circulares violeta rellenos con símbolo blanco simple adentro (flat design, sin sombras ni 3D), cada uno con su etiqueta corta en mayúsculas a la derecha (uno debajo del otro, no en fila).
-- Abajo a la izquierda: logo real — marca "AM" en violeta, línea vertical fina separadora, "ANGEL MEIER" en blanco bold, y debajo tagline en violeta chico "MASAJES TERAPÉUTICOS".
-- Paleta estricta: violeta #7B4FE0, negro, blanco. Sin gradientes ni efecto 3D.
-
-Necesito una plantilla base para historias diarias (formato vertical 1080x1920) para usar de fondo cuando no tengo una foto real a mano, categoría Masajes:
-- Foto placeholder central de un masaje en curso (manos aplicando técnica sobre espalda u hombros), consultorio prolijo, luz cálida.
-- Franja de texto abajo, tipografía bold blanca/violeta, con el texto de ejemplo: "Técnica en acción".
-- Logo real abajo a la izquierda.
-- Diseño liviano, no recargado, para que se lea bien con un sticker de Instagram (encuesta o pregunta) encima.</pre>
+            <pre class="copy" id="text-stk-m-img"></pre>
             <button class="copy-btn" data-copy-target="text-stk-m-img">Copiar prompt</button>
           </div>
         </details>
@@ -591,20 +482,7 @@ Necesito una plantilla base para historias diarias (formato vertical 1080x1920) 
             <span class="status" id="status-stk-c-img">Pendiente</span>
           </summary>
           <div class="block-body">
-            <pre class="copy" id="text-stk-c-img">Identidad visual de mis piezas de Instagram:
-- Foto real de gimnasio o consultorio (no ilustración), iluminación premium con tono violeta.
-- Panel diagonal violeta sólido #7B4FE0 sobre fondo negro, cubriendo aproximadamente el 40-45% izquierdo de la pieza, con corte diagonal pronunciado hacia la foto que ocupa el resto.
-- Grilla de puntos violeta chica arriba a la izquierda.
-- Título en tipografía condensada bold, todo en mayúsculas, en 2-3 líneas: blanco con la(s) palabra(s) clave en violeta. Línea divisoria violeta fina debajo del título.
-- Debajo del título, lista VERTICAL de 2-3 íconos circulares violeta rellenos con símbolo blanco simple adentro (flat design, sin sombras ni 3D), cada uno con su etiqueta corta en mayúsculas a la derecha (uno debajo del otro, no en fila).
-- Abajo a la izquierda: logo real — marca "AM" en violeta, línea vertical fina separadora, "ANGEL MEIER" en blanco bold, y debajo tagline en violeta chico.
-- Paleta estricta: violeta #7B4FE0, negro, blanco. Sin gradientes ni efecto 3D.
-
-Necesito una plantilla base para historias diarias (formato vertical 1080x1920) que combine entrenamiento y masajes en una sola imagen dividida:
-- Mitad superior de la foto: alguien entrenando. Mitad inferior: una sesión de masaje. Línea divisoria fina violeta entre ambas.
-- Franja de texto abajo, tipografía bold blanca/violeta, con el texto de ejemplo: "Entreno para poder cuidarte mejor".
-- Logo real abajo a la izquierda.
-- Diseño liviano, no recargado, para que se lea bien con un sticker de Instagram encima.</pre>
+            <pre class="copy" id="text-stk-c-img"></pre>
             <button class="copy-btn" data-copy-target="text-stk-c-img">Copiar prompt</button>
           </div>
         </details>
@@ -626,19 +504,7 @@ Necesito una plantilla base para historias diarias (formato vertical 1080x1920) 
             <span class="status" id="status-stk-pm-img">Pendiente</span>
           </summary>
           <div class="block-body">
-            <pre class="copy" id="text-stk-pm-img">Identidad visual de mis piezas de Instagram:
-- Foto real de gimnasio o consultorio (no ilustración), iluminación premium con tono violeta.
-- Panel diagonal violeta sólido #7B4FE0 sobre fondo negro, cubriendo aproximadamente el 40-45% izquierdo de la pieza, con corte diagonal pronunciado hacia la foto que ocupa el resto.
-- Grilla de puntos violeta chica arriba a la izquierda.
-- Título en tipografía condensada bold, todo en mayúsculas, blanco con la(s) palabra(s) clave en violeta. Línea divisoria violeta fina debajo del título.
-- Abajo a la izquierda: logo real — marca "AM" en violeta, línea vertical fina separadora, "ANGEL MEIER" en blanco bold, y debajo tagline en violeta chico "MASAJES TERAPÉUTICOS".
-- Paleta estricta: violeta #7B4FE0, negro, blanco. Sin gradientes ni efecto 3D.
-
-Necesito una plantilla de fondo para historia de encuesta (formato vertical 1080x1920), categoría Masajes:
-- Foto placeholder de alguien con dolor o tensión en la espalda/cuello (postura de oficina), consultorio o casa de fondo desenfocado.
-- Franja de texto en el tercio superior, tipografía bold blanca/violeta, con el texto de ejemplo: "¿Te duele la espalda después de todo el día sentado?"
-- Logo real abajo a la izquierda.
-- Dejar el tercio inferior de la imagen limpio y sin texto, para poder pegar ahí el sticker nativo de encuesta de Instagram (Sí/No).</pre>
+            <pre class="copy" id="text-stk-pm-img"></pre>
             <button class="copy-btn" data-copy-target="text-stk-pm-img">Copiar prompt</button>
           </div>
         </details>
@@ -660,19 +526,7 @@ Necesito una plantilla de fondo para historia de encuesta (formato vertical 1080
             <span class="status" id="status-stk-pe-img">Pendiente</span>
           </summary>
           <div class="block-body">
-            <pre class="copy" id="text-stk-pe-img">Identidad visual de mis piezas de Instagram:
-- Foto real de gimnasio o consultorio (no ilustración), iluminación premium con tono violeta.
-- Panel diagonal violeta sólido #7B4FE0 sobre fondo negro, cubriendo aproximadamente el 40-45% izquierdo de la pieza, con corte diagonal pronunciado hacia la foto que ocupa el resto.
-- Grilla de puntos violeta chica arriba a la izquierda.
-- Título en tipografía condensada bold, todo en mayúsculas, blanco con la(s) palabra(s) clave en violeta. Línea divisoria violeta fina debajo del título.
-- Abajo a la izquierda: logo real — marca "AM" en violeta, línea vertical fina separadora, "ANGEL MEIER" en blanco bold, y debajo tagline en violeta chico "ENTRENAMIENTO PERSONALIZADO".
-- Paleta estricta: violeta #7B4FE0, negro, blanco. Sin gradientes ni efecto 3D.
-
-Necesito una plantilla de fondo para historia de encuesta (formato vertical 1080x1920), categoría Entrenamiento/App:
-- Foto placeholder de un mockup de celular con la app de entrenamiento, o de alguien entrenando en casa mirando el celular apoyado cerca.
-- Franja de texto en el tercio superior, tipografía bold blanca/violeta, con el texto de ejemplo: "¿Ya tenés tu app de entrenamiento?"
-- Logo real abajo a la izquierda.
-- Dejar el tercio inferior de la imagen limpio y sin texto, para poder pegar ahí el sticker nativo de encuesta de Instagram (Sí/Todavía no).</pre>
+            <pre class="copy" id="text-stk-pe-img"></pre>
             <button class="copy-btn" data-copy-target="text-stk-pe-img">Copiar prompt</button>
           </div>
         </details>
@@ -694,19 +548,7 @@ Necesito una plantilla de fondo para historia de encuesta (formato vertical 1080
             <span class="status" id="status-stk-q-img">Pendiente</span>
           </summary>
           <div class="block-body">
-            <pre class="copy" id="text-stk-q-img">Identidad visual de mis piezas de Instagram:
-- Foto real de gimnasio o consultorio (no ilustración), iluminación premium con tono violeta.
-- Panel diagonal violeta sólido #7B4FE0 sobre fondo negro, cubriendo aproximadamente el 40-45% izquierdo de la pieza, con corte diagonal pronunciado hacia la foto que ocupa el resto.
-- Grilla de puntos violeta chica arriba a la izquierda.
-- Título en tipografía condensada bold, todo en mayúsculas, blanco con la(s) palabra(s) clave en violeta. Línea divisoria violeta fina debajo del título.
-- Abajo a la izquierda: logo real — marca "AM" en violeta, línea vertical fina separadora, "ANGEL MEIER" en blanco bold, y debajo tagline en violeta chico.
-- Paleta estricta: violeta #7B4FE0, negro, blanco. Sin gradientes ni efecto 3D.
-
-Necesito una plantilla de fondo para historia de pregunta abierta (formato vertical 1080x1920), que sirva tanto para masajes como para entrenamiento:
-- Foto placeholder neutra de Angel Meier trabajando (entrenando o dando un masaje, elegí la que quede más natural), plano medio, cálido y cercano.
-- Franja de texto en el tercio superior, tipografía bold blanca/violeta, con el texto de ejemplo: "¿Qué zona te molesta más? Contame 👇"
-- Logo real abajo a la izquierda.
-- Dejar el tercio inferior de la imagen limpio y sin texto, para poder pegar ahí el sticker nativo de "Preguntas" de Instagram.</pre>
+            <pre class="copy" id="text-stk-q-img"></pre>
             <button class="copy-btn" data-copy-target="text-stk-q-img">Copiar prompt</button>
           </div>
         </details>
@@ -728,19 +570,7 @@ Necesito una plantilla de fondo para historia de pregunta abierta (formato verti
             <span class="status" id="status-stk-o-img">Pendiente</span>
           </summary>
           <div class="block-body">
-            <pre class="copy" id="text-stk-o-img">Identidad visual de mis piezas de Instagram:
-- Foto real de gimnasio o consultorio (no ilustración), iluminación premium con tono violeta.
-- Panel diagonal violeta sólido #7B4FE0 sobre fondo negro, cubriendo aproximadamente el 40-45% izquierdo de la pieza, con corte diagonal pronunciado hacia la foto que ocupa el resto.
-- Grilla de puntos violeta chica arriba a la izquierda.
-- Título en tipografía condensada bold, todo en mayúsculas, blanco con la(s) palabra(s) clave en violeta. Línea divisoria violeta fina debajo del título.
-- Abajo a la izquierda: logo real — marca "AM" en violeta, línea vertical fina separadora, "ANGEL MEIER" en blanco bold, y debajo tagline en violeta chico.
-- Paleta estricta: violeta #7B4FE0, negro, blanco. Sin gradientes ni efecto 3D.
-
-Necesito una plantilla de fondo para historia de encuesta con dos opciones a elegir (formato vertical 1080x1920):
-- Foto placeholder dividida en dos mitades (izquierda/derecha), representando dos opciones distintas de entrenamiento o de masaje, línea divisoria fina violeta en el medio.
-- Franja de texto en el tercio superior, tipografía bold blanca/violeta, con el texto de ejemplo: "¿Cuál es tu objetivo hoy? 💪"
-- Logo real abajo a la izquierda.
-- Dejar el tercio inferior de la imagen limpio y sin texto, para poder pegar ahí el sticker nativo de encuesta con dos opciones de Instagram.</pre>
+            <pre class="copy" id="text-stk-o-img"></pre>
             <button class="copy-btn" data-copy-target="text-stk-o-img">Copiar prompt</button>
           </div>
         </details>
@@ -807,7 +637,7 @@ Necesito una plantilla de fondo para historia de encuesta con dos opciones a ele
       </div>
       <div>
         <label for="nt-img">Prompt de imagen para ChatGPT</label>
-        <textarea id="nt-img" placeholder="Pegá acá el prompt de imagen..."></textarea>
+        <textarea id="nt-img" placeholder="Pegá solo lo específico de la pieza (formato, foto, título, palabra en violeta, íconos). La identidad visual fija se agrega sola."></textarea>
       </div>
       <div class="actions">
         <button type="submit" id="save-topic-btn">Guardar tema</button>
@@ -961,11 +791,317 @@ function startPanel(){
     ],
   };
 
-  const IMG_BASE = 'Ya tengo cerrada la identidad visual de mis piezas de Instagram: foto real de gimnasio (ambiente oscuro y premium), con un panel diagonal violeta sólido #7B4FE0 sobre fondo negro que cubre aproximadamente el tercio izquierdo de la imagen, con el corte en diagonal hacia la foto. Título en tipografía condensada bold en mayúsculas, blanco con la palabra clave del título en violeta. Debajo del título, 2 o 3 íconos circulares violeta rellenos con el símbolo en blanco adentro, cada uno con una etiqueta corta en mayúscula al lado (categoría del contenido). Dejo el rectángulo inferior de la pieza limpio y vacío (sin logo, sin texto, sin marca de agua) para pegar mi logo real después en un editor. Grilla de puntos violeta arriba a la izquierda. Uso siempre el mismo template de flyer para el feed: foto real ocupando el lado derecho, panel diagonal violeta a la izquierda con el título, íconos circulares con etiqueta debajo del título, y un espacio limpio y vacío (sin logo, sin texto) abajo del todo para pegar mi logo real después.';
+  const IDENTIDAD_REGLAS_BASE = `IDENTIDAD VISUAL FIJA
+Estética general:
+- Deportiva, moderna, fuerte, premium y profesional.
+- Alto contraste.
+- Sensación de entrenamiento real y rendimiento, no de publicidad genérica.
+- Fotografía realista, cinematográfica y creíble.
+- Nada de ilustraciones ni renders 3D para las personas.
+Paleta:
+- Violeta principal exacto: #7B4FE0
+- Negro profundo.
+- Blanco.
+- No agregar otros colores predominantes.
+- Puede haber tonos naturales propios de la fotografía, pero el tratamiento general debe integrarse con negro y violeta.
+COMPOSICIÓN PRINCIPAL
+La composición base debe ser la siguiente:
+- Formato vertical, salvo que yo indique otro.
+- Aproximadamente 40% del lado izquierdo dedicado a la parte gráfica/textual.
+- Foto real ocupando principalmente centro y lado derecho.
+- Sobre el lado izquierdo, usar una base negra o negro-violeta muy oscura.
+- Incorporar un panel diagonal violeta #7B4FE0, integrado al área izquierda.
+- El borde entre texto y fotografía debe tener un corte diagonal pronunciado, similar a una gran cuña o banda que atraviesa verticalmente la pieza.
+- El violeta puede aparecer como plano semitransparente o integración editorial oscura, pero sin degradados artificiales o genéricos tipo Canva.
+- La fotografía puede extenderse parcialmente debajo de la zona violeta para dar profundidad.
+- Mantener una estética editorial/deportiva similar a una portada de campaña de gimnasio premium.
+ELEMENTOS GRÁFICOS FIJOS
+- Arriba a la izquierda: grilla pequeña de puntos violetas.
+- Si la pieza pertenece a un carrusel: colocar 3 chevrones »»» violetas arriba a la derecha.
+- Si es pieza única, omitir los chevrones salvo que yo los pida.
+- Debajo del título: agregar una línea divisoria horizontal fina en violeta.
+- No usar marcos, stickers decorativos genéricos ni elementos innecesarios.
+TIPOGRAFÍA
+- Título en tipografía sans serif condensada, bold o extra bold, estilo deportivo/editorial.
+- Todo en MAYÚSCULAS.
+- Título dividido en varias líneas para ocupar bien el área izquierda.
+- Mayormente blanco.
+- Una o dos palabras clave deben ir en violeta #7B4FE0.
+- La jerarquía debe ser muy clara y legible incluso viendo la miniatura pequeña en Instagram.
+- Usar interlineado compacto.
+- Evitar tipografías redondeadas, cursivas, futuristas o decorativas.
+Ejemplo visual de jerarquía:
+PUMP SESSION
+TRACCIÓN
+- CROSSFIT
+donde “TRACCIÓN” aparece en violeta y el resto en blanco.
+ÍCONOS Y BENEFICIOS
+Debajo del título utilizar una lista vertical de 2 o 3 ítems.
+Cada ítem:
+- Ícono circular violeta relleno.
+- Símbolo blanco simple adentro.
+- Diseño flat.
+- Sin sombras.
+- Sin 3D.
+- Etiqueta breve en mayúsculas a la derecha.
+Ejemplo:
+- ícono de barra → FUERZA
+- ícono relacionado con técnica → TÉCNICA
+- ícono gráfico → RESULTADOS
+Siempre en vertical, uno debajo del otro. Nunca en fila horizontal salvo pedido explícito.
+FOTOGRAFÍA
+- Debe ser fotografía real y fotorrealista.
+- Nunca ilustración.
+- Nunca dibujo.
+- Nunca personaje plástico o artificial.
+- Gimnasios reales, consultorios, salas de entrenamiento o entrenamiento en casa según el tema.
+- Iluminación premium, preferentemente ambiente oscuro con algunos acentos violetas.
+- La persona debe quedar principalmente en el lado derecho.
+- Mantener anatomía natural.
+- Buena técnica en ejercicios.
+- Movimiento creíble.
+- Evitar cuerpos exageradamente musculosos salvo que el contenido lo requiera.
+Cuando el contenido sea entrenamiento:
+- Usar equipamiento real.
+- Pesas, racks, mancuernas, barras, kettlebells, bancos, etc.
+- Ambiente oscuro y moderno.
+- Luz violeta sutil en el entorno.
+Cuando sea masajes/kinesiología:
+- Usar consultorio deportivo moderno.
+- Camilla, elementos de rehabilitación o anatomía de fondo.
+- Iluminación cálida-premium con acento violeta.
+PERSONAS
+- Alternar hombres y mujeres según el contenido.
+- No usar siempre mujeres.
+- Cuando hable de adultos +50, mostrar personas acordes a esa edad, activas pero reales.
+- Cuando hable de principiantes, evitar cuerpos de atleta profesional.
+- Si yo paso una foto mía, usarla como referencia principal y respetar mis rasgos.
+- Si aparece un masajista que no soy yo, evitar mostrar claramente su rostro.
+MARCA Y PARTE INFERIOR
+- No generar logos inventados.
+- No generar isotipos falsos.
+- No generar marcas de agua.
+- No poner un rectángulo blanco abajo.
+- La zona inferior debe quedar integrada naturalmente al diseño.
+- Si digo que luego voy a agregar mi logo, simplemente dejar un pequeño espacio visualmente limpio, pero manteniendo el mismo fondo oscuro/violeta.
+Si pido explícitamente el logo real, utilizar únicamente:
+AM en violeta + línea vertical fina + ANGEL MEIER blanco bold + ENTRENAMIENTO PERSONALIZADO violeta pequeño.
+Nunca inventar “Angel Fit”, “Angel Fitness” u otra marca si no lo pido.
+FORMATOS
+Cuando yo diga:
+- “Feed”: 1080x1350 px, proporción 4:5.
+- “Carrusel”: 1080x1350 px cada slide, mismo template en todas.
+- “Reel / TikTok / Historia”: 1080x1920 px, proporción 9:16.
+- “Portada Reel”: adaptar la composición para que título y sujeto también se lean bien en la vista previa del perfil.
+- “Facebook”: usar el formato que yo indique y proteger el contenido importante dentro del área segura central.
+COSAS QUE DEBÉS EVITAR SIEMPRE
+- Diseño genérico de inteligencia artificial.
+- Degradados azul/violeta genéricos.
+- Panel violeta plano ocupando toda la mitad de la imagen.
+- Fondo blanco.
+- Rectángulo blanco inferior.
+- Personas deformadas.
+- Manos extra.
+- Barras o pesas deformadas.
+- Equipamiento imposible.
+- Estética de folleto corporativo.
+- Iconos 3D.
+- Glow/neón exagerado.
+- Sombras artificiales.
+- Demasiado texto.
+- Logos falsos.
+- Texto pequeño ilegible.`;
 
-  function imgPrompt(categoria, titulo, foto){
-    return `${IMG_BASE}\n\nGenerame la pieza de feed, formato 1080x1350:\nCategoría: ${categoria}\nTítulo grande: "${titulo}"\nFoto: ${foto}\nÍcono de categoría: ${categoria} (el mismo de mi set de destacadas).`;
+  const IDENTIDAD_COMO_RESPONDER = `CÓMO TENÉS QUE RESPONDERME
+Cada vez que te dé una idea, devolveme SOLAMENTE el prompt final de generación de imagen, listo para pegar en ChatGPT.
+Estructurá internamente el prompt así:
+1. Formato exacto.
+2. Tipo de pieza.
+3. Composición.
+4. Fotografía y sujeto.
+5. Título exacto.
+6. Palabras que van en violeta.
+7. Íconos y etiquetas.
+8. Elementos gráficos.
+9. Iluminación.
+10. Restricciones.
+No me expliques el diseño antes ni después.
+Cuando yo te pase únicamente un tema, también tenés que ayudarme a definir:
+- un título corto y potente;
+- la palabra clave que irá en violeta;
+- 2 o 3 etiquetas para los íconos;
+- una escena fotográfica apropiada;
+y luego entregarme directamente el prompt final.
+Si te digo “como mi feed”, “como venimos haciendo”, “misma visual” o “identidad ANGEL MEIER”, significa exactamente utilizar todas estas reglas sin modificarlas.`;
+
+  const IDENTIDAD_PRIORIDAD = `Prioridad absoluta: consistencia del feed. Cada nuevo diseño debe parecer parte de la misma colección visual que los anteriores, cambiando únicamente la fotografía, el título y los íconos según el contenido.`;
+
+  // Para pegar en un Proyecto de ChatGPT: incluye cómo responder (devolver prompts).
+  const IDENTIDAD_COMPLETA = `${IDENTIDAD_REGLAS_BASE}\n\n${IDENTIDAD_COMO_RESPONDER}\n\n${IDENTIDAD_PRIORIDAD}`;
+  // Para anteponer a cada prompt de imagen: sin "cómo responder", así ChatGPT genera la imagen directamente.
+  const IDENTIDAD_REGLAS = `${IDENTIDAD_REGLAS_BASE}\n\n${IDENTIDAD_PRIORIDAD}`;
+
+  function withIdentidad(img){
+    if (!img || !img.trim() || img.includes('IDENTIDAD VISUAL FIJA')) return img;
+    return `${IDENTIDAD_REGLAS}\n\nPIEZA A GENERAR (aplicar todas las reglas de arriba sin modificarlas)\n${img}`;
   }
+
+  const FMT_FEED = 'Feed — 1080x1350 px, proporción 4:5.';
+  const FMT_CARRUSEL = 'Carrusel — 1080x1350 px cada slide, mismo template en todas.';
+  const FMT_HISTORIA = 'Historia — 1080x1920 px, proporción 9:16.';
+  const FMT_PORTADA_REEL = 'Portada Reel — 1080x1920 px, proporción 9:16, con título y sujeto legibles también en la vista previa del perfil. Después, una segunda versión Feed 1080x1350 con el mismo diseño.';
+  const COMPOSICION_BASE = 'Composición base de la identidad: ~40% izquierdo para título e íconos sobre base negra/negro-violeta muy oscura con panel diagonal violeta #7B4FE0 integrado; corte diagonal pronunciado hacia la foto real, que ocupa centro y derecha y puede extenderse parcialmente debajo de la zona violeta.';
+  const COMPOSICION_HISTORIA_STICKER = `${COMPOSICION_BASE} Título e íconos en la mitad superior; el tercio inferior queda limpio (mismo fondo oscuro/violeta, sin texto) para pegar el sticker nativo de Instagram.`;
+  const GRAF_UNICA = 'Grilla pequeña de puntos violetas arriba a la izquierda. Línea divisoria horizontal fina violeta debajo del título. Sin chevrones (pieza única).';
+  const GRAF_CARRUSEL = 'Grilla pequeña de puntos violetas arriba a la izquierda. 3 chevrones »»» violetas arriba a la derecha (carrusel), salvo en la última slide. Línea divisoria horizontal fina violeta debajo del título.';
+  const LUZ = {
+    entrenamiento: 'Ambiente de gimnasio oscuro y moderno, iluminación premium con luz violeta sutil en el entorno.',
+    masajes: 'Consultorio deportivo moderno, iluminación cálida-premium con acento violeta.',
+  };
+  const RESTRICCIONES_BASE = 'Todas las de la identidad. Sin logo ni marca de agua: dejar un pequeño espacio visualmente limpio abajo a la izquierda, con el mismo fondo oscuro/violeta, para agregar mi logo después. Nada de rectángulo blanco inferior.';
+
+  function pieza(o){
+    return [
+      `1. Formato exacto: ${o.formato || FMT_FEED}`,
+      `2. Tipo de pieza: ${o.tipo || 'Pieza única de feed.'}`,
+      `3. Composición: ${o.composicion || COMPOSICION_BASE}`,
+      `4. Fotografía y sujeto: ${o.foto}`,
+      `5. Título exacto: ${o.titulo}`,
+      `6. Palabras en violeta #7B4FE0: ${o.violeta}`,
+      `7. Íconos y etiquetas (lista vertical, uno debajo del otro): ${o.iconos}`,
+      `8. Elementos gráficos: ${o.graficos || (o.carrusel ? GRAF_CARRUSEL : GRAF_UNICA)}`,
+      `9. Iluminación: ${o.luz || LUZ[o.cat] || LUZ.entrenamiento}`,
+      `10. Restricciones: ${o.restricciones || RESTRICCIONES_BASE}${o.extraRestr ? ' ' + o.extraRestr : ''}`,
+    ].join('\n');
+  }
+
+  const STATIC_IMG = {
+    'text-p1': pieza({
+      formato: '1080x1080 px, una imagen por categoría, círculo centrado con margen prolijo alrededor.',
+      tipo: 'Set de 8 íconos para historias destacadas de Instagram. Excepción a la composición base: acá no va foto ni panel diagonal, solo el ícono. Categorías (una por mensaje): 1. Masajes, 2. Entrenamiento, 3. App, 4. Gift Card, 5. Turnos, 6. Opiniones, 7. Antes y Después, 8. Tips. Generá primero Masajes; cuando lo valide, las otras 7 con exactamente el mismo estilo.',
+      composicion: 'Círculo relleno violeta #7B4FE0 sobre fondo negro profundo. Símbolo blanco simple centrado, mismo grosor de trazo y mismo tamaño relativo en los 8 íconos para que se vean como un set.',
+      foto: 'No lleva fotografía.',
+      titulo: 'Sin título ni texto.',
+      violeta: 'El círculo completo.',
+      iconos: 'Un único símbolo blanco por categoría (ej.: manos → Masajes, mancuerna → Entrenamiento, celular → App, regalo → Gift Card, calendario → Turnos, estrella → Opiniones, flechas de progreso → Antes y Después, lamparita → Tips).',
+      graficos: 'Ninguno: sin grilla de puntos, sin chevrones, sin línea divisoria.',
+      luz: 'No aplica: diseño flat.',
+      restricciones: 'Flat, sin sombras, sin 3D, sin degradados, sin glow. Sin texto dentro del ícono. Sin logos ni marcas de agua.',
+    }),
+    'text-p2': pieza({
+      cat: 'masajes',
+      tipo: 'Pieza única de feed, primera de una serie de 12 con el mismo template. Esta es la pieza 1: Masajes — dolor lumbar. Las siguientes te las voy a pedir con "misma visual, pieza N": 2. Masajes — cervicales, 3. Masajes — deportivo/recuperación, 4. Masajes — relajación, 5. Entrenamiento — piernas/glúteos, 6. Entrenamiento — HIIT, 7. Entrenamiento — fuerza general, 8. App — "Entrená donde estés", 9. App — celular mostrando una rutina, 10. App — "Suscribite hoy", 11. Testimonio 1, 12. Testimonio 2.',
+      foto: 'Masaje en la zona lumbar de un cliente (hombre) acostado boca abajo en camilla; manos del masajista en primer plano, su rostro no se ve. Sujeto a la derecha.',
+      titulo: 'ADIÓS DOLOR LUMBAR',
+      violeta: 'LUMBAR',
+      iconos: 'ícono de manos → ALIVIO / ícono de columna → MOVILIDAD / ícono de hoja → BIENESTAR',
+    }),
+    'text-p3': pieza({
+      cat: 'masajes', carrusel: true,
+      formato: FMT_CARRUSEL,
+      tipo: 'Carrusel educativo de 5 slides: "5 tips para aliviar el dolor lumbar". Slide 1 portada. Slide 2 "MOVETE CADA 30-40 MINUTOS" (foto: persona parándose del escritorio a estirar). Slide 3 "FORTALECÉ EL CORE" (foto: persona haciendo plancha). Slide 4 "CUIDÁ CÓMO LEVANTÁS PESO" (foto: persona levantando una caja flexionando rodillas). Slide 5 cierre "¿SEGUÍS CON DOLOR?" + "ESCRIBIME Y COORDINAMOS TU TURNO". En las slides 2-4, número grande violeta (1, 2, 3) junto al título. Generá primero solo la Slide 1 para validar el estilo.',
+      foto: 'Slide 1: hombre adulto en una oficina oscura y moderna, de pie junto al escritorio, tocándose la zona lumbar con gesto de molestia. Sujeto a la derecha.',
+      titulo: 'Slide 1: 5 TIPS PARA ALIVIAR EL DOLOR LUMBAR',
+      violeta: 'DOLOR LUMBAR',
+      iconos: 'Slide 1: ícono de movimiento → MOVIMIENTO / ícono de abdomen → CORE / ícono de columna → POSTURA',
+      luz: 'Ambiente oscuro y moderno, luz premium con acento violeta sutil.',
+    }),
+    'text-p4': pieza({
+      formato: FMT_PORTADA_REEL,
+      tipo: 'Portada de reel (pieza única). Plantilla que voy a repetir en todos mis reels cambiando solo foto, título e íconos.',
+      foto: 'Hombre entrenando en casa con mancuernas (press de hombros), living moderno en penumbra. Sujeto a la derecha, dentro del área central segura.',
+      titulo: 'RUTINA DE 10 MINUTOS EN CASA',
+      violeta: '10 MINUTOS',
+      iconos: 'ícono de reloj → RÁPIDO / ícono de casa → EN CASA / ícono de mancuerna → ENTRENAMIENTO',
+      luz: 'Interior en penumbra, luz premium con acento violeta sutil.',
+    }),
+    'text-p5': pieza({
+      cat: 'masajes',
+      formato: FMT_HISTORIA,
+      tipo: 'Historia diaria (pieza única), plantilla liviana para reutilizar.',
+      composicion: COMPOSICION_HISTORIA_STICKER,
+      foto: 'Mujer de 30-40 años sentada frente a la computadora en una oficina oscura, tocándose la espalda baja con gesto de molestia. Sujeto a la derecha.',
+      titulo: '¿TE DUELE LA ESPALDA DESPUÉS DE TODO EL DÍA SENTADO?',
+      violeta: 'ESPALDA',
+      iconos: 'ícono de silla → POSTURA / ícono de manos → ALIVIO',
+      luz: 'Oficina en penumbra, luz premium con acento violeta sutil.',
+    }),
+    'text-stk-e-img': pieza({
+      formato: FMT_HISTORIA,
+      tipo: 'Fondo de historia recurrente, categoría Entrenamiento, para usar con un sticker de encuesta o pregunta encima.',
+      composicion: COMPOSICION_HISTORIA_STICKER,
+      foto: 'Hombre de 30-40 años haciendo remo con mancuerna en un banco, gimnasio oscuro y moderno, técnica correcta. Si te paso una foto mía, usala como referencia y respetá mis rasgos. Sujeto a la derecha.',
+      titulo: 'CUIDANDO EL CUERPO QUE CUIDA EL TUYO',
+      violeta: 'CUERPO',
+      iconos: 'ícono de barra → FUERZA / ícono de corazón → SALUD',
+    }),
+    'text-stk-m-img': pieza({
+      cat: 'masajes',
+      formato: FMT_HISTORIA,
+      tipo: 'Fondo de historia recurrente, categoría Masajes, para usar con un sticker encima.',
+      composicion: COMPOSICION_HISTORIA_STICKER,
+      foto: 'Manos aplicando masaje en hombros y espalda alta de una clienta boca abajo en camilla; rostro del masajista no visible. Sujeto a la derecha.',
+      titulo: 'TÉCNICA EN ACCIÓN',
+      violeta: 'TÉCNICA',
+      iconos: 'ícono de manos → TÉCNICA / ícono de hoja → ALIVIO',
+    }),
+    'text-stk-c-img': pieza({
+      cat: 'masajes',
+      formato: FMT_HISTORIA,
+      tipo: 'Fondo de historia recurrente que cruza entrenamiento y masajes, para usar con un sticker encima.',
+      composicion: COMPOSICION_HISTORIA_STICKER,
+      foto: 'Consultorio deportivo moderno con camilla en primer plano y mancuernas/kettlebells en un rack al fondo; un entrenador de pie junto a la camilla (si te paso una foto mía, usala como referencia). Sujeto a la derecha.',
+      titulo: 'ENTRENO PARA CUIDARTE MEJOR',
+      violeta: 'CUIDARTE',
+      iconos: 'ícono de mancuerna → ENTRENAMIENTO / ícono de manos → MASAJES',
+    }),
+    'text-stk-pm-img': pieza({
+      cat: 'masajes',
+      formato: FMT_HISTORIA,
+      tipo: 'Fondo de historia de encuesta Sí/No, categoría Masajes.',
+      composicion: COMPOSICION_HISTORIA_STICKER,
+      foto: 'Hombre de 35-45 años en una oficina oscura, frotándose el cuello con gesto de tensión. Sujeto a la derecha.',
+      titulo: '¿TE DUELE LA ESPALDA DESPUÉS DE TODO EL DÍA SENTADO?',
+      violeta: 'ESPALDA',
+      iconos: 'ícono de silla → POSTURA / ícono de cuello → TENSIÓN',
+      luz: 'Oficina en penumbra, luz premium con acento violeta sutil.',
+    }),
+    'text-stk-pe-img': pieza({
+      formato: FMT_HISTORIA,
+      tipo: 'Fondo de historia de encuesta Sí/Todavía no, categoría Entrenamiento/App.',
+      composicion: COMPOSICION_HISTORIA_STICKER,
+      foto: 'Mujer entrenando en casa con mancuernas, mirando un celular realista apoyado en el piso cuya pantalla muestra una rutina genérica (sin logos ni marcas). Sujeto a la derecha.',
+      titulo: '¿YA TENÉS TU APP DE ENTRENAMIENTO?',
+      violeta: 'APP',
+      iconos: 'ícono de celular → APP / ícono de calendario → A TU RITMO',
+      luz: 'Interior de casa en penumbra, luz premium con acento violeta sutil.',
+    }),
+    'text-stk-q-img': pieza({
+      cat: 'masajes',
+      formato: FMT_HISTORIA,
+      tipo: 'Fondo de historia de pregunta abierta (sticker "Preguntas"), sirve para masajes y entrenamiento.',
+      composicion: COMPOSICION_HISTORIA_STICKER,
+      foto: 'Entrenador en un consultorio deportivo moderno, plano medio, gesto cálido y cercano, camilla y elementos de rehabilitación de fondo. Si te paso una foto mía, usala como referencia principal y respetá mis rasgos. Sujeto a la derecha.',
+      titulo: '¿QUÉ ZONA TE MOLESTA MÁS?',
+      violeta: 'ZONA',
+      iconos: 'ícono de cuello → CUELLO / ícono de columna → ESPALDA / ícono de rodilla → RODILLA',
+    }),
+    'text-stk-o-img': pieza({
+      formato: FMT_HISTORIA,
+      tipo: 'Fondo de historia de encuesta con dos opciones a elegir.',
+      composicion: COMPOSICION_HISTORIA_STICKER,
+      foto: 'Mujer haciendo sentadilla con barra en un rack, gimnasio oscuro y moderno, técnica correcta. Sujeto a la derecha.',
+      titulo: '¿CUÁL ES TU OBJETIVO HOY?',
+      violeta: 'OBJETIVO',
+      iconos: 'ícono de balanza → BAJAR DE PESO / ícono de barra → GANAR FUERZA',
+    }),
+  };
+
+  document.getElementById('text-identidad').textContent = IDENTIDAD_COMPLETA;
+  Object.entries(STATIC_IMG).forEach(([id, txt]) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = withIdentidad(txt);
+  });
 
   const SEED_TOPICS = [
     {
@@ -973,98 +1109,98 @@ function startPanel(){
       post: 'Rutina de 15 minutos, sin excusas 💪\n\nNo hace falta gimnasio ni equipamiento — con tu peso corporal y constancia alcanza para empezar.\n\n¿Querés una rutina armada para vos? Suscribite a la app — link en bio\n\n#entrenamientoencasa #appdeentrenamiento #fitness',
       stories: 'Historia 1 (repost): Rutina nueva en el feed 💪 Deslizá al posteo 👆\nHistoria 2 (CTA): ¿Ya tenés tu app de entrenamiento? Suscribite — link en bio',
       slides: '',
-      img: imgPrompt('Entrenamiento', 'RUTINA DE 15 MINUTOS, SIN EXCUSAS', 'una persona entrenando en su casa (living o patio), haciendo un ejercicio de peso corporal (sentadilla o plancha), ambiente luminoso y prolijo, sin gimnasio de fondo.'),
+img: pieza({ cat: 'entrenamiento', foto: 'Hombre principiante (no atleta) haciendo sentadilla con peso corporal en un living moderno en penumbra, técnica correcta, sin gimnasio de fondo. Sujeto a la derecha.', titulo: 'RUTINA DE 15 MINUTOS, SIN EXCUSAS', violeta: '15 MINUTOS', iconos: 'ícono de reloj → RÁPIDO / ícono de casa → EN CASA / ícono de persona → SIN EQUIPO', luz: 'Interior de casa en penumbra, luz premium con acento violeta sutil.' }),
     },
     {
       id: 's1-miercoles', name: 'Semana 1 — Miércoles (Masajes)',
       post: 'Adiós dolor cervical 🙌\n\nPasar horas mirando el celular o la compu factura directo en el cuello y los hombros.\n\nUna sesión bien enfocada puede devolverte la movilidad en una sola visita.\n\n📲 Coordiná tu turno — link en bio\n\n#dolorcervical #masajesterapeuticos #bienestar',
       stories: 'Historia 1 (repost + encuesta): ¿Te duele el cuello después de trabajar? [Sí/No]\nHistoria 2 (CTA): Turnos disponibles esta semana — link en bio',
       slides: '',
-      img: imgPrompt('Masajes', 'ADIÓS DOLOR CERVICAL', 'masoterapeuta aplicando masaje en el cuello y hombros de un cliente acostado boca abajo en camilla, consultorio cálido y prolijo, luz suave.'),
+      img: pieza({ cat: 'masajes', foto: 'Masaje en cuello y hombros de una clienta acostada boca abajo en camilla; manos del masajista en primer plano, su rostro no se ve. Sujeto a la derecha.', titulo: 'ADIÓS DOLOR CERVICAL', violeta: 'CERVICAL', iconos: 'ícono de cuello → ALIVIO / ícono de hombros → MOVILIDAD / ícono de hoja → BIENESTAR' }),
     },
     {
       id: 's1-viernes', name: 'Semana 1 — Viernes (Carrusel — dolor lumbar, Masajes)',
       post: '💥 5 TIPS PARA ALIVIAR EL DOLOR LUMBAR 💥\n\nEl dolor lumbar no aparece de la nada: la mayoría de las veces es consecuencia de malos hábitos que repetimos todos los días sin darnos cuenta.\n\nGuardá este posteo y aplicá estos tips desde hoy 👇\n\n1️⃣ Movete cada 30-40 minutos, aunque sea un minuto\n2️⃣ Fortalecé el core, no solo la espalda\n3️⃣ Cuidá cómo levantás peso: flexioná rodillas, no la espalda\n\nSi ya venís con dolor hace tiempo, estos tips ayudan pero no reemplazan una sesión personalizada que trabaje la causa real.\n\n📲 Escribime y coordinamos tu turno (link en bio)\n\n#dolorlumbar #masajesterapeuticos #entrenamientopersonalizado #bienestar',
       stories: 'Historia 1 (repost + sticker de encuesta): ¿Te duele la zona lumbar seguido? [Sí/No]\nHistoria 2: Subí un carrusel con 5 tips para el dolor lumbar 💜 Deslizá al posteo anterior 👆\nHistoria 3 (tip suelto): Si pasás muchas horas sentado, tu espalda te lo va a cobrar tarde o temprano. Movete cada 30-40 min.\nHistoria 4 (CTA): ¿Ya probaste una sesión de masaje descontracturante? 📲 Coordiná tu turno — link en bio',
       slides: 'Slide 1 — Portada:\n5 TIPS PARA ALIVIAR EL DOLOR LUMBAR\nDeslizá →\n\nSlide 2 — Tip 1:\n1. Movete cada 30-40 minutos\nEstar sentado mucho tiempo sin pausas es una de las causas más comunes de dolor lumbar. Parate, caminá un minuto y volvé.\n\nSlide 3 — Tip 2:\n2. Fortalecé el core, no solo la espalda\nUn abdomen débil sobrecarga la zona lumbar. Ejercicios simples de core hacen más que cualquier estiramiento aislado.\n\nSlide 4 — Tip 3:\n3. Cuidá cómo levantás peso\nFlexioná las rodillas, no la espalda. Acercá el objeto al cuerpo antes de levantarlo.\n\nSlide 5 — Cierre:\n¿Seguís con dolor a pesar de estos tips?\nUna sesión personalizada puede ayudarte a encontrar la causa real.\n📲 Escribime y coordinamos tu turno',
-      img: `${IMG_BASE}\n\nCarrusel educativo de 5 slides, formato vertical 1080x1350 cada una, tema "5 tips para aliviar el dolor lumbar", mismo template visual en las 5:\n\nSlide 1 (portada): fondo negro o foto real de alguien con dolor de espalda con overlay oscuro. Título "5 TIPS PARA ALIVIAR EL DOLOR LUMBAR". "Deslizá →" abajo en violeta.\n\nSlide 2 (Tip 1): número grande "1" en violeta, título "Movete cada 30-40 minutos", foto de alguien parándose del escritorio para estirar.\n\nSlide 3 (Tip 2): número "2", título "Fortalecé el core, no solo la espalda", foto de alguien haciendo plancha.\n\nSlide 4 (Tip 3): número "3", título "Cuidá cómo levantás peso", foto de alguien levantando una caja flexionando rodillas.\n\nSlide 5 (cierre): título "¿Seguís con dolor a pesar de estos tips?", CTA violeta "📲 Escribime y coordinamos tu turno", espacio más grande para el logo.\n\nGenerame primero la Slide 1 para validar el estilo antes de seguir con las otras 4.`,
+      img: pieza({ cat: 'masajes', carrusel: true, formato: FMT_CARRUSEL, tipo: 'Carrusel educativo de 5 slides: "5 tips para aliviar el dolor lumbar". Slide 1 portada. Slide 2 "MOVETE CADA 30-40 MINUTOS" (foto: persona parándose del escritorio a estirar). Slide 3 "FORTALECÉ EL CORE" (foto: persona haciendo plancha). Slide 4 "CUIDÁ CÓMO LEVANTÁS PESO" (foto: persona levantando una caja flexionando rodillas). Slide 5 cierre "¿SEGUÍS CON DOLOR?" + "ESCRIBIME Y COORDINAMOS TU TURNO". En las slides 2-4, número grande violeta (1, 2, 3) junto al título. Generá primero solo la Slide 1 para validar el estilo.', foto: 'Slide 1: hombre adulto en una oficina oscura y moderna, de pie junto al escritorio, tocándose la zona lumbar con gesto de molestia. Sujeto a la derecha.', titulo: 'Slide 1: 5 TIPS PARA ALIVIAR EL DOLOR LUMBAR', violeta: 'DOLOR LUMBAR', iconos: 'Slide 1: ícono de movimiento → MOVIMIENTO / ícono de abdomen → CORE / ícono de columna → POSTURA', luz: 'Ambiente oscuro y moderno, luz premium con acento violeta sutil.' }),
     },
     {
       id: 's2-lunes', name: 'Semana 2 — Lunes (Entrenamiento)',
       post: 'Un core fuerte no es solo estética — es la base que protege tu espalda en cada movimiento del día.\n\nEn la app tenés rutinas de core progresivas, adaptadas a tu nivel.\n\n🔗 angelmeier-fit.web.app/suscripcion\n\n#core #entrenamientopersonalizado #fuerza',
       stories: 'Historia 1 (repost): Nueva rutina de core en el feed 👆\nHistoria 2 (CTA): Sumate a la app esta semana — link en bio',
       slides: '',
-      img: imgPrompt('Entrenamiento', 'UN CORE FUERTE PROTEGE TU ESPALDA', 'una persona haciendo un ejercicio de core (plancha o abdominales), buena forma técnica, ambiente de entrenamiento en casa o gimnasio funcional.'),
+      img: pieza({ cat: 'entrenamiento', foto: 'Mujer haciendo plancha con buena técnica sobre colchoneta en un gimnasio oscuro y moderno. Sujeto a la derecha.', titulo: 'UN CORE FUERTE PROTEGE TU ESPALDA', violeta: 'CORE FUERTE', iconos: 'ícono de abdomen → CORE / ícono de columna → ESPALDA / ícono de barra → FUERZA' }),
     },
     {
       id: 's2-miercoles', name: 'Semana 2 — Miércoles (Masajes)',
       post: 'Recuperación deportiva: no es un lujo, es parte del entrenamiento 🏋️\n\nSi entrenás fuerte, tu cuerpo necesita algo más que descanso — necesita recuperarse bien.\n\n📲 Reservá tu sesión de masaje deportivo — link en bio\n\n#masajedeportivo #recuperacion #rendimiento',
       stories: 'Historia 1 (repost + encuesta): ¿Entrenás fuerte y no te recuperás bien? [Sí/No]\nHistoria 2 (CTA): Turnos de masaje deportivo — link en bio',
       slides: '',
-      img: imgPrompt('Masajes', 'RECUPERACIÓN DEPORTIVA', 'masaje deportivo en las piernas o la espalda de un cliente con ropa deportiva, técnica de amasado profunda, ambiente de recuperación post-entrenamiento.'),
+      img: pieza({ cat: 'masajes', foto: 'Masaje deportivo en los isquiotibiales de un deportista (hombre) en camilla, consultorio deportivo con elementos de rehabilitación de fondo; rostro del masajista no visible. Sujeto a la derecha.', titulo: 'RECUPERACIÓN DEPORTIVA', violeta: 'DEPORTIVA', iconos: 'ícono de músculo → RECUPERACIÓN / ícono de rayo → RENDIMIENTO / ícono de gota → DESCARGA' }),
     },
     {
       id: 's2-viernes', name: 'Semana 2 — Viernes (Promo app, Entrenamiento)',
       post: 'Entrená donde estés, cuando quieras 💪\n\nRutinas personalizadas, seguimiento real, sin depender de horarios de gimnasio.\n\n🔗 Suscribite hoy: angelmeier-fit.web.app/suscripcion\n\n#entrenamientopersonalizado #appdeentrenamiento #fitness #vidasaludable',
       stories: 'Historia 1 (repost + sticker de link): Ya podés entrenar conmigo desde la app 📲 [Sticker de link: angelmeier-fit.web.app/suscripcion]\nHistoria 2 (oferta si aplica): Sumate esta semana 💜\nHistoria 3 (objeción común): ¿Pensás que no tenés tiempo para entrenar? La app se adapta a tu rutina, no al revés.',
       slides: '',
-      img: `${IMG_BASE}\n\nGenerame la pieza de feed, formato 1080x1350, promocionando la app:\nCategoría: App\nTítulo grande: "ENTRENÁ DONDE ESTÉS, CUANDO QUIERAS"\nFoto/elemento: mockup realista de un celular mostrando una pantalla de rutina de entrenamiento (con el nombre "ANGEL MEiER" arriba), sostenido por una persona o apoyado, de fondo un espacio de entrenamiento en casa desenfocado.\nÍcono de categoría: App (el mismo de mi set de destacadas).\nAgregar abajo un texto chico: "angelmeier-fit.web.app/suscripcion"`,
+      img: pieza({ cat: 'entrenamiento', foto: 'Mujer en un living en penumbra con mancuernas en el piso, sosteniendo un celular realista cuya pantalla muestra una rutina de entrenamiento genérica (sin logos ni marcas en la pantalla). Sujeto a la derecha.', titulo: 'ENTRENÁ DONDE ESTÉS, CUANDO QUIERAS', violeta: 'DONDE ESTÉS', iconos: 'ícono de celular → APP / ícono de calendario → A TU RITMO / ícono gráfico → SEGUIMIENTO', luz: 'Interior de casa en penumbra, luz premium con acento violeta sutil.', extraRestr: 'Único texto adicional permitido: "angelmeier-fit.web.app/suscripcion" en blanco, chico pero legible, abajo a la izquierda.' }),
     },
     {
       id: 's3-lunes', name: 'Semana 3 — Lunes (Entrenamiento)',
       post: 'HIIT: 20 minutos, resultados que se sienten 🔥\n\nQuemá grasa y ganá energía con entrenamientos cortos e intensos, armados para tu rutina diaria.\n\nEmpezá esta semana — link en bio\n\n#hiit #quemagrasa #entrenamientopersonalizado',
       stories: 'Historia 1 (repost): Nuevo HIIT en el feed 🔥 Deslizá 👆\nHistoria 2 (CTA): 20 minutos es todo lo que necesitás hoy — link en bio',
       slides: '',
-      img: imgPrompt('Entrenamiento', 'HIIT: 20 MINUTOS, RESULTADOS QUE SE SIENTEN', 'una persona en pleno movimiento de un ejercicio intenso (burpee o salto), transpirando, energía y esfuerzo, ambiente de entrenamiento funcional.'),
+      img: pieza({ cat: 'entrenamiento', foto: 'Hombre en pleno swing con kettlebell en una sala funcional oscura, transpirado, movimiento creíble y técnica correcta. Sujeto a la derecha.', titulo: 'HIIT: 20 MINUTOS, RESULTADOS QUE SE SIENTEN', violeta: '20 MINUTOS', iconos: 'ícono de reloj → 20 MIN / ícono de fuego → QUEMA / ícono de rayo → ENERGÍA' }),
     },
     {
       id: 's3-miercoles', name: 'Semana 3 — Miércoles (Masajes)',
       post: 'A veces el cuerpo no pide fuerza, pide calma 🕊️\n\nUna sesión de relajación ayuda a bajar el estrés acumulado de la semana — para el cuerpo y para la cabeza.\n\n📲 Regalate un momento — turnos por WhatsApp, link en bio\n\n#relajacion #bienestar #saludmental',
       stories: 'Historia 1 (repost + encuesta): ¿Necesitás desconectar esta semana? [Sí/No]\nHistoria 2 (CTA): Regalate una sesión de relajación — link en bio',
       slides: '',
-      img: imgPrompt('Masajes', 'A VECES EL CUERPO PIDE CALMA', 'ambiente de relajación en el consultorio, camilla con toalla prolija, luz tenue y cálida, sin gente en la foto o con un cliente relajado boca abajo.'),
+      img: pieza({ cat: 'masajes', foto: 'Mujer relajada boca abajo en camilla con toalla prolija; manos del masajista sobre su espalda, rostro del masajista no visible. Sujeto a la derecha.', titulo: 'A VECES EL CUERPO PIDE CALMA', violeta: 'CALMA', iconos: 'ícono de hoja → RELAJACIÓN / ícono de luna → DESCANSO / ícono de mente → MENOS ESTRÉS', luz: 'Consultorio en penumbra, luz tenue cálida-premium con acento violeta.' }),
     },
     {
       id: 's3-viernes', name: 'Semana 3 — Viernes (Relajante vs. descontracturante, Masajes)',
       post: '¿Masaje relajante o descontracturante? No es lo mismo 🙌\n\nEl relajante baja el estrés y la tensión general. El descontracturante ataca puntos específicos de dolor y contractura.\n\nContame qué necesitás y armamos la sesión ideal para vos.\n\n📲 Coordiná tu turno — link en bio\n\n#masajerelajante #masajedescontracturante #bienestar',
       stories: 'Historia 1 (repost + encuesta): ¿Qué preferís hoy? [Sticker: Masaje relajante / Masaje descontracturante]\nHistoria 2 (CTA): Contame qué te duele y armamos tu sesión — link en bio',
       slides: '',
-      img: imgPrompt('Masajes', 'RELAJANTE O DESCONTRACTURANTE?', 'manos aplicando dos técnicas distintas de masaje en la espalda de un cliente, mostrando precisión y cuidado, consultorio prolijo.'),
+      img: pieza({ cat: 'masajes', foto: 'Primer plano de manos trabajando con presión sobre la espalda alta de un cliente (hombre) en camilla, consultorio deportivo moderno; rostro del masajista no visible. Sujeto a la derecha.', titulo: '¿RELAJANTE O DESCONTRACTURANTE?', violeta: 'DESCONTRACTURANTE', iconos: 'ícono de hoja → RELAJANTE / ícono de objetivo → DESCONTRACTURANTE / ícono de persona → A MEDIDA' }),
     },
     {
       id: 's4-lunes', name: 'Semana 4 — Lunes (Entrenamiento)',
       post: 'Los resultados no vienen del entrenamiento perfecto, vienen del que repetís semana tras semana.\n\nLa constancia le gana a la intensidad.\n\n¿Necesitás alguien que te acompañe en ese proceso? Suscribite a la app — link en bio\n\n#constancia #habitossaludables #entrenamientopersonalizado',
       stories: 'Historia 1 (repost): La constancia le gana a la intensidad 💪 Deslizá 👆\nHistoria 2 (CTA): ¿Ya diste el primer paso? Suscribite — link en bio',
       slides: '',
-      img: imgPrompt('Entrenamiento', 'LA CONSTANCIA LE GANA A LA INTENSIDAD', 'una persona entrenando con expresión de esfuerzo tranquilo y sostenido (no forzado), ambiente de entrenamiento en casa o gimnasio funcional, sensación de rutina, no de evento único.'),
+      img: pieza({ cat: 'entrenamiento', foto: 'Mujer de 35-45 años, cuerpo real (no atleta), haciendo remo con mancuerna apoyada en un banco, gimnasio oscuro, esfuerzo sostenido y tranquilo. Sujeto a la derecha.', titulo: 'LA CONSTANCIA LE GANA A LA INTENSIDAD', violeta: 'CONSTANCIA', iconos: 'ícono de calendario → CONSTANCIA / ícono gráfico → PROGRESO / ícono de check → HÁBITO' }),
     },
     {
       id: 's4-miercoles', name: 'Semana 4 — Miércoles (Masajes)',
       post: 'El dolor de rodilla no siempre viene de la rodilla 🦵\n\nMuchas veces el origen está en la cadera o en la postura al caminar — por eso el tratamiento no puede ser genérico.\n\n📲 Coordiná tu turno — link en bio\n\n#dolorderodilla #masajeterapeutico #tratamientodeldolor',
       stories: 'Historia 1 (repost + encuesta): ¿Te duele la rodilla al caminar o entrenar? [Sí/No]\nHistoria 2 (CTA): Turnos disponibles esta semana — link en bio',
       slides: '',
-      img: imgPrompt('Masajes', 'EL DOLOR DE RODILLA NO SIEMPRE VIENE DE LA RODILLA', 'masaje enfocado en la zona de la rodilla o la cadera de un cliente, técnica precisa, consultorio prolijo.'),
+      img: pieza({ cat: 'masajes', foto: 'Masaje en la zona de cadera y muslo de un cliente (hombre) en camilla, lámina anatómica de la pierna de fondo; rostro del masajista no visible. Sujeto a la derecha.', titulo: 'EL DOLOR DE RODILLA NO SIEMPRE VIENE DE LA RODILLA', violeta: 'la primera aparición de "RODILLA"', iconos: 'ícono de rodilla → RODILLA / ícono de cadera → CADERA / ícono de pisada → POSTURA' }),
     },
     {
       id: 's4-viernes', name: 'Semana 4 — Viernes (Entrenamiento)',
       post: 'El progreso no se ve de un día para el otro — se nota semana a semana, entrenamiento a entrenamiento 📈\n\nLo que hoy te cuesta, en unas semanas va a ser tu calentamiento.\n\n¿Ya diste el primer paso? Suscribite a la app y arrancá esta semana — link en bio\n\n#progreso #entrenamientopersonalizado #constancia',
       stories: 'Historia 1 (repost): El progreso se nota semana a semana 📈 Deslizá al posteo 👆\nHistoria 2 (CTA): ¿Ya diste el primer paso hoy? Suscribite — link en bio',
       slides: '',
-      img: imgPrompt('Entrenamiento', 'EL PROGRESO SE NOTA SEMANA A SEMANA', 'persona entrenando con expresión de esfuerzo y satisfacción, ambiente que transmite rutina sostenida en el tiempo, no un evento único.'),
+      img: pieza({ cat: 'entrenamiento', foto: 'Hombre de 30-40 años haciendo peso muerto con barra, técnica correcta, gesto de esfuerzo y satisfacción, gimnasio oscuro con racks. Sujeto a la derecha.', titulo: 'EL PROGRESO SE NOTA SEMANA A SEMANA', violeta: 'PROGRESO', iconos: 'ícono gráfico → PROGRESO / ícono de barra → FUERZA / ícono de calendario → CONSTANCIA' }),
     },
     {
       id: 'gym-nivel-carrusel', name: 'Carrusel — Entrenamiento en el gym, principiante y avanzado (Entrenamiento)',
       post: '¿Principiante o avanzado? En el gym, hay un programa para vos 💪\n\nArmé programas de entrenamiento en el gimnasio pensados para cada nivel: uno para quienes están arrancando, y otro para quienes ya entrenan hace tiempo y buscan seguir progresando.\n\nCada uno se adapta según tu objetivo — bajar de peso, ganar fuerza o tonificar.\n\nDeslizá y encontrá el que es para vos 👉\n\n¿Querés el tuyo? Suscribite a la app — link en bio\n\n#entrenamientoengym #principiantes #avanzados #entrenamientopersonalizado',
       stories: 'Historia 1 (repost + sticker de encuesta): ¿Sos principiante o ya entrenás hace rato? [Sticker de encuesta: Principiante / Avanzado]\nHistoria 2: Subí un carrusel con los programas de gym según tu nivel 💜 Deslizá al posteo anterior 👆\nHistoria 3 (tip suelto): No hace falta empezar como el de al lado — hace falta empezar donde estás vos.\nHistoria 4 (CTA): ¿Ya tenés tu programa armado para el gym? Suscribite a la app — link en bio',
       slides: 'Slide 1 — Portada:\nENTRENÁ EN EL GYM SEGÚN TU NIVEL\nPrincipiante o avanzado — Deslizá →\n\nSlide 2 — Programa Principiante:\nPara vos que estás arrancando\nTécnica de base, progresión gradual de cargas y rutinas simples de seguir, para que el gym deje de ser intimidante y empieces a ver resultados desde la primera semana.\n\nSlide 3 — Programa Avanzado:\nPara vos que ya entrenás hace tiempo\nRutinas de mayor intensidad, variables de progresión (fuerza, volumen, técnica) para seguir rompiendo mesetas y avanzar hacia objetivos más exigentes.\n\nSlide 4 — Según tu objetivo:\nCada programa se adapta a lo que buscás:\n🔻 Bajar de peso\n💪 Ganar fuerza\n🔥 Tonificar\n\nSlide 5 — Cierre:\n¿Ya sabés en qué nivel estás?\nArmamos juntos el programa que necesitás para el gym.\n📲 Suscribite a la app — link en bio',
-      img: `${IMG_BASE}\n\nCarrusel educativo de 5 slides, formato vertical 1080x1350 cada una, tema "Entrenamiento en el gym según tu nivel: principiante y avanzado", mismo template visual en las 5:\n\nSlide 1 (portada): foto real de gimnasio con overlay oscuro, alguien entrenando de fondo. Título "ENTRENÁ EN EL GYM SEGÚN TU NIVEL". "Principiante o avanzado — Deslizá →" abajo en violeta.\n\nSlide 2 (Principiante): título "Para vos que estás arrancando", foto de alguien aprendiendo una técnica básica con peso liviano, acompañado o mirando su forma en el espejo.\n\nSlide 3 (Avanzado): título "Para vos que ya entrenás hace tiempo", foto de alguien levantando peso con carga considerable, técnica sólida, esfuerzo visible.\n\nSlide 4 (Objetivo): título "Según tu objetivo", tres íconos circulares violeta con etiqueta debajo (Bajar de peso / Ganar fuerza / Tonificar).\n\nSlide 5 (cierre): título "¿Ya sabés en qué nivel estás?", CTA violeta "📲 Suscribite a la app — link en bio", espacio para el logo.\n\nGenerame primero la Slide 1 para validar el estilo antes de seguir con las otras 4.`,
+      img: pieza({ cat: 'entrenamiento', carrusel: true, formato: FMT_CARRUSEL, tipo: 'Carrusel educativo de 5 slides: "Entrenamiento en el gym según tu nivel". Slide 1 portada. Slide 2 "PRINCIPIANTE: PARA VOS QUE ESTÁS ARRANCANDO" (foto: mujer principiante, cuerpo real, aprendiendo sentadilla goblet con kettlebell liviana). Slide 3 "AVANZADO: PARA VOS QUE YA ENTRENÁS" (foto: hombre haciendo sentadilla con barra cargada en rack, técnica sólida). Slide 4 "SEGÚN TU OBJETIVO" con íconos BAJAR DE PESO / GANAR FUERZA / TONIFICAR (foto: persona entrenando con mancuernas). Slide 5 cierre "¿YA SABÉS TU NIVEL?" + "SUSCRIBITE A LA APP — LINK EN BIO". Generá primero solo la Slide 1 para validar el estilo.', foto: 'Slide 1: gimnasio oscuro con racks; un hombre entrenando con barra como sujeto principal a la derecha y una mujer entrenando desenfocada de fondo.', titulo: 'Slide 1: ENTRENÁ EN EL GYM SEGÚN TU NIVEL', violeta: 'TU NIVEL', iconos: 'Slide 1: ícono de persona → PRINCIPIANTE / ícono de barra → AVANZADO / ícono de objetivo → TU OBJETIVO' }),
     },
     {
       id: 'video-lo-que-nadie-te-dice', name: 'Video — Lo que nadie te dice antes de empezar a entrenar (Entrenamiento)',
       post: 'Lo que nadie te dice antes de empezar a entrenar 🎥\n\nDolor en lugares que ni sabías que existían. Un mes sin ver cambios físicos, pero durmiendo mejor y con más paciencia. Días que vas a faltar y semanas que vas a fallar — y eso no borra nada de lo que avanzaste.\n\nLo difícil no es el gimnasio ni la rutina. Lo difícil es decidir moverte el día que no tenés ganas.\n\nPor eso armé un programa para arrancar de cero, sin exigencias imposibles: 30 minutos, 3 veces por semana, a tu ritmo.\n\nSi estabas esperando una señal para empezar, esta es 👇 Escribime y arrancamos — link en bio\n\n#empezarAentrenar #adultosmayores #entrenamientopersonalizado #constancia',
       stories: 'Historia 1 (repost + sticker de encuesta): ¿Estás por arrancar a entrenar? [Sí, ya arranqué / Todavía no]\nHistoria 2: Subí un video con lo que nadie te dice antes de empezar a entrenar 💜 Mirá el reel 👆\nHistoria 3 (CTA): Si estabas esperando una señal para empezar, esta es. Escribime y arrancamos — link en bio',
       slides: 'Guion para hablar a cámara (45-60 seg), adaptado a personas sedentarias y adultos mayores que están por arrancar:\n\n[0-4s] Hook:\n"Nadie te dice esto antes de empezar a entrenar. Te lo voy a decir yo."\n\n[4-12s]\n"Vas a tener dolor muscular en lugares que ni sabías que existían. Es normal, no significa que te lastimaste."\n\n[12-20s]\n"El primer mes no vas a ver ningún cambio físico. Pero vas a dormir mejor, vas a estar de mejor humor, vas a tener más paciencia. Eso también es progreso."\n\n[20-28s]\n"Vas a faltar días. Vas a fallar semanas. Y eso no borra nada de lo que ya avanzaste."\n\n[28-36s]\n"Lo difícil no es el gimnasio ni la rutina. Lo difícil es decidir moverte el día que no tenés ganas."\n\n[36-44s]\n"Por eso armé un programa pensado para arrancar de cero, sin exigencias imposibles: 30 minutos, 3 veces por semana, a tu ritmo."\n\n[44-50s] CTA:\n"Si estabas esperando una señal para empezar, esta es. Escribime y arrancamos."\n\nSugerencia visual: hablás a cámara con cortes cada 1-2 frases, texto en pantalla reforzando cada punto clave, música tranquila de fondo.',
-      img: `Identidad visual de mis piezas de Instagram/TikTok:\n- Foto real de gimnasio o consultorio (no ilustración), iluminación premium con tono violeta.\n- Panel diagonal violeta sólido #7B4FE0 sobre fondo negro, cubriendo aproximadamente el 40-45% izquierdo de la pieza, con corte diagonal pronunciado hacia la foto que ocupa el resto.\n- Grilla de puntos violeta chica arriba a la izquierda.\n- Debajo del título, lista vertical de 2-3 íconos circulares violeta rellenos con símbolo blanco simple adentro, cada uno con etiqueta corta en mayúsculas a la derecha.\n- Abajo a la izquierda: logo real — marca "AM" en violeta, línea vertical fina separadora, "ANGEL MEIER" en blanco bold, y debajo tagline "ENTRENAMIENTO PERSONALIZADO" en violeta chico.\n- Paleta estricta: violeta #7B4FE0, negro, blanco. Sin gradientes ni efecto 3D.\n\nNecesito la portada para un reel/video sobre "lo que nadie te dice antes de empezar a entrenar", pensado para adultos sedentarios que están arrancando.\n\nContenido de esta pieza:\n- Foto: una persona mayor o sedentaria (no atleta), en ropa deportiva cómoda, en pose de arranque/estiramiento, gesto de esfuerzo genuino pero seguro, en el lado derecho de la imagen.\n- Título en tipografía condensada bold, mayúsculas, en 3 líneas: "LO QUE NADIE TE DICE ANTES DE EMPEZAR A ENTRENAR", con la palabra "NADIE" en violeta y el resto en blanco. Línea divisoria violeta fina debajo del título.\n- Lista de 3 íconos verticales con etiquetas: "CONSTANCIA", "PACIENCIA", "RESULTADOS REALES".\n\nFormato: generame dos versiones — 1080x1350 (feed Instagram) y 1080x1920 (TikTok / reel), mismo diseño adaptado a cada proporción.`,
+      img: pieza({ cat: 'entrenamiento', formato: FMT_PORTADA_REEL, tipo: 'Portada de reel/TikTok (pieza única) sobre lo que nadie te dice antes de empezar a entrenar, para adultos sedentarios que arrancan.', foto: 'Persona de 50-60 años sedentaria que arranca a entrenar (cuerpo real, no atleta), ropa deportiva cómoda, haciendo una sentadilla asistida en un gimnasio oscuro, gesto de esfuerzo genuino pero seguro. Sujeto a la derecha, dentro del área central segura.', titulo: 'LO QUE NADIE TE DICE ANTES DE EMPEZAR A ENTRENAR', violeta: 'NADIE', iconos: 'ícono de calendario → CONSTANCIA / ícono de reloj → PACIENCIA / ícono gráfico → RESULTADOS REALES' }),
     },
     {
       id: 'mov50-autonomia', name: 'Video — Movimiento +50: por qué la fuerza cuida tu autonomía (Entrenamiento)',
@@ -1072,7 +1208,7 @@ function startPanel(){
       post: '¿Ya te duele la rodilla, la espalda o la cadera para hacer cosas simples? Desde los 50 perdés masa muscular más rápido si no entrenás — se llama sarcopenia, y es la razón de muchos dolores que antes no tenías 💪\n\nLa buena noticia: el músculo responde a cualquier edad. Armé Movimiento +50 dentro de mi app: postura, movilidad y fuerza funcional, con progresiones seguras. No esperes a que empeore.\n\n👉 Escribí FUERZA en los comentarios y te mando toda la info.\n\n#movimiento50 #autonomia #fuerzafuncional #appdeentrenamiento #adultomayor',
       stories: 'Historia 1 (repost + encuesta): ¿Te cuesta algún movimiento cotidiano por dolor? [Sí/No]\nHistoria 2: Nuevo video sobre Movimiento +50 👆 Deslizá al posteo\nHistoria 3 (CTA): Escribí FUERZA en el posteo y te mando toda la info sobre el programa',
       slides: '',
-      img: `Identidad visual de mis piezas de Instagram/TikTok:\n- Foto real de gimnasio o consultorio (no ilustración), iluminación premium con tono violeta.\n- Panel diagonal violeta sólido #7B4FE0 sobre fondo negro, cubriendo aproximadamente el 40-45% izquierdo de la pieza, con corte diagonal pronunciado hacia la foto que ocupa el resto.\n- Grilla de puntos violeta chica arriba a la izquierda.\n- Abajo a la izquierda: logo real — marca "AM" en violeta, línea vertical fina separadora, "ANGEL MEIER" en blanco bold, y debajo tagline "MOVIMIENTO +50" en violeta chico.\n- Paleta estricta: violeta #7B4FE0, negro, blanco. Sin gradientes ni efecto 3D.\n\nNecesito la portada para un reel/video sobre "por qué la fuerza cuida tu autonomía después de los 50".\n\nContenido de esta pieza:\n- Foto: una persona mayor de 50 años entrenando fuerza funcional de forma segura (sentadilla asistida o banda elástica), buena postura, ambiente luminoso y prolijo.\n- Título en tipografía condensada bold, mayúsculas: "NO ESPERES A QUE EL DOLOR TE FRENE", con "DOLOR" en violeta y el resto en blanco.\n- Etiqueta de categoría: "MOVIMIENTO +50".\n\nFormato: generame dos versiones — 1080x1350 (feed Instagram) y 1080x1920 (TikTok / reel), mismo diseño adaptado a cada proporción.`,
+      img: pieza({ cat: 'entrenamiento', formato: FMT_PORTADA_REEL, tipo: 'Portada de reel/TikTok (pieza única) sobre por qué la fuerza cuida tu autonomía después de los 50 (programa Movimiento +50).', foto: 'Mujer de 55-65 años, activa pero real, haciendo sentadilla con banda elástica con buena postura en un gimnasio oscuro y prolijo. Sujeto a la derecha, dentro del área central segura.', titulo: 'NO ESPERES A QUE EL DOLOR TE FRENE', violeta: 'DOLOR', iconos: 'ícono de persona → AUTONOMÍA / ícono de músculo → FUERZA / ícono de articulación → MOVILIDAD' }),
     },
   ];
 
@@ -1297,7 +1433,7 @@ function startPanel(){
         ${blockHTML(t.id + '-post', 'Copy del post', t.post)}
         ${blockHTML(t.id + '-stories', 'Copy de historias', t.stories)}
         ${t.slides ? blockHTML(t.id + '-slides', 'Copy de las slides', t.slides) : ''}
-        ${t.img ? blockHTML(t.id + '-img', 'Prompt de imagen para ChatGPT', t.img) : ''}
+        ${t.img ? blockHTML(t.id + '-img', 'Prompt de imagen para ChatGPT', withIdentidad(t.img)) : ''}
       </div>
     `).join('');
 
@@ -1478,6 +1614,21 @@ function startPanel(){
           topics.push({ ...SEED_TOPICS.find(s => s.id === 'mov50-autonomia') });
         }
         setDoc(stateRef, { addedMov50Autonomia: true }, { merge: true }).catch(()=>{});
+        saveTopics();
+      }
+      // Migración a la identidad visual fija: los temas base toman el prompt nuevo y en los demás
+      // se quita el párrafo de identidad viejo (la identidad nueva se antepone sola al mostrar).
+      if (!data.migratedIdentidadFija) {
+        topics.forEach(t => {
+          const seed = SEED_TOPICS.find(s => s.id === t.id);
+          if (seed) {
+            t.img = seed.img;
+          } else if (t.img && /^(Identidad visual de mis piezas|Ya tengo cerrada la identidad visual)/.test(t.img)) {
+            const cut = t.img.indexOf('\n\n');
+            if (cut > 0) t.img = t.img.slice(cut + 2);
+          }
+        });
+        setDoc(stateRef, { migratedIdentidadFija: true }, { merge: true }).catch(()=>{});
         saveTopics();
       }
       if (!data.recurrentes) {
