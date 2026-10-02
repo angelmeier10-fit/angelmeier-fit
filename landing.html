@@ -74,7 +74,10 @@ nav {
 .mid-photo-text blockquote { font-family: 'Playfair Display', serif; font-style: italic; font-size: clamp(1.4rem, 2.5vw, 2rem); color: #fff; max-width: 640px; line-height: 1.4; }
 .mid-photo-text cite { display: block; margin-top: 12px; font-size: .82rem; color: rgba(255,255,255,.6); font-style: normal; }
 
-.membresia { background: var(--s1); }
+.app-sec { background: var(--s1); }
+.app-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: center; }
+.app-shot { width: 100%; max-width: 420px; justify-self: center; border-radius: 24px; border: 8px solid var(--tx); box-shadow: 0 24px 64px rgba(0,0,0,.14); }
+.membresia { background: var(--warm); }
 .price-card { max-width: 620px; margin: 48px auto 0; background: var(--bg); border: 2px solid var(--ac); border-radius: 24px; padding: 44px 40px; text-align: center; position: relative; }
 .price-badge { display: inline-block; background: var(--ac); color: #fff; font-size: .72rem; font-weight: 700; padding: 5px 14px; border-radius: 20px; letter-spacing: .05em; text-transform: uppercase; margin-bottom: 20px; }
 .price-value { font-family: 'Playfair Display', serif; font-size: 2.8rem; font-weight: 800; color: var(--tx); line-height: 1; }
@@ -144,7 +147,8 @@ footer { padding: 32px 64px; display: flex; flex-direction: column; align-items:
   .hero-img::after { background: linear-gradient(to bottom, var(--bg) 0%, transparent 40%); }
   .stats { grid-template-columns: repeat(2,1fr); padding: 40px 24px; }
   .section { padding: 64px 24px; }
-  .signs-grid, .pillars-grid, .steps { grid-template-columns: 1fr; }
+  .signs-grid, .pillars-grid, .steps, .app-grid { grid-template-columns: 1fr; }
+  .app-grid { gap: 32px; }
   .price-card { padding: 32px 24px; }
   .sobre-grid { grid-template-columns: 1fr; gap: 32px; }
   .sobre-photo { aspect-ratio: 4/3; }
@@ -230,6 +234,23 @@ footer { padding: 32px 64px; display: flex; flex-direction: column; align-items:
       </div>
       <span class="section-cta-note">7 días de garantía · $30.000/mes · Sin permanencia</span>
     </div>
+  </div>
+</section>
+
+<section class="section app-sec" id="app">
+  <div class="section-inner app-grid">
+    <div class="app-text">
+      <div class="eyebrow">La app</div>
+      <h2>Tu plan, siempre a mano</h2>
+      <p class="section-lead">Entrás desde el celular y tenés los ejercicios del día listos para seguir, a tu ritmo y desde tu casa.</p>
+      <div class="price-includes" style="margin-top:24px">
+        <div class="item">Tus ejercicios organizados día por día</div>
+        <div class="item">Series, descansos y cada ejercicio explicado paso a paso</div>
+        <div class="item">Anotás cómo te sentiste y ajusto tu plan</div>
+        <div class="item">Se instala en tu celular en un toque, sin pasar por la tienda</div>
+      </div>
+    </div>
+    <img class="app-shot" src="img/app-rutina.jpg" alt="Pantalla de la app con los ejercicios del día" loading="lazy">
   </div>
 </section>
 

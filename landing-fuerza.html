@@ -83,6 +83,9 @@ nav {
 .section-cta .btn-wa { font-size: .9rem; padding: 12px 24px; }
 .section-cta-note { font-size: .78rem; color: var(--mu); font-family: 'Inter'; }
 
+.app-sec { background: var(--s1); }
+.app-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: center; }
+.app-shot { width: 100%; max-width: 420px; justify-self: center; border-radius: 20px; border: 8px solid var(--dark); box-shadow: 0 24px 64px rgba(0,0,0,.18); }
 .modalidades { background: var(--bg); }
 .mod-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 48px; }
 .mod-card { border-radius: 12px; padding: 36px; border: 2px solid var(--border); position: relative; transition: border-color .2s; background: var(--s1); }
@@ -148,7 +151,8 @@ footer { padding: 32px 64px; display: flex; flex-direction: column; gap: 10px; a
   .hero-img { height: 300px; }
   .section { padding: 64px 24px; }
   .obj-grid, .pillars-grid { grid-template-columns: 1fr; }
-  .mod-grid { grid-template-columns: 1fr; }
+  .mod-grid, .app-grid { grid-template-columns: 1fr; }
+  .app-grid { gap: 32px; }
   .sobre-grid { grid-template-columns: 1fr; gap: 32px; }
   .sobre-photo { aspect-ratio: 4/3; }
   .steps { grid-template-columns: 1fr; }
@@ -229,6 +233,23 @@ footer { padding: 32px 64px; display: flex; flex-direction: column; gap: 10px; a
     <div class="guarantee">
       <strong>🛡️ Empezá sin riesgo:</strong> probá el programa 7 días. Si sentís que no es para vos, te devolvemos el 100% de tu dinero.
     </div>
+  </div>
+</section>
+
+<section class="section app-sec" id="app">
+  <div class="section-inner app-grid">
+    <div class="app-text">
+      <div class="eyebrow">La app</div>
+      <h2>Tu plan, en tu celular</h2>
+      <p class="section-lead">Nada de rutinas sueltas en un PDF: entrás a la app y tenés el entrenamiento del día listo para seguir.</p>
+      <div class="mod-features" style="margin-top:24px">
+        <div class="mod-feature">Tu rutina organizada día por día</div>
+        <div class="mod-feature">Series, descansos y cada ejercicio explicado</div>
+        <div class="mod-feature">Anotás cómo te sentiste y ajusto tu plan</div>
+        <div class="mod-feature">Se instala en tu celular en un toque, sin pasar por la tienda</div>
+      </div>
+    </div>
+    <img class="app-shot" src="img/app-rutina.jpg" alt="Pantalla de la app con la rutina del día" loading="lazy">
   </div>
 </section>
 
