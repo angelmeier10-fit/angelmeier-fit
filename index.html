@@ -2222,6 +2222,8 @@ function norm(s){return(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g
 function exPersonKey(name,email){return((name||'')+'|'+(email||'')).toLowerCase().trim()}
 function jsAttr(s){return(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;')}
 let exHistoryCache={};
+let weekViewState={};
+let cvWeekInfo={};
 async function ensureExHistory(personKey,onLoaded){
   if(exHistoryCache[personKey])return exHistoryCache[personKey];
   let data={ex:{}};
@@ -2273,7 +2275,6 @@ function exHistoryRowHtml(personKey,exName){
   if(!e)return'';
   const parts=[];
   if(e.max)parts.push(`🏆 Máx: ${e.max.weight}kg${e.max.reps?' × '+e.max.reps:''}`);
-  if(e.last)parts.push(`Último: ${e.last.weight}kg${e.last.reps?' × '+e.last.reps:''} (${e.last.date})`);
   let html='';
   if(parts.length)html+=`<div style="font-size:.76rem;color:var(--ac2);font-weight:700;margin:2px 0 4px">${parts.join(' · ')}</div>`;
   if(e.note)html+=`<div style="font-size:.76rem;color:var(--mu);font-style:italic;margin-bottom:4px">📝 ${e.note}</div>`;
@@ -4112,12 +4113,15 @@ async function renderCV(clientId){
     if(idx>=0)clients[idx]=fresh;
   }
   const c=clients.find(cl=>cl.id===clientId);if(!c)return;
-  if(c.weeks&&Object.keys(c.weeks).length){
-    const wk=getClientCurrentWeekNum(c);
-    if(c.weeks[wk]&&c.activeWeek!==wk){
-      c.activeWeek=wk;
-      c.days=JSON.parse(JSON.stringify(c.weeks[wk]));
-    }
+  // Se calcula antes de pisar activeWeek, que en el doc es la semana de inicio.
+  // Va en un mapa aparte (no en c) porque hay saves que suben el cliente entero.
+  const timeline=clientWeekTimeline(c);
+  const curWk=timeline[timeline.length-1];
+  const viewWk=timeline.find(w=>w.key===weekViewState[clientId])||curWk;
+  const wi=cvWeekInfo[clientId]={timeline,view:viewWk,curKey:curWk.key,key:viewWk.key,readOnly:viewWk!==curWk};
+  if(c.weeks?.[viewWk.num]){
+    c.activeWeek=viewWk.num;
+    c.days=JSON.parse(JSON.stringify(c.weeks[viewWk.num]));
   }
   // Email verification (se salta si es el entrenador viendo su propio
   // simulador de vista de cliente: ya está autenticado, no tiene sentido
@@ -4188,13 +4192,13 @@ async function renderCV(clientId){
     return;
   }
   const initials=c.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
-  const {dayIdx:nextIdx,days:activeDays,weekNum:displayWeek}=getNextDayInfo(c);
+  const {dayIdx:nextIdx,days:activeDays,weekNum:displayWeek}=wi.readOnly?{dayIdx:0,days:c.days||[],weekNum:null}:getNextDayInfo(c,wi.key);
   const mpReminder=c.mpLink&&c.payStatus==='free'?`<a href="${c.mpLink}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:#009EE322;color:#009EE3;border:1px solid #009EE344;border-radius:8px;padding:6px 14px;font-size:.78rem;font-weight:600;text-decoration:none;margin-bottom:12px">💳 Renovar / pagar plan</a>`:'';
   const weekLabel=displayWeek&&c.weeks?`<span class="badge" style="background:var(--ac)22;color:var(--ac2)">📅 Semana ${displayWeek}</span>`:'';
   const activeDayName=activeDays[nextIdx]?.name||'Día '+(nextIdx+1);
   const dayListItems=activeDays.map((d,i)=>{
-    const isDone=(c.progress?.['snote-w'+(c.activeWeek||1)+'-'+i]||[]).length>0||isDayDoneViaSeries(c,activeDays,i,(c.activeWeek||1));
-    const badge=i===nextIdx?`<span style="font-size:.68rem;padding:2px 8px;border-radius:20px;font-weight:600;background:var(--ac)33;color:var(--ac2)">Siguiente</span>`:isDone?`<span style="font-size:.68rem;padding:2px 8px;border-radius:20px;font-weight:600;background:var(--gr)22;color:var(--gr)">✓</span>`:'';
+    const isDone=(c.progress?.['snote-w'+wi.key+'-'+i]||[]).length>0||isDayDoneViaSeries(c,activeDays,i,wi.key);
+    const badge=i===nextIdx&&!wi.readOnly?`<span style="font-size:.68rem;padding:2px 8px;border-radius:20px;font-weight:600;background:var(--ac)33;color:var(--ac2)">Siguiente</span>`:isDone?`<span style="font-size:.68rem;padding:2px 8px;border-radius:20px;font-weight:600;background:var(--gr)22;color:var(--gr)">✓</span>`:'';
     return`<div class="cv-day-item${i===nextIdx?' active':''}" id="cv-ditem-${clientId}-${i}" onclick="selectCVDay('${clientId}',${i})">
       <span class="cv-day-item-name">${d.name||'Día '+(i+1)}</span>${badge}
     </div>`;
@@ -4215,6 +4219,7 @@ async function renderCV(clientId){
       </div>
     </div>
     ${programPickerHTML(clientId,findAllProgramsForPerson(c.name,c.email),'personal',null)}
+    ${weekChipsHTML(wi.timeline,wi.key,`selectCVWeek('${clientId}',`)}
     <div class="cv-day-picker">
       <div class="cv-day-picker-title">Seleccionar día</div>
       <div class="cv-day-picker-hdr" id="cv-day-picker-hdr-${clientId}" onclick="toggleCVDayPicker('${clientId}')">
@@ -4313,14 +4318,16 @@ function renderDay(clientId,dIdx){
   if(!container)return;
   if(!day||!day.blocks?.length){container.innerHTML='<div style="text-align:center;padding:40px;color:var(--mu)">Sin bloques en este día.</div>';return}
   let html='';
-  const dayWeek=c.activeWeek||1;
+  const wi=cvWeekInfo[clientId];
+  const dayWeek=wi?.key||c.activeWeek||1;
+  const rc=wi?.readOnly?Object.assign({},c,{readOnly:true}):c;
   day.blocks.forEach((blk,bi)=>{
     const bkey=`w${dayWeek}-${dIdx}-${bi}`;
-    if(blk.kind==='warmup') html+=renderWarmupBlock(c,bkey,blk,bi);
-    else if(blk.kind==='gym') html+=renderGymBlock(c,bkey,blk,bi,true);
-    else if(blk.kind==='func') html+=renderFuncBlock(c,bkey,blk,bi,true);
-    else if(blk.kind==='note') html+=renderNoteBlock(c,bkey,blk,bi);
-    else html+=renderCFBlock(c,bkey,blk,bi);
+    if(blk.kind==='warmup') html+=renderWarmupBlock(rc,bkey,blk,bi);
+    else if(blk.kind==='gym') html+=renderGymBlock(rc,bkey,blk,bi,true);
+    else if(blk.kind==='func') html+=renderFuncBlock(rc,bkey,blk,bi,true);
+    else if(blk.kind==='note') html+=renderNoteBlock(rc,bkey,blk,bi);
+    else html+=renderCFBlock(rc,bkey,blk,bi);
   });
   // Session notes for this day
   const snKey=`snote-w${dayWeek}-${dIdx}`;
@@ -4332,8 +4339,16 @@ function renderDay(clientId,dIdx){
     <button class="btn bgr sm" onclick="saveSessionNote('${clientId}',${dIdx})">💾 Guardar nota</button>
     ${notesHtml}
   </div><div style="height:90px"></div>`;
-  container.innerHTML=html;
+  if(wi?.readOnly){
+    container.innerHTML=html;
+    makeReadOnly(container);
+    container.insertAdjacentHTML('afterbegin',pastWeekBannerHTML(wi.view,`selectCVWeek('${clientId}',`));
+  }else container.innerHTML=html;
 }
+window.selectCVWeek=function(clientId,key){
+  weekViewState[clientId]=key;
+  renderCV(clientId);
+};
 
 function renderWarmupBlock(c,bkey,blk,bi){
   const exList=blk.exercises.map((ex,ei)=>{
@@ -4501,9 +4516,11 @@ function renderGymBlock(c,bkey,blk,bi,isAdminView){
     </div>`:'';
     const exBank=exDB.find(e=>norm(e.name).trim()===norm(activeEx.name).trim());
     const refName=ex.refEx||exBank?.refEx||activeEx.name;
+    const prevSess=prevSessionFor(c,c.weeks||{[c.activeWeek||1]:c.days},ex.name);
     inner+=`<div class="cv-ex">
       <div class="cv-ex-name">${activeEx.name}${activeEx.video?` <a href="${activeEx.video}" target="_blank" style="font-size:.7rem;color:var(--ac2);text-decoration:none">▶</a>`:''}</div>
       ${exHistoryRowHtml(exPersonKey(c.name,c.email||''),refName)}
+      ${c.readOnly?'':prevSessionRowHtml(prevSess)}
       ${isAdminView?`<button type="button" onclick="editExNote('${c.id}','${jsAttr(exPersonKey(c.name,c.email||''))}','${jsAttr(activeEx.name)}',${dIdx})" style="background:none;border:none;color:var(--mu);cursor:pointer;font-size:.72rem;padding:0 0 4px">✏️ nota</button>`:''}
       ${variantChips}
       ${exBank?.notes?`<div class="cv-obs">📖 ${exBank.notes}</div>`:''}
@@ -4512,7 +4529,7 @@ function renderGymBlock(c,bkey,blk,bi,isAdminView){
     if(ex.scheme?.length){
       setCount=ex.scheme.length;
       const lastLogPre=(c.progress[`${c.id}-${ekey}-logs`]||[]).slice(-1)[0];
-      const lastWeights=lastLogPre?.weights||[];
+      const lastWeights=lastLogPre?.weights||prevSess?.weights||[];
       inner+=`<div style="overflow-x:auto"><table class="stbl"><thead><tr><th>#</th><th>Reps / Tiempo</th><th>Carga / RPE</th><th>Peso usado</th><th>✓</th></tr></thead><tbody>`;
       const isLastEx=(ei===blk.exercises.length-1);
       const restSecs=parseRestToSeconds(blk.rest);
@@ -4628,23 +4645,16 @@ window.toggleG=function(id){document.getElementById(id).classList.toggle('open')
 window.collapseYT=function(e,ytId){const b=document.createElement('button');b.className='btn bg2 sm';b.style.marginTop='5px';b.textContent='▶ Ver video';b.onclick=()=>embedYT(b,ytId);e.replaceWith(b)};
 window.embedYT=function(th,ytId){const e=document.createElement('div');e.className='yt-em';e.innerHTML=`<iframe src="https://www.youtube.com/embed/${ytId}?autoplay=1" allow="autoplay;encrypted-media" allowfullscreen></iframe><button class="yt-min" onclick="collapseYT(this.parentElement,'${ytId}')">✕ Minimizar</button>`;th.replaceWith(e)};
 
-window.toggleSerie=async function(cId,ekey,si,rk,isLast,blockRest,pauseSecs){
-  const c=clients.find(cl=>cl.id===cId);
+// Optimista: con la caché local de Firestore la escritura queda guardada al
+// instante y se sincroniza sola; esperar el ack del servidor demoraba el tilde
+// varios segundos con mala señal. Solo se revierte si la escritura es rechazada.
+async function toggleSerieOptimistic(progress,rk,isLast,blockRest,pauseSecs,save){
   const row=document.getElementById('sr-'+rk);const btn=row.querySelector('.ckbtn');
-  const prev=c.progress[rk];
-  c.progress[rk]=!c.progress[rk];
-  btn.classList.add('saving');
-  try{
-    await updateDoc(doc(db,'clients',cId),{progress:c.progress});
-  }catch(e){
-    c.progress[rk]=prev;
-    btn.classList.remove('saving');
-    toast('⚠️ No se pudo guardar, probá de nuevo');
-    return;
-  }
-  btn.classList.remove('saving');
-  row.classList.toggle('done-row',c.progress[rk]);btn.classList.toggle('done',c.progress[rk]);
-  if(c.progress[rk]){
+  const prev=progress[rk];
+  const done=!prev;
+  progress[rk]=done;
+  row.classList.toggle('done-row',done);btn.classList.toggle('done',done);
+  if(done){
     if(isLast){
       const secs=blockRest||parseInt(document.getElementById('timer-custom')?.value)||60;
       const inp=document.getElementById('timer-custom');if(inp)inp.value=secs;
@@ -4658,6 +4668,18 @@ window.toggleSerie=async function(cId,ekey,si,rk,isLast,blockRest,pauseSecs){
       toast('✅ Serie completada — seguí con el siguiente ejercicio');
     }
   }
+  try{
+    await save();
+  }catch(e){
+    progress[rk]=prev;
+    row.classList.toggle('done-row',!!prev);btn.classList.toggle('done',!!prev);
+    toast('⚠️ No se pudo guardar, probá de nuevo');
+  }
+}
+window.toggleSerie=function(cId,ekey,si,rk,isLast,blockRest,pauseSecs){
+  const c=clients.find(cl=>cl.id===cId);
+  return toggleSerieOptimistic(c.progress,rk,isLast,blockRest,pauseSecs,
+    ()=>updateDoc(doc(db,'clients',cId),{progress:c.progress}));
 };
 
 function collectSetWeights(cId,ekey){
@@ -5173,7 +5195,7 @@ window.saveSessionNote=async function(cId,dIdx){
   const c=clients.find(cl=>cl.id===cId);
   const txt=document.getElementById('snote-'+cId+'-'+dIdx).value.trim();
   if(!txt)return;
-  const key=`snote-w${c.activeWeek||1}-${dIdx}`;
+  const key=`snote-w${cvWeekInfo[cId]?.curKey||c.activeWeek||1}-${dIdx}`;
   if(!c.progress[key])c.progress[key]=[];
   c.progress[key].push({date:new Date().toLocaleDateString('es-AR'),text:txt});
   await updateDoc(doc(db,'clients',cId),{progress:c.progress});
@@ -5185,7 +5207,7 @@ window.saveSessionNote=async function(cId,dIdx){
 window.deleteNote=async function(cId,dIdx,noteIdx){
   if(!confirm('¿Borrar esta nota?'))return;
   const c=clients.find(cl=>cl.id===cId);
-  const key=`snote-w${c.activeWeek||1}-${dIdx}`;
+  const key=`snote-w${cvWeekInfo[cId]?.curKey||c.activeWeek||1}-${dIdx}`;
   if(!c.progress[key])return;
   c.progress[key].splice(noteIdx,1);
   await updateDoc(doc(db,'clients',cId),{progress:c.progress});
@@ -5341,7 +5363,7 @@ async function renderProgramaUnificadoHtml(prog,cats,hasSubscription){
     const hasWeeks=c.weeks&&Object.keys(c.weeks).length;
     const wk=hasWeeks?getClientCurrentWeekNum(c):(c.activeWeek||1);
     const days=hasWeeks&&c.weeks[wk]?c.weeks[wk]:c.days;
-    const{exerciseLogs,notes}=buildProgressSummary(c.progress||{},days,c.id,wk);
+    const{exerciseLogs,notes}=buildProgressSummary(c.progress||{},days,c.id,hasWeeks?clientWeekTimeline(c).slice(-1)[0].key:wk);
     const progressHtml=renderProgressDetailBlock(c.id,exerciseLogs,days,notes)||'<div style="font-size:.78rem;color:var(--mu)">Sin registros todavía.</div>';
     const expiredNow=c.expiry&&(new Date(c.expiry+'T00:00:00')<new Date());
     const expiryBadge=c.expiry?`<span class="badge" style="background:${expiredNow?'#f8717122':'#fbbf2422'};color:${expiredNow?'var(--rd)':'var(--yw)'}">${expiredNow?'⏰ Vencido':'📅 Vence: '+new Date(c.expiry+'T00:00:00').toLocaleDateString('es-AR')}</span>`:'';
@@ -5371,7 +5393,7 @@ async function renderProgramaUnificadoHtml(prog,cats,hasSubscription){
     await loadPlanProgreso(plan);
     const days=getMemberPlanDays(plan,m);
     const memberWeek=getMemberCurrentWeekNum(plan,m)||1;
-    const{exerciseLogs,notes}=buildProgressSummary(m.progress||{},days,`${plan.id}-${m.id}`,memberWeek);
+    const{exerciseLogs,notes}=buildProgressSummary(m.progress||{},days,`${plan.id}-${m.id}`,getMemberCurrentWeekKey(plan,m));
     const progressHtml=renderProgressDetailBlock(`${plan.id}-${m.id}`,exerciseLogs,days,notes)||'<div style="font-size:.78rem;color:var(--mu)">Sin registros todavía.</div>';
     const weekNumsG=planWeekNums(plan);
     const weekBadgeG=plan.continuo?`<span class="badge bgr2">🔥 ${days.length} días</span>`:weekNumsG.length?`<span class="badge bgr2">Semana ${memberWeek} de ${weekNumsG.length}</span>`:'';
@@ -5409,7 +5431,7 @@ async function renderProgramaUnificadoHtml(prog,cats,hasSubscription){
       const days=getMemberPlanDays(plan,pseudoMember);
       const info=getMemberWeekMesoInfo(plan,pseudoMember);
       badge=plan.continuo?`<span class="badge bgr2">🔥 ${days.length} días</span>`:`<span class="badge bgr2">Semana ${info.currentWeek} de ${info.totalWeeks}</span>`;
-      const{exerciseLogs,notes}=buildProgressSummary(s.progress||{},days,`alu-${uid}`,info.currentWeek);
+      const{exerciseLogs,notes}=buildProgressSummary(s.progress||{},days,`alu-${uid}`,getMemberCurrentWeekKey(plan,pseudoMember));
       progressHtml=renderProgressDetailBlock(`alu-${uid}`,exerciseLogs,days,notes)||'';
       const weekNumsD=planWeekNums(plan);
       if(!plan.continuo&&weekNumsD.length>1)weekSelectHtml=`<select id="susc-changeweek-${uid}" style="width:auto;font-size:.78rem">${weekNumsD.map(w=>`<option value="${w}"${w===s.startWeek?' selected':''}>Semana ${w}</option>`).join('')}</select>
@@ -5445,7 +5467,7 @@ async function renderProgramaUnificadoHtml(prog,cats,hasSubscription){
       subWeek=getMemberCurrentWeekNum(planData,pseudoMember)||1;
     }
   }
-  const{exerciseLogs,notes}=buildProgressSummary(s.progress||{},days,`alu-${uid}`,subWeek);
+  const{exerciseLogs,notes}=buildProgressSummary(s.progress||{},days,`alu-${uid}`,planData?getMemberCurrentWeekKey(planData,{startWeek:s.startWeek||1,startDate:s.startDate||""}):subWeek);
   const acceso=estadoAccesoAlumno(s);
   const vencido=acceso.clave==='vencido';
   // "plan:{id}" asigna un plan grupal puntual por afuera del mapeo de
@@ -6316,6 +6338,99 @@ function getClientCurrentWeekNum(c){
   return weekNums[(startIdx+elapsedWeeks)%weekNums.length];
 }
 
+// Semanas transcurridas desde el inicio del alumno, de la primera a la actual.
+// `key` va en las claves de progreso (w{key}-día-bloque): el primer ciclo
+// conserva w{n} (datos existentes); al volver al inicio del plan se suma
+// c{ciclo} para no heredar los tildes del ciclo anterior.
+function weekTimeline(weekNums,startWeek,startDate){
+  if(!weekNums.length)return[];
+  const n=weekNums.length;
+  const startIdx=weekNums.includes(startWeek)?weekNums.indexOf(startWeek):0;
+  const elapsed=sundayAlignedElapsedWeeks(startDate);
+  const out=[];
+  for(let e=0;e<=elapsed;e++){
+    const pos=startIdx+e;const num=weekNums[pos%n];const cycle=Math.floor(pos/n);
+    out.push({num,cycle,key:cycle?`${num}c${cycle}`:String(num)});
+  }
+  return out;
+}
+function clientWeekTimeline(c){
+  const weekNums=Object.keys(c.weeks||{}).map(Number).sort((a,b)=>a-b);
+  const fixed=num=>[{num,cycle:0,key:String(num)}];
+  if(!weekNums.length)return fixed(c.activeWeek||1);
+  if(!c.startDate)return fixed(weekNums.includes(c.activeWeek)?c.activeWeek:weekNums[0]);
+  return weekTimeline(weekNums,c.activeWeek,c.startDate);
+}
+// viewKey: semana elegida en el selector (vacío = la actual). Las pasadas son solo lectura.
+function memberWeekView(plan,member,viewKey){
+  const weekNums=planWeekNums(plan);
+  if(plan.continuo||!weekNums.length){
+    const num=getMemberCurrentWeekNum(plan,member)||1;const w={num,cycle:0,key:String(num)};
+    return{timeline:[w],cur:w,view:w,days:getMemberPlanDays(plan,member),readOnly:false};
+  }
+  const timeline=weekTimeline(weekNums,member?.startWeek,member?.startDate);
+  const cur=timeline[timeline.length-1];
+  const view=timeline.find(w=>w.key===viewKey)||cur;
+  return{timeline,cur,view,days:plan.weeks[view.num]||[],readOnly:view!==cur};
+}
+function getMemberCurrentWeekKey(plan,member){return memberWeekView(plan,member).cur.key}
+// callPrefix: inicio de la llamada sin la key, ej. "selectCVWeek('id'," → se completa con "'key')".
+function weekChipsHTML(timeline,viewKey,callPrefix){
+  if(timeline.length<2)return'';
+  const cur=timeline[timeline.length-1];
+  const showCycle=timeline.some(w=>w.cycle>0);
+  const chips=timeline.slice().reverse().map(w=>{
+    const sel=w.key===(viewKey||cur.key);
+    const label=w===cur?'Esta semana':`Sem ${w.num}${showCycle?` · ciclo ${w.cycle+1}`:''}`;
+    return`<button type="button" onclick="${callPrefix}'${w===cur?'':w.key}')" style="flex-shrink:0;font-size:.74rem;font-weight:700;padding:5px 12px;border-radius:20px;cursor:pointer;font-family:inherit;border:1px solid var(--ac2);background:${sel?'var(--ac2)':'transparent'};color:${sel?'#fff':'var(--ac2)'}">${label}</button>`;
+  }).join('');
+  return`<div style="font-size:.7rem;color:var(--mu);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Semanas</div><div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:12px">${chips}</div>`;
+}
+function pastWeekBannerHTML(w,callPrefix){
+  return`<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;background:var(--s2);border:1px dashed var(--bd);border-radius:var(--ra);padding:10px 14px;margin-bottom:12px;font-size:.8rem;color:var(--mu)">
+    <span>👀 Semana ${w.num}${w.cycle?` (ciclo ${w.cycle+1})`:''} — solo lectura</span>
+    <button type="button" class="btn bg2 sm" onclick="${callPrefix}'')">Volver a esta semana</button></div>`;
+}
+// Deja ver videos y desplegar bloques, pero no tildar ni registrar nada.
+function makeReadOnly(container){
+  container.querySelectorAll('textarea').forEach(t=>{
+    t.style.display='none';
+    if(t.nextElementSibling?.tagName==='BUTTON')t.nextElementSibling.style.display='none';
+  });
+  container.querySelectorAll('input,select').forEach(el=>{el.disabled=true;el.style.opacity='.6'});
+  container.querySelectorAll('button').forEach(b=>{
+    const h=b.getAttribute('onclick')||'';
+    if(/^(embedYT|collapseYT|toggleG|toggleBlk|launchExTimer)\b/.test(h.trim()))return;
+    b.disabled=true;b.style.opacity='.4';b.style.cursor='not-allowed';
+  });
+}
+// Última sesión registrada de este ejercicio (por nombre, en cualquier semana
+// o ciclo), sin contar la de hoy.
+function prevSessionFor(c,weeks,exName){
+  const target=norm(exName).trim();
+  if(!target||!weeks)return null;
+  const prefix=c.id+'-';const today=todayStr();
+  let best=null;
+  for(const k in (c.progress||{})){
+    if(!k.startsWith(prefix)||!k.endsWith('-logs'))continue;
+    const m=k.slice(prefix.length,-5).match(/^w(\d+)(?:c\d+)?-(\d+)-(\d+)-e(\d+)$/);
+    if(!m)continue;
+    const ex=weeks[m[1]]?.[+m[2]]?.blocks?.[+m[3]]?.exercises?.[+m[4]];
+    if(!ex||norm(ex.name).trim()!==target)continue;
+    (c.progress[k]||[]).forEach(l=>{
+      if(l.date===today||!(l.weight||l.weights?.some(w=>w)||l.reps))return;
+      if(!best||compareDates(l.date,best.date)>0)best=l;
+    });
+  }
+  return best;
+}
+function prevSessionRowHtml(l){
+  if(!l)return'';
+  const wTxt=l.weights?.some(w=>w)?l.weights.map(w=>w||'—').join(' / ')+' kg':(l.weight?l.weight+' kg':'');
+  const txt=[wTxt,l.reps?(wTxt?'× ':'')+l.reps+' reps':''].filter(Boolean).join(' ');
+  return`<div style="font-size:.76rem;color:var(--mu);font-weight:600;margin:2px 0 4px">↩ La vez anterior (${l.date.split('/').slice(0,2).join('/')}): <span style="color:var(--tx)">${txt}</span></div>`;
+}
+
 // Info de semana/mesociclo actual del alumno, respetando su semana de inicio (no siempre arranca en la 1)
 function getMemberWeekMesoInfo(plan,member){
   const weekNum=getMemberCurrentWeekNum(plan,member)||1;
@@ -6752,16 +6867,17 @@ function renderGroupCV(plan,member,mode='client'){
   const initials=member.name.charAt(0).toUpperCase();
   const expDate=member.expiry?new Date(member.expiry+'T00:00:00').toLocaleDateString('es-AR'):'—';
   const daysLeft=member.expiry?Math.max(0,Math.ceil((new Date(member.expiry+'T00:00:00')-new Date())/(1000*60*60*24))):null;
-  const days=getMemberPlanDays(plan,member);
-  const fakeC={id:`grp::${plan.id}::${member.id}`,progress:member.progress||{}};
-  const memberWeek=getMemberCurrentWeekNum(plan,member)||1;
-  const nextIdx=getNextDayIdx({days,...fakeC},memberWeek);
   const gkey=`${plan.id}-${member.id}`;
+  const wv=memberWeekView(plan,member,weekViewState[gkey]);
+  const days=wv.days;
+  const fakeC={id:`grp::${plan.id}::${member.id}`,progress:member.progress||{}};
+  const memberWeek=wv.view.key;
+  const nextIdx=wv.readOnly?0:getNextDayIdx({days,...fakeC},memberWeek);
   const activeDayName=days[nextIdx]?.name||'Día '+(nextIdx+1);
   const mesoBadge=plan.continuo?`<span class="badge" style="background:var(--ac)22;color:var(--ac2)">🔥 Desafío de ${getMemberPlanDays(plan,member).length} días</span>`:(plan.weeks&&member.startDate)?(()=>{const info=getMemberWeekMesoInfo(plan,member);return`<span class="badge" style="background:var(--ac)22;color:var(--ac2)">🗓️ Semana ${info.currentWeek} de ${info.totalWeeks} — Meso ${info.mesoNum}/${info.totalMesos}</span>`;})():'';
   const dayListItems=(days||[]).map((d,i)=>{
     const isDone=(member.progress?.['snote-w'+memberWeek+'-'+i]||[]).length>0||isDayDoneViaSeries(fakeC,days,i,memberWeek);
-    const badge=i===nextIdx?`<span style="font-size:.68rem;padding:2px 8px;border-radius:20px;font-weight:600;background:var(--ac)33;color:var(--ac2)">Siguiente</span>`:isDone?`<span style="font-size:.68rem;padding:2px 8px;border-radius:20px;font-weight:600;background:var(--gr)22;color:var(--gr)">✓</span>`:'';
+    const badge=i===nextIdx&&!wv.readOnly?`<span style="font-size:.68rem;padding:2px 8px;border-radius:20px;font-weight:600;background:var(--ac)33;color:var(--ac2)">Siguiente</span>`:isDone?`<span style="font-size:.68rem;padding:2px 8px;border-radius:20px;font-weight:600;background:var(--gr)22;color:var(--gr)">✓</span>`:'';
     return`<div class="cv-day-item${i===nextIdx?' active':''}" id="gv-ditem-${gkey}-${i}" onclick="selectGroupCVDay('${plan.id}','${member.id}',${i})">
       <span class="cv-day-item-name">${d.name||'Día '+(i+1)}</span>${badge}
     </div>`;
@@ -6782,6 +6898,7 @@ function renderGroupCV(plan,member,mode='client'){
       ${plan.mpLink&&daysLeft!==null&&daysLeft<=7?`<a href="${plan.mpLink}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:#009EE322;color:#009EE3;border:1px solid #009EE344;border-radius:8px;padding:6px 14px;font-size:.78rem;font-weight:600;text-decoration:none;margin-bottom:12px">💳 Renovar plan</a>`:''}
     </div>
     ${mode==='alumno'?programPickerHTML(gkey,findAllProgramsForAlumno(alumnoState.uid,alumnoState.sub.name,alumnoState.sub.email,alumnoState.plan?.id||alumnoState.sub.planId,alumnoState.plan?.name),'group',plan.id,'alumno'):programPickerHTML(gkey,findAllProgramsForPerson(member.name,member.email),'group',plan.id)}
+    ${weekChipsHTML(wv.timeline,wv.view.key,`selectGroupWeek('${plan.id}','${member.id}','${mode}',`)}
     <div class="cv-day-picker">
       <div class="cv-day-picker-title">Seleccionar día</div>
       <div class="cv-day-picker-hdr" id="gv-picker-hdr-${gkey}" onclick="toggleGroupCVDayPicker('${gkey}')">
@@ -6806,25 +6923,33 @@ window.selectGroupCVDay=function(planId,memberId,idx){
   document.querySelectorAll(`[id^="gv-ditem-${gkey}-"]`).forEach(el=>el.classList.remove('active'));
   document.getElementById(`gv-ditem-${gkey}-${idx}`)?.classList.add('active');
   const label=document.getElementById('gv-picker-label-'+gkey);
-  const days=getMemberPlanDays(plan,member);
+  const days=memberWeekView(plan,member,weekViewState[gkey]).days;
   if(label)label.textContent='📅 '+(days[idx]?.name||'Día '+(idx+1));
   document.getElementById('gv-picker-hdr-'+gkey)?.classList.remove('open');
   document.getElementById('gv-day-list-'+gkey)?.classList.remove('open');
   renderGroupDay(plan,member,idx);
 };
+window.selectGroupWeek=function(planId,memberId,mode,key){
+  const plan=planes.find(p=>p.id===planId);
+  const member=plan&&resolveGroupMember(plan,memberId);
+  if(!plan||!member)return;
+  weekViewState[`${planId}-${memberId}`]=key;
+  renderGroupCV(plan,member,mode);
+};
 
 function renderGroupDay(plan,member,dIdx){
   const pk=exPersonKey(member.name,member.email||'');
   if(!exHistoryCache[pk])ensureExHistory(pk,()=>renderGroupDay(plan,member,dIdx));
-  const days=getMemberPlanDays(plan,member);
-  const day=days[dIdx];
   const gkey=`${plan.id}-${member.id}`;
+  const wv=memberWeekView(plan,member,weekViewState[gkey]);
+  const days=wv.days;
+  const day=days[dIdx];
   const container=document.getElementById('gday-view-'+gkey);
   if(!container)return;
   if(!day||!day.blocks?.length){container.innerHTML='<div style="text-align:center;padding:40px;color:var(--mu)">Sin bloques en este día.</div>';return}
   // Reuse same render functions but with plan+member as client proxy
-  const fakeClient={id:`grp::${plan.id}::${member.id}`,name:member.name,email:member.email||'',progress:member.progress||{},days};
-  const memberWeek=getMemberCurrentWeekNum(plan,member)||1;
+  const fakeClient={id:`grp::${plan.id}::${member.id}`,name:member.name,email:member.email||'',progress:member.progress||{},days,weeks:plan.weeks||{[wv.view.num]:days},readOnly:wv.readOnly};
+  const memberWeek=wv.view.key;
   let html='';
   day.blocks.forEach((blk,bi)=>{
     const bkey=`w${memberWeek}-${dIdx}-${bi}`;
@@ -6844,7 +6969,12 @@ function renderGroupDay(plan,member,dIdx){
     <button class="btn bgr sm" onclick="saveGroupNote('${plan.id}','${member.id}',${dIdx})">💾 Guardar nota</button>
     ${notesHtml}
   </div><div style="height:90px"></div>`;
-  container.innerHTML=html;
+  if(wv.readOnly){
+    const mode=document.getElementById('gday-view-'+gkey)?.closest('#alumno-cv-content')?'alumno':'client';
+    container.innerHTML=html;
+    makeReadOnly(container);
+    container.insertAdjacentHTML('afterbegin',pastWeekBannerHTML(wv.view,`selectGroupWeek('${plan.id}','${member.id}','${mode}',`));
+  }else container.innerHTML=html;
 }
 
 // Busca un member dentro de plan.members, con fallback al Desafío Glúteos
@@ -6864,26 +6994,7 @@ const origToggleSerie=window.toggleSerie;
 window.toggleSerie=async function(cId,ekey,si,rk,isLast,blockRest,pauseSecs){
   if(cId.startsWith('alu-')){
     if(!alumnoState.sub.progress)alumnoState.sub.progress={};
-    const row=document.getElementById('sr-'+rk);const btn=row.querySelector('.ckbtn');
-    const prev=alumnoState.sub.progress[rk];
-    alumnoState.sub.progress[rk]=!alumnoState.sub.progress[rk];
-    btn.classList.add('saving');
-    try{
-      await persistAlumnoProgress();
-    }catch(e){
-      alumnoState.sub.progress[rk]=prev;
-      btn.classList.remove('saving');
-      toast('⚠️ No se pudo guardar, probá de nuevo');
-      return;
-    }
-    btn.classList.remove('saving');
-    row.classList.toggle('done-row',alumnoState.sub.progress[rk]);btn.classList.toggle('done',alumnoState.sub.progress[rk]);
-    if(alumnoState.sub.progress[rk]){
-      if(isLast){const secs=blockRest||parseInt(document.getElementById('timer-custom')?.value)||60;const inp=document.getElementById('timer-custom');if(inp)inp.value=secs;toast('✅ ¡Bloque completo!');startTimer(secs);}
-      else if(pauseSecs){const inp=document.getElementById('timer-custom');if(inp)inp.value=pauseSecs;toast('✅ Serie completada — pausa de '+pauseSecs+'s');startTimer(pauseSecs);}
-      else toast('✅ Serie completada — seguí con el siguiente ejercicio');
-    }
-    return;
+    return toggleSerieOptimistic(alumnoState.sub.progress,rk,isLast,blockRest,pauseSecs,persistAlumnoProgress);
   }
   // Check if this is a group member (cId = grp::planId::memberId)
   if(cId.startsWith('grp::')){
@@ -6891,28 +7002,10 @@ window.toggleSerie=async function(cId,ekey,si,rk,isLast,blockRest,pauseSecs){
     const plan=planes.find(p=>p.id===planId);if(!plan)return;
     const member=resolveGroupMember(plan,memberId);if(!member)return;
     if(!member.progress)member.progress={};
-    const row=document.getElementById('sr-'+rk);const btn=row.querySelector('.ckbtn');
-    const prev=member.progress[rk];
-    member.progress[rk]=!member.progress[rk];
-    btn.classList.add('saving');
-    try{
-      await setDoc(doc(db,'planes',planId,'progreso',memberId),{progress:member.progress});
-    }catch(e){
-      member.progress[rk]=prev;
-      btn.classList.remove('saving');
-      toast('⚠️ No se pudo guardar, probá de nuevo');
-      return;
-    }
-    btn.classList.remove('saving');
-    row.classList.toggle('done-row',member.progress[rk]);btn.classList.toggle('done',member.progress[rk]);
-    if(member.progress[rk]){
-      if(isLast){const secs=blockRest||parseInt(document.getElementById('timer-custom')?.value)||60;const inp=document.getElementById('timer-custom');if(inp)inp.value=secs;toast('✅ ¡Bloque completo!');startTimer(secs);}
-      else if(pauseSecs){const inp=document.getElementById('timer-custom');if(inp)inp.value=pauseSecs;toast('✅ Serie completada — pausa de '+pauseSecs+'s');startTimer(pauseSecs);}
-      else toast('✅ Serie completada — seguí con el siguiente ejercicio');
-    }
-    return;
+    return toggleSerieOptimistic(member.progress,rk,isLast,blockRest,pauseSecs,
+      ()=>setDoc(doc(db,'planes',planId,'progreso',memberId),{progress:member.progress}));
   }
-  origToggleSerie(cId,ekey,si,rk,isLast,blockRest,pauseSecs);
+  return origToggleSerie(cId,ekey,si,rk,isLast,blockRest,pauseSecs);
 };
 
 const origAutoSaveGym=window.autoSaveGym;
@@ -7105,7 +7198,7 @@ window.saveGroupNote=async function(planId,memberId,dIdx){
   const txt=document.getElementById(`gsnote-${planId}-${memberId}-${dIdx}`).value.trim();
   if(!txt)return;
   if(!member.progress)member.progress={};
-  const key=`snote-w${getMemberCurrentWeekNum(plan,member)||1}-${dIdx}`;
+  const key=`snote-w${getMemberCurrentWeekKey(plan,member)}-${dIdx}`;
   if(!member.progress[key])member.progress[key]=[];
   member.progress[key].push({date:new Date().toLocaleDateString('es-AR'),text:txt});
   await setDoc(doc(db,'planes',planId,'progreso',memberId),{progress:member.progress});
@@ -7117,7 +7210,7 @@ window.deleteGroupNote=async function(planId,memberId,dIdx,noteIdx){
   if(!confirm('¿Borrar esta nota?'))return;
   const plan=planes.find(p=>p.id===planId);
   const member=resolveGroupMember(plan,memberId);if(!member)return;
-  const key=`snote-w${getMemberCurrentWeekNum(plan,member)||1}-${dIdx}`;
+  const key=`snote-w${getMemberCurrentWeekKey(plan,member)}-${dIdx}`;
   member.progress[key].splice(noteIdx,1);
   await setDoc(doc(db,'planes',planId,'progreso',memberId),{progress:member.progress});
   toast('🗑️ Nota eliminada');renderGroupDay(plan,member,dIdx);
@@ -7221,15 +7314,16 @@ function renderAlumnoCV(plan,member,uid){
   const akey='alu-'+uid;
   const expDate=member.expiry?new Date(member.expiry+'T00:00:00').toLocaleDateString('es-AR'):'Sin vencimiento';
   const daysLeft=member.expiry?Math.max(0,Math.ceil((new Date(member.expiry+'T00:00:00')-new Date())/(1000*60*60*24))):null;
-  const days=getMemberPlanDays(plan,member);
+  const wv=memberWeekView(plan,member,weekViewState[akey]);
+  const days=wv.days;
   const fakeC={id:akey,progress:member.progress||{}};
-  const memberWeek=getMemberCurrentWeekNum(plan,member)||1;
-  const nextIdx=getNextDayIdx({days,...fakeC},memberWeek);
+  const memberWeek=wv.view.key;
+  const nextIdx=wv.readOnly?0:getNextDayIdx({days,...fakeC},memberWeek);
   const activeDayName=days[nextIdx]?.name||'Día '+(nextIdx+1);
   const mesoBadge=plan.continuo?`<span class="badge" style="background:var(--ac)22;color:var(--ac2)">🔥 Desafío de ${getMemberPlanDays(plan,member).length} días</span>`:(plan.weeks&&member.startDate)?(()=>{const info=getMemberWeekMesoInfo(plan,member);return`<span class="badge" style="background:var(--ac)22;color:var(--ac2)">🗓️ Semana ${info.currentWeek} de ${info.totalWeeks} — Meso ${info.mesoNum}/${info.totalMesos}</span>`;})():'';
   const dayListItems=(days||[]).map((d,i)=>{
     const isDone=(member.progress?.['snote-w'+memberWeek+'-'+i]||[]).length>0||isDayDoneViaSeries(fakeC,days,i,memberWeek);
-    const badge=i===nextIdx?`<span style="font-size:.68rem;padding:2px 8px;border-radius:20px;font-weight:600;background:var(--ac)33;color:var(--ac2)">Siguiente</span>`:isDone?`<span style="font-size:.68rem;padding:2px 8px;border-radius:20px;font-weight:600;background:var(--gr)22;color:var(--gr)">✓</span>`:'';
+    const badge=i===nextIdx&&!wv.readOnly?`<span style="font-size:.68rem;padding:2px 8px;border-radius:20px;font-weight:600;background:var(--ac)33;color:var(--ac2)">Siguiente</span>`:isDone?`<span style="font-size:.68rem;padding:2px 8px;border-radius:20px;font-weight:600;background:var(--gr)22;color:var(--gr)">✓</span>`:'';
     return`<div class="cv-day-item${i===nextIdx?' active':''}" id="av-ditem-${akey}-${i}" onclick="selectAlumnoCVDay(${i})">
       <span class="cv-day-item-name">${d.name||'Día '+(i+1)}</span>${badge}
     </div>`;
@@ -7249,6 +7343,7 @@ function renderAlumnoCV(plan,member,uid){
       </div>
     </div>
     ${programPickerHTML(akey,findAllProgramsForAlumno(uid,member.name,member.email,plan.id,plan.name),'personal',null,'alumno')}
+    ${weekChipsHTML(wv.timeline,wv.view.key,'selectAlumnoWeek(')}
     <div class="cv-day-picker">
       <div class="cv-day-picker-title">Seleccionar día</div>
       <div class="cv-day-picker-hdr" id="av-picker-hdr-${akey}" onclick="toggleAlumnoCVDayPicker('${akey}')">
@@ -7272,24 +7367,31 @@ window.selectAlumnoCVDay=function(idx){
   document.querySelectorAll(`[id^="av-ditem-${akey}-"]`).forEach(el=>el.classList.remove('active'));
   document.getElementById(`av-ditem-${akey}-${idx}`)?.classList.add('active');
   const label=document.getElementById('av-picker-label-'+akey);
-  const days=getMemberPlanDays(plan,member);
+  const days=memberWeekView(plan,member,weekViewState[akey]).days;
   if(label)label.textContent='📅 '+(days[idx]?.name||'Día '+(idx+1));
   document.getElementById('av-picker-hdr-'+akey)?.classList.remove('open');
   document.getElementById('av-day-list-'+akey)?.classList.remove('open');
   renderAlumnoDay(plan,member,idx,uid);
 };
+window.selectAlumnoWeek=function(key){
+  const {plan,sub,uid}=alumnoState;
+  weekViewState['alu-'+uid]=key;
+  const member={id:'sub',name:sub.name||sub.email||'Alumno',email:sub.email||'',status:sub.status,expiry:sub.expiry,startDate:sub.startDate||'',startWeek:sub.startWeek||1,progress:sub.progress||{}};
+  renderAlumnoCV(plan,member,uid);
+};
 
 function renderAlumnoDay(plan,member,dIdx,uid){
   const pk=exPersonKey(member.name,member.email||'');
   if(!exHistoryCache[pk])ensureExHistory(pk,()=>renderAlumnoDay(plan,member,dIdx,uid));
-  const days=getMemberPlanDays(plan,member);
-  const day=days[dIdx];
   const akey='alu-'+uid;
+  const wv=memberWeekView(plan,member,weekViewState[akey]);
+  const days=wv.days;
+  const day=days[dIdx];
   const container=document.getElementById('aday-view-'+akey);
   if(!container)return;
   if(!day||!day.blocks?.length){container.innerHTML='<div style="text-align:center;padding:40px;color:var(--mu)">Sin bloques en este día.</div>';return}
-  const fakeClient={id:akey,name:member.name,email:member.email||'',progress:member.progress||{},days};
-  const memberWeek=getMemberCurrentWeekNum(plan,member)||1;
+  const fakeClient={id:akey,name:member.name,email:member.email||'',progress:member.progress||{},days,weeks:plan.weeks||{[wv.view.num]:days},readOnly:wv.readOnly};
+  const memberWeek=wv.view.key;
   let html='';
   day.blocks.forEach((blk,bi)=>{
     const bkey=`w${memberWeek}-${dIdx}-${bi}`;
@@ -7308,7 +7410,11 @@ function renderAlumnoDay(plan,member,dIdx,uid){
     <button class="btn bgr sm" onclick="saveAlumnoNote(${dIdx})">💾 Guardar nota</button>
     ${notesHtml}
   </div><div style="height:90px"></div>`;
-  container.innerHTML=html;
+  if(wv.readOnly){
+    container.innerHTML=html;
+    makeReadOnly(container);
+    container.insertAdjacentHTML('afterbegin',pastWeekBannerHTML(wv.view,'selectAlumnoWeek('));
+  }else container.innerHTML=html;
 }
 
 async function persistAlumnoProgress(){
@@ -7321,7 +7427,7 @@ window.saveAlumnoNote=async function(dIdx){
   const txt=document.getElementById(`asnote-${akey}-${dIdx}`).value.trim();
   if(!txt)return;
   if(!alumnoState.sub.progress)alumnoState.sub.progress={};
-  const subWeek=getMemberCurrentWeekNum(alumnoState.plan,{startWeek:alumnoState.sub.startWeek||1,startDate:alumnoState.sub.startDate||''})||1;
+  const subWeek=getMemberCurrentWeekKey(alumnoState.plan,{startWeek:alumnoState.sub.startWeek||1,startDate:alumnoState.sub.startDate||''});
   const key=`snote-w${subWeek}-${dIdx}`;
   if(!alumnoState.sub.progress[key])alumnoState.sub.progress[key]=[];
   alumnoState.sub.progress[key].push({date:new Date().toLocaleDateString('es-AR'),text:txt});
@@ -7339,7 +7445,7 @@ window.saveAlumnoNote=async function(dIdx){
 
 window.deleteAlumnoNote=async function(dIdx,noteIdx){
   if(!confirm('¿Borrar esta nota?'))return;
-  const subWeek=getMemberCurrentWeekNum(alumnoState.plan,{startWeek:alumnoState.sub.startWeek||1,startDate:alumnoState.sub.startDate||''})||1;
+  const subWeek=getMemberCurrentWeekKey(alumnoState.plan,{startWeek:alumnoState.sub.startWeek||1,startDate:alumnoState.sub.startDate||''});
   const key=`snote-w${subWeek}-${dIdx}`;
   alumnoState.sub.progress[key].splice(noteIdx,1);
   await persistAlumnoProgress();

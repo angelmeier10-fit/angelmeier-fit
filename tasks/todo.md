@@ -1,3 +1,35 @@
+# Plan: Historial de semanas para alumnos — HECHO, sin deploy (2026-10-05)
+
+Datos: el progreso ya se guarda por semana (`w{semana}-{día}-{bloque}`), los pesos con fecha (`...-logs`). No hace falta migrar datos.
+Aplica a las 3 vistas de alumno: cliente individual (`renderCV`/`renderDay`), miembro de grupo (`renderGroupDay`), suscriptor (`renderAlumnoCV`/`renderAlumnoDay`). Planes "continuos" (desafíos) quedan afuera: no tienen semanas.
+
+## A. Selector de semanas (solo lectura)
+- [x] Helper `pastWeekNums(weekNums,startWeek,startDate)`: semanas ya transcurridas desde el inicio + la actual (sin futuras).
+- [x] Chips arriba del selector de día: `S1 · S2 · S3 · S4 (actual)`. Si hay una sola semana transcurrida, no se muestra.
+- [x] Al elegir una semana pasada: se renderizan los días de esa semana con su `bkey` `w{semana}`, cartel "Semana X — solo lectura · Volver a la actual", y se deshabilitan tildes, inputs de peso y notas (videos y desplegables siguen andando).
+- [x] Integrarlo en las 3 vistas.
+
+## B. "La vez anterior" en cada ejercicio de fuerza
+- [x] Helper `prevSessionFor(c,weeks,exName)`: recorre los `...-logs` del alumno, resuelve qué ejercicio era cada uno con el plan, filtra por mismo nombre y toma la última sesión con fecha distinta de hoy.
+- [x] Línea en `renderGymBlock`: `↩ La vez anterior (28/9): 12 / 12 / 14 kg × 10`.
+- [x] Pasar `weeks` a los `fakeClient` de grupo y suscriptor.
+
+## Verificación
+- [x] Sintaxis del módulo + simulación con progreso falso (semanas pasadas, ejercicio repetido en varias semanas, sesión de hoy excluida).
+- [x] Probar en navegador la vista de alumno.
+
+## C. Ciclos (pedido extra)
+- [x] Al volver a la semana 1 del plan, las claves pasan a `w{n}c{ciclo}`; el primer ciclo conserva `w{n}`. Notas, tildes y resúmenes del entrenador usan la clave del ciclo actual.
+
+## Revisión
+- Helpers nuevos junto a `getMemberCurrentWeekNum`: `weekTimeline`, `clientWeekTimeline`, `memberWeekView`, `weekChipsHTML`, `makeReadOnly`, `prevSessionFor`.
+- Cliente individual: el estado de semana va en `cvWeekInfo` (no en `c`) porque `deleteLog` guarda el cliente entero con setDoc.
+- Se quitó "Último" de `exHistoryRowHtml` (queda 🏆 Máx); "La vez anterior" también sugiere el peso de cada serie.
+- Verificado: sintaxis del módulo, simulación de helpers (ciclos, arranque en semana 3, desafío continuo, la vez anterior excluyendo hoy) y render real en navegador con datos ficticios (semana actual y pasada, solo lectura).
+- No probado con cuentas reales.
+
+---
+
 # Plan: Macrociclo de Abdominales (3 mesociclos x 4 semanas) — EN CURSO
 
 ## Estructura general
