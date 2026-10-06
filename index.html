@@ -318,7 +318,16 @@ textarea{resize:vertical;min-height:52px}
 .cf-timer-prog-bar{height:100%;border-radius:99px;transition:width .9s linear;width:100%}
 .cf-timer-controls{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
 .cf-timer-controls input{width:58px;font-size:.82rem;padding:5px 7px;text-align:center}
-#toast{position:fixed;bottom:20px;right:20px;background:var(--gr);color:#0f1117;padding:10px 16px;border-radius:10px;font-weight:600;font-size:.83rem;transform:translateY(80px);opacity:0;transition:all .3s;z-index:9999}
+/* Timer en pantalla completa (clase .tfs); minimizado vuelve a la barra de abajo */
+.tfs{top:0;border-top-width:0!important;overflow-y:auto}
+.tfs>div{height:100%;flex-direction:column;justify-content:center;flex-wrap:nowrap!important;gap:28px!important;text-align:center}
+.tfs #timer-big,.tfs .cf-timer-display{font-size:min(30vw,10rem)!important}
+.tfs .tm-info,.tfs .cf-timer-info{flex:0 0 auto!important;width:min(90%,520px)}
+.tfs .tm-info>div:first-child,.tfs .cf-timer-label{font-size:1rem!important}
+.tfs .cf-timer-sub{font-size:1.1rem}
+.tfs #timer-progress-wrap,.tfs .cf-timer-progress{height:10px}
+.tfs .tm-ctrls,.tfs .cf-timer-controls{justify-content:center}
+#toast{position:fixed;bottom:20px;right:20px;background:var(--gr);color:#0f1117;padding:10px 16px;border-radius:10px;font-weight:600;font-size:.83rem;transform:translateY(80px);opacity:0;transition:all .3s;z-index:10000}
 #toast.show{transform:translateY(0);opacity:1}
 #loading{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;gap:14px}
 #loading .spin{width:40px;height:40px;border:3px solid var(--bd);border-top-color:var(--ac2);border-radius:50%;animation:spin .7s linear infinite}
@@ -759,6 +768,7 @@ setTimeout(()=>{
       </div>
       <button id="cf-timer-startstop" onclick="cfTimerToggle()" class="btn bor sm">▶ Iniciar</button>
       <button onclick="cfTimerReset()" class="btn bg2 sm">↺</button>
+      <button onclick="toggleTimerFs('cf-timer-bar')" class="btn bg2 sm tfs-btn">⛶</button>
       <button onclick="cfTimerClose()" class="btn bd2 sm">✕</button>
     </div>
   </div>
@@ -844,18 +854,19 @@ setTimeout(()=>{
 <div id="timer-bar" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:var(--s1);border-top:2px solid var(--or);padding:10px 20px;box-shadow:0 -4px 20px rgba(0,0,0,.4)">
   <div style="max-width:980px;margin:0 auto;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
     <div id="timer-big" style="font-family:'Space Grotesk',sans-serif;font-size:2.2rem;font-weight:700;color:var(--or);min-width:64px;text-align:center;line-height:1">60</div>
-    <div style="flex:1;min-width:0">
+    <div class="tm-info" style="flex:1;min-width:0">
       <div style="font-size:.68rem;color:var(--mu);text-transform:uppercase;letter-spacing:.08em;font-weight:600;margin-bottom:4px">⏱ Descanso</div>
       <div id="timer-progress-wrap" style="background:var(--s2);border-radius:99px;height:6px;overflow:hidden">
         <div id="timer-progress" style="height:100%;background:var(--or);border-radius:99px;transition:width .9s linear;width:100%"></div>
       </div>
     </div>
-    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+    <div class="tm-ctrls" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
       <div style="display:flex;align-items:center;gap:5px">
         <input id="timer-custom" type="number" min="5" max="600" value="60" style="width:64px;font-size:.85rem;padding:5px 8px;text-align:center">
         <span style="font-size:.75rem;color:var(--mu)">seg</span>
       </div>
       <button onclick="restartWithCustom()" class="btn bor sm">↺ Reiniciar</button>
+      <button onclick="toggleTimerFs('timer-bar')" class="btn bg2 sm tfs-btn">⛶</button>
       <button onclick="stopTimer()" class="btn bd2 sm">✕</button>
     </div>
   </div>
@@ -5158,6 +5169,15 @@ document.addEventListener('visibilitychange',()=>{
 // de que la app volvió a primer plano.
 window.addEventListener('focus',timerCatchUp);
 window.addEventListener('pageshow',timerCatchUp);
+function setTimerFs(bar,on){
+  bar.classList.toggle('tfs',on);
+  const b=bar.querySelector('.tfs-btn');
+  if(b){b.textContent=on?'▾ Minimizar':'⛶';b.title=on?'Minimizar':'Pantalla completa';}
+}
+window.toggleTimerFs=function(id){
+  const bar=document.getElementById(id);
+  setTimerFs(bar,!bar.classList.contains('tfs'));
+};
 function startTimer(secs){
   clearInterval(timerInterval);
   timerTotal=secs;timerSeconds=secs;
@@ -5167,6 +5187,7 @@ function startTimer(secs){
   const inp=document.getElementById('timer-custom');
   if(inp)inp.value=secs;
   bar.style.display='block';
+  setTimerFs(bar,true);
   bar.style.borderTopColor='var(--or)';
   big.textContent=timerSeconds;big.style.color='var(--or)';
   prog.style.background='var(--or)';prog.style.width='100%';
@@ -8311,7 +8332,7 @@ function launchCFTimer(cftype, meta, customLabel, exNames){
     cfTimerSetColor('var(--or)');
   }
 
-  bar.style.display='block';
+  bar.style.display='block';setTimerFs(bar,true);
   cfTimerUpdateDisplay();
 }
 window.launchCFTimer=launchCFTimer;
@@ -8344,7 +8365,7 @@ window.confirmCFTimerConfig=function(){
 window.launchExTimer=function(exTimerId, exName, prefillVal){
   const val=(prefillVal||'').trim();
   if(!val){toast('Este ejercicio no tiene tiempo definido. Ingresalo en la barra del timer.');
-    document.getElementById('cf-timer-bar').style.display='block';
+    {const b=document.getElementById('cf-timer-bar');b.style.display='block';setTimerFs(b,true);}
     document.getElementById('cf-timer-edit').focus();return;}
   // Parse time
   const secs=parseToSecs(val);
@@ -8357,7 +8378,7 @@ window.launchExTimer=function(exTimerId, exName, prefillVal){
   cfTimer.mode='countdown';cfTimer.totalSecs=secs;cfTimer.currentSecs=secs;
   label.textContent=`⏱ ${exName} — ${val}`;
   cfTimerSetColor('var(--cy)');
-  bar.style.display='block';
+  bar.style.display='block';setTimerFs(bar,true);
   document.getElementById('cf-timer-edit').placeholder='Cambiar tiempo...';
   cfTimerUpdateDisplay();
   // Auto-start with 10s countdown
