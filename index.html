@@ -4117,7 +4117,7 @@ async function renderCV(clientId){
   const c=clients.find(cl=>cl.id===clientId);if(!c)return;
   // Se calcula antes de pisar activeWeek, que en el doc es la semana de inicio.
   // Va en un mapa aparte (no en c) porque hay saves que suben el cliente entero.
-  const timeline=clientWeekTimeline(c);
+  const timeline=withRecordedWeeks(clientWeekTimeline(c),c.progress,Object.keys(c.weeks||{}).map(Number));
   const curWk=timeline[timeline.length-1];
   const viewWk=timeline.find(w=>w.key===weekViewState[clientId])||curWk;
   const wi=cvWeekInfo[clientId]={timeline,view:viewWk,curKey:curWk.key,key:viewWk.key,readOnly:viewWk!==curWk};
@@ -4221,7 +4221,7 @@ async function renderCV(clientId){
       </div>
     </div>
     ${programPickerHTML(clientId,findAllProgramsForPerson(c.name,c.email),'personal',null)}
-    ${weekSelectHTML(wi.timeline,wi.key,`selectCVWeek('${clientId}',`,c.mesoWeeks)}
+    ${weekPickerHTML(wi.timeline,wi.key,`selectCVWeek('${clientId}',`,c.mesoWeeks,`wkp-${clientId}`)}
     <div class="cv-day-picker">
       <div class="cv-day-picker-title">Seleccionar día</div>
       <div class="cv-day-picker-hdr" id="cv-day-picker-hdr-${clientId}" onclick="toggleCVDayPicker('${clientId}')">
@@ -6383,31 +6383,72 @@ function memberWeekView(plan,member,viewKey){
     const num=getMemberCurrentWeekNum(plan,member)||1;const w={num,cycle:0,key:String(num)};
     return{timeline:[w],cur:w,view:w,days:getMemberPlanDays(plan,member),readOnly:false};
   }
-  const timeline=weekTimeline(weekNums,member?.startWeek,member?.startDate);
+  const timeline=withRecordedWeeks(weekTimeline(weekNums,member?.startWeek,member?.startDate),member?.progress,weekNums);
   const cur=timeline[timeline.length-1];
   const view=timeline.find(w=>w.key===viewKey)||cur;
   return{timeline,cur,view,days:plan.weeks[view.num]||[],readOnly:view!==cur};
 }
 function getMemberCurrentWeekKey(plan,member){return memberWeekView(plan,member).cur.key}
+// Semanas con registros que quedaron fuera de la línea de tiempo (pasa al usar
+// "Cambiar semana" o reasignar el plan, que reinician la fecha de inicio): se
+// suman al historial, sin fechas, para no perder lo que el alumno ya hizo.
+function withRecordedWeeks(timeline,progress,weekNums){
+  const have=new Set(timeline.map(w=>w.key));const extra={};
+  for(const k in progress||{}){
+    const v=progress[k];
+    if(!(v===true||(Array.isArray(v)&&v.length)))continue;
+    const m=k.match(/^snote-w(\d+)(?:c(\d+))?-\d+$/)||k.match(/-w(\d+)(?:c(\d+))?-\d+-\d+-/);
+    if(!m)continue;
+    const num=+m[1],cycle=+(m[2]||0),key=cycle?`${num}c${cycle}`:String(num);
+    if(have.has(key)||!weekNums.includes(num))continue;
+    extra[key]={num,cycle,key,from:null};
+  }
+  const ex=Object.values(extra).sort((x,y)=>x.cycle-y.cycle||x.num-y.num);
+  return ex.length?[...ex,...timeline]:timeline;
+}
+// Selector de semana con los mesociclos plegables (el actual abierto).
 // callPrefix: inicio de la llamada sin la key, ej. "selectCVWeek('id'," → se completa con "'key')".
-function weekSelectHTML(timeline,viewKey,callPrefix,mesoWeeks){
+function weekPickerHTML(timeline,viewKey,callPrefix,mesoWeeks,pid){
   if(timeline.length<2)return'';
   const cur=timeline[timeline.length-1];
+  const sel=timeline.find(w=>w.key===viewKey)||cur;
   const mw=mesoWeeks||4;
   const showCycle=timeline.some(w=>w.cycle>0);
   const dm=d=>d.getDate()+'/'+(d.getMonth()+1);
-  const range=w=>w.from?` (${dm(w.from)} – ${dm(new Date(w.from.getFullYear(),w.from.getMonth(),w.from.getDate()+6))})`:'';
-  const opt=(w,label)=>`<option value="${w===cur?'':w.key}"${w.key===(viewKey||cur.key)?' selected':''}>${label}${range(w)}</option>`;
+  const end=d=>new Date(d.getFullYear(),d.getMonth(),d.getDate()+6);
+  const range=w=>w.from?`${dm(w.from)} – ${dm(end(w.from))}`:'';
+  const name=w=>`Semana ${w.num}${w===cur?' · esta semana':''}`;
   const groups=[];
-  timeline.slice(0,-1).reverse().forEach(w=>{
+  timeline.slice().reverse().forEach(w=>{
     const meso=Math.ceil(w.num/mw);const id=w.cycle+'-'+meso;
     let g=groups[groups.length-1];
-    if(!g||g.id!==id)groups.push(g={id,label:`${showCycle?`Ciclo ${w.cycle+1} · `:''}Meso ${meso} · semanas ${(meso-1)*mw+1}-${meso*mw}`,opts:[]});
-    g.opts.push(opt(w,`Semana ${w.num}`));
+    if(!g||g.id!==id)groups.push(g={id,label:`${showCycle?`Ciclo ${w.cycle+1} · `:''}Meso ${meso} · semanas ${(meso-1)*mw+1}-${meso*mw}`,weeks:[]});
+    g.weeks.push(w);
   });
-  const past=groups.length>1||showCycle?groups.map(g=>`<optgroup label="${g.label}">${g.opts.join('')}</optgroup>`).join(''):groups.map(g=>g.opts.join('')).join('');
-  return`<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px"><span style="font-size:.7rem;color:var(--mu);font-weight:700;text-transform:uppercase;letter-spacing:.05em;flex-shrink:0">📆 Semana</span><select onchange="${callPrefix}this.value)" style="flex:1;min-width:0;font-size:.85rem;padding:8px 10px;border-radius:9px;border:1px solid var(--bd);background:var(--s2);color:var(--tx);font-family:inherit">${opt(cur,`Esta semana — Semana ${cur.num}`)}${past}</select></div>`;
+  const groupHTML=(g,gi)=>{
+    const open=g.weeks.includes(sel);
+    const dated=g.weeks.filter(w=>w.from);
+    const side=g.weeks.includes(cur)?'actual':dated.length?`${dm(dated[dated.length-1].from)} – ${dm(end(dated[0].from))}`:'';
+    const rows=g.weeks.map(w=>{
+      const on=w===sel;
+      return`<button type="button" onclick="${callPrefix}'${w===cur?'':w.key}')" style="display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;padding:10px 14px 10px 30px;border:none;border-top:1px solid var(--bd);background:${on?'var(--ac)22':'transparent'};color:${on?'var(--ac2)':'var(--tx)'};font-family:inherit;font-size:.84rem;font-weight:${on?700:500};cursor:pointer;text-align:left"><span>${on?'● ':''}${name(w)}</span><span style="font-size:.74rem;color:var(--mu);flex-shrink:0">${range(w)}</span></button>`;
+    }).join('');
+    return`<div${gi?' style="border-top:1px solid var(--bd)"':''}><button type="button" onclick="toggleWkGroup(this)" style="display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;padding:11px 14px;border:none;background:transparent;color:var(--tx);font-family:inherit;font-size:.8rem;font-weight:700;cursor:pointer;text-align:left"><span><span class="wk-arr" style="display:inline-block;width:14px;color:var(--mu)">${open?'▾':'▸'}</span>${g.label}</span><span style="font-size:.72rem;color:var(--mu);font-weight:500;flex-shrink:0">${side}</span></button><div style="display:${open?'block':'none'}">${rows}</div></div>`;
+  };
+  return`<div style="margin-bottom:12px">
+    <button type="button" onclick="toggleWkPanel('${pid}')" style="display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;padding:11px 14px;border:1px solid var(--bd);border-radius:10px;background:var(--s2);color:var(--tx);font-family:inherit;font-size:.86rem;font-weight:600;cursor:pointer;text-align:left"><span>📆 ${name(sel)}${range(sel)?` <span style="font-weight:400;color:var(--mu);font-size:.78rem">(${range(sel)})</span>`:''}</span><span style="color:var(--mu)">▼</span></button>
+    <div id="${pid}" style="display:none;margin-top:6px;border:1px solid var(--bd);border-radius:10px;background:var(--s1);max-height:60vh;overflow-y:auto">${groups.map(groupHTML).join('')}</div>
+  </div>`;
 }
+window.toggleWkPanel=function(id){
+  const p=document.getElementById(id);
+  if(p)p.style.display=p.style.display==='none'?'block':'none';
+};
+window.toggleWkGroup=function(btn){
+  const body=btn.nextElementSibling;const open=body.style.display!=='none';
+  body.style.display=open?'none':'block';
+  btn.querySelector('.wk-arr').textContent=open?'▸':'▾';
+};
 function pastWeekBannerHTML(w,callPrefix){
   return`<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;background:var(--s2);border:1px dashed var(--bd);border-radius:var(--ra);padding:10px 14px;margin-bottom:12px;font-size:.8rem;color:var(--mu)">
     <span>👀 Semana ${w.num}${w.cycle?` (ciclo ${w.cycle+1})`:''} — solo lectura</span>
@@ -6921,7 +6962,7 @@ function renderGroupCV(plan,member,mode='client'){
       ${plan.mpLink&&daysLeft!==null&&daysLeft<=7?`<a href="${plan.mpLink}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:#009EE322;color:#009EE3;border:1px solid #009EE344;border-radius:8px;padding:6px 14px;font-size:.78rem;font-weight:600;text-decoration:none;margin-bottom:12px">💳 Renovar plan</a>`:''}
     </div>
     ${mode==='alumno'?programPickerHTML(gkey,findAllProgramsForAlumno(alumnoState.uid,alumnoState.sub.name,alumnoState.sub.email,alumnoState.plan?.id||alumnoState.sub.planId,alumnoState.plan?.name),'group',plan.id,'alumno'):programPickerHTML(gkey,findAllProgramsForPerson(member.name,member.email),'group',plan.id)}
-    ${weekSelectHTML(wv.timeline,wv.view.key,`selectGroupWeek('${plan.id}','${member.id}','${mode}',`,plan.mesoWeeks)}
+    ${weekPickerHTML(wv.timeline,wv.view.key,`selectGroupWeek('${plan.id}','${member.id}','${mode}',`,plan.mesoWeeks,`wkp-${gkey}`)}
     <div class="cv-day-picker">
       <div class="cv-day-picker-title">Seleccionar día</div>
       <div class="cv-day-picker-hdr" id="gv-picker-hdr-${gkey}" onclick="toggleGroupCVDayPicker('${gkey}')">
@@ -7366,7 +7407,7 @@ function renderAlumnoCV(plan,member,uid){
       </div>
     </div>
     ${programPickerHTML(akey,findAllProgramsForAlumno(uid,member.name,member.email,plan.id,plan.name),'personal',null,'alumno')}
-    ${weekSelectHTML(wv.timeline,wv.view.key,'selectAlumnoWeek(',plan.mesoWeeks)}
+    ${weekPickerHTML(wv.timeline,wv.view.key,'selectAlumnoWeek(',plan.mesoWeeks,`wkp-${akey}`)}
     <div class="cv-day-picker">
       <div class="cv-day-picker-title">Seleccionar día</div>
       <div class="cv-day-picker-hdr" id="av-picker-hdr-${akey}" onclick="toggleAlumnoCVDayPicker('${akey}')">
