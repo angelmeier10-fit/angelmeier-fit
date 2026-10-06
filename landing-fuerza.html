@@ -100,8 +100,11 @@ nav {
 .mod-feature { display: flex; align-items: flex-start; gap: 10px; font-size: .86rem; font-family: 'Inter'; }
 .mod-price { font-family: 'Oswald', sans-serif; font-size: 2rem; font-weight: 700; margin: -6px 0 16px; }
 .mod-price span { font-family: 'Inter', sans-serif; font-size: .9rem; font-weight: 500; color: var(--mu); }
-.mod-link { display: inline-block; margin-top: 20px; color: var(--ac); font-weight: 700; font-size: .9rem; text-decoration: none; }
-.mod-link:hover { text-decoration: underline; }
+.mod-btn { width: 100%; justify-content: center; font-size: .9rem; padding: 13px 18px; }
+.mod-cta-note { font-size: .78rem; color: var(--mu); font-family: 'Inter'; margin: 8px 0 20px; text-align: center; }
+.mod-card.presencial { border-color: var(--ac); }
+.mod-feature strong { display: block; font-weight: 700; }
+.mod-feature span { display: block; color: var(--mu); margin-top: 2px; line-height: 1.5; }
 .guarantee { background: var(--s1); border: 1px solid var(--border); border-radius: 12px; padding: 22px 26px; margin-top: 36px; font-size: .95rem; font-family: 'Inter'; }
 .mod-feature::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--ac); flex-shrink: 0; margin-top: 6px; }
 
@@ -245,6 +248,7 @@ body.menu-open { overflow: hidden; }
       <a class="btn-wa" href="https://wa.me/5491172399988?text=Hola%20Angel%2C%20vi%20tu%20p%C3%A1gina%20y%20quiero%20empezar%20con%20la%20garant%C3%ADa%20de%207%20d%C3%ADas." target="_blank">Quiero empezar — 7 días de garantía</a>
     </div>
     <p class="hero-sub">Programas online: si no te convence, te devolvemos el 100% — sin vueltas</p>
+    <p class="hero-sub" style="margin-top:6px">¿Preferís entrenar en persona? <a href="#modalidades" style="color:var(--ac);font-weight:600">Clases presenciales en Zona Norte →</a></p>
   </div>
   <div class="hero-img"></div>
 </section>
@@ -321,39 +325,46 @@ body.menu-open { overflow: hidden; }
   <div class="section-inner">
     <div class="eyebrow">Modalidades</div>
     <h2>Elegí cómo entrenar</h2>
-    <p class="section-lead">Tres formatos según tu disponibilidad y el nivel de acompañamiento que necesitás.</p>
+    <p class="section-lead">Dos programas online y clases presenciales en Zona Norte: elegí según tu disponibilidad y el acompañamiento que necesitás.</p>
     <div class="mod-grid">
       <div class="mod-card">
         <h3>Programa General</h3>
-        <p class="mod-desc">Un programa online prediseñado de fuerza y funcional. Entrenás a tu ritmo, con seguimiento a través de la app.</p>
+        <p class="mod-desc">Un programa online prediseñado de fuerza y funcional, con seguimiento a través de la app.</p>
         <div class="mod-price">$18.000 <span>/ mes</span></div>
+        <a class="btn-wa mod-btn" href="https://wa.me/5491172399988?text=Hola%20Angel%2C%20quiero%20empezar%20con%20el%20Programa%20General." target="_blank">Quiero el Programa General</a>
+        <p class="mod-cta-note">Te respondo por WhatsApp y arrancás esta semana.</p>
         <div class="mod-features">
-          <div class="mod-feature">100% online, sin horarios fijos</div>
-          <div class="mod-feature">Progresión de fuerza estructurada</div>
-          <div class="mod-feature">Ideal para empezar por tu cuenta</div>
+          <div class="mod-feature"><div><strong>100% online</strong><span>Sin horarios fijos: entrenás a tu ritmo.</span></div></div>
+          <div class="mod-feature"><div><strong>Progresión estructurada</strong><span>Fuerza y funcional, semana a semana.</span></div></div>
+          <div class="mod-feature"><div><strong>Ideal para empezar</strong><span>Si querés arrancar por tu cuenta con una guía clara.</span></div></div>
         </div>
       </div>
       <div class="mod-card destacado">
         <div class="mod-badge">Más elegido</div>
         <h3>Programa Personalizado</h3>
-        <p class="mod-desc">Plan 100% diseñado para vos según tu objetivo — fuerza, CrossFit o composición corporal. Evaluación inicial y ajuste continuo.</p>
+        <p class="mod-desc">Plan 100% diseñado para vos según tu objetivo, con evaluación inicial y ajuste continuo.</p>
         <div class="mod-price">$35.000 <span>/ mes</span></div>
+        <a class="btn-wa mod-btn" href="https://wa.me/5491172399988?text=Hola%20Angel%2C%20quiero%20empezar%20con%20el%20Programa%20Personalizado." target="_blank">Quiero mi plan personalizado</a>
+        <p class="mod-cta-note">Te respondo por WhatsApp y arrancás esta semana.</p>
         <div class="mod-features">
-          <div class="mod-feature">Evaluación física inicial</div>
-          <div class="mod-feature">Plan exclusivo según tu objetivo</div>
-          <div class="mod-feature">Seguimiento online con la app</div>
+          <div class="mod-feature"><div><strong>Evaluación física inicial</strong><span>Partimos de tu nivel real.</span></div></div>
+          <div class="mod-feature"><div><strong>Plan exclusivo</strong><span>Según tu objetivo: fuerza, CrossFit o composición corporal.</span></div></div>
+          <div class="mod-feature"><div><strong>Seguimiento con la app</strong><span>Ajusto el plan según cómo avanzás.</span></div></div>
         </div>
       </div>
-      <div class="mod-card">
+      <div class="mod-card presencial">
+        <div class="mod-badge">Presencial · Zona Norte</div>
         <h3>Clases presenciales</h3>
-        <p class="mod-desc">Clases personalizadas en el lugar que elijas dentro de Zona Norte (tu casa, tu gimnasio o al aire libre), con corrección técnica en tiempo real.</p>
+        <p class="mod-desc">Clases personalizadas en el lugar que elijas, con corrección técnica en tiempo real.</p>
         <div class="mod-price">$40.000 <span>/ clase</span></div>
+        <a class="btn-wa mod-btn" href="https://wa.me/5491172399988?text=Hola%20Angel%2C%20quiero%20consultar%20disponibilidad%20para%20clases%20presenciales%20en%20Zona%20Norte." target="_blank">Quiero clases presenciales</a>
+        <p class="mod-cta-note">Te paso los horarios disponibles por WhatsApp.</p>
         <div class="mod-features">
-          <div class="mod-feature">Si entrenan 2 personas juntas, se divide: $20.000 cada una</div>
-          <div class="mod-feature">Grupos de 3 o 4: precio promocional</div>
-          <div class="mod-feature">Mínimo 8 clases por mes</div>
+          <div class="mod-feature"><div><strong>En el lugar que elijas</strong><span>Tu casa, tu gimnasio o al aire libre, dentro de Zona Norte.</span></div></div>
+          <div class="mod-feature"><div><strong>Corrección técnica en tiempo real</strong><span>Cada repetición, bien hecha.</span></div></div>
+          <div class="mod-feature"><div><strong>Entrená acompañado</strong><span>Entre 2 personas se divide: $20.000 cada una. Grupos de 3 o 4: precio promocional.</span></div></div>
+          <div class="mod-feature"><div><strong>Mínimo 8 clases por mes</strong><span>Equivale a 2 clases por semana.</span></div></div>
         </div>
-        <a class="mod-link" href="https://wa.me/5491172399988?text=Hola%20Angel%2C%20quiero%20consultar%20disponibilidad%20para%20clases%20presenciales%20en%20Zona%20Norte." target="_blank">Consultar disponibilidad →</a>
       </div>
     </div>
     <div class="section-cta">

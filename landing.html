@@ -89,12 +89,14 @@ nav {
 .price-includes .item { display: flex; align-items: flex-start; gap: 10px; font-size: .95rem; color: var(--tx); }
 .price-includes .item::before { content: '✓'; color: var(--ac); font-weight: 700; flex-shrink: 0; }
 .price-guarantee { font-size: .85rem; color: var(--mu); margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border); }
-.presencial-card { max-width: 620px; margin: 24px auto 0; background: var(--s1); border: 1px solid var(--border); border-radius: 24px; padding: 36px 40px; }
-.presencial-card h3 { font-family: 'Playfair Display', serif; font-size: 1.4rem; font-weight: 700; margin-bottom: 14px; }
-.presencial-card .price-value { font-size: 2.2rem; margin-bottom: 20px; }
-.presencial-card .price-includes { margin-bottom: 20px; }
-.presencial-link { color: var(--ac); font-weight: 700; text-decoration: none; font-size: .95rem; }
-.presencial-link:hover { text-decoration: underline; }
+.plans-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; max-width: 1000px; margin: 48px auto 0; align-items: start; }
+.plans-grid .price-card { margin: 0; max-width: none; padding: 36px 32px; }
+.plans-grid .price-note { margin-bottom: 22px; }
+.plan-title { font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 700; margin-bottom: 12px; }
+.plan-btn { width: 100%; justify-content: center; }
+.plan-cta-note { font-size: .8rem; color: var(--mu); margin: 10px 0 26px; }
+.price-includes .item strong { display: block; font-weight: 700; }
+.price-includes .item span { display: block; font-size: .86rem; color: var(--mu); margin-top: 2px; line-height: 1.5; }
 .price-alt-note { font-size: .82rem; color: var(--mu); margin-top: 24px; }
 .price-alt-note a { color: var(--ac); font-weight: 600; text-decoration: none; }
 
@@ -151,7 +153,8 @@ footer { padding: 32px 64px; display: flex; flex-direction: column; align-items:
   .section { padding: 64px 24px; }
   .signs-grid, .pillars-grid, .steps, .app-grid { grid-template-columns: 1fr; }
   .app-grid { gap: 32px; }
-  .price-card { padding: 32px 24px; }
+  .price-card, .plans-grid .price-card { padding: 32px 24px; }
+  .plans-grid { grid-template-columns: 1fr; }
   .sobre-grid { grid-template-columns: 1fr; gap: 32px; }
   .sobre-photo { aspect-ratio: 4/3; }
   .mid-photo-text { padding: 32px 24px; }
@@ -247,6 +250,7 @@ body.menu-open { overflow: hidden; }
       </div>
       <p class="hero-sub">Programa online: si no te convence, te devolvemos el 100% — sin vueltas</p>
       <p class="hero-sub">¿Ya sabés que querés empezar? <a href="#membresia" style="color:var(--ac);font-weight:600">Sumate al Club Movimiento +50 →</a></p>
+      <p class="hero-sub">¿Preferís entrenar en persona? <a href="#membresia" style="color:var(--ac);font-weight:600">Clases presenciales en Zona Norte →</a></p>
     </div>
   </div>
   <div class="hero-img"></div>
@@ -294,7 +298,7 @@ body.menu-open { overflow: hidden; }
           Quiero empezar
         </a>
       </div>
-      <span class="section-cta-note">Online · 7 días de garantía · $30.000/mes · Sin permanencia</span>
+      <span class="section-cta-note">Online · 7 días de garantía · $30.000/mes · Sin permanencia<br>También clases presenciales en Zona Norte</span>
     </div>
   </div>
 </section>
@@ -321,38 +325,46 @@ body.menu-open { overflow: hidden; }
 
 <section class="section membresia" id="membresia">
   <div class="section-inner">
-    <div class="eyebrow">Membresía mensual</div>
+    <div class="eyebrow">Elegí cómo entrenar</div>
     <h2>Sumate al Club<br>Movimiento +50</h2>
-    <p class="section-lead">Un programa completo para moverte con más fuerza, equilibrio y confianza — con acompañamiento real, mes a mes.</p>
+    <p class="section-lead">Online desde tu casa o presencial en Zona Norte: en los dos casos, con acompañamiento real para moverte con más fuerza, equilibrio y confianza.</p>
+    <div class="plans-grid">
     <div class="price-card">
-      <div class="price-badge">Sin permanencia · Cancelás cuando quieras</div>
+      <div class="price-badge">Online · Sin permanencia</div>
+      <h3 class="plan-title">Membresía online</h3>
       <div class="price-value">$30.000<span> /mes</span></div>
       <p class="price-note">(USD 30 para quienes están fuera de Argentina)</p>
-      <div class="price-includes">
-        <div class="item">Plan de ejercicios progresivo: postura, fuerza funcional, movilidad y equilibrio</div>
-        <div class="item">Tu plan en la app, con cada ejercicio explicado paso a paso</div>
-        <div class="item">Grupo de WhatsApp exclusivo de alumnos</div>
-        <div class="item">1 encuentro en vivo por semana para corregir forma y resolver dudas</div>
-        <div class="item">Seguimiento y ajuste mensual del plan según cómo responde tu cuerpo</div>
-      </div>
-      <a class="btn-wa" href="https://wa.me/5491172399988?text=Hola%20Angel%2C%20quiero%20empezar%20el%20programa%20%2B50%20con%20la%20garant%C3%ADa%20de%207%20d%C3%ADas." target="_blank" style="width:100%;justify-content:center">
+      <a class="btn-wa plan-btn" href="https://wa.me/5491172399988?text=Hola%20Angel%2C%20quiero%20empezar%20el%20programa%20%2B50%20con%20la%20garant%C3%ADa%20de%207%20d%C3%ADas." target="_blank">
         <svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
         Quiero sumarme a la membresía
       </a>
-      <p class="price-guarantee">🛡️ Garantía de 7 días en la membresía online: si no te sirve, te devolvemos el 100%, sin vueltas.</p>
-    </div>
-    <div class="presencial-card">
-      <div class="eyebrow">¿Preferís presencial?</div>
-      <h3>Clases personalizadas, donde vos elijas</h3>
-      <div class="price-value">$40.000<span> /clase</span></div>
+      <p class="plan-cta-note">Te respondo por WhatsApp y arrancás esta semana.</p>
       <div class="price-includes">
-        <div class="item">Te doy la clase en el lugar que elijas dentro de Zona Norte (tu casa, tu gimnasio o al aire libre)</div>
-        <div class="item">Si entrenan 2 personas juntas, se divide: $20.000 cada una</div>
-        <div class="item">Grupos de 3 o 4: precio promocional</div>
-        <div class="item">Mínimo 8 clases por mes</div>
-        <div class="item">Corrección postural en tiempo real</div>
+        <div class="item"><div><strong>Plan progresivo a tu medida</strong><span>Postura, fuerza funcional, movilidad y equilibrio, paso a paso.</span></div></div>
+        <div class="item"><div><strong>Tu plan en la app</strong><span>Cada ejercicio explicado paso a paso, siempre a mano.</span></div></div>
+        <div class="item"><div><strong>Grupo de WhatsApp exclusivo</strong><span>Solo para alumnos del club.</span></div></div>
+        <div class="item"><div><strong>Encuentro en vivo semanal</strong><span>Corregimos la forma y resolvemos dudas juntos.</span></div></div>
+        <div class="item"><div><strong>Ajuste mensual</strong><span>El plan se adapta según cómo responde tu cuerpo.</span></div></div>
       </div>
-      <a class="presencial-link" href="https://wa.me/5491172399988?text=Hola%20Angel%2C%20quiero%20consultar%20disponibilidad%20para%20clases%20presenciales%20%2B50%20en%20Zona%20Norte." target="_blank">Consultar disponibilidad →</a>
+      <p class="price-guarantee">🛡️ Garantía de 7 días: si no te sirve, te devolvemos el 100%, sin vueltas.</p>
+    </div>
+    <div class="price-card">
+      <div class="price-badge">Presencial · Zona Norte</div>
+      <h3 class="plan-title">Clases personalizadas</h3>
+      <div class="price-value">$40.000<span> /clase</span></div>
+      <p class="price-note">Entre 2 personas se divide: $20.000 cada una</p>
+      <a class="btn-wa plan-btn" href="https://wa.me/5491172399988?text=Hola%20Angel%2C%20quiero%20consultar%20disponibilidad%20para%20clases%20presenciales%20%2B50%20en%20Zona%20Norte." target="_blank">
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        Quiero clases presenciales
+      </a>
+      <p class="plan-cta-note">Te paso los horarios disponibles por WhatsApp.</p>
+      <div class="price-includes">
+        <div class="item"><div><strong>En el lugar que elijas</strong><span>Tu casa, tu gimnasio o al aire libre, dentro de Zona Norte.</span></div></div>
+        <div class="item"><div><strong>Corrección postural en tiempo real</strong><span>Te acompaño en cada movimiento.</span></div></div>
+        <div class="item"><div><strong>Entrená acompañado</strong><span>Con tu pareja o una amiga se divide el precio. Grupos de 3 o 4: precio promocional.</span></div></div>
+        <div class="item"><div><strong>Mínimo 8 clases por mes</strong><span>Equivale a 2 clases por semana.</span></div></div>
+      </div>
+    </div>
     </div>
   </div>
 </section>
