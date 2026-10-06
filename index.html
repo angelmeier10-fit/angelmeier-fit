@@ -674,6 +674,7 @@ setTimeout(()=>{
         </div>
         <div class="fg" style="margin:0"><label>Vencimiento</label><input type="date" id="ec-addplan-exp"></div>
         <div class="fg" id="ec-addplan-week-wrap" style="margin:0;display:none"><label>Empieza en semana</label><select id="ec-addplan-week"></select></div>
+        <div class="fg" style="margin:0"><label>¿Cuándo arranca? (vacío = hoy)</label><input type="date" id="ec-addplan-start"></div>
         <button class="btn bp" onclick="addClientToGroupPlan()">Agregar</button>
       </div>
     </div>
@@ -1021,6 +1022,7 @@ setTimeout(()=>{
           </div>
         </div>
         <div class="fg" id="nm-startweek-wrap" style="display:none"><label>¿En qué semana arranca?</label><select id="nm-startweek"></select></div>
+        <div class="fg"><label>¿Cuándo arranca? (vacío = hoy)</label><input id="nm-startdate" type="date"></div>
       </div>
       <div class="fg full" style="margin-top:10px">
         <label>También agregar a estos planes</label>
@@ -5562,6 +5564,7 @@ async function renderAlumnosUnificado(searchTerm){
           </select>
           ${hasSubscription?'':`<div class="fg" style="margin:0"><label style="font-size:.68rem">Vencimiento</label><input type="date" id="uni-addexp-${ai}" style="font-size:.8rem"></div>`}
           <div class="fg" id="uni-addweek-wrap-${ai}" style="margin:0;display:none"><label style="font-size:.68rem">Empieza en semana</label><select id="uni-addweek-${ai}" style="font-size:.8rem"></select></div>
+          <div class="fg" style="margin:0"><label style="font-size:.68rem">¿Cuándo arranca?</label><input type="date" id="uni-addstart-${ai}" value="${defaultStartDate()}" style="font-size:.8rem"></div>
           <button class="btn bp xs" onclick="addUniAlumnoToPlan(${ai})">Agregar</button>
         </div>
       </div>`:'';
@@ -5660,7 +5663,7 @@ window.addUniAlumnoToPlan=async function(ai){
     if(!expiry){alert('Elegí la fecha de vencimiento.');return}
     id='m'+Date.now()+Math.floor(Math.random()*1000);
   }
-  const member={id,name:a.name,email:a.email,status:'active',expiry,addedAt:new Date().toLocaleDateString('es-AR'),startDate:defaultStartDate(),startWeek};
+  const member={id,name:a.name,email:a.email,status:'active',expiry,addedAt:new Date().toLocaleDateString('es-AR'),startDate:pickedStartDate(`uni-addstart-${ai}`),startWeek};
   if(!plan.members)plan.members=[];
   plan.members.push(member);
   await setDoc(doc(db,'planes',planId),plan);
@@ -5694,6 +5697,7 @@ function renderEcAddPlanOptions(){
   form.style.display='flex';none.style.display='none';
   sel.innerHTML='<option value="">Elegir plan…</option>'+available.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
   document.getElementById('ec-addplan-exp').value='';
+  document.getElementById('ec-addplan-start').value='';
   document.getElementById('ec-addplan-week-wrap').style.display='none';
 }
 
@@ -5726,7 +5730,7 @@ async function addClientToGroupPlan(){
   if(!expiry){alert('Elegí la fecha de vencimiento.');return}
   const weekSel=document.getElementById('ec-addplan-week');
   const startWeek=weekSel&&weekSel.value?parseInt(weekSel.value):1;
-  const member={id:'m'+Date.now()+Math.floor(Math.random()*1000),name:c.name,email:c.email||'',status:'active',expiry,addedAt:new Date().toLocaleDateString('es-AR'),startDate:defaultStartDate(),startWeek};
+  const member={id:'m'+Date.now()+Math.floor(Math.random()*1000),name:c.name,email:c.email||'',status:'active',expiry,addedAt:new Date().toLocaleDateString('es-AR'),startDate:pickedStartDate('ec-addplan-start'),startWeek};
   if(!plan.members)plan.members=[];
   plan.members.push(member);
   await setDoc(doc(db,'planes',planId),plan);
@@ -6305,13 +6309,9 @@ function renderStartWeekSelect(selectId,plan){
 
 // Fecha local: toISOString es UTC y en Argentina después de las 21 h da el día siguiente.
 function localISODate(d){return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
-// Las semanas cambian el domingo: si el alta cae de jueves a sábado, arranca el
-// lunes siguiente para no pasar a la semana 2 sin haber hecho la 1.
-function defaultStartDate(){
-  const d=new Date();const wd=d.getDay();
-  if(wd>=4)d.setDate(d.getDate()+8-wd);
-  return localISODate(d);
-}
+function defaultStartDate(){return localISODate(new Date())}
+// Fecha elegida en un input de "cuándo arranca la semana 1"; vacío = hoy.
+function pickedStartDate(id){return document.getElementById(id)?.value||defaultStartDate()}
 function startDateInputHTML(id){
   return`<span style="font-size:.74rem;color:var(--mu)">desde</span><input type="date" id="${id}" value="${defaultStartDate()}" title="Fecha de inicio de esa semana" style="width:auto;font-size:.78rem;padding:4px 6px">`;
 }
@@ -6584,7 +6584,7 @@ async function addMember(){
   for(const pid of allPlanIds){
     const p=planes.find(pl=>pl.id===pid);
     if(!p)continue;
-    const member={id:'m'+Date.now()+Math.floor(Math.random()*1000),name,email,status,expiry,addedAt,startDate:defaultStartDate(),startWeek:pid===activePlanId?startWeek:1};
+    const member={id:'m'+Date.now()+Math.floor(Math.random()*1000),name,email,status,expiry,addedAt,startDate:pickedStartDate('nm-startdate'),startWeek:pid===activePlanId?startWeek:1};
     if(!p.members)p.members=[];
     p.members.push(member);
     await setDoc(doc(db,'planes',pid),p);
@@ -6594,6 +6594,7 @@ async function addMember(){
   const plan=planes.find(p=>p.id===activePlanId);
   document.getElementById('nm-name').value='';
   document.getElementById('nm-email').value='';
+  document.getElementById('nm-startdate').value='';
   // Desmarcar checkboxes
   document.querySelectorAll('#nm-extra-plans input').forEach(cb=>cb.checked=false);
   const planNames=allPlanIds.map(pid=>planes.find(p=>p.id===pid)?.name).filter(Boolean).join(', ');
@@ -7551,7 +7552,7 @@ window.activarAlumnoDirecto=async function(uid){
   const updates={
     activo:true,status:'active',lastPaymentId:'manual',planId,
     expiry:expDate.toISOString().split('T')[0],
-    startDate:defaultStartDate(),
+    startDate:pickedStartDate('susc-start-'+uid),
     startWeek:sub.startWeek||1
   };
   await updateDoc(subRef,updates);
@@ -8900,6 +8901,7 @@ window.asignarAPlanGrupal=function(docId){
         </label>`;
       }).join('')}
     </div>
+    <div class="fg"><label>¿Cuándo arranca? (vacío = hoy)</label><input type="date" id="asig-start"></div>
     <button class="btn bp" onclick="confirmarAsignacionPlanGrupal('${docId}')">✅ Asignar</button>
   </div>`;
 };
@@ -8918,7 +8920,7 @@ window.confirmarAsignacionPlanGrupal=async function(docId){
     const expDate=new Date();expDate.setDate(expDate.getDate()+(p.durationDays||30));
     const expiry=expDate.toISOString().split('T')[0];
     const startWeek=parseInt(document.querySelector(`[data-startweek-for="${pid}"]`)?.value)||1;
-    const member={id:'m'+Date.now()+Math.floor(Math.random()*1000),name:s.nombre||'Sin nombre',email:s.email||'',status:'active',expiry,addedAt,notes,startDate:defaultStartDate(),startWeek};
+    const member={id:'m'+Date.now()+Math.floor(Math.random()*1000),name:s.nombre||'Sin nombre',email:s.email||'',status:'active',expiry,addedAt,notes,startDate:pickedStartDate('asig-start'),startWeek};
     if(!p.members)p.members=[];
     p.members.push(member);
     await setDoc(doc(db,'planes',pid),p);
