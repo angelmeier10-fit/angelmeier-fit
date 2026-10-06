@@ -327,6 +327,7 @@ textarea{resize:vertical;min-height:52px}
 .tfs .cf-timer-sub{font-size:1.1rem}
 .tfs #timer-progress-wrap,.tfs .cf-timer-progress{height:10px}
 .tfs .tm-ctrls,.tfs .cf-timer-controls{justify-content:center}
+#cv-client-list [data-cid]:hover{background:var(--s2)}
 #toast{position:fixed;bottom:20px;right:20px;background:var(--gr);color:#0f1117;padding:10px 16px;border-radius:10px;font-weight:600;font-size:.83rem;transform:translateY(80px);opacity:0;transition:all .3s;z-index:10000}
 #toast.show{transform:translateY(0);opacity:1}
 #loading{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;gap:14px}
@@ -721,12 +722,10 @@ setTimeout(()=>{
 <div id="view-client" class="view">
   <div id="client-selector" class="card">
     <h2>👁️ Simular vista de alumno</h2>
-    <p style="font-size:.81rem;color:var(--mu);margin-bottom:10px">Buscá un alumno para ver la app tal como la ve él, con su usuario y contraseña.</p>
-    <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <input type="text" id="cv-client-search" placeholder="🔍 Buscar por nombre..." style="flex:1;min-width:150px" oninput="filtrarClientSelect()">
-      <select id="client-select" style="flex:1"><option value="">— Seleccioná un alumno —</option></select>
-      <button class="btn bp" onclick="loadCV()">Ver rutina</button>
-    </div>
+    <p style="font-size:.81rem;color:var(--mu);margin-bottom:10px">Tocá un alumno para ver la app tal como la ve él.</p>
+    <input type="text" id="cv-client-search" placeholder="🔍 Buscar alumno..." style="width:100%;margin-bottom:10px" oninput="filtrarClientSelect()">
+    <div id="cv-client-list" style="max-height:60vh;overflow-y:auto;border:1px solid var(--bd);border-radius:10px"
+      onclick="const r=event.target.closest('[data-cid]');if(r)previewComoAlumno(r.dataset.cid)"></div>
   </div>
   <div id="cv-content"></div>
   <div id="contact-float" style="display:none;position:fixed;bottom:20px;right:20px;z-index:200;display:none;flex-direction:column;align-items:flex-end;gap:10px">
@@ -4103,19 +4102,23 @@ async function populateClientSelect(){
   filtrarClientSelect();
 }
 window.filtrarClientSelect=function(){
-  const term=(document.getElementById('cv-client-search')?.value||'').trim().toLowerCase();
-  const filtered=term?clientSelectOptions.filter(o=>o.name.toLowerCase().includes(term)):clientSelectOptions;
-  const sel=document.getElementById('client-select');
-  sel.innerHTML=`<option value="">— Seleccioná un alumno —</option>`
-    +filtered.map(o=>`<option value="${o.value}">${o.name}</option>`).join('');
+  const norm=s=>s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+  const esc=s=>s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const term=norm((document.getElementById('cv-client-search')?.value||'').trim());
+  const filtered=clientSelectOptions
+    .filter(o=>!term||norm(o.name).includes(term))
+    .sort((a,b)=>a.name.localeCompare(b.name,'es'));
+  const list=document.getElementById('cv-client-list');
+  if(!filtered.length){list.innerHTML=`<div style="padding:14px;font-size:.84rem;color:var(--mu);text-align:center">${clientSelectOptions.length?'Ningún alumno coincide':'Cargando alumnos...'}</div>`;return;}
+  list.innerHTML=filtered.map((o,i)=>{
+    const ini=o.name.split(/\s+/).filter(Boolean).slice(0,2).map(w=>w[0].toUpperCase()).join('');
+    return`<div data-cid="${esc(o.value.split(':')[1])}" style="display:flex;align-items:center;gap:11px;padding:10px 13px;cursor:pointer;${i?'border-top:1px solid var(--bd)':''}">
+      <span style="width:34px;height:34px;border-radius:50%;background:var(--s2);color:var(--or);display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:700;flex-shrink:0">${esc(ini)}</span>
+      <span style="flex:1;min-width:0;font-weight:600;font-size:.9rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(o.name)}</span>
+      <span style="color:var(--mu);font-size:1.1rem">›</span>
+    </div>`;
+  }).join('');
 };
-function loadCV(){
-  const val=document.getElementById('client-select').value;
-  if(!val)return;
-  const[,id]=val.split(':');
-  previewComoAlumno(id);
-}
-window.loadCV=loadCV;
 
 async function renderCV(clientId){
   // Always fetch fresh data from Firebase
