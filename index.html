@@ -1696,7 +1696,7 @@ onAuthStateChanged(auth,async(user)=>{
           categoria:'desafio-gluteos-21',
           status:'active',
           activo:true,
-          startDate:today,
+          startDate:defaultStartDate(),
           startWeek:1,
           progress:{},
           expiry:expDate.toISOString().split('T')[0],
@@ -1708,7 +1708,7 @@ onAuthStateChanged(auth,async(user)=>{
         const vigente=data.status==='active'&&data.expiry&&data.expiry>=today;
         if(!vigente){
           const expDate=new Date();expDate.setDate(expDate.getDate()+durationDays);
-          await setDoc(ref,{status:'active',activo:true,startDate:today,startWeek:1,progress:{},expiry:expDate.toISOString().split('T')[0],planId},{merge:true});
+          await setDoc(ref,{status:'active',activo:true,startDate:defaultStartDate(),startWeek:1,progress:{},expiry:expDate.toISOString().split('T')[0],planId},{merge:true});
         }
       }else if(planSnap.exists()){
         // Ya tiene cuenta con otro plan: el desafío se suma como plan
@@ -1726,7 +1726,7 @@ onAuthStateChanged(auth,async(user)=>{
             planId,
             status:'active',
             expiry:expDate.toISOString().split('T')[0],
-            startDate:today,
+            startDate:defaultStartDate(),
             startWeek:1,
             progress:{}
           }},{merge:true});
@@ -4219,7 +4219,7 @@ async function renderCV(clientId){
       </div>
     </div>
     ${programPickerHTML(clientId,findAllProgramsForPerson(c.name,c.email),'personal',null)}
-    ${weekChipsHTML(wi.timeline,wi.key,`selectCVWeek('${clientId}',`)}
+    ${weekSelectHTML(wi.timeline,wi.key,`selectCVWeek('${clientId}',`,c.mesoWeeks)}
     <div class="cv-day-picker">
       <div class="cv-day-picker-title">Seleccionar día</div>
       <div class="cv-day-picker-hdr" id="cv-day-picker-hdr-${clientId}" onclick="toggleCVDayPicker('${clientId}')">
@@ -5372,7 +5372,7 @@ async function renderProgramaUnificadoHtml(prog,cats,hasSubscription){
     const mpLink=c.mpLink?`<a href="${c.mpLink}" target="_blank" style="font-size:.72rem;color:#009EE3;text-decoration:none">💳 Link MP</a>`:'';
     const weekNumsC=hasWeeks?Object.keys(c.weeks).map(Number).sort((a,b)=>a-b):[];
     const weekBadge=hasWeeks?`<span class="badge bgr2">Semana ${wk} de ${weekNumsC.length}</span>`:'';
-    const weekSelectHtml=weekNumsC.length>1?`<select id="cli-changeweek-${c.id}" style="width:auto;font-size:.78rem">${weekNumsC.map(w=>`<option value="${w}"${w===wk?' selected':''}>Semana ${w}</option>`).join('')}</select>
+    const weekSelectHtml=weekNumsC.length>1?`<select id="cli-changeweek-${c.id}" style="width:auto;font-size:.78rem">${weekNumsC.map(w=>`<option value="${w}"${w===wk?' selected':''}>Semana ${w}</option>`).join('')}</select>${startDateInputHTML(`cli-start-${c.id}`)}
     <button class="btn bg2 xs" onclick="cambiarSemanaCliente('${c.id}')">📅 Cambiar semana</button>`:'';
     return`<div style="padding:8px 0;border-bottom:1px solid var(--bd)">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
@@ -5397,7 +5397,7 @@ async function renderProgramaUnificadoHtml(prog,cats,hasSubscription){
     const progressHtml=renderProgressDetailBlock(`${plan.id}-${m.id}`,exerciseLogs,days,notes)||'<div style="font-size:.78rem;color:var(--mu)">Sin registros todavía.</div>';
     const weekNumsG=planWeekNums(plan);
     const weekBadgeG=plan.continuo?`<span class="badge bgr2">🔥 ${days.length} días</span>`:weekNumsG.length?`<span class="badge bgr2">Semana ${memberWeek} de ${weekNumsG.length}</span>`:'';
-    const weekSelectHtmlG=(!plan.continuo&&weekNumsG.length>1)?`<select id="mw-week-${m.id}" style="width:auto;font-size:.78rem">${weekNumsG.map(w=>`<option value="${w}"${w===m.startWeek?' selected':''}>Semana ${w}</option>`).join('')}</select>
+    const weekSelectHtmlG=(!plan.continuo&&weekNumsG.length>1)?`<select id="mw-week-${m.id}" style="width:auto;font-size:.78rem">${weekNumsG.map(w=>`<option value="${w}"${w===m.startWeek?' selected':''}>Semana ${w}</option>`).join('')}</select>${startDateInputHTML(`mw-start-${m.id}`)}
     <button class="btn bg2 xs" onclick="cambiarSemanaMiembro('${plan.id}','${m.id}')">📅 Cambiar semana</button>`:'';
     // El acceso/vencimiento de este alumno se controla en un solo lugar (el
     // switch del header), no acá. Si todavía no tiene cuenta propia
@@ -5434,7 +5434,7 @@ async function renderProgramaUnificadoHtml(prog,cats,hasSubscription){
       const{exerciseLogs,notes}=buildProgressSummary(s.progress||{},days,`alu-${uid}`,getMemberCurrentWeekKey(plan,pseudoMember));
       progressHtml=renderProgressDetailBlock(`alu-${uid}`,exerciseLogs,days,notes)||'';
       const weekNumsD=planWeekNums(plan);
-      if(!plan.continuo&&weekNumsD.length>1)weekSelectHtml=`<select id="susc-changeweek-${uid}" style="width:auto;font-size:.78rem">${weekNumsD.map(w=>`<option value="${w}"${w===s.startWeek?' selected':''}>Semana ${w}</option>`).join('')}</select>
+      if(!plan.continuo&&weekNumsD.length>1)weekSelectHtml=`<select id="susc-changeweek-${uid}" style="width:auto;font-size:.78rem">${weekNumsD.map(w=>`<option value="${w}"${w===s.startWeek?' selected':''}>Semana ${w}</option>`).join('')}</select>${startDateInputHTML(`susc-start-${uid}`)}
       <button class="btn bg2 xs" onclick="cambiarSemanaAlumno('${uid}')">📅 Cambiar semana</button>`;
     }
     // El vencimiento editable vive solo arriba, en el header del alumno
@@ -5489,7 +5489,7 @@ async function renderProgramaUnificadoHtml(prog,cats,hasSubscription){
   const cambiarSemanaHtml=(planData&&!planData.continuo&&s.categoria!=='global')?(()=>{
     const weekNums=planWeekNums(planData);
     if(weekNums.length<2)return'';
-    return`<select id="susc-changeweek-${uid}" style="width:auto;font-size:.78rem">${weekNums.map(w=>`<option value="${w}"${w===s.startWeek?' selected':''}>Semana ${w}</option>`).join('')}</select>
+    return`<select id="susc-changeweek-${uid}" style="width:auto;font-size:.78rem">${weekNums.map(w=>`<option value="${w}"${w===s.startWeek?' selected':''}>Semana ${w}</option>`).join('')}</select>${startDateInputHTML(`susc-start-${uid}`)}
     <button class="btn bg2 xs" onclick="cambiarSemanaAlumno('${uid}')">📅 Cambiar semana</button>`;
   })():'';
   const weekBadgeS=(planData&&s.categoria!=='global')?(planData.continuo?`<span class="badge bgr2">🔥 ${days.length} días</span>`:`<span class="badge bgr2">Semana ${subWeek} de ${planWeekNums(planData).length}</span>`):'';
@@ -5660,7 +5660,7 @@ window.addUniAlumnoToPlan=async function(ai){
     if(!expiry){alert('Elegí la fecha de vencimiento.');return}
     id='m'+Date.now()+Math.floor(Math.random()*1000);
   }
-  const member={id,name:a.name,email:a.email,status:'active',expiry,addedAt:new Date().toLocaleDateString('es-AR'),startDate:new Date().toISOString().split('T')[0],startWeek};
+  const member={id,name:a.name,email:a.email,status:'active',expiry,addedAt:new Date().toLocaleDateString('es-AR'),startDate:defaultStartDate(),startWeek};
   if(!plan.members)plan.members=[];
   plan.members.push(member);
   await setDoc(doc(db,'planes',planId),plan);
@@ -5726,7 +5726,7 @@ async function addClientToGroupPlan(){
   if(!expiry){alert('Elegí la fecha de vencimiento.');return}
   const weekSel=document.getElementById('ec-addplan-week');
   const startWeek=weekSel&&weekSel.value?parseInt(weekSel.value):1;
-  const member={id:'m'+Date.now()+Math.floor(Math.random()*1000),name:c.name,email:c.email||'',status:'active',expiry,addedAt:new Date().toLocaleDateString('es-AR'),startDate:new Date().toISOString().split('T')[0],startWeek};
+  const member={id:'m'+Date.now()+Math.floor(Math.random()*1000),name:c.name,email:c.email||'',status:'active',expiry,addedAt:new Date().toLocaleDateString('es-AR'),startDate:defaultStartDate(),startWeek};
   if(!plan.members)plan.members=[];
   plan.members.push(member);
   await setDoc(doc(db,'planes',planId),plan);
@@ -6303,6 +6303,18 @@ function renderStartWeekSelect(selectId,plan){
   if(wrap)wrap.style.display='flex';
 }
 
+// Fecha local: toISOString es UTC y en Argentina después de las 21 h da el día siguiente.
+function localISODate(d){return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
+// Las semanas cambian el domingo: si el alta cae de jueves a sábado, arranca el
+// lunes siguiente para no pasar a la semana 2 sin haber hecho la 1.
+function defaultStartDate(){
+  const d=new Date();const wd=d.getDay();
+  if(wd>=4)d.setDate(d.getDate()+8-wd);
+  return localISODate(d);
+}
+function startDateInputHTML(id){
+  return`<span style="font-size:.74rem;color:var(--mu)">desde</span><input type="date" id="${id}" value="${defaultStartDate()}" title="Fecha de inicio de esa semana" style="width:auto;font-size:.78rem;padding:4px 6px">`;
+}
 // Cantidad de domingos-calendario transcurridos entre startDateStr y hoy (alineado a semana calendario, no a franjas de 7 días desde la hora de alta)
 function sundayAlignedElapsedWeeks(startDateStr){
   if(!startDateStr)return 0;
@@ -6347,10 +6359,13 @@ function weekTimeline(weekNums,startWeek,startDate){
   const n=weekNums.length;
   const startIdx=weekNums.includes(startWeek)?weekNums.indexOf(startWeek):0;
   const elapsed=sundayAlignedElapsedWeeks(startDate);
+  const sunday=startDate?new Date(startDate+'T00:00:00'):null;
+  if(sunday)sunday.setDate(sunday.getDate()-sunday.getDay());
   const out=[];
   for(let e=0;e<=elapsed;e++){
     const pos=startIdx+e;const num=weekNums[pos%n];const cycle=Math.floor(pos/n);
-    out.push({num,cycle,key:cycle?`${num}c${cycle}`:String(num)});
+    const from=sunday?new Date(sunday.getFullYear(),sunday.getMonth(),sunday.getDate()+7*e):null;
+    out.push({num,cycle,key:cycle?`${num}c${cycle}`:String(num),from});
   }
   return out;
 }
@@ -6375,16 +6390,23 @@ function memberWeekView(plan,member,viewKey){
 }
 function getMemberCurrentWeekKey(plan,member){return memberWeekView(plan,member).cur.key}
 // callPrefix: inicio de la llamada sin la key, ej. "selectCVWeek('id'," → se completa con "'key')".
-function weekChipsHTML(timeline,viewKey,callPrefix){
+function weekSelectHTML(timeline,viewKey,callPrefix,mesoWeeks){
   if(timeline.length<2)return'';
   const cur=timeline[timeline.length-1];
+  const mw=mesoWeeks||4;
   const showCycle=timeline.some(w=>w.cycle>0);
-  const chips=timeline.slice().reverse().map(w=>{
-    const sel=w.key===(viewKey||cur.key);
-    const label=w===cur?'Esta semana':`Sem ${w.num}${showCycle?` · ciclo ${w.cycle+1}`:''}`;
-    return`<button type="button" onclick="${callPrefix}'${w===cur?'':w.key}')" style="flex-shrink:0;font-size:.74rem;font-weight:700;padding:5px 12px;border-radius:20px;cursor:pointer;font-family:inherit;border:1px solid var(--ac2);background:${sel?'var(--ac2)':'transparent'};color:${sel?'#fff':'var(--ac2)'}">${label}</button>`;
-  }).join('');
-  return`<div style="font-size:.7rem;color:var(--mu);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Semanas</div><div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:12px">${chips}</div>`;
+  const dm=d=>d.getDate()+'/'+(d.getMonth()+1);
+  const range=w=>w.from?` (${dm(w.from)} – ${dm(new Date(w.from.getFullYear(),w.from.getMonth(),w.from.getDate()+6))})`:'';
+  const opt=(w,label)=>`<option value="${w===cur?'':w.key}"${w.key===(viewKey||cur.key)?' selected':''}>${label}${range(w)}</option>`;
+  const groups=[];
+  timeline.slice(0,-1).reverse().forEach(w=>{
+    const meso=Math.ceil(w.num/mw);const id=w.cycle+'-'+meso;
+    let g=groups[groups.length-1];
+    if(!g||g.id!==id)groups.push(g={id,label:`${showCycle?`Ciclo ${w.cycle+1} · `:''}Meso ${meso} · semanas ${(meso-1)*mw+1}-${meso*mw}`,opts:[]});
+    g.opts.push(opt(w,`Semana ${w.num}`));
+  });
+  const past=groups.length>1||showCycle?groups.map(g=>`<optgroup label="${g.label}">${g.opts.join('')}</optgroup>`).join(''):groups.map(g=>g.opts.join('')).join('');
+  return`<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px"><span style="font-size:.7rem;color:var(--mu);font-weight:700;text-transform:uppercase;letter-spacing:.05em;flex-shrink:0">📆 Semana</span><select onchange="${callPrefix}this.value)" style="flex:1;min-width:0;font-size:.85rem;padding:8px 10px;border-radius:9px;border:1px solid var(--bd);background:var(--s2);color:var(--tx);font-family:inherit">${opt(cur,`Esta semana — Semana ${cur.num}`)}${past}</select></div>`;
 }
 function pastWeekBannerHTML(w,callPrefix){
   return`<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;background:var(--s2);border:1px dashed var(--bd);border-radius:var(--ra);padding:10px 14px;margin-bottom:12px;font-size:.8rem;color:var(--mu)">
@@ -6498,7 +6520,7 @@ async function renderMembersList(planId){
           <div style="font-size:.7rem;color:var(--ac2);word-break:break-all;margin-top:2px">${link}</div>
         </div>
         ${planWeekNums(plan).length>1?`<div style="display:flex;align-items:center;gap:4px;flex-shrink:0">
-          <select id="mw-week-${m.id}" style="width:auto;font-size:.76rem">${planWeekNums(plan).map(w=>`<option value="${w}"${w===m.startWeek?' selected':''}>Semana ${w}</option>`).join('')}</select>
+          <select id="mw-week-${m.id}" style="width:auto;font-size:.76rem">${planWeekNums(plan).map(w=>`<option value="${w}"${w===m.startWeek?' selected':''}>Semana ${w}</option>`).join('')}</select>${startDateInputHTML(`mw-start-${m.id}`)}
           <button class="btn bg2 xs" onclick="cambiarSemanaMiembro('${planId}','${m.id}')" title="Poner al alumno a partir de la semana elegida, desde hoy">📅</button>
         </div>`:''}
         <div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">
@@ -6525,7 +6547,7 @@ window.cambiarSemanaMiembro=async function(planId,memberId){
   if(!member)return;
   const week=parseInt(document.getElementById('mw-week-'+memberId).value);
   member.startWeek=week;
-  member.startDate=new Date().toISOString().split('T')[0];
+  member.startDate=document.getElementById('mw-start-'+memberId)?.value||defaultStartDate();
   await setDoc(doc(db,'planes',planId),plan);
   toast('✅ Ahora arranca desde semana '+week);
   renderMembersList(planId);
@@ -6537,7 +6559,7 @@ window.cambiarSemanaCliente=async function(clientId){
   if(!c)return;
   const week=parseInt(document.getElementById('cli-changeweek-'+clientId).value);
   c.activeWeek=week;
-  c.startDate=new Date().toISOString().split('T')[0];
+  c.startDate=document.getElementById('cli-start-'+clientId)?.value||defaultStartDate();
   await updateDoc(doc(db,'clients',clientId),{activeWeek:week,startDate:c.startDate});
   toast('✅ Ahora arranca desde semana '+week);
   refreshSuscriptorPanels();
@@ -6562,7 +6584,7 @@ async function addMember(){
   for(const pid of allPlanIds){
     const p=planes.find(pl=>pl.id===pid);
     if(!p)continue;
-    const member={id:'m'+Date.now()+Math.floor(Math.random()*1000),name,email,status,expiry,addedAt,startDate:new Date().toISOString().split('T')[0],startWeek:pid===activePlanId?startWeek:1};
+    const member={id:'m'+Date.now()+Math.floor(Math.random()*1000),name,email,status,expiry,addedAt,startDate:defaultStartDate(),startWeek:pid===activePlanId?startWeek:1};
     if(!p.members)p.members=[];
     p.members.push(member);
     await setDoc(doc(db,'planes',pid),p);
@@ -6898,7 +6920,7 @@ function renderGroupCV(plan,member,mode='client'){
       ${plan.mpLink&&daysLeft!==null&&daysLeft<=7?`<a href="${plan.mpLink}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:#009EE322;color:#009EE3;border:1px solid #009EE344;border-radius:8px;padding:6px 14px;font-size:.78rem;font-weight:600;text-decoration:none;margin-bottom:12px">💳 Renovar plan</a>`:''}
     </div>
     ${mode==='alumno'?programPickerHTML(gkey,findAllProgramsForAlumno(alumnoState.uid,alumnoState.sub.name,alumnoState.sub.email,alumnoState.plan?.id||alumnoState.sub.planId,alumnoState.plan?.name),'group',plan.id,'alumno'):programPickerHTML(gkey,findAllProgramsForPerson(member.name,member.email),'group',plan.id)}
-    ${weekChipsHTML(wv.timeline,wv.view.key,`selectGroupWeek('${plan.id}','${member.id}','${mode}',`)}
+    ${weekSelectHTML(wv.timeline,wv.view.key,`selectGroupWeek('${plan.id}','${member.id}','${mode}',`,plan.mesoWeeks)}
     <div class="cv-day-picker">
       <div class="cv-day-picker-title">Seleccionar día</div>
       <div class="cv-day-picker-hdr" id="gv-picker-hdr-${gkey}" onclick="toggleGroupCVDayPicker('${gkey}')">
@@ -7343,7 +7365,7 @@ function renderAlumnoCV(plan,member,uid){
       </div>
     </div>
     ${programPickerHTML(akey,findAllProgramsForAlumno(uid,member.name,member.email,plan.id,plan.name),'personal',null,'alumno')}
-    ${weekChipsHTML(wv.timeline,wv.view.key,'selectAlumnoWeek(')}
+    ${weekSelectHTML(wv.timeline,wv.view.key,'selectAlumnoWeek(',plan.mesoWeeks)}
     <div class="cv-day-picker">
       <div class="cv-day-picker-title">Seleccionar día</div>
       <div class="cv-day-picker-hdr" id="av-picker-hdr-${akey}" onclick="toggleAlumnoCVDayPicker('${akey}')">
@@ -7489,7 +7511,8 @@ window.cambiarSemanaAlumno=async function(uid){
   if(!sel)return;
   const startWeek=parseInt(sel.value);
   if(!confirm(`¿Cambiar ahora a la semana ${startWeek}?`))return;
-  await updateDoc(doc(db,'subscribers',uid),{startWeek,startDate:new Date().toISOString().split('T')[0]});
+  const startDate=document.getElementById('susc-start-'+uid)?.value||defaultStartDate();
+  await updateDoc(doc(db,'subscribers',uid),{startWeek,startDate});
   toast(`✅ Ahora ve la semana ${startWeek}`);
   suscriptoresCache=null;
   refreshSuscriptorPanels();
@@ -7528,7 +7551,7 @@ window.activarAlumnoDirecto=async function(uid){
   const updates={
     activo:true,status:'active',lastPaymentId:'manual',planId,
     expiry:expDate.toISOString().split('T')[0],
-    startDate:new Date().toISOString().split('T')[0],
+    startDate:defaultStartDate(),
     startWeek:sub.startWeek||1
   };
   await updateDoc(subRef,updates);
@@ -7575,7 +7598,7 @@ window.cambiarCategoriaSuscriptorManual=async function(uid){
     const expDate=new Date();expDate.setDate(expDate.getDate()+durationDays);
     await updateDoc(doc(db,'subscribers',uid),{
       categoria,planId,status:'active',activo:true,
-      startDate:new Date().toISOString().split('T')[0],
+      startDate:defaultStartDate(),
       expiry:expDate.toISOString().split('T')[0]
     });
     toast('✅ Sumada al Desafío Glúteos');
@@ -7779,7 +7802,7 @@ window.migrarClienteAAlumno=async function(clientId){
       expiry:c.expiry||null,activo:true,progress:remappedProgress,
       // Sin esto, getMemberCurrentWeekNum no sabe qué semana mostrar y el
       // progreso migrado queda invisible aunque los datos estén completos.
-      startDate:new Date().toISOString().split('T')[0],startWeek:c.activeWeek||1
+      startDate:defaultStartDate(),startWeek:c.activeWeek||1
     });
     await sendPasswordResetEmail(auth,c.email);
     await deleteDoc(doc(db,'clients',clientId));
@@ -8348,6 +8371,7 @@ function notifId(n){
   if(n.tipo==='alumno')return `alu:${n.planId}:${n.member}:${n.fecha?n.fecha.getTime():''}`;
   if(n.tipo==='suscripcion')return `sus:${n.uid}`;
   if(n.tipo==='desafio')return `des:${n.uid}`;
+  if(n.tipo==='finplan')return `fin:${n.planId}:${n.fecha?n.fecha.getTime():''}`;
   return n.texto;
 }
 
@@ -8429,6 +8453,40 @@ async function buildNotifications(){
         notifs.push({tipo:'alumno',texto:`🏋️ Nuevo alumno: ${m.name} en "${plan.name}"`,fecha:added,targetView:'planes',order:2,planId:plan.id,member:m.name});
       }
     });
+  });
+
+  // Planes en su última semana cargada: si no se carga la siguiente, el
+  // domingo los alumnos vuelven a la semana 1. Se agrupa por plan porque los
+  // planes fijos son compartidos.
+  const ending={};
+  const notExpired=exp=>!exp||new Date(exp+'T00:00:00')>=today;
+  const checkEnding=(plan,member,name)=>{
+    if(!plan||plan.continuo||!member.startDate)return;
+    const weekNums=planWeekNums(plan);
+    if(weekNums.length<2)return;
+    const cur=memberWeekView(plan,member).cur;
+    if(cur.num!==weekNums[weekNums.length-1])return;
+    (ending[plan.id]??={plan,names:[],from:cur.from}).names.push(name);
+  };
+  planes.forEach(plan=>(plan.members||[]).forEach(m=>{
+    if(m.status==='active'&&notExpired(m.expiry))checkEnding(plan,m,m.name);
+  }));
+  subSnap.docs.forEach(d=>{
+    const s=d.data();
+    if(s.status!=='active'||!notExpired(s.expiry))return;
+    const pid=s.planId||planesFijosCache[s.categoria]?.planId;
+    checkEnding(planes.find(p=>p.id===pid),{startWeek:s.startWeek||1,startDate:s.startDate},s.name||s.email);
+  });
+  Object.values(ending).forEach(({plan,names,from})=>{
+    const quien=names.length===1?names[0]:`${names.length} alumnos (${names.slice(0,3).join(', ')}${names.length>3?'…':''})`;
+    notifs.push({tipo:'finplan',texto:`📅 "${plan.name}" termina esta semana para ${quien}: cargá la semana siguiente`,fecha:from,targetView:'planes',order:1,planId:plan.id});
+  });
+  clients.forEach(c=>{
+    const weekNums=Object.keys(c.weeks||{}).map(Number).sort((a,b)=>a-b);
+    if(weekNums.length<2||!c.startDate||!notExpired(c.expiry))return;
+    const tl=clientWeekTimeline(c);const cur=tl[tl.length-1];
+    if(cur.num!==weekNums[weekNums.length-1])return;
+    notifs.push({tipo:'finplan',texto:`📅 La rutina de ${c.name} termina esta semana: cargá la semana siguiente`,fecha:cur.from,targetView:'trainer',order:1,planId:c.id});
   });
 
   notifs.sort((a,b)=>a.order-b.order);
@@ -8860,7 +8918,7 @@ window.confirmarAsignacionPlanGrupal=async function(docId){
     const expDate=new Date();expDate.setDate(expDate.getDate()+(p.durationDays||30));
     const expiry=expDate.toISOString().split('T')[0];
     const startWeek=parseInt(document.querySelector(`[data-startweek-for="${pid}"]`)?.value)||1;
-    const member={id:'m'+Date.now()+Math.floor(Math.random()*1000),name:s.nombre||'Sin nombre',email:s.email||'',status:'active',expiry,addedAt,notes,startDate:new Date().toISOString().split('T')[0],startWeek};
+    const member={id:'m'+Date.now()+Math.floor(Math.random()*1000),name:s.nombre||'Sin nombre',email:s.email||'',status:'active',expiry,addedAt,notes,startDate:defaultStartDate(),startWeek};
     if(!p.members)p.members=[];
     p.members.push(member);
     await setDoc(doc(db,'planes',pid),p);
