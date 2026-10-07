@@ -42,6 +42,7 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:13px 2
 }
 .view{display:none;padding:20px;max-width:980px;margin:0 auto}
 .view.active{display:block}
+.view>h1,.view>div>h1{margin-bottom:16px}
 /* Editar un plan personalizado (1:1 de un alumno) reusa la pantalla de
    Planes Grupales por dentro, pero visualmente debe sentirse como una
    ventana propia, no como "estás parado en Planes Grupales". */
@@ -580,7 +581,6 @@ setTimeout(()=>{
 <!-- TRAINER -->
 <div id="view-trainer" class="view active">
   <h1>Panel del Entrenador</h1>
-  <p class="sub">Planificá rutinas por día con bloques de gym y CrossFit mezclados.</p>
   <div class="itabs">
     <button class="itab active" id="it-alumnosuni" onclick="showPanel('alumnosuni',this)">👤 Alumnos</button>
     <button class="itab" id="it-new" style="display:none" onclick="showPanel('new',this)">➕ Nuevo cliente</button>
@@ -598,7 +598,7 @@ setTimeout(()=>{
       <button class="btn bcy sm" onclick="copyLink('https://angelmeier-fit.web.app/suscripcion')">📋 Copiar link</button>
     </div>
     <div class="card" style="margin-bottom:16px;padding:16px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
-      <div><div style="font-weight:700;font-size:.9rem">🍑 Link del Desafío Glúteos (gratis)</div><div class="sub" style="margin-bottom:0">Landing pública + registro gratuito, sin pago. El contenido es un plan grupal normal — editalo desde "Planes Grupales".</div></div>
+      <div><div style="font-weight:700;font-size:.9rem">🍑 Link del Desafío Glúteos (gratis)</div><div class="sub" style="margin-bottom:0">Registro gratis. El plan se edita en Planes Grupales.</div></div>
       <div style="display:flex;gap:6px;flex-wrap:wrap">
         <button class="btn bg2 sm" onclick="sembrarPlanDesafioGluteos()">🌱 Crear/ver plan del desafío</button>
         <button class="btn bcy sm" onclick="copyLink('https://angelmeier-fit.web.app/desafio-gluteos')">📋 Copiar link</button>
@@ -606,7 +606,7 @@ setTimeout(()=>{
     </div>
     <div class="card" style="margin-bottom:16px;padding:16px">
       <h3 style="margin-bottom:10px;font-size:.95rem">➕ Dar de alta un alumno vos mismo</h3>
-      <p class="sub" style="margin-bottom:10px">Para alguien que te paga en persona y no quiere/puede registrarse solo. Le creás la cuenta con una contraseña que elegís vos y le pasás el link para que ingrese. El email se autocompleta con tu Gmail + el nombre (así el reseteo de contraseña te llega siempre a vos).</p>
+      <p class="sub" style="margin-bottom:10px">Para quien te paga en persona: le creás la cuenta y le pasás la contraseña. El email se arma con tu Gmail, así el reseteo te llega a vos.</p>
       <div class="fg full" style="margin-bottom:8px"><label>Nombre</label><input id="uni-new-name" placeholder="Nombre y apellido" oninput="sugerirEmailAlumno()"></div>
       <div class="fg full" style="margin-bottom:8px"><label>Email</label><input id="uni-new-email" type="email" placeholder="alumno@gmail.com" oninput="marcarEmailAlumnoEditadoManual()"></div>
       <div class="fg full" style="margin-bottom:8px"><label>Contraseña</label><input id="uni-new-pass" type="text" placeholder="Mínimo 6 caracteres"></div>
@@ -917,7 +917,6 @@ setTimeout(()=>{
 <!-- PLANES GRUPALES -->
 <div id="view-planes" class="view" onclick="if(event.target===this&&editingPersonalPlan)volverAAlumnosDesdeEdicion()">
   <h1>👥 Planes Grupales</h1>
-  <p class="sub">Creá programas para grupos: Glúteos de acero, Postural, Descenso de peso, etc.</p>
   <div class="itabs">
     <button class="itab active" id="itp-list" onclick="showPlanesPanel('list',this)">📋 Mis planes</button>
     <button class="itab" id="itp-new" onclick="showPlanesPanel('new',this)">➕ Nuevo plan</button>
@@ -928,7 +927,7 @@ setTimeout(()=>{
   <div id="planes-panel-list">
     <div class="card">
       <h2>🔔 Planes fijos por categoría</h2>
-      <p class="sub" style="margin-bottom:14px">Elegí, para cada categoría de la suscripción, cuál de tus planes grupales es el plan fijo que reciben los alumnos que se suscriban. Marcá esos planes como "🔒 privados" en su edición para que solo se pueda acceder con una suscripción activa.</p>
+      <p class="sub" style="margin-bottom:14px">Qué plan recibe quien se suscribe a cada categoría. Marcalos como 🔒 privados.</p>
       <div id="planes-fijos-form"></div>
       <button class="btn bp" onclick="savePlanesFijos()" style="width:100%;justify-content:center;padding:12px;font-size:.93rem;margin-top:12px">💾 Guardar mapeo</button>
     </div>
@@ -1092,13 +1091,11 @@ setTimeout(()=>{
     <h1>Actividad</h1>
     <button class="btn bg2 sm" onclick="renderActividad()">🔄 Actualizar</button>
   </div>
-  <p class="sub">Cómo vienen tus alumnos: último entreno y lo que te escribieron.</p>
   <div id="actividad-content"></div>
 </div>
 
 <div id="view-solicitudes" class="view">
   <h1>📬 Solicitudes de Anamnesis</h1>
-  <p class="sub">Personas que completaron la anamnesis digital. Revisalas y convertílas en clientes con 1 click.</p>
   <div style="background:var(--s1);border:1px solid var(--bd);border-radius:var(--ra);padding:14px 16px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
     <div>
       <div style="font-size:.78rem;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">🔗 Link de anamnesis digital</div>
@@ -1115,7 +1112,6 @@ setTimeout(()=>{
 <!-- EXERCISE DB -->
 <div id="view-exdb" class="view">
   <h1>📚 Banco de Ejercicios</h1>
-  <p class="sub">Agregá, editá o importá ejercicios con sus links de YouTube.</p>
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
     <button class="btn bp" onclick="openAddExModal()">➕ Agregar ejercicio</button>
     <button class="btn bg2" onclick="openCatModal()">⚙️ Categorías</button>
@@ -1135,7 +1131,6 @@ setTimeout(()=>{
 <!-- BLOCK TEMPLATES (WOD y otras plantillas) -->
 <div id="view-templates" class="view">
   <h1>🧩 Plantillas</h1>
-  <p class="sub">Calentamientos, WOD, bloques de gym y funcionales guardados para reusar en cualquier planificación.</p>
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
     <button class="btn bp" onclick="abrirEditorPlantilla()">➕ Nueva plantilla</button>
     <button class="btn bg2" onclick="abrirGestionCategoriasPlantilla()">🏷️ Categorías</button>
