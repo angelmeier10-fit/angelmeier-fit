@@ -527,7 +527,7 @@ setTimeout(()=>{
     <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;margin-bottom:14px;gap:10px;row-gap:8px">
       <div style="display:flex;align-items:center;gap:8px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.1rem"><svg width="22" height="22" viewBox="0 0 100 100"><defs><linearGradient id="amlogo-g3" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#c084fc"/><stop offset="100%" stop-color="#7c5cbf"/></linearGradient></defs><circle cx="48" cy="22" r="12" fill="url(#amlogo-g3)"/><path d="M88,38 C76,58 60,64 44,56 C30,49 18,54 8,74 C22,66 36,63 48,67 C64,72 78,64 88,38 Z" fill="url(#amlogo-g3)"/></svg>Angel Meier</div>
       <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px">
-        <button id="theme-btn-alumno" onclick="toggleTheme()" style="background:var(--s2);border:1px solid var(--bd);color:var(--tx);border-radius:9px;padding:6px 12px;cursor:pointer;font-size:1rem;transition:all .2s;flex-shrink:0" title="Cambiar tema">🌙</button>
+        <button id="theme-btn-alumno" onclick="toggleTheme()" style="background:var(--s2);border:1px solid var(--bd);color:var(--tx);border-radius:9px;padding:6px 12px;cursor:pointer;font-size:1rem;transition:all .2s;flex-shrink:0" title="Cambiar tema" aria-label="Cambiar tema">🌙</button>
         <button onclick="openPerfilAlumno()" style="background:var(--s2);border:1px solid var(--bd);color:var(--tx);border-radius:9px;padding:6px 12px;cursor:pointer;font-size:.82rem;transition:all .2s;flex-shrink:0" title="Mi perfil">👤 Mi Perfil</button>
         <span id="alumno-logout-btn-active" onclick="handleAlumnoLogoutClick()" style="color:var(--mu);cursor:pointer;font-size:.82rem">🚪 Cerrar sesión</span>
       </div>
@@ -553,12 +553,12 @@ setTimeout(()=>{
 
   </div>
   <div style="position:relative;flex-shrink:0">
-    <button id="notif-bell-btn" onclick="toggleNotifPanel()" style="background:var(--s2);border:1px solid var(--bd);color:var(--tx);border-radius:9px;padding:6px 12px;cursor:pointer;font-size:1rem;transition:all .2s;position:relative" title="Notificaciones">
+    <button id="notif-bell-btn" aria-label="Notificaciones" onclick="toggleNotifPanel()" style="background:var(--s2);border:1px solid var(--bd);color:var(--tx);border-radius:9px;padding:6px 12px;cursor:pointer;font-size:1rem;transition:all .2s;position:relative" title="Notificaciones">
       🔔<span id="notif-badge" style="display:none;position:absolute;top:-4px;right:-4px;background:var(--rd);color:#fff;border-radius:50%;min-width:16px;height:16px;font-size:.62rem;font-weight:700;align-items:center;justify-content:center;padding:0 3px;line-height:1"></span>
     </button>
     <div id="notif-panel" style="display:none;position:absolute;top:calc(100% + 6px);right:0;width:280px;max-height:360px;overflow-y:auto;background:var(--s1);border:1px solid var(--bd);border-radius:var(--ra);box-shadow:0 8px 24px rgba(0,0,0,.25);z-index:100"></div>
   </div>
-  <button id="theme-btn" onclick="toggleTheme()" style="background:var(--s2);border:1px solid var(--bd);color:var(--tx);border-radius:9px;padding:6px 12px;cursor:pointer;font-size:1rem;transition:all .2s;flex-shrink:0" title="Cambiar tema">🌙</button>
+  <button id="theme-btn" onclick="toggleTheme()" style="background:var(--s2);border:1px solid var(--bd);color:var(--tx);border-radius:9px;padding:6px 12px;cursor:pointer;font-size:1rem;transition:all .2s;flex-shrink:0" title="Cambiar tema" aria-label="Cambiar tema">🌙</button>
   <button id="nav-logout" onclick="doLogout()" style="background:var(--s2);border:1px solid var(--bd);color:var(--tx);border-radius:9px;padding:6px 12px;cursor:pointer;font-size:.85rem;transition:all .2s;flex-shrink:0" title="Cerrar sesión">🚪 Salir</button>
   <!-- Navegación de celular: va dentro de #main-nav para ocultarse junto con él (vista pública de un plan) -->
   <div id="bottom-nav">
@@ -805,12 +805,12 @@ setTimeout(()=>{
         <input id="cf-timer-edit" type="text" placeholder="Ej: 20 min" 
           style="width:72px;font-size:.8rem;padding:4px 7px;border-radius:7px;border:1px solid var(--bd);background:var(--s2);color:var(--tx)"
           onkeydown="if(event.key==='Enter')cfTimerApplyEdit()">
-        <button onclick="cfTimerApplyEdit()" class="btn bg2 sm" style="padding:4px 8px;font-size:.75rem">✓</button>
+        <button onclick="cfTimerApplyEdit()" class="btn bg2 sm" style="padding:4px 8px;font-size:.75rem" title="Aplicar" aria-label="Aplicar">✓</button>
       </div>
       <button id="cf-timer-startstop" onclick="cfTimerToggle()" class="btn bor sm">▶ Iniciar</button>
-      <button onclick="cfTimerReset()" class="btn bg2 sm">↺</button>
-      <button onclick="toggleTimerFs('cf-timer-bar')" class="btn bg2 sm tfs-btn">⛶</button>
-      <button onclick="cfTimerClose()" class="btn bd2 sm">✕</button>
+      <button onclick="cfTimerReset()" class="btn bg2 sm" title="Reiniciar timer" aria-label="Reiniciar timer">↺</button>
+      <button onclick="toggleTimerFs('cf-timer-bar')" class="btn bg2 sm tfs-btn" title="Agrandar o minimizar timer" aria-label="Agrandar o minimizar timer">⛶</button>
+      <button onclick="cfTimerClose()" class="btn bd2 sm" title="Cerrar timer" aria-label="Cerrar timer">✕</button>
     </div>
   </div>
 </div>
@@ -907,8 +907,8 @@ setTimeout(()=>{
         <span style="font-size:.75rem;color:var(--mu)">seg</span>
       </div>
       <button onclick="restartWithCustom()" class="btn bor sm">↺ Reiniciar</button>
-      <button onclick="toggleTimerFs('timer-bar')" class="btn bg2 sm tfs-btn">⛶</button>
-      <button onclick="stopTimer()" class="btn bd2 sm">✕</button>
+      <button onclick="toggleTimerFs('timer-bar')" class="btn bg2 sm tfs-btn" title="Agrandar o minimizar timer" aria-label="Agrandar o minimizar timer">⛶</button>
+      <button onclick="stopTimer()" class="btn bd2 sm" title="Cerrar timer" aria-label="Cerrar timer">✕</button>
     </div>
   </div>
 </div>
@@ -1460,8 +1460,8 @@ function renderRMAlumno(){
   if(!rm.length){cont.innerHTML='<div style="color:var(--mu);font-size:.85rem">Todavía no cargaste ningún RM.</div>';return}
   cont.innerHTML=rm.map((r,i)=>`<div style="display:flex;align-items:center;gap:8px;background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:8px 10px">
     <div style="flex:1"><b>${r.exercise}</b> — ${r.reps} rep${r.reps==1?'':'s'} x ${r.kg}kg</div>
-    <button onclick="editarRMAlumno(${i})" style="background:none;border:none;cursor:pointer;font-size:.9rem" title="Editar">✏️</button>
-    <button onclick="eliminarRMAlumno(${i})" style="background:none;border:none;cursor:pointer;font-size:.9rem" title="Eliminar">🗑️</button>
+    <button onclick="editarRMAlumno(${i})" style="background:none;border:none;cursor:pointer;font-size:.9rem" title="Editar" aria-label="Editar">✏️</button>
+    <button onclick="eliminarRMAlumno(${i})" style="background:none;border:none;cursor:pointer;font-size:.9rem" title="Eliminar" aria-label="Eliminar">🗑️</button>
   </div>`).join('');
 }
 window.editarRMAlumno=function(i){
@@ -2858,9 +2858,9 @@ function buildOneDay(cid,idx,data=null){
       <button class="btn byw sm" onclick="addNoteBlock('${did}-body')">📝 + Nota</button>
       <button class="btn bcy sm" onclick="abrirInsertarPlantilla('${did}-body')">📥 Insertar plantilla</button>
       <button class="btn bcy sm" onclick="copiarDia('${did}')">📤 Copiar día</button>
-      <button class="btn bg2 sm" onclick="moveDayBlock('${did}',-1)" title="Mover arriba">↑</button>
-      <button class="btn bg2 sm" onclick="moveDayBlock('${did}',1)" title="Mover abajo">↓</button>
-      <button class="btn bd2 sm" onclick="deleteDayBlock('${did}')" title="Borrar día">🗑️</button>
+      <button class="btn bg2 sm" onclick="moveDayBlock('${did}',-1)" title="Mover arriba" aria-label="Mover arriba">↑</button>
+      <button class="btn bg2 sm" onclick="moveDayBlock('${did}',1)" title="Mover abajo" aria-label="Mover abajo">↓</button>
+      <button class="btn bd2 sm" onclick="deleteDayBlock('${did}')" title="Borrar día" aria-label="Borrar día">🗑️</button>
     </div>
   </div>
   <div class="day-body" id="${did}-body"></div>`;
@@ -2974,10 +2974,10 @@ function addFuncBlock(bodyId,data=null){
   const div=document.createElement('div');div.className='blk';div.id=gid;div.dataset.kind='func';if(data?.tplId)div.dataset.tplId=data.tplId;
   div.innerHTML=`<div class="blk-hdr" onclick="toggleBlk('${gid}',event)">
     <span class="blk-type t-warmup">Actividad funcional</span>
-    <button class="btn bg2 xs" onclick="event.stopPropagation();guardarBloqueComoPlantilla('${gid}')" title="Guardar como plantilla">💾</button>
-    <button class="btn bg2 xs" onclick="event.stopPropagation();moveBlk('${gid}',-1)" title="Mover arriba">↑</button>
-    <button class="btn bg2 xs" onclick="event.stopPropagation();moveBlk('${gid}',1)" title="Mover abajo">↓</button>
-    <button class="btn bd2 xs" onclick="event.stopPropagation();document.getElementById('${gid}').remove()">✕</button>
+    <button class="btn bg2 xs" onclick="event.stopPropagation();guardarBloqueComoPlantilla('${gid}')" title="Guardar como plantilla" aria-label="Guardar como plantilla">💾</button>
+    <button class="btn bg2 xs" onclick="event.stopPropagation();moveBlk('${gid}',-1)" title="Mover arriba" aria-label="Mover arriba">↑</button>
+    <button class="btn bg2 xs" onclick="event.stopPropagation();moveBlk('${gid}',1)" title="Mover abajo" aria-label="Mover abajo">↓</button>
+    <button class="btn bd2 xs" onclick="event.stopPropagation();document.getElementById('${gid}').remove()" title="Quitar" aria-label="Quitar">✕</button>
     <span class="blk-toggle">▼</span>
   </div>
   <div class="blk-body" id="${gid}-body">
@@ -3011,7 +3011,7 @@ function addFuncEx(cid,data=null){
       ${vidBadgeHtml(data?.video||'')}${exEditBtnHtml()}
       <div class="ex-dd" id="${eid}-dd"></div>
     </div>
-    <button class="btn bd2 xs" style="flex-shrink:0" onclick="document.getElementById('${eid}').remove()">✕</button>
+    <button class="btn bd2 xs" style="flex-shrink:0" onclick="document.getElementById('${eid}').remove()" title="Quitar" aria-label="Quitar">✕</button>
   </div>
   ${refExFieldHtml(data)}
   <div class="fg full" style="margin-top:2px"><label>Observaciones</label><input type="text" class="ex-obs" value="${data?.obs||''}" placeholder="Intensidad, técnica..."></div>`;
@@ -3025,10 +3025,10 @@ function addNoteBlock(bodyId,data=null){
   const div=document.createElement('div');div.className='blk';div.id=gid;div.dataset.kind='note';if(data?.tplId)div.dataset.tplId=data.tplId;
   div.innerHTML=`<div class="blk-hdr" onclick="toggleBlk('${gid}',event)">
     <span class="blk-type t-warmup">📝 Nota</span>
-    <button class="btn bg2 xs" onclick="event.stopPropagation();guardarBloqueComoPlantilla('${gid}')" title="Guardar como plantilla">💾</button>
-    <button class="btn bg2 xs" onclick="event.stopPropagation();moveBlk('${gid}',-1)" title="Mover arriba">↑</button>
-    <button class="btn bg2 xs" onclick="event.stopPropagation();moveBlk('${gid}',1)" title="Mover abajo">↓</button>
-    <button class="btn bd2 xs" onclick="event.stopPropagation();document.getElementById('${gid}').remove()">✕</button>
+    <button class="btn bg2 xs" onclick="event.stopPropagation();guardarBloqueComoPlantilla('${gid}')" title="Guardar como plantilla" aria-label="Guardar como plantilla">💾</button>
+    <button class="btn bg2 xs" onclick="event.stopPropagation();moveBlk('${gid}',-1)" title="Mover arriba" aria-label="Mover arriba">↑</button>
+    <button class="btn bg2 xs" onclick="event.stopPropagation();moveBlk('${gid}',1)" title="Mover abajo" aria-label="Mover abajo">↓</button>
+    <button class="btn bd2 xs" onclick="event.stopPropagation();document.getElementById('${gid}').remove()" title="Quitar" aria-label="Quitar">✕</button>
     <span class="blk-toggle">▼</span>
   </div>
   <div class="blk-body" id="${gid}-body">
@@ -3053,10 +3053,10 @@ function addGymBlock(bodyId,type,data=null){
       <label style="font-size:.7rem;color:var(--mu);white-space:nowrap">Descanso:</label>
       <input type="text" value="${data?.rest||(type==='simple'?'60s':'90s')}" class="sg-rest" style="max-width:70px;font-size:.78rem;padding:4px 8px">
     </div>
-    <button class="btn bg2 xs" onclick="event.stopPropagation();guardarBloqueComoPlantilla('${gid}')" title="Guardar como plantilla">💾</button>
-    <button class="btn bg2 xs" onclick="event.stopPropagation();moveBlk('${gid}',-1)" title="Mover arriba">↑</button>
-    <button class="btn bg2 xs" onclick="event.stopPropagation();moveBlk('${gid}',1)" title="Mover abajo">↓</button>
-    <button class="btn bd2 xs" onclick="event.stopPropagation();document.getElementById('${gid}').remove()">✕</button>
+    <button class="btn bg2 xs" onclick="event.stopPropagation();guardarBloqueComoPlantilla('${gid}')" title="Guardar como plantilla" aria-label="Guardar como plantilla">💾</button>
+    <button class="btn bg2 xs" onclick="event.stopPropagation();moveBlk('${gid}',-1)" title="Mover arriba" aria-label="Mover arriba">↑</button>
+    <button class="btn bg2 xs" onclick="event.stopPropagation();moveBlk('${gid}',1)" title="Mover abajo" aria-label="Mover abajo">↓</button>
+    <button class="btn bd2 xs" onclick="event.stopPropagation();document.getElementById('${gid}').remove()" title="Quitar" aria-label="Quitar">✕</button>
     <span class="blk-toggle">▼</span>
   </div>
   <div class="blk-body" id="${gid}-body"></div>`;
@@ -3117,10 +3117,10 @@ function addWarmupBlock(bodyId,data=null){
   const div=document.createElement('div');div.className='blk';div.id=gid;div.dataset.kind='warmup';if(data?.tplId)div.dataset.tplId=data.tplId;
   div.innerHTML=`<div class="blk-hdr" onclick="toggleBlk('${gid}',event)">
     <span class="blk-type t-warmup">🔥 Entrada en calor</span>
-    <button class="btn bg2 xs" onclick="event.stopPropagation();guardarBloqueComoPlantilla('${gid}')" title="Guardar como plantilla">💾</button>
-    <button class="btn bg2 xs" onclick="event.stopPropagation();moveBlk('${gid}',-1)" title="Mover arriba">↑</button>
-    <button class="btn bg2 xs" onclick="event.stopPropagation();moveBlk('${gid}',1)" title="Mover abajo">↓</button>
-    <button class="btn bd2 xs" onclick="event.stopPropagation();document.getElementById('${gid}').remove()">✕</button>
+    <button class="btn bg2 xs" onclick="event.stopPropagation();guardarBloqueComoPlantilla('${gid}')" title="Guardar como plantilla" aria-label="Guardar como plantilla">💾</button>
+    <button class="btn bg2 xs" onclick="event.stopPropagation();moveBlk('${gid}',-1)" title="Mover arriba" aria-label="Mover arriba">↑</button>
+    <button class="btn bg2 xs" onclick="event.stopPropagation();moveBlk('${gid}',1)" title="Mover abajo" aria-label="Mover abajo">↓</button>
+    <button class="btn bd2 xs" onclick="event.stopPropagation();document.getElementById('${gid}').remove()" title="Quitar" aria-label="Quitar">✕</button>
     <span class="blk-toggle">▼</span>
   </div>
   <div class="blk-body" id="${gid}-body">
@@ -3154,7 +3154,7 @@ function addWarmupEx(body,data=null,before=null){
       ${vidBadgeHtml(data?.video||'')}${exEditBtnHtml()}
       <div class="ex-dd" id="${eid}-dd"></div>
     </div>
-    <button class="btn bd2 xs" style="margin-top:18px;flex-shrink:0" onclick="document.getElementById('${eid}').remove()">✕</button>
+    <button class="btn bd2 xs" style="margin-top:18px;flex-shrink:0" onclick="document.getElementById('${eid}').remove()" title="Quitar" aria-label="Quitar">✕</button>
   </div>
   <div class="fg">
     <label>Observaciones</label>
@@ -3188,7 +3188,7 @@ function addExEntry(body,data=null,removable=false,before=null){
       ${vidBadgeHtml(data?.video||'')}${exEditBtnHtml()}
       <div class="ex-dd" id="${eid}-dd"></div>
     </div>
-    ${removable?`<button class="btn bd2 xs" style="margin-top:18px;flex-shrink:0" onclick="removeGiantEx('${eid}')">✕</button>`:''}
+    ${removable?`<button class="btn bd2 xs" style="margin-top:18px;flex-shrink:0" onclick="removeGiantEx('${eid}')" title="Quitar" aria-label="Quitar">✕</button>`:''}
   </div>
   ${refExFieldHtml(data)}
   <div class="fg"><label>Observaciones</label><input type="text" class="ex-obs" value="${data?.obs||''}" placeholder="RPE, técnica..."></div>
@@ -3224,7 +3224,7 @@ function addExVariant(containerId,data=null){
     ${vidBadgeHtml(data?.video||'')}${exEditBtnHtml()}
     <div class="ex-dd" id="${vid}-dd"></div>
   </div>
-  <button class="btn bd2 xs" style="margin-top:2px;flex-shrink:0" onclick="document.getElementById('${vid}').remove()">✕</button>`;
+  <button class="btn bd2 xs" style="margin-top:2px;flex-shrink:0" onclick="document.getElementById('${vid}').remove()" title="Quitar" aria-label="Quitar">✕</button>`;
   container.appendChild(div);
 }
 window.addExVariant=addExVariant;
@@ -3235,8 +3235,8 @@ function addSR(cid,data=null){
   div.innerHTML=`<span class="sc-num">${n}</span>
     <input type="text" value="${data?.reps||'12'}" placeholder="Reps/tiempo" class="sr-reps">
     <input type="text" value="${data?.load||''}" placeholder="Carga/RPE (ej: 55/60 RPE)" class="sr-load">
-    <button class="btn bg2 xs" onclick="dupSR('${rid}','${cid}')" title="Duplicar serie">⧉</button>
-    <button class="btn bd2 xs" onclick="rmSR('${rid}','${cid}')">✕</button>`;
+    <button class="btn bg2 xs" onclick="dupSR('${rid}','${cid}')" title="Duplicar serie" aria-label="Duplicar serie">⧉</button>
+    <button class="btn bd2 xs" onclick="rmSR('${rid}','${cid}')" title="Quitar" aria-label="Quitar">✕</button>`;
   c.appendChild(div);
 }
 window.addSR=addSR;
@@ -3250,8 +3250,8 @@ function dupSR(rid,cid){
   div.innerHTML=`<span class="sc-num"></span>
     <input type="text" value="${reps}" placeholder="Reps/tiempo" class="sr-reps">
     <input type="text" value="${load}" placeholder="Carga/RPE (ej: 55/60 RPE)" class="sr-load">
-    <button class="btn bg2 xs" onclick="dupSR('${rid2}','${cid}')" title="Duplicar serie">⧉</button>
-    <button class="btn bd2 xs" onclick="rmSR('${rid2}','${cid}')">✕</button>`;
+    <button class="btn bg2 xs" onclick="dupSR('${rid2}','${cid}')" title="Duplicar serie" aria-label="Duplicar serie">⧉</button>
+    <button class="btn bd2 xs" onclick="rmSR('${rid2}','${cid}')" title="Quitar" aria-label="Quitar">✕</button>`;
   row.insertAdjacentElement('afterend',div);
   c.querySelectorAll('.sc-num').forEach((el,i)=>el.textContent=i+1);
 }
@@ -3278,10 +3278,10 @@ function addCFBlock(bodyId,cftype,data=null){
   const div=document.createElement('div');div.className='cf-blk';div.id=bid;div.dataset.kind='cf';div.dataset.cftype=cftype;if(data?.tplId)div.dataset.tplId=data.tplId;
   div.innerHTML=`<div class="cf-hdr" style="background:${cfg.color}11;border-bottom:1px solid ${cfg.color}33" onclick="toggleBlk('${bid}',event)">
     <div class="cf-lbl">${cfg.icon} <span style="color:${cfg.color}">${cfg.label}</span> <span class="cf-lbl-desc" style="font-size:.72rem;color:var(--mu);font-weight:400">${cfg.desc}</span></div>
-    <button class="btn bg2 xs" onclick="event.stopPropagation();guardarBloqueComoPlantilla('${bid}')" title="Guardar como plantilla">💾</button>
-    <button class="btn bg2 xs" onclick="event.stopPropagation();moveBlk('${bid}',-1)" title="Mover arriba">↑</button>
-    <button class="btn bg2 xs" onclick="event.stopPropagation();moveBlk('${bid}',1)" title="Mover abajo">↓</button>
-    <button class="btn bd2 xs" onclick="event.stopPropagation();document.getElementById('${bid}').remove()">✕</button>
+    <button class="btn bg2 xs" onclick="event.stopPropagation();guardarBloqueComoPlantilla('${bid}')" title="Guardar como plantilla" aria-label="Guardar como plantilla">💾</button>
+    <button class="btn bg2 xs" onclick="event.stopPropagation();moveBlk('${bid}',-1)" title="Mover arriba" aria-label="Mover arriba">↑</button>
+    <button class="btn bg2 xs" onclick="event.stopPropagation();moveBlk('${bid}',1)" title="Mover abajo" aria-label="Mover abajo">↓</button>
+    <button class="btn bd2 xs" onclick="event.stopPropagation();document.getElementById('${bid}').remove()" title="Quitar" aria-label="Quitar">✕</button>
     <span class="cf-toggle">▼</span>
   </div>
   <div class="cf-body">
@@ -3371,7 +3371,7 @@ function addCFEx(cid,data=null){
       ${vidBadgeHtml(data?.video||'')}${exEditBtnHtml()}
       <div class="ex-dd" id="${eid}-dd"></div>
     </div>
-    <button class="btn bd2 xs" style="flex-shrink:0" onclick="document.getElementById('${eid}').remove()">✕</button>`;
+    <button class="btn bd2 xs" style="flex-shrink:0" onclick="document.getElementById('${eid}').remove()" title="Quitar" aria-label="Quitar">✕</button>`;
   c.appendChild(div);
 }
 window.addCFEx=addCFEx;
@@ -3435,7 +3435,7 @@ function showDd(input,ddId){
   dd.classList.add('open');
 }
 function vidBadgeHtml(video){return`<span class="ex-vid-badge" data-has="${video?'1':'0'}" style="display:${video?'block':'none'}" onmousedown="event.preventDefault();event.stopPropagation();window.open('${video}','_blank')" title="Ver video">🎬</span>`}
-function exEditBtnHtml(){return`<button type="button" class="ex-edit-btn" title="Editar este ejercicio en la biblioteca" onmousedown="event.preventDefault()" onclick="event.stopPropagation();openEditExFromPlan(this)" style="background:none;border:none;color:var(--mu);cursor:pointer;font-size:.85rem;padding:2px 4px;flex-shrink:0">✏️</button>`}
+function exEditBtnHtml(){return`<button type="button" class="ex-edit-btn" title="Editar este ejercicio en la biblioteca" onmousedown="event.preventDefault()" onclick="event.stopPropagation();openEditExFromPlan(this)" style="background:none;border:none;color:var(--mu);cursor:pointer;font-size:.85rem;padding:2px 4px;flex-shrink:0" aria-label="Editar este ejercicio en la biblioteca">✏️</button>`}
 window.openEditExFromPlan=function(btn){
   const wrap=btn.closest('.ex-wrap');
   const input=wrap.querySelector('.ex-search');
@@ -3596,20 +3596,20 @@ function renderGestionCategoriasPlantilla(){
   modal.innerHTML=`<div style="background:var(--s1);border-radius:16px;padding:24px;width:100%;max-width:380px;max-height:80vh;overflow-y:auto">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
       <h2>🏷️ Categorías de plantilla</h2>
-      <button onclick="document.getElementById('modal-bg').style.display='none';renderTemplatesView()" style="background:none;border:none;color:var(--mu);font-size:1.4rem;cursor:pointer">✕</button>
+      <button onclick="document.getElementById('modal-bg').style.display='none';renderTemplatesView()" style="background:none;border:none;color:var(--mu);font-size:1.4rem;cursor:pointer" title="Cerrar" aria-label="Cerrar">✕</button>
     </div>
     <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px">
       ${cats.map(c=>`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--s2);border-radius:8px;padding:8px 12px">
         <span style="font-size:.86rem">${c}</span>
         <div style="display:flex;gap:6px">
-          <button class="btn bg2 xs" onclick="renombrarPlantillaCategoria('${c}')">✏️</button>
-          <button class="btn bd2 xs" onclick="borrarPlantillaCategoria('${c}')">🗑️</button>
+          <button class="btn bg2 xs" onclick="renombrarPlantillaCategoria('${c}')" title="Renombrar categoría" aria-label="Renombrar categoría">✏️</button>
+          <button class="btn bd2 xs" onclick="borrarPlantillaCategoria('${c}')" title="Borrar categoría" aria-label="Borrar categoría">🗑️</button>
         </div>
       </div>`).join('')||'<p style="color:var(--mu);font-size:.85rem">Sin categorías todavía.</p>'}
     </div>
     <div style="display:flex;gap:8px">
       <input type="text" id="cat-new-name" placeholder="Nueva categoría...">
-      <button class="btn bp" onclick="agregarPlantillaCategoria()">➕</button>
+      <button class="btn bp" onclick="agregarPlantillaCategoria()" title="Agregar categoría" aria-label="Agregar categoría">➕</button>
     </div>
   </div>`;
 }
@@ -3706,7 +3706,7 @@ window.abrirInsertarPlantilla=async function(bodyId){
   modal.innerHTML=`<div style="background:var(--s1);border-radius:16px;padding:24px;width:100%;max-width:420px;max-height:80vh;overflow-y:auto">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
       <h2>📥 Insertar plantilla</h2>
-      <button onclick="document.getElementById('modal-bg').style.display='none'" style="background:none;border:none;color:var(--mu);font-size:1.4rem;cursor:pointer">✕</button>
+      <button onclick="document.getElementById('modal-bg').style.display='none'" style="background:none;border:none;color:var(--mu);font-size:1.4rem;cursor:pointer" title="Cerrar" aria-label="Cerrar">✕</button>
     </div>
     <div style="display:flex;gap:8px;margin-bottom:12px">
       <input id="ip-search" type="text" placeholder="🔍 Buscar por nombre..." oninput="filtrarInsertarPlantilla('${bodyId}')" style="flex:1">
@@ -3735,7 +3735,7 @@ function renderInsertarPlantillaList(bodyId,filtered){
         <div style="display:flex;gap:6px">
           <button class="btn bg2 xs" onclick="togglePlantillaPreview(${i})">👁️ Ver</button>
           <button class="btn bp xs" onclick="insertarPlantilla('${bodyId}',${i})">Insertar</button>
-          <button class="btn bd2 xs" onclick="eliminarPlantilla(${i})">🗑️</button>
+          <button class="btn bd2 xs" onclick="eliminarPlantilla(${i})" title="Eliminar plantilla" aria-label="Eliminar plantilla">🗑️</button>
         </div>
       </div>
       <div id="ip-preview-${i}" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid var(--bd)"></div>
@@ -3951,7 +3951,7 @@ window.abrirEditorPlantilla=async function(id){
   modal.innerHTML=`<div style="background:var(--s1);border-radius:16px;padding:24px;width:100%;max-width:520px;max-height:88vh;overflow-y:auto">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
       <h2>${t?'✏️ Editar':'➕ Nueva'} plantilla</h2>
-      <button onclick="document.getElementById('modal-bg').style.display='none'" style="background:none;border:none;color:var(--mu);font-size:1.4rem;cursor:pointer">✕</button>
+      <button onclick="document.getElementById('modal-bg').style.display='none'" style="background:none;border:none;color:var(--mu);font-size:1.4rem;cursor:pointer" title="Cerrar" aria-label="Cerrar">✕</button>
     </div>
     <input type="hidden" id="tpl-editor-id" value="${t?.id||''}">
     <div class="fg" style="margin-bottom:10px"><label>Nombre de la plantilla</label><input type="text" id="tpl-editor-name" value="${t?.name||''}" placeholder="Ej: Fran, Calentamiento estándar..."></div>
@@ -4452,7 +4452,7 @@ function renderDay(clientId,dIdx){
   // Session notes for this day
   const snKey=`snote-w${dayWeek}-${dIdx}`;
   const notes=c.progress[snKey]||[];
-  const notesHtml=notes.slice().reverse().map((n,ri)=>{const realIdx=notes.length-1-ri;return`<div class="note-entry" style="display:flex;align-items:flex-start;gap:8px"><div style="flex:1"><div class="note-date">${n.date}</div><div class="note-text">${n.text}</div></div><button onclick="deleteNote('${clientId}',${dIdx},${realIdx})" style="background:none;border:none;color:var(--mu);cursor:pointer;font-size:.85rem;flex-shrink:0;padding:2px 4px" title="Borrar nota">🗑️</button></div>`}).join('');
+  const notesHtml=notes.slice().reverse().map((n,ri)=>{const realIdx=notes.length-1-ri;return`<div class="note-entry" style="display:flex;align-items:flex-start;gap:8px"><div style="flex:1"><div class="note-date">${n.date}</div><div class="note-text">${n.text}</div></div><button onclick="deleteNote('${clientId}',${dIdx},${realIdx})" style="background:none;border:none;color:var(--mu);cursor:pointer;font-size:.85rem;flex-shrink:0;padding:2px 4px" title="Borrar nota" aria-label="Borrar nota">🗑️</button></div>`}).join('');
   html+=`<div style="border:1px solid var(--bd);border-radius:var(--ra);padding:16px;margin-top:6px;background:var(--s1)">
     <div style="font-size:.78rem;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">📝 Notas de sesión (opcional)</div>
     <textarea id="snote-${clientId}-${dIdx}" placeholder="¿Cómo te sentiste hoy? ¿Algo a mejorar? ¿Peso usado?..." style="min-height:70px;margin-bottom:8px;font-size:.83rem"></textarea>
@@ -4482,7 +4482,7 @@ function renderWarmupBlock(c,bkey,blk,bi){
       schemeHtml=`<table class="stbl"><thead><tr><th>#</th><th>Reps / Tiempo</th><th>Carga / RPE</th><th>✓</th></tr></thead><tbody>`;
       ex.scheme.forEach((s,si)=>{
         const rk=`${c.id}-${ekey}-${si}`;const done=c.progress[rk]||false;
-        schemeHtml+=`<tr id="sr-${rk}" class="${done?'done-row':''}"><td>Serie ${si+1}</td><td>${s.reps||'—'}</td><td>${s.load||'—'}</td><td><button class="ckbtn ${done?'done':''}" onclick="toggleSerie('${c.id}','${ekey}',${si},'${rk}',${isLastEx},${restSecs})">✓</button></td></tr>`;
+        schemeHtml+=`<tr id="sr-${rk}" class="${done?'done-row':''}"><td>Serie ${si+1}</td><td>${s.reps||'—'}</td><td>${s.load||'—'}</td><td><button class="ckbtn ${done?'done':''}" onclick="toggleSerie('${c.id}','${ekey}',${si},'${rk}',${isLastEx},${restSecs})" title="Marcar serie como hecha" aria-label="Marcar serie como hecha">✓</button></td></tr>`;
       });
       schemeHtml+=`</tbody></table>`;
     }
@@ -4570,9 +4570,9 @@ function renderFuncBlock(c,bkey,blk,bi,isAdminView){
           <div class="lr">
             <input type="number" id="pw-${c.id}-${ekey}" placeholder="${lastLog?.weight?'Último: '+lastLog.weight+'kg':'Peso (kg)'}" step="0.5">
             <input type="number" id="pr-${c.id}-${ekey}" placeholder="${lastLog?.reps?'Último: '+lastLog.reps+' rep':'Reps'}">
-            <button class="btn bgr sm" onclick="logGym('${c.id}','${ekey}','${jsAttr(ex.refEx||exBank?.refEx||ex.name)}')">✓</button>
+            <button class="btn bgr sm" onclick="logGym('${c.id}','${ekey}','${jsAttr(ex.refEx||exBank?.refEx||ex.name)}')" title="Guardar registro" aria-label="Guardar registro">✓</button>
           </div>
-          ${logs.slice(-3).reverse().map((l,ri)=>{const realIdx=logs.length-1-ri;return`<div class="lent"><span>${l.date}</span><span class="lv">${l.weight?l.weight+'kg':'—'} × ${l.reps||'—'}</span><button onclick="deleteLog('${c.id}','${ekey}',${realIdx})" style="background:none;border:none;color:var(--mu);cursor:pointer;font-size:.75rem;padding:0 4px">✕</button></div>`;}).join('')}
+          ${logs.slice(-3).reverse().map((l,ri)=>{const realIdx=logs.length-1-ri;return`<div class="lent"><span>${l.date}</span><span class="lv">${l.weight?l.weight+'kg':'—'} × ${l.reps||'—'}</span><button onclick="deleteLog('${c.id}','${ekey}',${realIdx})" style="background:none;border:none;color:var(--mu);cursor:pointer;font-size:.75rem;padding:0 4px" title="Borrar registro" aria-label="Borrar registro">✕</button></div>`;}).join('')}
         </div>
       </div>`;
     });
@@ -4590,7 +4590,7 @@ function renderFuncBlock(c,bkey,blk,bi,isAdminView){
       const done=(c.progress||{})[rk]||false;
       const isLast=ri===numRondas-1;
       inner+=`<div id="sr-${rk}" style="display:flex;align-items:center;gap:6px">
-        <button class="ckbtn ${done?'done':''}" onclick="toggleSerie('${c.id}','${bkey}',${ri},'${rk}',${isLast},${restSecs},${restSecs})">✓</button>
+        <button class="ckbtn ${done?'done':''}" onclick="toggleSerie('${c.id}','${bkey}',${ri},'${rk}',${isLast},${restSecs},${restSecs})" title="Marcar serie como hecha" aria-label="Marcar serie como hecha">✓</button>
         <span style="font-size:.82rem;color:var(--mu)">Ronda ${ri+1}</span>
       </div>`;
     }
@@ -4655,12 +4655,12 @@ function renderGymBlock(c,bkey,blk,bi,isAdminView){
       const restSecs=parseRestToSeconds(blk.rest);
       const pauseSecs=isLastEx?0:parseRestToSeconds((blk.pauses||[])[ei]||'');
       ex.scheme.forEach((s,si)=>{const rk=`${c.id}-${ekey}-${si}`;const done=c.progress[rk]||false;
-        inner+=`<tr id="sr-${rk}" class="${done?'done-row':''}"><td>Serie ${si+1}</td><td>${s.reps||'—'}</td><td>${s.load||'—'}</td><td><input type="number" id="sw-${c.id}-${ekey}-${si}" placeholder="${lastWeights[si]?lastWeights[si]+'kg':'kg'}" step="0.5" style="width:62px;font-size:.78rem;padding:4px 6px" onchange="autoSaveGym('${c.id}','${ekey}','${jsAttr(refName)}')"></td><td><button class="ckbtn ${done?'done':''}" onclick="toggleSerie('${c.id}','${ekey}',${si},'${rk}',${isLastEx},${restSecs},${pauseSecs})">✓</button></td></tr>`});
+        inner+=`<tr id="sr-${rk}" class="${done?'done-row':''}"><td>Serie ${si+1}</td><td>${s.reps||'—'}</td><td>${s.load||'—'}</td><td><input type="number" id="sw-${c.id}-${ekey}-${si}" placeholder="${lastWeights[si]?lastWeights[si]+'kg':'kg'}" step="0.5" style="width:62px;font-size:.78rem;padding:4px 6px" onchange="autoSaveGym('${c.id}','${ekey}','${jsAttr(refName)}')"></td><td><button class="ckbtn ${done?'done':''}" onclick="toggleSerie('${c.id}','${ekey}',${si},'${rk}',${isLastEx},${restSecs},${pauseSecs})" title="Marcar serie como hecha" aria-label="Marcar serie como hecha">✓</button></td></tr>`});
       inner+=`</tbody></table></div>`;
     }
     inner+=vidHtml;
     const logs=c.progress[`${c.id}-${ekey}-logs`]||[];
-    const logsHtml=logs.slice(-5).reverse().map((l,ri)=>{const realIdx=logs.length-1-ri;const wTxt=(l.weights&&l.weights.length)?l.weights.map(w=>w||'—').join(' / ')+'kg':(l.weight?l.weight+'kg':'—');return`<div class="lent"><span>${l.date}</span><span class="lv">${wTxt} × ${l.reps||'—'}</span><button onclick="deleteLog('${c.id}','${ekey}',${realIdx})" style="background:none;border:none;color:var(--mu);cursor:pointer;font-size:.75rem;padding:0 4px;opacity:.6" title="Borrar">✕</button>${l.note?`<div style="font-size:.72rem;color:var(--mu);font-style:italic;margin-top:2px;grid-column:1/-1">📝 ${l.note}</div>`:''}</div>`;}).join('');
+    const logsHtml=logs.slice(-5).reverse().map((l,ri)=>{const realIdx=logs.length-1-ri;const wTxt=(l.weights&&l.weights.length)?l.weights.map(w=>w||'—').join(' / ')+'kg':(l.weight?l.weight+'kg':'—');return`<div class="lent"><span>${l.date}</span><span class="lv">${wTxt} × ${l.reps||'—'}</span><button onclick="deleteLog('${c.id}','${ekey}',${realIdx})" style="background:none;border:none;color:var(--mu);cursor:pointer;font-size:.75rem;padding:0 4px;opacity:.6" title="Borrar" aria-label="Borrar">✕</button>${l.note?`<div style="font-size:.72rem;color:var(--mu);font-style:italic;margin-top:2px;grid-column:1/-1">📝 ${l.note}</div>`:''}</div>`;}).join('');
     const lastLog=logs.length?logs[logs.length-1]:null;
     inner+=`<div class="plog">
       <div style="font-size:.69rem;color:var(--mu);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">📊 Registro de sesión — se guarda solo al completar cada campo</div>
@@ -4721,7 +4721,7 @@ function renderCFBlock(c,bkey,blk,bi){
         const rk=`${c.id}-${bkey}-s${si}-cfround${ri}`;
         const done=!!c.progress[rk];
         return`<span id="sr-${rk}" style="display:flex;flex-direction:column;align-items:center;gap:3px">
-          <button class="ckbtn ${done?'done':''}" onclick="toggleSerie('${c.id}','${bkey}-s${si}',${ri},'${rk}',false,null,${restSecs})">✓</button>
+          <button class="ckbtn ${done?'done':''}" onclick="toggleSerie('${c.id}','${bkey}-s${si}',${ri},'${rk}',false,null,${restSecs})" title="Marcar serie como hecha" aria-label="Marcar serie como hecha">✓</button>
           <span style="font-size:.68rem;color:var(--mu);font-weight:700">R${ri+1}</span>
         </span>`;
       }).join('');
@@ -4756,7 +4756,7 @@ function renderCFBlock(c,bkey,blk,bi){
         <div class="cfr-row">
           <input type="text" id="cfr-${c.id}-${bkey}" placeholder="Ej: 8 rondas + 5 / 12:34 min">
           <input type="text" id="cfn-${c.id}-${bkey}" placeholder="Notas...">
-          <button class="btn bgr sm" onclick="logCF('${c.id}','${bkey}','${rk}')">✓</button>
+          <button class="btn bgr sm" onclick="logCF('${c.id}','${bkey}','${rk}')" title="Guardar resultado" aria-label="Guardar resultado">✓</button>
         </div>${resultsHtml}</div>
     </div></div>`;
 }
@@ -4932,8 +4932,8 @@ function renderCatList(){
     return`<div style="display:flex;align-items:center;gap:7px;background:var(--s2);border-radius:8px;padding:7px 10px">
       <span style="flex:1;font-size:.85rem">${c}</span>
       <span style="font-size:.72rem;color:var(--mu)">${count} ej.</span>
-      <button class="btn bg2 xs" onclick="renameCategory('${c.replace(/'/g,"\\'")}')">✏️</button>
-      <button class="btn bd2 xs" onclick="deleteCategory('${c.replace(/'/g,"\\'")}')">🗑️</button>
+      <button class="btn bg2 xs" onclick="renameCategory('${c.replace(/'/g,"\\'")}')" title="Renombrar categoría" aria-label="Renombrar categoría">✏️</button>
+      <button class="btn bd2 xs" onclick="deleteCategory('${c.replace(/'/g,"\\'")}')" title="Borrar categoría" aria-label="Borrar categoría">🗑️</button>
     </div>`;
   }).join('')||'<div style="color:var(--mu);font-size:.83rem;padding:10px">Sin categorías.</div>';
 }
@@ -4994,8 +4994,8 @@ function renderExDB(){
       <span><span class="exdb-cat">${ex.cat}</span></span>
       <span>${ytId?`<a href="${ex.video}" target="_blank" class="yt-link">▶ ver</a>`:ex.video?`<a href="${ex.video}" target="_blank" class="yt-link">🔗 link</a>`:'<span style="color:var(--mu);font-size:.75rem">sin video</span>'}</span>
       <span style="display:flex;gap:5px">
-        <button class="btn bg2 xs" onclick="openEditEx('${ex.id}')">✏️</button>
-        <button class="btn bd2 xs" onclick="delEx('${ex.id}')">🗑️</button>
+        <button class="btn bg2 xs" onclick="openEditEx('${ex.id}')" title="Editar ejercicio" aria-label="Editar ejercicio">✏️</button>
+        <button class="btn bd2 xs" onclick="delEx('${ex.id}')" title="Eliminar ejercicio" aria-label="Eliminar ejercicio">🗑️</button>
       </span>
     </div>`;
   }).join('');
@@ -5671,7 +5671,7 @@ async function renderProgramaUnificadoHtml(prog,cats,hasSubscription){
         ${editarPlanBtn}
         ${cambiarSemanaHtml}
         <select id="susc-cat-${uid}" style="width:auto;font-size:.78rem">${catOptions}</select>
-        <button class="btn bg2 xs" onclick="cambiarCategoriaSuscriptorManual('${uid}')">💾</button>
+        <button class="btn bg2 xs" onclick="cambiarCategoriaSuscriptorManual('${uid}')" title="Guardar" aria-label="Guardar">💾</button>
         ${accionBtn}
       </div>
     </div>
@@ -5842,7 +5842,7 @@ async function renderAlumnosUnificado(searchTerm){
           return`<span onclick="event.stopPropagation()" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
             <input type="date" id="susc-exp-${uid}" value="${exp}" ${exp?'':'disabled'} style="width:auto;font-size:.78rem">
             <label style="font-size:.7rem;display:flex;align-items:center;gap:3px"><input type="checkbox" id="susc-noexp-${uid}" ${exp?'':'checked'} onchange="document.getElementById('susc-exp-${uid}').disabled=this.checked">Sin vto.</label>
-            <button class="btn bg2 xs" onclick="editarVencimientoSuscriptor('${uid}')">💾</button>
+            <button class="btn bg2 xs" onclick="editarVencimientoSuscriptor('${uid}')" title="Guardar" aria-label="Guardar">💾</button>
             <button class="btn bgr xs" onclick="toggleAlumnoActivo('${uid}',true)" title="Click para desactivar todo su acceso">🟢 Activo</button>
           </span>`;
         }
@@ -6177,7 +6177,7 @@ function renderPlanesFijosPanel(){
         <label>Link de pago (MercadoPago)</label>
         <input id="pf-mplink-${id}" placeholder="https://mpago.la/..." value="${planesFijosCache[id]?.mpLink||''}">
       </div>
-      <button class="btn bg2 sm" title="Eliminar categoría" onclick="eliminarCategoriaSuscripcion('${id}')">🗑️</button>
+      <button class="btn bg2 sm" title="Eliminar categoría" onclick="eliminarCategoriaSuscripcion('${id}')" aria-label="Eliminar categoría">🗑️</button>
     </div>`;
   }).join('')
   +`<div class="fg full" style="margin-bottom:14px;margin-top:6px;display:flex;gap:8px;align-items:end">
@@ -6277,7 +6277,7 @@ function renderPlanesList(){
           <button class="btn bcy sm" onclick="duplicatePlan('${plan.id}')">📋 Duplicar</button>
           <button class="btn bcy sm" onclick="openUseAsBaseModal('${plan.id}')">🎯 Usar como base para un alumno</button>
           <button class="btn bgr sm" onclick="copyLink('${pubLink}')">🌐 Link público</button>
-          <button class="btn bd2 sm" onclick="deletePlan('${plan.id}')">🗑️</button>
+          <button class="btn bd2 sm" onclick="deletePlan('${plan.id}')" title="Eliminar plan" aria-label="Eliminar plan">🗑️</button>
         </div>
       </div>`;
     el.appendChild(div);
@@ -6342,7 +6342,7 @@ window.abrirCargarComoBaseEnEdicion=function(){
   modal.innerHTML=`<div style="background:var(--s1);border-radius:16px;padding:24px;width:100%;max-width:460px;max-height:80vh;overflow-y:auto">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
       <h2>🎯 Usar como base</h2>
-      <button onclick="document.getElementById('modal-bg').style.display='none'" style="background:none;border:none;color:var(--mu);font-size:1.4rem;cursor:pointer">✕</button>
+      <button onclick="document.getElementById('modal-bg').style.display='none'" style="background:none;border:none;color:var(--mu);font-size:1.4rem;cursor:pointer" title="Cerrar" aria-label="Cerrar">✕</button>
     </div>
     <input type="text" id="cb-search" placeholder="Buscar plan..." oninput="filtrarCargarComoBase()" style="margin-bottom:10px">
     <div id="cb-list" style="display:flex;flex-direction:column;gap:6px"></div>
@@ -6801,7 +6801,7 @@ async function renderMembersList(planId){
           <div style="font-size:.72rem;color:var(--mu)">${s.email||''} ${ex.expiry?'· Vence: '+new Date(ex.expiry+'T00:00:00').toLocaleDateString('es-AR'):''}</div>
         </div>
         <div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">
-          <button class="btn bd2 xs" onclick="quitarExtraDesafio('${d.id}','${planId}')" title="Quitarle el Desafío Glúteos como plan adicional">✕</button>
+          <button class="btn bd2 xs" onclick="quitarExtraDesafio('${d.id}','${planId}')" title="Quitarle el Desafío Glúteos como plan adicional" aria-label="Quitarle el Desafío Glúteos como plan adicional">✕</button>
         </div>
       </div>`;
     }).join('');
@@ -6822,12 +6822,12 @@ async function renderMembersList(planId){
         </div>
         ${planWeekNums(plan).length>1?`<div style="display:flex;align-items:center;gap:4px;flex-shrink:0">
           <select id="mw-week-${m.id}" style="width:auto;font-size:.76rem">${planWeekNums(plan).map(w=>`<option value="${w}"${w===m.startWeek?' selected':''}>Semana ${w}</option>`).join('')}</select>${startDateInputHTML(`mw-start-${m.id}`)}
-          <button class="btn bg2 xs" onclick="cambiarSemanaMiembro('${planId}','${m.id}')" title="Poner al alumno a partir de la semana elegida, desde hoy">📅</button>
+          <button class="btn bg2 xs" onclick="cambiarSemanaMiembro('${planId}','${m.id}')" title="Poner al alumno a partir de la semana elegida, desde hoy" aria-label="Poner al alumno a partir de la semana elegida, desde hoy">📅</button>
         </div>`:''}
         <div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">
-          <button class="btn bgr xs" onclick="copyLink('${link}')">📋</button>
-          <button class="btn byw xs" onclick="renewMember('${planId}','${m.id}')">↺</button>
-          <button class="btn bd2 xs" onclick="removeMember('${planId}','${m.id}')">✕</button>
+          <button class="btn bgr xs" onclick="copyLink('${link}')" title="Copiar link" aria-label="Copiar link">📋</button>
+          <button class="btn byw xs" onclick="renewMember('${planId}','${m.id}')" title="Renovar" aria-label="Renovar">↺</button>
+          <button class="btn bd2 xs" onclick="removeMember('${planId}','${m.id}')" title="Eliminar alumno" aria-label="Eliminar alumno">✕</button>
         </div>
       </div>`;
     }).join('')}
@@ -7293,7 +7293,7 @@ function renderGroupDay(plan,member,dIdx){
   // Session notes
   const snKey=`snote-w${memberWeek}-${dIdx}`;
   const notes=member.progress?.[snKey]||[];
-  const notesHtml=notes.slice(-5).reverse().map((n,ri)=>{const realIdx=notes.length-1-ri;return`<div class="note-entry" style="display:flex;align-items:flex-start;gap:8px"><div style="flex:1"><div class="note-date">${n.date}</div><div class="note-text">${n.text}</div></div><button onclick="deleteGroupNote('${plan.id}','${member.id}',${dIdx},${realIdx})" style="background:none;border:none;color:var(--mu);cursor:pointer;font-size:.85rem;padding:2px 4px">🗑️</button></div>`}).join('');
+  const notesHtml=notes.slice(-5).reverse().map((n,ri)=>{const realIdx=notes.length-1-ri;return`<div class="note-entry" style="display:flex;align-items:flex-start;gap:8px"><div style="flex:1"><div class="note-date">${n.date}</div><div class="note-text">${n.text}</div></div><button onclick="deleteGroupNote('${plan.id}','${member.id}',${dIdx},${realIdx})" style="background:none;border:none;color:var(--mu);cursor:pointer;font-size:.85rem;padding:2px 4px" title="Borrar nota" aria-label="Borrar nota">🗑️</button></div>`}).join('');
   html+=`<div style="border:1px solid var(--bd);border-radius:var(--ra);padding:16px;margin-top:6px;background:var(--s1)">
     <div style="font-size:.78rem;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">📝 Notas de sesión (opcional)</div>
     <textarea id="gsnote-${plan.id}-${member.id}-${dIdx}" placeholder="¿Cómo te sentiste hoy?..." style="min-height:70px;margin-bottom:8px;font-size:.83rem"></textarea>
@@ -7734,7 +7734,7 @@ function renderAlumnoDay(plan,member,dIdx,uid){
   });
   const snKey=`snote-w${memberWeek}-${dIdx}`;
   const notes=member.progress?.[snKey]||[];
-  const notesHtml=notes.slice(-5).reverse().map((n,ri)=>{const realIdx=notes.length-1-ri;return`<div class="note-entry" style="display:flex;align-items:flex-start;gap:8px"><div style="flex:1"><div class="note-date">${n.date}</div><div class="note-text">${n.text}</div></div><button onclick="deleteAlumnoNote(${dIdx},${realIdx})" style="background:none;border:none;color:var(--mu);cursor:pointer;font-size:.85rem;padding:2px 4px">🗑️</button></div>`}).join('');
+  const notesHtml=notes.slice(-5).reverse().map((n,ri)=>{const realIdx=notes.length-1-ri;return`<div class="note-entry" style="display:flex;align-items:flex-start;gap:8px"><div style="flex:1"><div class="note-date">${n.date}</div><div class="note-text">${n.text}</div></div><button onclick="deleteAlumnoNote(${dIdx},${realIdx})" style="background:none;border:none;color:var(--mu);cursor:pointer;font-size:.85rem;padding:2px 4px" title="Borrar nota" aria-label="Borrar nota">🗑️</button></div>`}).join('');
   html+=`<div style="border:1px solid var(--bd);border-radius:var(--ra);padding:16px;margin-top:6px;background:var(--s1)">
     <div style="font-size:.78rem;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">📝 Notas de sesión (opcional)</div>
     <textarea id="asnote-${akey}-${dIdx}" placeholder="¿Cómo te sentiste hoy?..." style="min-height:70px;margin-bottom:8px;font-size:.83rem"></textarea>
@@ -8933,7 +8933,7 @@ function buildSolCard(s,isNew){
         <button class="btn bpu sm" onclick="asignarAPlanGrupal('${s._docId}')">👥 Asignar a plan grupal</button>
         <button class="btn bcy sm" onclick="convertirEnSuscriptor('${s._docId}')">🔔 Dar de alta como suscriptor</button>
         ${isNew?`<button class="btn bg2 sm" onclick="marcarSolicitudProcesada('${s._docId}')">✅ Marcar como procesada</button>`:''}
-        <button class="btn bd2 sm" onclick="eliminarSolicitud('${s._docId}')">🗑️</button>
+        <button class="btn bd2 sm" onclick="eliminarSolicitud('${s._docId}')" title="Eliminar solicitud" aria-label="Eliminar solicitud">🗑️</button>
       </div>
     </div>
     <button class="btn bg2 sm" onclick="verAnamnesis('${s._docId}')" style="margin-top:4px">📋 Ver anamnesis completa</button>
@@ -8965,7 +8965,7 @@ window.verAnamnesis=function(docId){
         <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.1rem">${s.nombre||'Sin nombre'}</div>
         <div style="font-size:.76rem;color:var(--mu);margin-top:3px">${s.email||''} ${s.whatsapp?'· '+s.whatsapp:''} · ${s.createdAt||''}</div>
       </div>
-      <button onclick="document.getElementById('modal-bg').style.display='none'" style="background:none;border:none;color:var(--mu);font-size:1.4rem;cursor:pointer;padding:4px">✕</button>
+      <button onclick="document.getElementById('modal-bg').style.display='none'" style="background:none;border:none;color:var(--mu);font-size:1.4rem;cursor:pointer;padding:4px" title="Cerrar" aria-label="Cerrar">✕</button>
     </div>
     ${row('Nacimiento',s.nacimiento)}
     ${row('Sexo',s.sexo)}
@@ -9053,7 +9053,7 @@ window.editarAnamnesis=function(docId){
   modal.innerHTML=`<div style="background:var(--s1);border-radius:16px;padding:24px;width:100%;max-width:600px;max-height:90vh;overflow-y:auto;position:relative">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
       <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.1rem">✏️ Editar anamnesis</div>
-      <button onclick="document.getElementById('modal-bg').style.display='none'" style="background:none;border:none;color:var(--mu);font-size:1.4rem;cursor:pointer;padding:4px">✕</button>
+      <button onclick="document.getElementById('modal-bg').style.display='none'" style="background:none;border:none;color:var(--mu);font-size:1.4rem;cursor:pointer;padding:4px" title="Cerrar" aria-label="Cerrar">✕</button>
     </div>
     ${ANAMNESIS_FIELDS.map(field).join('')}
     <div style="margin-top:18px;display:flex;gap:8px;flex-wrap:wrap">
@@ -9201,7 +9201,7 @@ window.asignarAPlanGrupal=function(docId){
   modal.innerHTML=`<div style="background:var(--s1);border-radius:16px;padding:24px;width:100%;max-width:420px;max-height:90vh;overflow-y:auto;position:relative">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
       <div style="font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.05rem">👥 Asignar a plan grupal</div>
-      <button onclick="document.getElementById('modal-bg').style.display='none'" style="background:none;border:none;color:var(--mu);font-size:1.4rem;cursor:pointer;padding:4px">✕</button>
+      <button onclick="document.getElementById('modal-bg').style.display='none'" style="background:none;border:none;color:var(--mu);font-size:1.4rem;cursor:pointer;padding:4px" title="Cerrar" aria-label="Cerrar">✕</button>
     </div>
     <div style="font-size:.82rem;color:var(--mu);margin-bottom:12px">${s.nombre||'Sin nombre'} · elegí uno o varios planes</div>
     <div id="asig-plan-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:18px">
