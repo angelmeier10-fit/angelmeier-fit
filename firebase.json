@@ -9,6 +9,9 @@
   "hosting": {
     "public": ".",
     "ignore": ["firebase.json", ".firebaserc", "functions/**", ".git/**"],
+    "redirects": [
+      {"source": "/turnos", "destination": "https://angelmeier10-fit.github.io/mano-a-mano-turnos/mano-a-mano-reservas/", "type": 302}
+    ],
     "rewrites": [
       {"source": "/suscripcion", "destination": "/index.html"},
       {"source": "/desafio-gluteos", "destination": "/index.html"}
