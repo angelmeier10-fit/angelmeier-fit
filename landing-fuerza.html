@@ -73,6 +73,19 @@ nav {
 .obj-card p { font-size: .85rem; color: var(--mu); line-height: 1.6; font-family: 'Inter'; text-transform: none; }
 
 .programa { background: var(--warm); }
+.guia { background: var(--bg); padding-top: 64px; padding-bottom: 64px; }
+.guia-card { display: grid; grid-template-columns: 1fr auto; gap: 32px; align-items: center; background: var(--s1); border: 1px solid var(--border); border-left: 4px solid var(--ac); border-radius: 12px; padding: 40px 44px; }
+.guia-card h2 { margin-bottom: 12px; }
+.guia-list { list-style: none; padding: 0; margin: 18px 0 0; display: grid; gap: 8px; font-size: .92rem; color: var(--mu); }
+.guia-list li::before { content: "✓"; color: var(--ac); font-weight: 700; margin-right: 10px; }
+.guia-cta { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; }
+.guia-cta .note { font-size: .78rem; color: var(--mu); max-width: 240px; }
+@media (max-width: 768px) {
+  .guia-card { grid-template-columns: 1fr; padding: 28px 24px; }
+  .guia-cta { align-items: stretch; }
+  .guia-cta .btn-wa { justify-content: center; }
+  .guia-cta .note { max-width: none; }
+}
 .pillars-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 20px; margin-top: 48px; }
 .pillar-card { background: var(--s1); border-radius: 12px; padding: 32px; border: 1px solid var(--border); }
 .pillar-num { width: 36px; height: 36px; border-radius: 8px; background: var(--ac); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: .9rem; margin-bottom: 16px; font-family: 'Oswald'; }
@@ -280,6 +293,25 @@ body.menu-open { overflow: hidden; }
     <div class="section-cta" style="justify-content:center;flex-direction:column;text-align:center;margin-top:44px">
       <a class="btn-wa" style="font-size:1.02rem;padding:16px 36px" href="https://wa.me/5491172399988?text=Hola%20Angel%2C%20quiero%20elegir%20mi%20plan%20de%20entrenamiento." target="_blank">🎯 Elegir mi plan</a>
       <span class="section-cta-note">Te ayudo a elegir por WhatsApp · Evaluación inicial gratuita · 💥 Preguntame por la promo si querés combinar más de un plan</span>
+    </div>
+  </div>
+</section>
+
+<section class="section guia" id="guia">
+  <div class="section-inner guia-card">
+    <div>
+      <div class="eyebrow">Guía gratis</div>
+      <h2>Glúteos y piernas fuertes</h2>
+      <p class="section-lead">¿Querés arrancar por tu cuenta antes de sumarte a un plan? Te mando gratis mi guía con los ejercicios clave para fortalecer glúteos y piernas.</p>
+      <ul class="guia-list">
+        <li>Ejercicios explicados para hacer bien la técnica</li>
+        <li>En casa o en el gimnasio</li>
+        <li>Te la mando gratis por WhatsApp</li>
+      </ul>
+    </div>
+    <div class="guia-cta">
+      <a class="btn-wa" href="https://wa.me/5491172399988?text=Hola%20Angel%2C%20quiero%20la%20gu%C3%ADa%20gratis%20%22Gl%C3%BAteos%20y%20piernas%20fuertes%22." target="_blank">Quiero la guía gratis</a>
+      <span class="note">Se abre WhatsApp con el mensaje listo: solo tocás enviar.</span>
     </div>
   </div>
 </section>
