@@ -2281,6 +2281,44 @@ let scC=0;
 let isClientMode=false;
 
 function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2400)}
+// Reemplazo de alert/confirm/prompt nativos con el estilo de la app. Devuelven
+// promesas: uiConfirm → true/false, uiPrompt → texto, o null si cancela.
+function uiDialog({msg,input=false,def='',cancel=false}){
+  return new Promise(res=>{
+    const danger=cancel&&!input&&/borrar|eliminar|sacar|quitar|sobreescribir|reemplaz|desactivar/i.test(msg);
+    const bg=document.createElement('div');
+    bg.className='modal-bg open';bg.style.zIndex='10001';
+    bg.innerHTML=`<div class="modal" role="dialog" aria-modal="true" style="max-width:400px">
+      <div class="ui-dialog-msg" style="font-size:.92rem;line-height:1.5;white-space:pre-wrap;margin-bottom:18px"></div>
+      ${input?'<input style="margin-bottom:18px">':''}
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        ${cancel?'<button class="btn bg2" data-r="0">Cancelar</button>':''}
+        <button class="btn ${danger?'bd2':'bp'}" data-r="1">${danger?'Sí, confirmar':'Aceptar'}</button>
+      </div></div>`;
+    bg.querySelector('.ui-dialog-msg').textContent=msg;
+    const inp=bg.querySelector('input');if(inp)inp.value=def??'';
+    let done=false;
+    const close=ok=>{
+      if(done)return;done=true;
+      bg.remove();document.removeEventListener('keydown',onKey,true);
+      res(input?(ok?inp.value:null):ok);
+    };
+    const onKey=e=>{
+      if(e.key==='Escape'){e.preventDefault();close(!cancel);}
+      else if(e.key==='Enter'){e.preventDefault();close(true);}
+    };
+    bg.addEventListener('click',e=>{
+      const b=e.target.closest('[data-r]');
+      if(b)close(b.dataset.r==='1');else if(e.target===bg)close(!cancel);
+    });
+    document.addEventListener('keydown',onKey,true);
+    document.body.appendChild(bg);
+    if(inp){inp.focus();inp.select();}else bg.querySelector('[data-r="1"]').focus();
+  });
+}
+function uiAlert(msg){return uiDialog({msg})}
+function uiConfirm(msg){return uiDialog({msg,cancel:true})}
+function uiPrompt(msg,def){return uiDialog({msg,input:true,def,cancel:true})}
 function norm(s){return(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')}
 function exPersonKey(name,email){return((name||'')+'|'+(email||'')).toLowerCase().trim()}
 function jsAttr(s){return(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;')}
@@ -2325,7 +2363,7 @@ async function saveExNote(personKey,exName,note){
 }
 window.editExNote=async function(clientId,personKey,exName,dIdx){
   const cur=exHistoryCache[personKey]?.ex?.[norm(exName).trim()]?.note||'';
-  const txt=prompt('Nota para este alumno sobre "'+exName+'":',cur);
+  const txt=await uiPrompt('Nota para este alumno sobre "'+exName+'":',cur);
   if(txt===null)return; // canceló
   await saveExNote(personKey,exName,txt.trim());
   toast('📝 Nota guardada');
@@ -2536,7 +2574,7 @@ function renderProgressDetailBlock(uid,exerciseLogs,days,allNotes){
 function fillExpiryFromDays(dateId,daysId){
   const daysInput=document.getElementById(daysId);
   const days=parseInt(daysInput.value);
-  if(!days||days<1){alert('Ingresá una cantidad de días válida.');return}
+  if(!days||days<1){uiAlert('Ingresá una cantidad de días válida.');return}
   const d=new Date();d.setDate(d.getDate()+days);
   document.getElementById(dateId).value=d.toISOString().split('T')[0];
   daysInput.value='';
@@ -2647,7 +2685,7 @@ function setupWeekSelector(prefix,totalWeeksHint){
   sel.value=store.getCur();
 }
 
-window.onWeekChange=function(prefix){
+window.onWeekChange=async function(prefix){
   const sel=document.getElementById(prefix+'-week-selector');
   const store=weekStoreFor(prefix);
   const{containerId,countId,data}=store;
@@ -2661,7 +2699,7 @@ window.onWeekChange=function(prefix){
   if(newWeek==='__new__'){
     const weekNums=Object.keys(data).map(Number);
     const suggested=Math.max(...weekNums)+1;
-    const picked=promptWeekNumber('Número para la nueva semana:',suggested,weekNums);
+    const picked=await promptWeekNumber('Número para la nueva semana:',suggested,weekNums);
     if(picked==null){sel.value=curWeek;return} // canceló: no crear nada, volver a la semana actual
     newWeek=picked;
     data[newWeek]=data[curWeek].map(d=>({name:d.name,blocks:[]})); // empieza vacía, conserva nombres de días
@@ -2681,9 +2719,9 @@ window.onWeekChange=function(prefix){
 // y que no choque con una semana ya existente (excepto la propia, si se le
 // pasa excludeCurrent). Devuelve null si el usuario cancela o insiste en un
 // valor inválido tras el aviso.
-function promptWeekNumber(message,suggested,existingNums,excludeCurrent){
+async function promptWeekNumber(message,suggested,existingNums,excludeCurrent){
   const taken=excludeCurrent!=null?existingNums.filter(n=>n!==excludeCurrent):existingNums;
-  const raw=window.prompt(message,String(suggested));
+  const raw=await uiPrompt(message,String(suggested));
   if(raw==null)return null;
   const n=parseInt(raw.trim());
   if(!n||n<1){toast('⚠️ Ingresá un número de semana válido (mayor a 0).');return null}
@@ -2693,7 +2731,7 @@ function promptWeekNumber(message,suggested,existingNums,excludeCurrent){
 
 // Cambia el número de la semana actual (sin tocar su contenido), validando
 // que no quede duplicada con otra semana ya existente del mismo plan.
-window.renumberWeek=function(prefix){
+window.renumberWeek=async function(prefix){
   const store=weekStoreFor(prefix);
   const{containerId,countId,data}=store;
   const curWeek=store.getCur();
@@ -2701,7 +2739,7 @@ window.renumberWeek=function(prefix){
   data[curWeek]=collectDays(containerId,curCount); // no perder cambios sin guardar
 
   const weekNums=Object.keys(data).map(Number);
-  const newWeek=promptWeekNumber('Nuevo número para la semana '+curWeek+':',curWeek,weekNums,curWeek);
+  const newWeek=await promptWeekNumber('Nuevo número para la semana '+curWeek+':',curWeek,weekNums,curWeek);
   if(newWeek==null||newWeek===curWeek)return;
 
   data[newWeek]=data[curWeek];
@@ -2712,13 +2750,13 @@ window.renumberWeek=function(prefix){
 };
 
 // Borra la semana actual del plan (mínimo 1 semana siempre tiene que quedar).
-window.deleteWeek=function(prefix){
+window.deleteWeek=async function(prefix){
   const store=weekStoreFor(prefix);
   const{containerId,countId,data}=store;
   const curWeek=store.getCur();
   const weekNums=Object.keys(data).map(Number).sort((a,b)=>a-b);
   if(weekNums.length<=1){toast('⚠️ No se puede borrar: tiene que quedar al menos una semana.');return}
-  if(!confirm('¿Borrar la semana '+curWeek+'? Se pierde toda su rutina.'))return;
+  if(!await uiConfirm('¿Borrar la semana '+curWeek+'? Se pierde toda su rutina.'))return;
 
   delete data[curWeek];
   const remaining=weekNums.filter(w=>w!==curWeek);
@@ -2770,11 +2808,11 @@ window.pegarDia=function(prefix){
   rebuildWeekDays(prefix,days);
   toast('📥 Día "'+clip.label+'" agregado al final');
 };
-window.pegarSemana=function(prefix){
+window.pegarSemana=async function(prefix){
   const clip=getClip('week');
   if(!clip){toast('⚠️ Primero copiá una semana');return}
   const hasContent=collectCurrentWeekDays(prefix).some(d=>d.blocks.length);
-  if(hasContent&&!confirm('Esto reemplaza toda la rutina de la semana actual por la copiada ('+clip.label+'). ¿Continuar?'))return;
+  if(hasContent&&!await uiConfirm('Esto reemplaza toda la rutina de la semana actual por la copiada ('+clip.label+'). ¿Continuar?'))return;
   rebuildWeekDays(prefix,JSON.parse(JSON.stringify(clip.data)));
   toast('📥 Semana pegada');
 };
@@ -2878,10 +2916,10 @@ window.moveBlk=function(id,dir){
   else parent.insertBefore(target,el);
 };
 
-window.deleteDayBlock=function(did){
+window.deleteDayBlock=async function(did){
   const block=document.getElementById(did);if(!block)return;
   const name=block.querySelector('.day-name-input')?.value||'este día';
-  if(!confirm(`¿Borrar "${name}"? Se perderán todos sus ejercicios.`))return;
+  if(!await uiConfirm(`¿Borrar "${name}"? Se perderán todos sus ejercicios.`))return;
   const cid=block.parentElement.id;
   block.remove();
   refreshDayNav(cid);
@@ -3511,7 +3549,7 @@ async function loadBloqueTemplates(){
 }
 
 window.importWodTemplates=async function(){
-  if(!confirm('Esto va a agregar 300 plantillas de WOD de CrossFit (incluye benchmarks clásicos como Fran, Murph, DT, etc.) a tu lista de plantillas de bloque. Se suman a las que ya tenés, sin borrar ninguna. ¿Continuar?'))return;
+  if(!await uiConfirm('Esto va a agregar 300 plantillas de WOD de CrossFit (incluye benchmarks clásicos como Fran, Murph, DT, etc.) a tu lista de plantillas de bloque. Se suman a las que ya tenés, sin borrar ninguna. ¿Continuar?'))return;
   try{
     const res=await fetch('wod-templates.json');
     const seed=await res.json();
@@ -3591,7 +3629,7 @@ window.agregarPlantillaCategoria=async function(){
   renderGestionCategoriasPlantilla();
 };
 window.renombrarPlantillaCategoria=async function(oldName){
-  const nuevo=prompt('Nuevo nombre para "'+oldName+'":',oldName);
+  const nuevo=await uiPrompt('Nuevo nombre para "'+oldName+'":',oldName);
   if(!nuevo||!nuevo.trim()||nuevo.trim()===oldName)return;
   const nuevoName=nuevo.trim();
   const cats=await loadPlantillaCategorias();
@@ -3607,7 +3645,7 @@ window.renombrarPlantillaCategoria=async function(oldName){
   renderGestionCategoriasPlantilla();
 };
 window.borrarPlantillaCategoria=async function(name){
-  if(!confirm('¿Eliminar la categoría "'+name+'"? Las plantillas que la usaban quedan sin categoría.'))return;
+  if(!await uiConfirm('¿Eliminar la categoría "'+name+'"? Las plantillas que la usaban quedan sin categoría.'))return;
   const cats=(await loadPlantillaCategorias()).filter(c=>c!==name);
   plantillaCategoriasCache=cats;
   await setDoc(doc(db,'meta','plantillaCategorias'),{list:cats});
@@ -3824,7 +3862,7 @@ async function borrarPlantillaPorId(id){
 window.eliminarPlantilla=async function(idx){
   const t=bloqueTemplatesCache?.[idx];
   if(!t)return;
-  if(!confirm('¿Eliminar esta plantilla?'))return;
+  if(!await uiConfirm('¿Eliminar esta plantilla?'))return;
   await borrarPlantillaPorId(t.id);
   toast('🗑️ Plantilla eliminada');
   document.getElementById('modal-bg').style.display='none';
@@ -3876,7 +3914,7 @@ window.renderTemplatesView=async function(){
 };
 
 window.borrarPlantillaDesdeVista=async function(id){
-  if(!confirm('¿Eliminar esta plantilla?'))return;
+  if(!await uiConfirm('¿Eliminar esta plantilla?'))return;
   await borrarPlantillaPorId(id);
   toast('🗑️ Plantilla eliminada');
   renderTemplatesView();
@@ -3995,7 +4033,7 @@ window.guardarPlantillaDesdeEditor=async function(){
 async function saveClient(opts={}){
   const silent=!!opts.silent;
   const name=document.getElementById('nc-name').value.trim();
-  if(!name){if(!silent)alert('Ingresá el nombre del cliente.');return}
+  if(!name){if(!silent)uiAlert('Ingresá el nombre del cliente.');return}
   const count=parseInt(document.getElementById('nc-days').value)||4;
   const id=ncSavedId||('c'+Date.now());
   ncSavedId=id;
@@ -4916,7 +4954,7 @@ window.addCategory=async function(){
   toast('✅ Categoría agregada');
 };
 window.renameCategory=async function(oldName){
-  const newName=prompt('Nuevo nombre para la categoría:',oldName);
+  const newName=await uiPrompt('Nuevo nombre para la categoría:',oldName);
   if(!newName||!newName.trim()||newName.trim()===oldName)return;
   const trimmed=newName.trim();
   if(exCats.some(c=>c.toLowerCase()===trimmed.toLowerCase())){toast('Ya existe una categoría con ese nombre');return}
@@ -4935,7 +4973,7 @@ window.deleteCategory=async function(name){
   const msg=affected.length
     ?`Hay ${affected.length} ejercicio(s) en "${name}". Se moverán a "Otra". ¿Eliminar la categoría igual?`
     :`¿Eliminar la categoría "${name}"?`;
-  if(!confirm(msg))return;
+  if(!await uiConfirm(msg))return;
   if(affected.length){
     if(!exCats.includes('Otra')){exCats.push('Otra')}
     for(const ex of affected){
@@ -5079,7 +5117,7 @@ async function propagateExerciseEdit(oldName,newName,newVideo){
 // actuales del banco, una sola vez, por nombre de ejercicio.
 window.resyncTodosLosVideos=async function(){
   if(!exDB.length){toast('❌ No hay ejercicios en el banco');return}
-  if(!confirm('Esto va a revisar todos los planes, clientes y plantillas y actualizar el video de cada ejercicio (y sus variantes) con el link que tiene ahora en el banco. ¿Continuar?'))return;
+  if(!await uiConfirm('Esto va a revisar todos los planes, clientes y plantillas y actualizar el video de cada ejercicio (y sus variantes) con el link que tiene ahora en el banco. ¿Continuar?'))return;
   toast('⏳ Sincronizando videos...');
   const changedPlans=new Set(),changedClients=new Set();
   let tplChanged=false;
@@ -5111,7 +5149,7 @@ let savingExercise=false;
 window.saveExercise=async function(){
   if(savingExercise)return;
   const name=document.getElementById('em-name').value.trim();
-  if(!name){alert('Ingresá el nombre.');return}
+  if(!name){uiAlert('Ingresá el nombre.');return}
   savingExercise=true;
   try{
   const cat=document.getElementById('em-cat').value;
@@ -5152,7 +5190,7 @@ window.saveExercise=async function(){
 };
 
 window.delEx=async function(id){
-  if(!confirm('¿Eliminar este ejercicio?'))return;
+  if(!await uiConfirm('¿Eliminar este ejercicio?'))return;
   await deleteDoc(doc(db,'exercises',id));
   exDB=exDB.filter(e=>e.id!==id);renderExDB();toast('🗑️ Eliminado');
 };
@@ -5299,7 +5337,7 @@ window.openContact=function(){document.getElementById('contact-modal').classList
 window.sendWhatsApp=function(){
   const name=document.getElementById('ct-name').value.trim();
   const msg=document.getElementById('ct-msg').value.trim();
-  if(!msg){alert('Escribí un mensaje.');return}
+  if(!msg){uiAlert('Escribí un mensaje.');return}
   const text=encodeURIComponent((name?'Hola Angel! Soy '+name+'. ':'Hola Angel! ')+msg);
   window.open('https://wa.me/5491172399988?text='+text,'_blank');
   document.getElementById('contact-modal').classList.remove('open');
@@ -5320,7 +5358,7 @@ window.saveSessionNote=async function(cId,dIdx){
 };
 
 window.deleteNote=async function(cId,dIdx,noteIdx){
-  if(!confirm('¿Borrar esta nota?'))return;
+  if(!await uiConfirm('¿Borrar esta nota?'))return;
   const c=clients.find(cl=>cl.id===cId);
   const key=`snote-w${cvWeekInfo[cId]?.curKey||c.activeWeek||1}-${dIdx}`;
   if(!c.progress[key])return;
@@ -5392,7 +5430,7 @@ window.sembrarPlanDesafioGluteos=async function(){
       return;
     }
   }
-  if(!confirm('¿Crear el plan "Desafío Glúteos 21 días" en Planes Grupales? Solo hace falta una vez; después lo editás como cualquier otro plan.'))return;
+  if(!await uiConfirm('¿Crear el plan "Desafío Glúteos 21 días" en Planes Grupales? Solo hace falta una vez; después lo editás como cualquier otro plan.'))return;
   const id='plan'+Date.now();
   const weeks=buildDesafioGluteosWeeks();
   const plan={
@@ -5873,7 +5911,7 @@ window.addUniAlumnoToPlan=async function(ai){
   if(!a)return;
   const planId=document.getElementById(`uni-addplan-${ai}`).value;
   const plan=planes.find(p=>p.id===planId);
-  if(!plan){alert('Elegí un plan.');return}
+  if(!plan){uiAlert('Elegí un plan.');return}
   const weekSel=document.getElementById(`uni-addweek-${ai}`);
   const startWeek=weekSel&&weekSel.value?parseInt(weekSel.value):1;
   // Si ya es un alumno con cuenta (subscriber), el member queda vinculado con
@@ -5887,7 +5925,7 @@ window.addUniAlumnoToPlan=async function(ai){
     expiry='';
   }else{
     expiry=document.getElementById(`uni-addexp-${ai}`).value;
-    if(!expiry){alert('Elegí la fecha de vencimiento.');return}
+    if(!expiry){uiAlert('Elegí la fecha de vencimiento.');return}
     id='m'+Date.now()+Math.floor(Math.random()*1000);
   }
   const member={id,name:a.name,email:a.email,status:'active',expiry,addedAt:new Date().toLocaleDateString('es-AR'),startDate:pickedStartDate(`uni-addstart-${ai}`),startWeek};
@@ -5952,9 +5990,9 @@ async function addClientToGroupPlan(){
   if(!c)return;
   const planId=document.getElementById('ec-addplan').value;
   const plan=planes.find(p=>p.id===planId);
-  if(!plan){alert('Elegí un plan.');return}
+  if(!plan){uiAlert('Elegí un plan.');return}
   const expiry=document.getElementById('ec-addplan-exp').value;
-  if(!expiry){alert('Elegí la fecha de vencimiento.');return}
+  if(!expiry){uiAlert('Elegí la fecha de vencimiento.');return}
   const weekSel=document.getElementById('ec-addplan-week');
   const startWeek=weekSel&&weekSel.value?parseInt(weekSel.value):1;
   const member={id:'m'+Date.now()+Math.floor(Math.random()*1000),name:c.name,email:c.email||'',status:'active',expiry,addedAt:new Date().toLocaleDateString('es-AR'),startDate:pickedStartDate('ec-addplan-start'),startWeek};
@@ -5970,7 +6008,7 @@ window.addClientToGroupPlan=addClientToGroupPlan;
 // Deja que el entrenador ponga a mano el vencimiento de un alumno en un plan grupal (igual que en planes personalizados)
 async function updateMemberExpiry(planId,memberId){
   const input=document.getElementById(`alu-exp-${planId}-${memberId}`);
-  if(!input||!input.value){alert('Elegí una fecha.');return}
+  if(!input||!input.value){uiAlert('Elegí una fecha.');return}
   const plan=planes.find(p=>p.id===planId);
   const m=plan?.members?.find(m=>m.id===memberId);
   if(!plan||!m)return;
@@ -5984,7 +6022,7 @@ async function updateMemberExpiry(planId,memberId){
 window.updateMemberExpiry=updateMemberExpiry;
 
 async function removeMemberFromAlumnos(planId,memberId){
-  if(!confirm('¿Sacar a este alumno de este plan?'))return;
+  if(!await uiConfirm('¿Sacar a este alumno de este plan?'))return;
   const plan=planes.find(p=>p.id===planId);
   plan.members=plan.members.filter(m=>m.id!==memberId);
   await setDoc(doc(db,'planes',planId),plan);
@@ -5997,7 +6035,7 @@ window.removeMemberFromAlumnos=removeMemberFromAlumnos;
 async function deleteAlumnoCompleto(ai){
   const a=alumnosUniCache[ai];
   if(!a)return;
-  if(!confirm(`¿Borrar a ${a.name} por completo? Se elimina su plan personal, su lugar en planes grupales y su suscripción, con todo su progreso registrado. Esta acción no se puede deshacer.`))return;
+  if(!await uiConfirm(`¿Borrar a ${a.name} por completo? Se elimina su plan personal, su lugar en planes grupales y su suscripción, con todo su progreso registrado. Esta acción no se puede deshacer.`))return;
   for(const prog of a.programs){
     if(prog.type==='personal'){
       await deleteDoc(doc(db,'clients',prog.client.id));
@@ -6043,7 +6081,7 @@ document.getElementById('np-days').addEventListener('change',function(){buildDay
 
 async function savePlan(){
   const name=document.getElementById('np-name').value.trim();
-  if(!name){alert('Ingresá el nombre del plan.');return}
+  if(!name){uiAlert('Ingresá el nombre del plan.');return}
   const count=parseInt(document.getElementById('np-days').value)||3;
   const id='plan'+Date.now();
   npWeeklyData[npCurrentWeek]=collectDays('np-days-container',count);
@@ -6184,7 +6222,7 @@ window.agregarCategoriaSuscripcion=async function(){
 
 window.eliminarCategoriaSuscripcion=async function(id){
   const label=planesFijosCache[id]?.label||LEGACY_CAT_LABELS[id]||id;
-  if(!confirm(`¿Eliminar la categoría "${label}"? Los alumnos ya suscriptos a esta categoría no van a poder acceder a su plan hasta que les cambies la categoría manualmente en Suscriptores.`))return;
+  if(!await uiConfirm(`¿Eliminar la categoría "${label}"? Los alumnos ya suscriptos a esta categoría no van a poder acceder a su plan hasta que les cambies la categoría manualmente en Suscriptores.`))return;
   await deleteDoc(doc(db,'planesFijos',id));
   delete planesFijosCache[id];
   toast('🗑️ Categoría eliminada');
@@ -6328,10 +6366,10 @@ window.filtrarCargarComoBase=function(){
   </div>`).join('')||'<p style="color:var(--mu);font-size:.85rem">Sin resultados.</p>';
 };
 
-window.aplicarBaseEnEdicion=function(sourcePlanId){
+window.aplicarBaseEnEdicion=async function(sourcePlanId){
   const src=planes.find(p=>p.id===sourcePlanId);
   if(!src)return;
-  if(!confirm(`¿Reemplazar los días actuales por los de "${src.name}"? No se guarda hasta que apretés "Guardar cambios".`))return;
+  if(!await uiConfirm(`¿Reemplazar los días actuales por los de "${src.name}"? No se guarda hasta que apretés "Guardar cambios".`))return;
   epWeeklyData=src.weeks&&Object.keys(src.weeks).length?JSON.parse(JSON.stringify(src.weeks)):{1:JSON.parse(JSON.stringify(src.days||[]))};
   epCurrentWeek=src.activeWeek&&epWeeklyData[src.activeWeek]?src.activeWeek:Object.keys(epWeeklyData).map(Number)[0]||1;
   document.getElementById('ep-totalweeks').value=src.totalWeeks||12;
@@ -6354,7 +6392,7 @@ window.irAEditarPlanPersonal=function(planId){
 };
 
 async function deletePlan(id){
-  if(!confirm('¿Eliminar este plan?'))return;
+  if(!await uiConfirm('¿Eliminar este plan?'))return;
   await deleteDoc(doc(db,'planes',id));
   planes=planes.filter(p=>p.id!==id);
   renderPlanesList();toast('🗑️ Plan eliminado');
@@ -6411,7 +6449,7 @@ window.confirmUseAsBase=async function(){
       targetPlanId=await crearPlanPersonalVacio(sub.name||sub.email);
       await updateDoc(subRef,{categoria:'__personal__',planId:targetPlanId});
     }else{
-      if(!confirm(`¿Sobreescribir el plan personal de ${sub.name||sub.email} con "${plan.name}"? Se reemplazan sus semanas actuales.`))return;
+      if(!await uiConfirm(`¿Sobreescribir el plan personal de ${sub.name||sub.email} con "${plan.name}"? Se reemplazan sus semanas actuales.`))return;
     }
     const personalPlan=planes.find(p=>p.id===targetPlanId);
     personalPlan.weeks=JSON.parse(JSON.stringify(plan.weeks||{}));
@@ -6427,7 +6465,7 @@ window.confirmUseAsBase=async function(){
   let clientId=selId;
   if(!clientId){
     const name=document.getElementById('ub-new-name').value.trim();
-    if(!name){alert('Ingresá el nombre del alumno.');return}
+    if(!name){uiAlert('Ingresá el nombre del alumno.');return}
     const email=document.getElementById('ub-new-email').value.trim();
     clientId='c'+Date.now();
     const newClient={id:clientId,name,age:'',weight:'',level:plan.level||'',goal:'',routineName:plan.name,notes:'',email,whatsapp:'',
@@ -6438,7 +6476,7 @@ window.confirmUseAsBase=async function(){
     clients.push(newClient);
   }else{
     const c=clients.find(x=>x.id===clientId);if(!c)return;
-    if(!confirm(`¿Sobreescribir el plan de ${c.name} con "${plan.name}"? Se reemplazan sus semanas actuales.`))return;
+    if(!await uiConfirm(`¿Sobreescribir el plan de ${c.name} con "${plan.name}"? Se reemplazan sus semanas actuales.`))return;
     c.weeks=JSON.parse(JSON.stringify(plan.weeks||{}));
     c.totalWeeks=plan.totalWeeks||12;
     c.mesoWeeks=plan.mesoWeeks||4;
@@ -6803,7 +6841,7 @@ async function renderMembersList(planId){
 }
 
 window.quitarExtraDesafio=async function(uid,planId){
-  if(!confirm('¿Quitarle el Desafío Glúteos como plan adicional a esta alumna?'))return;
+  if(!await uiConfirm('¿Quitarle el Desafío Glúteos como plan adicional a esta alumna?'))return;
   await updateDoc(doc(db,'subscribers',uid),{extraDesafioGluteos:null});
   toast('✅ Desafío Glúteos quitado');
   renderMembersList(planId);
@@ -6835,13 +6873,13 @@ window.cambiarSemanaCliente=async function(clientId){
 
 async function addMember(){
   const name=document.getElementById('nm-name').value.trim();
-  if(!name){alert('Ingresá el nombre.');return}
+  if(!name){uiAlert('Ingresá el nombre.');return}
   const email=document.getElementById('nm-email').value.trim();
   const status=document.getElementById('nm-status').value;
   const addedAt=new Date().toLocaleDateString('es-AR');
   const startWeek=parseInt(document.getElementById('nm-startweek').value)||1;
   const expiry=document.getElementById('nm-expiry').value;
-  if(!expiry){alert('Ingresá la fecha de vencimiento.');return}
+  if(!expiry){uiAlert('Ingresá la fecha de vencimiento.');return}
 
   // Planes seleccionados: el plan actual + los checkboxes marcados
   const extraIds=[...document.querySelectorAll('#nm-extra-plans input:checked')].map(cb=>cb.value);
@@ -6896,14 +6934,14 @@ async function renewMember(planId,memberId){
   const link=`${location.origin}${location.pathname}?plan=${planId}&member=${memberId}`;
   const newExpiry=new Date(m.expiry+'T00:00:00').toLocaleDateString('es-AR');
   const msg=encodeURIComponent(`🎉 Hola ${m.name}! Tu acceso al plan "${plan.name}" fue renovado.\n\n📅 Nuevo vencimiento: ${newExpiry}\n\n💪 Accedé a tu rutina acá:\n${link}`);
-  if(confirm(`¿Enviar WhatsApp de renovación a ${m.name}?`)){
+  if(await uiConfirm(`¿Enviar WhatsApp de renovación a ${m.name}?`)){
     window.open(`https://wa.me/?text=${msg}`,'_blank');
   }
 }
 window.renewMember=renewMember;
 
 async function removeMember(planId,memberId){
-  if(!confirm('¿Eliminar este alumno?'))return;
+  if(!await uiConfirm('¿Eliminar este alumno?'))return;
   const plan=planes.find(p=>p.id===planId);
   plan.members=plan.members.filter(m=>m.id!==memberId);
   await setDoc(doc(db,'planes',planId),plan);
@@ -7505,7 +7543,7 @@ window.saveGroupNote=async function(planId,memberId,dIdx){
 };
 
 window.deleteGroupNote=async function(planId,memberId,dIdx,noteIdx){
-  if(!confirm('¿Borrar esta nota?'))return;
+  if(!await uiConfirm('¿Borrar esta nota?'))return;
   const plan=planes.find(p=>p.id===planId);
   const member=resolveGroupMember(plan,memberId);if(!member)return;
   const key=`snote-w${getMemberCurrentWeekKey(plan,member)}-${dIdx}`;
@@ -7742,7 +7780,7 @@ window.saveAlumnoNote=async function(dIdx){
 };
 
 window.deleteAlumnoNote=async function(dIdx,noteIdx){
-  if(!confirm('¿Borrar esta nota?'))return;
+  if(!await uiConfirm('¿Borrar esta nota?'))return;
   const subWeek=getMemberCurrentWeekKey(alumnoState.plan,{startWeek:alumnoState.sub.startWeek||1,startDate:alumnoState.sub.startDate||''});
   const key=`snote-w${subWeek}-${dIdx}`;
   alumnoState.sub.progress[key].splice(noteIdx,1);
@@ -7786,7 +7824,7 @@ window.cambiarSemanaAlumno=async function(uid){
   const sel=document.getElementById('susc-changeweek-'+uid);
   if(!sel)return;
   const startWeek=parseInt(sel.value);
-  if(!confirm(`¿Cambiar ahora a la semana ${startWeek}?`))return;
+  if(!await uiConfirm(`¿Cambiar ahora a la semana ${startWeek}?`))return;
   const startDate=document.getElementById('susc-start-'+uid)?.value||defaultStartDate();
   await updateDoc(doc(db,'subscribers',uid),{startWeek,startDate});
   toast(`✅ Ahora ve la semana ${startWeek}`);
@@ -7813,7 +7851,7 @@ window.editarVencimientoSuscriptor=async function(uid){
 // "activar" de toggleAlumnoActivo) por una sola acción directa; el ajuste
 // fino de vencimiento/semana/categoría sigue disponible en la ficha expandida.
 window.activarAlumnoDirecto=async function(uid){
-  if(!confirm('¿Activar a este alumno con acceso por 30 días desde hoy?'))return;
+  if(!await uiConfirm('¿Activar a este alumno con acceso por 30 días desde hoy?'))return;
   const subRef=doc(db,'subscribers',uid);
   const subSnap=await getDoc(subRef);
   if(!subSnap.exists())return;
@@ -7838,7 +7876,7 @@ window.activarAlumnoDirecto=async function(uid){
 
 window.toggleAlumnoActivo=async function(uid,currentActivo,ai){
   const next=!currentActivo;
-  if(!confirm(next?'¿Reactivar a este alumno? Recupera acceso a todos sus programas.':'¿Desactivar a este alumno? Pierde acceso a todos sus programas, pero no se borra nada y puede reactivarse después.'))return;
+  if(!await uiConfirm(next?'¿Reactivar a este alumno? Recupera acceso a todos sus programas.':'¿Desactivar a este alumno? Pierde acceso a todos sus programas, pero no se borra nada y puede reactivarse después.'))return;
   await updateDoc(doc(db,'subscribers',uid),{activo:next});
   toast(next?'🟢 Alumno activado':'⚪ Alumno desactivado');
   suscriptoresCache=null;
@@ -7895,7 +7933,7 @@ window.cambiarCategoriaSuscriptorManual=async function(uid){
 // asignarle otra categoría/plan desde cero, sin el bloqueo de
 // cambiarCategoriaSuscriptorManual ("Ya tiene un plan personalizado asignado.").
 window.borrarPlanSuscriptor=async function(uid,planId){
-  if(!confirm('¿Borrar el plan personalizado de este alumno? Se pierde el plan y todo su progreso registrado. Después vas a poder asignarle otra categoría o plan.'))return;
+  if(!await uiConfirm('¿Borrar el plan personalizado de este alumno? Se pierde el plan y todo su progreso registrado. Después vas a poder asignarle otra categoría o plan.'))return;
   await deleteDoc(doc(db,'planes',planId));
   planes=planes.filter(p=>p.id!==planId);
   await updateDoc(doc(db,'subscribers',uid),{categoria:'',planId:null,status:'pending',progress:{}});
@@ -8009,7 +8047,7 @@ window.altaManualAlumno=async function(nameId,emailId,passId,catId,refreshFn){
 // el email de reseteo de Firebase para que la defina él mismo.
 window.cambiarPasswordAlumnoAdmin=async function(email,name){
   if(!email){toast('⚠️ Este alumno no tiene email cargado');return}
-  if(!confirm(`¿Mandarle a ${name} (${email}) un email para que defina una contraseña nueva?`))return;
+  if(!await uiConfirm(`¿Mandarle a ${name} (${email}) un email para que defina una contraseña nueva?`))return;
   try{
     await sendPasswordResetEmail(auth,email);
     toast('✅ Le llegó un email a '+email+' para definir su contraseña nueva');
@@ -8027,7 +8065,7 @@ window.cambiarPasswordAlumnoAdmin=async function(email,name){
 // alta antes de pedir "Nombre y apellido" en /suscripcion, que quedaron con
 // el email como nombre).
 window.editarNombreAlumno=async function(uid,nombreActual){
-  const nuevo=window.prompt('Nombre y apellido:',nombreActual||'');
+  const nuevo=await uiPrompt('Nombre y apellido:',nombreActual||'');
   if(nuevo===null)return;
   const trimmed=nuevo.trim();
   if(!trimmed){toast('⚠️ El nombre no puede quedar vacío');return}
@@ -8044,8 +8082,8 @@ window.migrarClienteAAlumno=async function(clientId){
   const c=clients.find(cl=>cl.id===clientId);
   if(!c)return;
   if(!c.email){toast('⚠️ Este alumno no tiene email cargado, necesario para crear la cuenta. Editalo primero.');return}
-  if(!confirm(`¿Migrar a ${c.name} a una cuenta con usuario y contraseña? Vas a elegir vos la contraseña y deja de necesitar el link viejo.`))return;
-  const tempPass=window.prompt(`Contraseña para la cuenta de ${c.name} (mínimo 6 caracteres):`);
+  if(!await uiConfirm(`¿Migrar a ${c.name} a una cuenta con usuario y contraseña? Vas a elegir vos la contraseña y deja de necesitar el link viejo.`))return;
+  const tempPass=await uiPrompt(`Contraseña para la cuenta de ${c.name} (mínimo 6 caracteres):`);
   if(!tempPass)return;
   if(tempPass.length<6){toast('⚠️ La contraseña tiene que tener al menos 6 caracteres');return}
   try{
@@ -8107,8 +8145,8 @@ window.migrarMiembroGrupalASuscriptor=async function(planId,memberId){
   const m=plan?.members?.find(mm=>mm.id===memberId);
   if(!m)return;
   if(!m.email){toast('⚠️ Este alumno no tiene email cargado, necesario para crear la cuenta. Agregaselo primero.');return}
-  if(!confirm(`¿Crear una cuenta con usuario y contraseña para ${m.name}? Vas a elegir vos la contraseña y de ahí en más lo controlás con un solo switch.`))return;
-  const tempPass=window.prompt(`Contraseña para la cuenta de ${m.name} (mínimo 6 caracteres):`);
+  if(!await uiConfirm(`¿Crear una cuenta con usuario y contraseña para ${m.name}? Vas a elegir vos la contraseña y de ahí en más lo controlás con un solo switch.`))return;
+  const tempPass=await uiPrompt(`Contraseña para la cuenta de ${m.name} (mínimo 6 caracteres):`);
   if(!tempPass)return;
   if(tempPass.length<6){toast('⚠️ La contraseña tiene que tener al menos 6 caracteres');return}
   try{
@@ -9060,7 +9098,7 @@ window.marcarSolicitudProcesada=async function(docId){
 };
 
 window.eliminarSolicitud=async function(docId){
-  if(!confirm('¿Eliminar esta solicitud?'))return;
+  if(!await uiConfirm('¿Eliminar esta solicitud?'))return;
   await deleteDoc(doc(db,'solicitudes',docId));
   solicitudes=solicitudes.filter(s=>s._docId!==docId);
   toast('🗑️ Eliminada');
@@ -9162,7 +9200,7 @@ window.asignarAPlanGrupal=function(docId){
   const s=solicitudes.find(x=>x._docId===docId);
   if(!s)return;
   const gruposPlanes=planes.filter(p=>p.kind!=='personal');
-  if(!gruposPlanes.length){alert('Todavía no creaste ningún plan grupal.');return}
+  if(!gruposPlanes.length){uiAlert('Todavía no creaste ningún plan grupal.');return}
   const modal=document.getElementById('modal-bg');
   modal.style.display='flex';
   modal.innerHTML=`<div style="background:var(--s1);border-radius:16px;padding:24px;width:100%;max-width:420px;max-height:90vh;overflow-y:auto;position:relative">
@@ -9190,7 +9228,7 @@ window.confirmarAsignacionPlanGrupal=async function(docId){
   const s=solicitudes.find(x=>x._docId===docId);
   if(!s)return;
   const planIds=[...document.querySelectorAll('#asig-plan-list input:checked')].map(cb=>cb.value);
-  if(!planIds.length){alert('Elegí al menos un plan.');return}
+  if(!planIds.length){uiAlert('Elegí al menos un plan.');return}
   const notes=notasDeSolicitud(s);
   const addedAt=new Date().toLocaleDateString('es-AR');
   const assignedNames=[];
@@ -9216,7 +9254,7 @@ window.confirmarAsignacionPlanGrupal=async function(docId){
 };
 
 window.eliminarSolicitud=async function(docId){
-  if(!confirm('¿Eliminar esta solicitud?'))return;
+  if(!await uiConfirm('¿Eliminar esta solicitud?'))return;
   await deleteDoc(doc(db,'solicitudes',docId));
   solicitudes=solicitudes.filter(s=>s._docId!==docId);
   toast('🗑️ Eliminada');
@@ -9250,7 +9288,7 @@ window.toggleMeso=function(id){
   if(el) el.style.display=el.style.display==='none'?'block':'none';
 }
 window.deleteLog=async function(clientId,ekey,logIdx){
-  if(!confirm('¿Borrar este registro?'))return;
+  if(!await uiConfirm('¿Borrar este registro?'))return;
   const dIdx=parseInt(ekey.split('-')[1]);
   if(clientId.startsWith('alu-')){
     const logKey=clientId+'-'+ekey+'-logs';

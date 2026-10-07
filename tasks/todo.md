@@ -1,3 +1,16 @@
+# Plan: Reemplazar alert/confirm/prompt por modales — HECHO, sin deploy (2026-10-07)
+
+- [x] Helper `uiDialog` + `uiAlert` / `uiConfirm` / `uiPrompt` (promesas, junto a `toast`). Usa `.modal-bg`/`.modal` existentes, z-index 10001 para quedar arriba de otros modales.
+- [x] Confirmaciones destructivas (borrar, eliminar, sacar, quitar, sobreescribir, reemplazar, desactivar) con botón rojo "Sí, confirmar".
+- [x] Enter acepta, Escape cancela, tocar afuera cancela.
+- [x] 55 usos reemplazados en `index.html`. Pasaron a async: `promptWeekNumber`, `onWeekChange`, `renumberWeek`, `deleteWeek`, `pegarSemana`, `deleteDayBlock`, `aplicarBaseEnEdicion` (todas se llaman desde onclick/onchange).
+
+## Revisión
+- Verificado: sintaxis de los 4 scripts; en navegador a 390px: confirmar (cancelar no ejecuta nada), aviso (Escape lo cierra), prompt (valor por defecto seleccionado y con foco).
+- Fuera de alcance: los otros HTML (`anamnesis_digital.html`, `contenido.html`, etc.).
+
+---
+
 # Plan: Seguimiento de alumnos + navegación móvil — HECHO, sin deploy (2026-10-07)
 
 Datos que ya existen: notas de sesión (`snote-w..`, `{date,text}`) y cargas (`...-logs`, `{date,...,note?}`) con fecha d/m/aaaa, sin hora. Viven en 3 lugares: `clients/{id}.progress`, `planes/{id}/progreso/{memberId}` (grupos y desafío extra) y `subscribers/{uid}.progress`. Tildar series no guarda fecha.
