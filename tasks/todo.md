@@ -1,3 +1,45 @@
+# Plan: Seguimiento de alumnos + navegación móvil — HECHO, sin deploy (2026-10-07)
+
+Datos que ya existen: notas de sesión (`snote-w..`, `{date,text}`) y cargas (`...-logs`, `{date,...,note?}`) con fecha d/m/aaaa, sin hora. Viven en 3 lugares: `clients/{id}.progress`, `planes/{id}/progreso/{memberId}` (grupos y desafío extra) y `subscribers/{uid}.progress`. Tildar series no guarda fecha.
+
+## A. Recolector de actividad (base de B y C)
+- [x] `collectActividad(subSnap?)`: reusa `buildAlumnosUnificadoGroups` (agrupa por alumno), carga el progreso de los planes grupales, junta todos los `progress` de cada alumno y saca: último día con actividad, notas de sesión y notas de ejercicio (con fecha), y si tiene algún programa activo.
+- [x] Marca de actividad al tildar series: `toggleSerieOptimistic` guarda `progress._ultimo = hoy`. Así cuenta como entreno aunque no cargue pesos ni deje nota. (Revisar que ningún código que recorre `progress` se rompa con esa clave.)
+- [x] `buildAlumnosUnificadoGroups` acepta el `subSnap` ya leído, para no leer `subscribers` dos veces.
+
+## B. Campanita
+- [x] Nuevo aviso `💬 Juan: "me dolió la rodilla en…"` por cada nota de las últimas 48 h. Al tocarlo va a Actividad. Se descarta igual que los demás (id por alumno+fecha+texto).
+
+## C. Pantalla "📈 Actividad"
+- [x] Resumen arriba: entrenaron esta semana · inactivos +7 días · sin registros.
+- [x] "💬 Notas recientes" (últimos 14 días): alumno, fecha, texto. Tocar → abre su ficha en Alumnos.
+- [x] Lista de alumnos activos ordenada por último entreno, con semáforo: verde ≤3 días, amarillo 4–7, rojo +7, gris sin registros. Tocar → su ficha.
+- [x] Botón "Actualizar" (relee el progreso de los grupos).
+
+## D. Navegación móvil (punto 1) — solo pantallas ≤640px
+- [x] Arriba: logo + campanita (barra de ~52px en vez de ~173px).
+- [x] Barra fija abajo: 👤 Alumnos · 📈 Actividad · 👥 Planes · 🧩 Plantillas · ☰ Más.
+- [x] "Más" abre un panel con: 📚 Ejercicios, 👁️ Simular alumno, 📬 Solicitudes, 🌙 Tema, 🚪 Salir.
+- [x] El toast y el final de cada pantalla se corren hacia arriba para que la barra no tape nada. Los timers siguen por encima de la barra (como hoy).
+- [x] En compu queda igual que ahora, con la pestaña nueva "📈 Actividad".
+
+## E. Panel de Alumnos (punto 2)
+- [x] Los 3 bloques (link de suscripción, link del desafío, alta manual) van dentro de una sola tarjeta plegable "➕ Sumar alumnos", cerrada por defecto, arriba del buscador (ocupa una línea).
+
+## Verificación
+- [x] Sintaxis del módulo + simular `collectActividad` con progreso falso (las 3 fuentes, fechas viejas/nuevas, alumno en 2 programas).
+- [x] Navegador a 390px y a escritorio: barras, panel "Más", Actividad, panel de Alumnos. (Campanita: no probada en navegador, necesita sesión.)
+- [ ] Confirmar con cuenta real que la vista del alumno no muestra la barra de abajo (por código: queda tapada por #view-alumno y se oculta con #main-nav).
+
+
+## Revisión
+- `loadPlanProgreso` ahora guarda la promesa (dos llamadas simultáneas ya no ven datos a medias) y acepta `fresh` para releer; `planProgresoDocs` expone también el progreso del desafío extra.
+- `escHtml` nuevo: notas de alumnos en campanita y Actividad se escapan.
+- Barra de abajo vive dentro de `#main-nav`, así se oculta sola en la vista pública de un plan.
+- Verificado: sintaxis de los 4 scripts, simulación de `collectActividad` (3 fuentes, desafío extra, vencido, `_ultimo`), y navegador a 390px y 1280px con datos falsos (barra, menú Más, tarjeta plegable, Actividad, escapado).
+- No probado con cuenta real (Actividad y campanita leen Firestore con sesión de entrenador).
+---
+
 # Plan: Historial de semanas para alumnos — HECHO, sin deploy (2026-10-05)
 
 Datos: el progreso ya se guarda por semana (`w{semana}-{día}-{bloque}`), los pesos con fecha (`...-logs`). No hace falta migrar datos.

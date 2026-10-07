@@ -26,6 +26,20 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:13px 2
 .tab-btn{padding:6px 13px;border-radius:8px;border:none;cursor:pointer;font-size:.8rem;font-weight:500;transition:all .2s;background:transparent;color:var(--mu);font-family:inherit}
 .tab-btn.active{background:var(--ac);color:#fff}
 .tab-btn:hover:not(.active){background:var(--s2);color:var(--tx)}
+#bottom-nav,#mas-menu,#mas-menu-bg{display:none}
+@media (max-width:640px){
+  .nav-tabs,#theme-btn,#nav-logout,.nav-sub{display:none!important}
+  #bottom-nav{display:flex;position:fixed;left:0;right:0;bottom:0;background:var(--s1);border-top:1px solid var(--bd);padding:6px 4px calc(6px + env(safe-area-inset-bottom));z-index:101}
+  .bn-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;color:var(--mu);font-family:inherit;font-size:.68rem;font-weight:600;padding:4px 0;border-radius:10px;cursor:pointer}
+  .bn-btn span{font-size:1.15rem;line-height:1.2}
+  .bn-btn.active{color:var(--ac2);background:var(--s2)}
+  #mas-menu-bg.open{display:block;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:101}
+  #mas-menu.open{display:flex;flex-direction:column;position:fixed;right:8px;left:8px;bottom:calc(70px + env(safe-area-inset-bottom));background:var(--s1);border:1px solid var(--bd);border-radius:var(--ra);padding:6px;z-index:102;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+  #mas-menu button{background:none;border:none;color:var(--tx);font-family:inherit;font-size:.92rem;text-align:left;padding:13px 14px;border-radius:10px;cursor:pointer}
+  #mas-menu button:active{background:var(--s2)}
+  .view{padding-bottom:90px!important}
+  #toast{bottom:84px!important}
+}
 .view{display:none;padding:20px;max-width:980px;margin:0 auto}
 .view.active{display:block}
 /* Editar un plan personalizado (1:1 de un alumno) reusa la pantalla de
@@ -529,6 +543,7 @@ setTimeout(()=>{
   </div>
   <div class="nav-tabs">
     <button class="tab-btn active" onclick="showView('trainer',this)">🏋️ Entrenador</button>
+    <button class="tab-btn" onclick="showView('actividad',this)">📈 Actividad</button>
     <button class="tab-btn" onclick="showView('client',this)">👁️ Simular alumno</button>
     <button class="tab-btn" onclick="showView('exdb',this)">📚 Ejercicios</button>
     <button class="tab-btn" onclick="showView('templates',this)">🧩 Plantillas</button>
@@ -543,7 +558,23 @@ setTimeout(()=>{
     <div id="notif-panel" style="display:none;position:absolute;top:calc(100% + 6px);right:0;width:280px;max-height:360px;overflow-y:auto;background:var(--s1);border:1px solid var(--bd);border-radius:var(--ra);box-shadow:0 8px 24px rgba(0,0,0,.25);z-index:100"></div>
   </div>
   <button id="theme-btn" onclick="toggleTheme()" style="background:var(--s2);border:1px solid var(--bd);color:var(--tx);border-radius:9px;padding:6px 12px;cursor:pointer;font-size:1rem;transition:all .2s;flex-shrink:0" title="Cambiar tema">🌙</button>
-  <button onclick="doLogout()" style="background:var(--s2);border:1px solid var(--bd);color:var(--tx);border-radius:9px;padding:6px 12px;cursor:pointer;font-size:.85rem;transition:all .2s;flex-shrink:0" title="Cerrar sesión">🚪 Salir</button>
+  <button id="nav-logout" onclick="doLogout()" style="background:var(--s2);border:1px solid var(--bd);color:var(--tx);border-radius:9px;padding:6px 12px;cursor:pointer;font-size:.85rem;transition:all .2s;flex-shrink:0" title="Cerrar sesión">🚪 Salir</button>
+  <!-- Navegación de celular: va dentro de #main-nav para ocultarse junto con él (vista pública de un plan) -->
+  <div id="bottom-nav">
+    <button class="bn-btn active" data-view="trainer" onclick="irAVista('trainer')"><span>👤</span>Alumnos</button>
+    <button class="bn-btn" data-view="actividad" onclick="irAVista('actividad')"><span>📈</span>Actividad</button>
+    <button class="bn-btn" data-view="planes" onclick="irAVista('planes')"><span>👥</span>Planes</button>
+    <button class="bn-btn" data-view="templates" onclick="irAVista('templates')"><span>🧩</span>Plantillas</button>
+    <button class="bn-btn" id="bn-mas" onclick="toggleMasMenu()"><span>☰</span>Más</button>
+  </div>
+  <div id="mas-menu-bg" onclick="toggleMasMenu(false)"></div>
+  <div id="mas-menu">
+    <button onclick="irAVista('exdb')">📚 Ejercicios</button>
+    <button onclick="irAVista('client')">👁️ Simular alumno</button>
+    <button onclick="irAVista('solicitudes')">📬 Solicitudes</button>
+    <button onclick="toggleTheme();toggleMasMenu(false)">🌓 Cambiar tema</button>
+    <button onclick="doLogout()">🚪 Salir</button>
+  </div>
 </nav>
 
 <!-- TRAINER -->
@@ -557,6 +588,11 @@ setTimeout(()=>{
     <button class="itab" id="it-macro" style="display:none" onclick="showPanel('macro',this)">📊 Macrociclo</button>
   </div>
   <div id="panel-alumnosuni">
+    <div class="card collapsed" id="sumar-alumnos-card">
+      <div class="collapsible-card-hdr" onclick="document.getElementById('sumar-alumnos-card').classList.toggle('collapsed')">
+        <h2 style="margin:0">➕ Sumar alumnos</h2><span class="card-toggle">▼</span>
+      </div>
+      <div class="collapsible-card-body">
     <div class="card" style="margin-bottom:16px;padding:16px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
       <div><div style="font-weight:700;font-size:.9rem">🔗 Link de suscripción</div><div class="sub" style="margin-bottom:0">Pasáselo a un alumno nuevo para que se registre solo.</div></div>
       <button class="btn bcy sm" onclick="copyLink('https://angelmeier-fit.web.app/suscripcion')">📋 Copiar link</button>
@@ -576,6 +612,8 @@ setTimeout(()=>{
       <div class="fg full" style="margin-bottom:8px"><label>Contraseña</label><input id="uni-new-pass" type="text" placeholder="Mínimo 6 caracteres"></div>
       <div class="fg full" style="margin-bottom:10px"><label>Categoría</label><select id="uni-new-cat"></select></div>
       <button class="btn bp" onclick="altaManualAlumno('uni-new-name','uni-new-email','uni-new-pass','uni-new-cat',renderAlumnosUnificado)" style="width:100%;justify-content:center">Crear alumno</button>
+    </div>
+      </div>
     </div>
     <input id="uni-search" placeholder="🔍 Buscar alumno por nombre o email..." oninput="renderAlumnosUnificado(this.value)" style="margin-bottom:12px;font-size:.88rem">
     <div id="alumnosuni-list"></div>
@@ -1049,6 +1087,15 @@ setTimeout(()=>{
 </div>
 
 <!-- SOLICITUDES -->
+<div id="view-actividad" class="view">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+    <h1>Actividad</h1>
+    <button class="btn bg2 sm" onclick="renderActividad()">🔄 Actualizar</button>
+  </div>
+  <p class="sub">Cómo vienen tus alumnos: último entreno y lo que te escribieron.</p>
+  <div id="actividad-content"></div>
+</div>
+
 <div id="view-solicitudes" class="view">
   <h1>📬 Solicitudes de Anamnesis</h1>
   <p class="sub">Personas que completaron la anamnesis digital. Revisalas y convertílas en clientes con 1 click.</p>
@@ -2378,8 +2425,27 @@ function showView(v,btn){
   if(v==='templates')renderTemplatesView();
   if(v==='planes'){renderPlanesList();renderPlanesFijosPanel();}
   if(v==='solicitudes')renderSolicitudes();
+  if(v==='actividad')renderActividad();
+  document.querySelectorAll('.bn-btn').forEach(b=>b.classList.toggle('active',
+    b.dataset.view===v||(b.id==='bn-mas'&&['exdb','client','solicitudes'].includes(v))));
 }
 window.showView=showView;
+// La barra de abajo (celular) reusa los botones de pestaña de arriba, que siguen
+// en el DOM aunque estén ocultos: showView necesita el botón para marcarlo activo.
+function irAVista(v){
+  toggleMasMenu(false);
+  const btn=document.querySelector(`.tab-btn[onclick*="showView('${v}'"]`);
+  if(btn)showView(v,btn);
+  window.scrollTo(0,0);
+}
+window.irAVista=irAVista;
+function toggleMasMenu(open){
+  const menu=document.getElementById('mas-menu');
+  const show=open??!menu.classList.contains('open');
+  menu.classList.toggle('open',show);
+  document.getElementById('mas-menu-bg').classList.toggle('open',show);
+}
+window.toggleMasMenu=toggleMasMenu;
 
 // Recorre days->blocks->exercises y arma un resumen de progreso (último entrenamiento, notas, historial de cargas por ejercicio) leyendo `progress` con las mismas claves que usan toggleSerie/logGym/saveSessionNote
 function buildProgressSummary(progress,days,idPrefix,week){
@@ -4690,6 +4756,8 @@ async function toggleSerieOptimistic(progress,rk,isLast,blockRest,pauseSecs,save
   const prev=progress[rk];
   const done=!prev;
   progress[rk]=done;
+  // Tildar no guarda fecha; _ultimo deja registro del día para la pantalla Actividad
+  if(done)progress._ultimo=todayStr();
   row.classList.toggle('done-row',done);btn.classList.toggle('done',done);
   if(done){
     if(isLast){
@@ -5373,7 +5441,7 @@ window.showPlanesPanel=showPlanesPanel;
 // (Paso B completo: las 4 pantallas viejas que convivían con esta se borraron.)
 let alumnosUniCache=[];
 
-async function buildAlumnosUnificadoGroups(){
+async function buildAlumnosUnificadoGroups(subSnapIn){
   const groups=new Map();
   const keyOf=(name,email)=>((name||'')+'|'+(email||'')).toLowerCase();
   clients.forEach(c=>{
@@ -5393,7 +5461,7 @@ async function buildAlumnosUnificadoGroups(){
   groupByPlan.forEach((byPlan,key)=>{
     byPlan.forEach(({plan,member})=>groups.get(key).programs.push({type:'group',plan,member}));
   });
-  const subSnap=await getDocs(collection(db,'subscribers'));
+  const subSnap=subSnapIn||await getDocs(collection(db,'subscribers'));
   subSnap.docs.forEach(d=>{
     const s={id:d.id,...d.data()};
     const key=keyOf(s.name||s.email,s.email);
@@ -5578,6 +5646,120 @@ async function renderProgramaUnificadoHtml(prog,cats,hasSubscription){
     ${progressHtml}
   </div>`;
 }
+
+const escHtml=s=>String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+
+// Actividad de cada alumno juntando todo su progreso (clients, progreso de
+// planes grupales y subscribers): último día con registros, notas con fecha
+// y si tiene algún programa vigente. Las fechas son d/m/aaaa sin hora.
+async function collectActividad(subSnap,fresh){
+  const groups=await buildAlumnosUnificadoGroups(subSnap);
+  const planIds=new Set();
+  groups.forEach(a=>a.programs.forEach(p=>{
+    if(p.type==='group')planIds.add(p.plan.id);
+    if(p.type==='subscription'&&p.sub.extraDesafioGluteos?.planId)planIds.add(p.sub.extraDesafioGluteos.planId);
+  }));
+  await Promise.all([...planIds].map(id=>{
+    const plan=planes.find(p=>p.id===id);
+    return plan&&loadPlanProgreso(plan,fresh);
+  }));
+  const today=new Date();today.setHours(0,0,0,0);
+  const vigente=exp=>!exp||new Date(exp+'T00:00:00')>=today;
+  return[...groups.values()].map(a=>{
+    const sources=[];let activo=false;
+    a.programs.forEach(p=>{
+      if(p.type==='personal'){
+        sources.push(p.client.progress);
+        activo||=vigente(p.client.expiry);
+      }else if(p.type==='group'){
+        sources.push(p.member.progress);
+        activo||=p.member.status==='active'&&vigente(p.member.expiry);
+      }else{
+        sources.push(p.sub.progress);
+        activo||=p.sub.status==='active'&&vigente(p.sub.expiry);
+        const ex=p.sub.extraDesafioGluteos;
+        if(ex?.planId){
+          sources.push(planProgresoDocs.get(ex.planId)?.[p.uid]);
+          activo||=ex.status==='active'&&vigente(ex.expiry);
+        }
+      }
+    });
+    let last=null;const notas=[];const vistas=new Set();
+    const registrar=date=>{const f=parseARDate(date);if(f&&(!last||f>last))last=f;return f;};
+    sources.forEach(prog=>{
+      for(const k in prog||{}){
+        const v=prog[k];
+        if(k==='_ultimo'){registrar(v);continue;}
+        if(!Array.isArray(v))continue;
+        const esSesion=k.startsWith('snote-');
+        v.forEach(e=>{
+          if(!e?.date)return;
+          const fecha=registrar(e.date);
+          const text=esSesion?e.text:e.note;
+          if(!text||vistas.has(e.date+'|'+text))return;
+          vistas.add(e.date+'|'+text);
+          notas.push({date:e.date,fecha,text,ejercicio:!esSesion});
+        });
+      }
+    });
+    notas.sort((x,y)=>(y.fecha||0)-(x.fecha||0));
+    return{name:a.name,email:a.email,activo,last,notas};
+  });
+}
+
+function abrirFichaAlumno(term){
+  const btn=document.querySelector(`.tab-btn[onclick*="showView('trainer'"]`);
+  if(btn)showView('trainer',btn);
+  showPanel('alumnosuni',document.getElementById('it-alumnosuni'));
+  const search=document.getElementById('uni-search');
+  if(search){search.value=term||'';renderAlumnosUnificado(search.value);}
+  window.scrollTo(0,0);
+}
+window.abrirFichaAlumno=abrirFichaAlumno;
+
+let actividadVista=[];
+async function renderActividad(){
+  const el=document.getElementById('actividad-content');
+  if(!el)return;
+  el.innerHTML='<div style="text-align:center;padding:20px;color:var(--mu)">Cargando...</div>';
+  const subSnap=await getDocs(collection(db,'subscribers'));
+  const todos=await collectActividad(subSnap,true);
+  const today=new Date();today.setHours(0,0,0,0);
+  const diasDesde=f=>f?Math.round((today-f)/86400000):null;
+  actividadVista=todos.filter(a=>a.activo).map(a=>({...a,dias:diasDesde(a.last)}))
+    .sort((x,y)=>(x.dias??1e9)-(y.dias??1e9)||x.name.localeCompare(y.name,undefined,{sensitivity:'base'}));
+  const semana=actividadVista.filter(a=>a.dias!==null&&a.dias<=6).length;
+  const inactivos=actividadVista.filter(a=>a.dias!==null&&a.dias>7).length;
+  const sinReg=actividadVista.filter(a=>a.dias===null).length;
+  const stat=(n,label,color)=>`<div class="card" style="flex:1;min-width:90px;margin:0;padding:12px;text-align:center"><div style="font-size:1.4rem;font-weight:700;color:${color}">${n}</div><div style="font-size:.72rem;color:var(--mu)">${label}</div></div>`;
+  const notas=[];
+  actividadVista.forEach((a,i)=>a.notas.forEach(n=>{
+    const d=diasDesde(n.fecha);
+    if(d!==null&&d<=14)notas.push({...n,i});
+  }));
+  notas.sort((x,y)=>(y.fecha||0)-(x.fecha||0));
+  const notasHtml=notas.length?notas.slice(0,40).map(n=>`<div onclick="abrirFichaAlumno(actividadVista[${n.i}].name)" style="padding:10px 0;border-top:1px solid var(--bd);cursor:pointer">
+      <div style="display:flex;justify-content:space-between;gap:8px;font-size:.78rem"><b>${escHtml(actividadVista[n.i].name)}</b><span style="color:var(--mu);flex-shrink:0">${escHtml(n.date)}${n.ejercicio?' · en un ejercicio':''}</span></div>
+      <div style="font-size:.85rem;margin-top:3px;white-space:pre-wrap">${escHtml(n.text)}</div>
+    </div>`).join(''):'<div style="font-size:.82rem;color:var(--mu)">Nadie dejó notas en las últimas 2 semanas.</div>';
+  const semaforo=d=>d===null?['var(--mu)','Sin registros']:[d<=3?'var(--gr)':d<=7?'var(--yw)':'var(--rd)',d===0?'Hoy':d===1?'Ayer':`Hace ${d} días`];
+  const listaHtml=actividadVista.length?actividadVista.map((a,i)=>{
+    const[color,txt]=semaforo(a.dias);
+    return`<div onclick="abrirFichaAlumno(actividadVista[${i}].name)" style="display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--bd);cursor:pointer">
+      <span style="width:10px;height:10px;border-radius:50%;background:${color};flex-shrink:0"></span>
+      <span style="flex:1;font-size:.88rem">${escHtml(a.name)}</span>
+      <span style="font-size:.78rem;color:${color};flex-shrink:0">${txt}</span>
+    </div>`;
+  }).join(''):'<div style="font-size:.82rem;color:var(--mu)">No hay alumnos activos.</div>';
+  el.innerHTML=`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+      ${stat(semana,'entrenaron (7 días)','var(--gr)')}${stat(inactivos,'sin entrenar +7 días','var(--rd)')}${stat(sinReg,'sin registros','var(--mu)')}
+    </div>
+    <div class="card"><h2>💬 Notas recientes</h2>${notasHtml}</div>
+    <div class="card"><h2>👤 Alumnos activos</h2>${listaHtml}
+      <p style="font-size:.72rem;color:var(--mu);margin-top:10px">Cuenta como entreno tildar una serie, cargar pesos o dejar una nota.</p>
+    </div>`;
+}
+window.renderActividad=renderActividad;
 
 async function renderAlumnosUnificado(searchTerm){
   const el=document.getElementById('alumnosuni-list');
@@ -6871,15 +7053,22 @@ function findAllProgramsForAlumno(uid,name,email,ownPlanId,ownPlanName){
 // planes/{planId}/progreso/{memberId} (ver firestore.rules: solo así un
 // alumno puede escribir su propio progreso sin poder tocar el resto del
 // plan). Se carga una vez por plan y se mergea en memoria sobre members[].
-const planProgresoLoaded=new Set();
-async function loadPlanProgreso(plan){
-  if(planProgresoLoaded.has(plan.id))return;
-  planProgresoLoaded.add(plan.id);
-  const snap=await getDocsSafe(collection(db,'planes',plan.id,'progreso'));
-  snap.docs.forEach(d=>{
-    const m=plan.members?.find(mb=>mb.id===d.id);
-    if(m)m.progress=d.data().progress||{};
-  });
+// planProgresoDocs guarda también los docs sin member en plan.members (desafío
+// como plan adicional), que lee collectActividad.
+const planProgresoLoaded=new Map();
+const planProgresoDocs=new Map();
+function loadPlanProgreso(plan,fresh){
+  if(fresh||!planProgresoLoaded.has(plan.id))planProgresoLoaded.set(plan.id,(async()=>{
+    const snap=await getDocsSafe(collection(db,'planes',plan.id,'progreso'));
+    const docs={};
+    snap.docs.forEach(d=>{
+      docs[d.id]=d.data().progress||{};
+      const m=plan.members?.find(mb=>mb.id===d.id);
+      if(m)m.progress=docs[d.id];
+    });
+    planProgresoDocs.set(plan.id,docs);
+  })());
+  return planProgresoLoaded.get(plan.id);
 }
 function programPickerHTML(gkey,progs,activeType,activePlanId,mode='client'){
   if(progs.length<2)return'';
@@ -8459,6 +8648,7 @@ function notifId(n){
   if(n.tipo==='suscripcion')return `sus:${n.uid}`;
   if(n.tipo==='desafio')return `des:${n.uid}`;
   if(n.tipo==='finplan')return `fin:${n.planId}:${n.fecha?n.fecha.getTime():''}`;
+  if(n.tipo==='nota')return `nota:${n.alumno}:${n.nota}`;
   return n.texto;
 }
 
@@ -8529,6 +8719,14 @@ async function buildNotifications(){
       notifs.push({tipo:'anamnesis',texto:`📬 Nueva anamnesis: ${s.nombre||s.name||'Sin nombre'}`,fecha:null,targetView:'solicitudes',order:1,docId:s._docId});
     }
   });
+
+  // Notas que dejaron los alumnos en las últimas 48hs (de sesión o de un ejercicio)
+  (await collectActividad(subSnap)).forEach(a=>a.notas.forEach(n=>{
+    const diff=n.fecha?Math.round((today-n.fecha)/86400000):-1;
+    if(diff<0||diff>2)return;
+    const txt=n.text.length>70?n.text.slice(0,70)+'…':n.text;
+    notifs.push({tipo:'nota',texto:`💬 ${escHtml(a.name)}: "${escHtml(txt)}"`,fecha:n.fecha,targetView:'actividad',order:1,alumno:a.name,nota:n.date+'|'+n.text.slice(0,40)});
+  }));
 
   // Alumnos nuevos (últimas 48hs, granularidad de día ya que addedAt no tiene hora)
   planes.forEach(plan=>{
@@ -8628,11 +8826,7 @@ function goToNotification(i){
   toggleNotifPanel();
   const btn=document.querySelector(`.tab-btn[onclick*="showView('${n.targetView}'"]`);
   if(btn)showView(n.targetView,btn);
-  if((n.tipo==='desafio'||n.tipo==='suscripcion')&&n.uid){
-    showPanel('alumnosuni',document.getElementById('it-alumnosuni'));
-    const search=document.getElementById('uni-search');
-    if(search){search.value=n.searchTerm||'';renderAlumnosUnificado(search.value);}
-  }
+  if((n.tipo==='desafio'||n.tipo==='suscripcion')&&n.uid)abrirFichaAlumno(n.searchTerm);
 }
 window.goToNotification=goToNotification;
 
