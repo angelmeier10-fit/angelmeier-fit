@@ -4788,9 +4788,14 @@ async function toggleSerieOptimistic(progress,rk,isLast,blockRest,pauseSecs,save
   const row=document.getElementById('sr-'+rk);const btn=row.querySelector('.ckbtn');
   const prev=progress[rk];
   const done=!prev;
+  const prevTildes=progress._tildes;
   progress[rk]=done;
-  // Tildar no guarda fecha; _ultimo deja registro del día para la pantalla Actividad
-  if(done)progress._ultimo=todayStr();
+  // El valor del tilde es solo true/false: la fecha de cada tilde va aparte en
+  // _tildes para el historial de la pantalla Actividad (_ultimo, el día más reciente).
+  const hoy=todayStr();
+  const tildes=(progress._tildes||[]).filter(t=>!(t.k===rk&&t.date===hoy));
+  if(done){progress._ultimo=hoy;tildes.push({date:hoy,k:rk});}
+  progress._tildes=tildes;
   row.classList.toggle('done-row',done);btn.classList.toggle('done',done);
   if(done){
     if(isLast){
@@ -4810,6 +4815,7 @@ async function toggleSerieOptimistic(progress,rk,isLast,blockRest,pauseSecs,save
     await save();
   }catch(e){
     progress[rk]=prev;
+    if(prevTildes)progress._tildes=prevTildes;else delete progress._tildes;
     row.classList.toggle('done-row',!!prev);btn.classList.toggle('done',!!prev);
     toast('⚠️ No se pudo guardar, probá de nuevo');
   }
@@ -5736,9 +5742,132 @@ async function collectActividad(subSnap,fresh){
       }
     });
     notas.sort((x,y)=>(y.fecha||0)-(x.fecha||0));
-    return{name:a.name,email:a.email,activo,last,notas};
+    return{name:a.name,email:a.email,activo,last,notas,programs:a.programs};
   });
 }
+
+// Historial día por día de un alumno: cargas, resultados, notas y tildes con
+// fecha de todos sus programas. Las claves de progress llevan semana, día,
+// bloque y ejercicio (ver toggleSerie/logGym/logCF/saveSessionNote).
+async function historialAlumno(a){
+  const cats=await getCategoriasSuscripcion();
+  const fuentes=[];
+  a.programs.forEach(p=>{
+    if(p.type==='personal'){
+      fuentes.push({prog:p.client.progress,weeks:p.client.weeks,days:p.client.days,label:p.client.routineName||'Plan personalizado'});
+    }else if(p.type==='group'){
+      fuentes.push({prog:p.member.progress,plan:p.plan,label:p.plan.name});
+    }else{
+      const s=p.sub;
+      const planId=s.planId||(s.categoria==='global'?cats.find(c=>c.id!=='global')?.planId:null);
+      const plan=planes.find(x=>x.id===planId);
+      fuentes.push({prog:s.progress,plan,label:plan?.name||'Suscripción'});
+      const ex=s.extraDesafioGluteos;
+      if(ex?.planId){
+        const pl=planes.find(x=>x.id===ex.planId);
+        fuentes.push({prog:planProgresoDocs.get(ex.planId)?.[p.uid],plan:pl,label:pl?.name||'Desafío Glúteos'});
+      }
+    }
+  });
+  const conLabel=fuentes.filter(f=>f.prog&&Object.keys(f.prog).length).length>1;
+  const dias=new Map();
+  const diaDe=date=>{
+    if(!dias.has(date))dias.set(date,{date,fecha:parseARDate(date),grupos:new Map()});
+    return dias.get(date);
+  };
+  fuentes.forEach(f=>{
+    const pl=f.plan;
+    const flat=pl?.continuo?planWeekNums(pl).flatMap(n=>pl.weeks[n]||[]):null;
+    const dayOf=(w,di)=>flat?flat[di]:((pl?pl.weeks:f.weeks)?.[w]?.[di]||(pl?pl.days:f.days)?.[di]);
+    const grupo=(date,w,di)=>{
+      const d=diaDe(date);const gk=f.label+'|'+w+'|'+di;
+      if(!d.grupos.has(gk)){
+        const semana=!flat&&(pl?planWeekNums(pl).length>1:f.weeks&&Object.keys(f.weeks).length>1)?` · Semana ${w}`:'';
+        d.grupos.set(gk,{titulo:(dayOf(w,di)?.name||'Día '+(+di+1))+semana+(conLabel?' · '+f.label:''),items:new Map(),notas:[]});
+      }
+      return d.grupos.get(gk);
+    };
+    // Ejercicio (gym, entrada en calor o funcional) o bloque entero (circuitos/CF)
+    const item=(date,k)=>{
+      const m=k.match(/-w(\d+)(?:c\d+)?-(\d+)-(\d+)-(.+)$/);
+      if(!m)return null;
+      const[,w,di,bi,tail]=m;
+      const blk=dayOf(w,di)?.blocks?.[bi];
+      const em=tail.match(/^(e|wu|fe)(\d+)-/);
+      const ex=em?blk?.exercises?.[em[2]]:null;
+      const nombre=em?(ex?.name||ex?.title||'Ejercicio'):(blk?.title||CF_TYPES[blk?.cftype]?.label||'Bloque');
+      const g=grupo(date,w,di);const ik=bi+'|'+(em?em[1]+em[2]:'blk');
+      if(!g.items.has(ik))g.items.set(ik,{nombre,orden:+bi*1000+(em?+em[2]:0),tildes:0,log:null,resultados:[]});
+      return g.items.get(ik);
+    };
+    for(const k in f.prog||{}){
+      const v=f.prog[k];
+      if(!Array.isArray(v))continue;
+      if(k==='_tildes'){v.forEach(t=>{const it=t?.date&&item(t.date,t.k);if(it)it.tildes++;});continue;}
+      const sn=k.match(/^snote-w(\d+)(?:c\d+)?-(\d+)$/);
+      if(sn){v.forEach(n=>{if(n?.date&&n.text)grupo(n.date,sn[1],sn[2]).notas.push(n.text);});continue;}
+      if(k.endsWith('-logs')){
+        v.forEach(l=>{if(l?.date&&(l.weight||l.weights?.some(x=>x)||l.reps||l.note)){const it=item(l.date,k);if(it)it.log=l;}});
+      }else if(k.endsWith('-cfresult')){
+        v.forEach(r=>{if(r?.date&&r.result){const it=item(r.date,k);if(it)it.resultados.push(r.result);}});
+      }
+    }
+  });
+  return[...dias.values()].sort((x,y)=>(y.fecha||0)-(x.fecha||0));
+}
+
+async function abrirHistorialAlumno(i){
+  const a=actividadVista[i];if(!a)return;
+  document.getElementById('historial-modal')?.remove();
+  const bg=document.createElement('div');
+  bg.id='historial-modal';bg.className='modal-bg open';
+  bg.innerHTML=`<div class="modal" role="dialog" aria-modal="true">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px">
+      <h2 style="margin:0;font-size:1.05rem">${escHtml(a.name)}</h2>
+      <div style="display:flex;gap:6px;flex-shrink:0">
+        <button class="btn bg2 xs" data-ficha>👤 Ver ficha</button>
+        <button class="btn bg2 xs" data-cerrar aria-label="Cerrar">✕</button>
+      </div>
+    </div>
+    <div id="historial-body"><div style="text-align:center;padding:20px;color:var(--mu)">Cargando...</div></div>
+  </div>`;
+  const cerrar=()=>{bg.remove();document.removeEventListener('keydown',onKey);};
+  const onKey=e=>{if(e.key==='Escape')cerrar();};
+  document.addEventListener('keydown',onKey);
+  bg.addEventListener('click',e=>{if(e.target===bg||e.target.closest('[data-cerrar]'))cerrar();});
+  bg.querySelector('[data-ficha]').onclick=()=>{cerrar();abrirFichaAlumno(a.name);};
+  document.body.appendChild(bg);
+  const dias=await historialAlumno(a);
+  const body=bg.querySelector('#historial-body');if(!body)return;
+  const today=new Date();today.setHours(0,0,0,0);
+  const ult30=dias.filter(d=>d.fecha&&(today-d.fecha)/86400000<30).length;
+  const ultTxt=a.dias===null?'Sin registros':a.dias===0?'Hoy':a.dias===1?'Ayer':`Hace ${a.dias} días`;
+  const fechaTxt=d=>d.fecha?d.fecha.toLocaleDateString('es-AR',{weekday:'short',day:'numeric',month:'numeric'}):d.date;
+  const itemHtml=it=>{
+    const l=it.log;const partes=[];
+    if(l){
+      const w=l.weights?.some(x=>x)?l.weights.map(x=>x||'—').join(' / ')+' kg':(l.weight?l.weight+' kg':'');
+      const txt=[w,l.reps?(w?'× ':'')+l.reps+' reps':''].filter(Boolean).join(' ');
+      if(txt)partes.push(escHtml(txt));
+    }
+    it.resultados.forEach(r=>partes.push(escHtml(r)));
+    if(it.tildes)partes.push(`<span style="color:var(--gr)">✓ ${it.tildes} ${it.tildes===1?'serie':'series'}</span>`);
+    return`<div style="padding:5px 0;font-size:.82rem"><b>${escHtml(it.nombre)}</b>${partes.length?` <span style="color:var(--mu)">— ${partes.join(' · ')}</span>`:''}
+      ${l?.note?`<div style="font-size:.78rem;color:var(--mu);font-style:italic">"${escHtml(l.note)}"</div>`:''}</div>`;
+  };
+  const diasHtml=dias.map((d,di)=>`<details${di===0?' open':''} style="border-top:1px solid var(--bd);padding:8px 0">
+      <summary style="cursor:pointer;font-size:.86rem;font-weight:700">${escHtml(fechaTxt(d))}</summary>
+      ${[...d.grupos.values()].map(g=>`<div style="background:var(--s2);border-radius:9px;padding:8px 11px;margin-top:8px">
+        <div style="font-size:.74rem;color:var(--mu);font-weight:700;margin-bottom:2px">${escHtml(g.titulo)}</div>
+        ${[...g.items.values()].sort((x,y)=>x.orden-y.orden).map(itemHtml).join('')}
+        ${g.notas.map(n=>`<div style="font-size:.82rem;margin-top:4px;white-space:pre-wrap">💬 ${escHtml(n)}</div>`).join('')}
+      </div>`).join('')}
+    </details>`).join('');
+  body.innerHTML=`<div style="font-size:.78rem;color:var(--mu);margin-bottom:10px">Último entreno: ${ultTxt} · ${ult30} ${ult30===1?'día entrenado':'días entrenados'} en 30 días</div>
+    ${diasHtml||'<div style="font-size:.82rem;color:var(--mu)">Todavía no hay registros con fecha.</div>'}
+    <p style="font-size:.72rem;color:var(--mu);margin-top:10px">Los tildes de series se guardan con fecha desde el 8/10/2026; antes solo quedaba el último día.</p>`;
+}
+window.abrirHistorialAlumno=abrirHistorialAlumno;
 
 function abrirFichaAlumno(term){
   const btn=document.querySelector(`.tab-btn[onclick*="showView('trainer'"]`);
@@ -5771,14 +5900,14 @@ async function renderActividad(){
     if(d!==null&&d<=14)notas.push({...n,i});
   }));
   notas.sort((x,y)=>(y.fecha||0)-(x.fecha||0));
-  const notasHtml=notas.length?notas.slice(0,40).map(n=>`<div onclick="abrirFichaAlumno(actividadVista[${n.i}].name)" style="padding:10px 0;border-top:1px solid var(--bd);cursor:pointer">
+  const notasHtml=notas.length?notas.slice(0,40).map(n=>`<div onclick="abrirHistorialAlumno(${n.i})" style="padding:10px 0;border-top:1px solid var(--bd);cursor:pointer">
       <div style="display:flex;justify-content:space-between;gap:8px;font-size:.78rem"><b>${escHtml(actividadVista[n.i].name)}</b><span style="color:var(--mu);flex-shrink:0">${escHtml(n.date)}${n.ejercicio?' · en un ejercicio':''}</span></div>
       <div style="font-size:.85rem;margin-top:3px;white-space:pre-wrap">${escHtml(n.text)}</div>
     </div>`).join(''):'<div style="font-size:.82rem;color:var(--mu)">Nadie dejó notas en las últimas 2 semanas.</div>';
   const semaforo=d=>d===null?['var(--mu)','Sin registros']:[d<=3?'var(--gr)':d<=7?'var(--yw)':'var(--rd)',d===0?'Hoy':d===1?'Ayer':`Hace ${d} días`];
   const listaHtml=actividadVista.length?actividadVista.map((a,i)=>{
     const[color,txt]=semaforo(a.dias);
-    return`<div onclick="abrirFichaAlumno(actividadVista[${i}].name)" style="display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--bd);cursor:pointer">
+    return`<div onclick="abrirHistorialAlumno(${i})" style="display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--bd);cursor:pointer">
       <span style="width:10px;height:10px;border-radius:50%;background:${color};flex-shrink:0"></span>
       <span style="flex:1;font-size:.88rem">${escHtml(a.name)}</span>
       <span style="font-size:.78rem;color:${color};flex-shrink:0">${txt}</span>
