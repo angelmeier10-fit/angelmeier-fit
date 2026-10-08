@@ -5754,18 +5754,21 @@ async function historialAlumno(a){
   const fuentes=[];
   a.programs.forEach(p=>{
     if(p.type==='personal'){
-      fuentes.push({prog:p.client.progress,weeks:p.client.weeks,days:p.client.days,label:p.client.routineName||'Plan personalizado'});
+      fuentes.push({prog:p.client.progress,weeks:p.client.weeks,days:p.client.days,label:p.client.routineName||'Plan personalizado',timeline:clientWeekTimeline(p.client)});
     }else if(p.type==='group'){
-      fuentes.push({prog:p.member.progress,plan:p.plan,label:p.plan.name});
+      fuentes.push({prog:p.member.progress,plan:p.plan,label:p.plan.name,timeline:memberWeekView(p.plan,p.member).timeline});
     }else{
       const s=p.sub;
       const planId=s.planId||(s.categoria==='global'?cats.find(c=>c.id!=='global')?.planId:null);
       const plan=planes.find(x=>x.id===planId);
-      fuentes.push({prog:s.progress,plan,label:plan?.name||'Suscripción'});
+      fuentes.push({prog:s.progress,plan,label:plan?.name||'Suscripción',
+        timeline:plan?memberWeekView(plan,{startWeek:s.startWeek||1,startDate:s.startDate||'',progress:s.progress}).timeline:[]});
       const ex=s.extraDesafioGluteos;
       if(ex?.planId){
         const pl=planes.find(x=>x.id===ex.planId);
-        fuentes.push({prog:planProgresoDocs.get(ex.planId)?.[p.uid],plan:pl,label:pl?.name||'Desafío Glúteos'});
+        const prog=planProgresoDocs.get(ex.planId)?.[p.uid];
+        fuentes.push({prog,plan:pl,label:pl?.name||'Desafío Glúteos',
+          timeline:pl?memberWeekView(pl,{startWeek:ex.startWeek||1,startDate:ex.startDate||'',progress:prog}).timeline:[]});
       }
     }
   });
@@ -5775,20 +5778,23 @@ async function historialAlumno(a){
     if(!dias.has(date))dias.set(date,{date,fecha:parseARDate(date),grupos:new Map()});
     return dias.get(date);
   };
+  // Tildes de antes de que se guardara la fecha: solo se sabe la semana del
+  // plan (va en la clave), y su rango sale de la línea de tiempo del alumno.
+  const semanas=new Map();
   fuentes.forEach(f=>{
     const pl=f.plan;
     const flat=pl?.continuo?planWeekNums(pl).flatMap(n=>pl.weeks[n]||[]):null;
     const dayOf=(w,di)=>flat?flat[di]:((pl?pl.weeks:f.weeks)?.[w]?.[di]||(pl?pl.days:f.days)?.[di]);
-    const grupo=(date,w,di)=>{
-      const d=diaDe(date);const gk=f.label+'|'+w+'|'+di;
+    const grupo=(d,w,di)=>{
+      const gk=f.label+'|'+w+'|'+di;
       if(!d.grupos.has(gk)){
-        const semana=!flat&&(pl?planWeekNums(pl).length>1:f.weeks&&Object.keys(f.weeks).length>1)?` · Semana ${w}`:'';
+        const semana=!d.semana&&!flat&&(pl?planWeekNums(pl).length>1:f.weeks&&Object.keys(f.weeks).length>1)?` · Semana ${w}`:'';
         d.grupos.set(gk,{titulo:(dayOf(w,di)?.name||'Día '+(+di+1))+semana+(conLabel?' · '+f.label:''),items:new Map(),notas:[]});
       }
       return d.grupos.get(gk);
     };
     // Ejercicio (gym, entrada en calor o funcional) o bloque entero (circuitos/CF)
-    const item=(date,k)=>{
+    const item=(d,k)=>{
       const m=k.match(/-w(\d+)(?:c\d+)?-(\d+)-(\d+)-(.+)$/);
       if(!m)return null;
       const[,w,di,bi,tail]=m;
@@ -5796,24 +5802,39 @@ async function historialAlumno(a){
       const em=tail.match(/^(e|wu|fe)(\d+)-/);
       const ex=em?blk?.exercises?.[em[2]]:null;
       const nombre=em?(ex?.name||ex?.title||'Ejercicio'):(blk?.title||CF_TYPES[blk?.cftype]?.label||'Bloque');
-      const g=grupo(date,w,di);const ik=bi+'|'+(em?em[1]+em[2]:'blk');
+      const g=grupo(d,w,di);const ik=bi+'|'+(em?em[1]+em[2]:'blk');
       if(!g.items.has(ik))g.items.set(ik,{nombre,orden:+bi*1000+(em?+em[2]:0),tildes:0,log:null,resultados:[]});
       return g.items.get(ik);
     };
     for(const k in f.prog||{}){
       const v=f.prog[k];
       if(!Array.isArray(v))continue;
-      if(k==='_tildes'){v.forEach(t=>{const it=t?.date&&item(t.date,t.k);if(it)it.tildes++;});continue;}
+      if(k==='_tildes'){v.forEach(t=>{const it=t?.date&&item(diaDe(t.date),t.k);if(it)it.tildes++;});continue;}
       const sn=k.match(/^snote-w(\d+)(?:c\d+)?-(\d+)$/);
-      if(sn){v.forEach(n=>{if(n?.date&&n.text)grupo(n.date,sn[1],sn[2]).notas.push(n.text);});continue;}
+      if(sn){v.forEach(n=>{if(n?.date&&n.text)grupo(diaDe(n.date),sn[1],sn[2]).notas.push(n.text);});continue;}
       if(k.endsWith('-logs')){
-        v.forEach(l=>{if(l?.date&&(l.weight||l.weights?.some(x=>x)||l.reps||l.note)){const it=item(l.date,k);if(it)it.log=l;}});
+        v.forEach(l=>{if(l?.date&&(l.weight||l.weights?.some(x=>x)||l.reps||l.note)){const it=item(diaDe(l.date),k);if(it)it.log=l;}});
       }else if(k.endsWith('-cfresult')){
-        v.forEach(r=>{if(r?.date&&r.result){const it=item(r.date,k);if(it)it.resultados.push(r.result);}});
+        v.forEach(r=>{if(r?.date&&r.result){const it=item(diaDe(r.date),k);if(it)it.resultados.push(r.result);}});
       }
     }
+    const conFecha=new Set((f.prog?._tildes||[]).map(t=>t.k));
+    for(const k in f.prog||{}){
+      if(f.prog[k]!==true||conFecha.has(k))continue;
+      const m=k.match(/-w(\d+(?:c\d+)?)-\d+-\d+-(?:(?:e|wu|fe)\d+-\d+|round\d+|s\d+-cfround\d+)$/);
+      if(!m)continue;
+      const sk=f.label+'|'+m[1];
+      if(!semanas.has(sk)){
+        const w=(f.timeline||[]).find(x=>x.key===m[1]);
+        semanas.set(sk,{semana:true,num:+m[1].split('c')[0],from:w?.from||null,label:f.label,grupos:new Map()});
+      }
+      const it=item(semanas.get(sk),k);if(it)it.tildes++;
+    }
   });
-  return[...dias.values()].sort((x,y)=>(y.fecha||0)-(x.fecha||0));
+  return{
+    dias:[...dias.values()].sort((x,y)=>(y.fecha||0)-(x.fecha||0)),
+    semanas:[...semanas.values()].sort((x,y)=>(y.from||0)-(x.from||0)||y.num-x.num)
+  };
 }
 
 async function abrirHistorialAlumno(i){
@@ -5837,7 +5858,7 @@ async function abrirHistorialAlumno(i){
   bg.addEventListener('click',e=>{if(e.target===bg||e.target.closest('[data-cerrar]'))cerrar();});
   bg.querySelector('[data-ficha]').onclick=()=>{cerrar();abrirFichaAlumno(a.name);};
   document.body.appendChild(bg);
-  const dias=await historialAlumno(a);
+  const{dias,semanas}=await historialAlumno(a);
   const body=bg.querySelector('#historial-body');if(!body)return;
   const today=new Date();today.setHours(0,0,0,0);
   const ult30=dias.filter(d=>d.fecha&&(today-d.fecha)/86400000<30).length;
@@ -5855,17 +5876,39 @@ async function abrirHistorialAlumno(i){
     return`<div style="padding:5px 0;font-size:.82rem"><b>${escHtml(it.nombre)}</b>${partes.length?` <span style="color:var(--mu)">— ${partes.join(' · ')}</span>`:''}
       ${l?.note?`<div style="font-size:.78rem;color:var(--mu);font-style:italic">"${escHtml(l.note)}"</div>`:''}</div>`;
   };
-  const diasHtml=dias.map((d,di)=>`<details${di===0?' open':''} style="border-top:1px solid var(--bd);padding:8px 0">
-      <summary style="cursor:pointer;font-size:.86rem;font-weight:700">${escHtml(fechaTxt(d))}</summary>
-      ${[...d.grupos.values()].map(g=>`<div style="background:var(--s2);border-radius:9px;padding:8px 11px;margin-top:8px">
+  const meses=[];
+  dias.forEach(d=>{
+    const mk=d.fecha?d.fecha.getFullYear()+'-'+d.fecha.getMonth():'?';
+    let m=meses[meses.length-1];
+    if(!m||m.key!==mk)meses.push(m={key:mk,titulo:d.fecha?d.fecha.toLocaleDateString('es-AR',{month:'long',year:'numeric'}).replace(/^./,c=>c.toUpperCase()):'Sin fecha',dias:[]});
+    m.dias.push(d);
+  });
+  const gruposHtml=d=>[...d.grupos.values()].map(g=>`<div style="background:var(--s2);border-radius:9px;padding:8px 11px;margin-top:8px">
         <div style="font-size:.74rem;color:var(--mu);font-weight:700;margin-bottom:2px">${escHtml(g.titulo)}</div>
         ${[...g.items.values()].sort((x,y)=>x.orden-y.orden).map(itemHtml).join('')}
         ${g.notas.map(n=>`<div style="font-size:.82rem;margin-top:4px;white-space:pre-wrap">💬 ${escHtml(n)}</div>`).join('')}
-      </div>`).join('')}
+      </div>`).join('');
+  const diaHtml=(d,abierto)=>`<details${abierto?' open':''} style="border-top:1px solid var(--bd);padding:8px 0">
+      <summary style="cursor:pointer;font-size:.86rem;font-weight:700">${escHtml(fechaTxt(d))}</summary>
+      ${gruposHtml(d)}
+    </details>`;
+  const dm=f=>f.getDate()+'/'+(f.getMonth()+1);
+  const variosPlanes=new Set(semanas.map(s=>s.label)).size>1;
+  const semanaTxt=s=>`Semana ${s.num}${s.from?` · ${dm(s.from)} – ${dm(new Date(s.from.getFullYear(),s.from.getMonth(),s.from.getDate()+6))}`:''}${variosPlanes?' · '+s.label:''}`;
+  const semanasHtml=semanas.length?`<details style="margin-bottom:6px">
+      <summary style="cursor:pointer;font-size:.9rem;font-weight:700;padding:8px 10px;background:var(--s2);border-radius:9px">Tildes anteriores <span style="font-weight:400;color:var(--mu)">· sin día exacto</span></summary>
+      <div style="padding:0 4px">${semanas.map(s=>`<details style="border-top:1px solid var(--bd);padding:8px 0">
+        <summary style="cursor:pointer;font-size:.86rem;font-weight:700">${escHtml(semanaTxt(s))}</summary>
+        ${gruposHtml(s)}
+      </details>`).join('')}</div>
+    </details>`:'';
+  const diasHtml=meses.map((m,mi)=>`<details${mi===0?' open':''} style="margin-bottom:6px">
+      <summary style="cursor:pointer;font-size:.9rem;font-weight:700;padding:8px 10px;background:var(--s2);border-radius:9px">${escHtml(m.titulo)} <span style="font-weight:400;color:var(--mu)">· ${m.dias.length} ${m.dias.length===1?'día':'días'}</span></summary>
+      <div style="padding:0 4px">${m.dias.map((d,di)=>diaHtml(d,mi===0&&di===0)).join('')}</div>
     </details>`).join('');
   body.innerHTML=`<div style="font-size:.78rem;color:var(--mu);margin-bottom:10px">Último entreno: ${ultTxt} · ${ult30} ${ult30===1?'día entrenado':'días entrenados'} en 30 días</div>
-    ${diasHtml||'<div style="font-size:.82rem;color:var(--mu)">Todavía no hay registros con fecha.</div>'}
-    <p style="font-size:.72rem;color:var(--mu);margin-top:10px">Los tildes de series se guardan con fecha desde el 8/10/2026; antes solo quedaba el último día.</p>`;
+    ${diasHtml||semanasHtml?diasHtml+semanasHtml:'<div style="font-size:.82rem;color:var(--mu)">Todavía no hay registros.</div>'}
+    ${semanasHtml?'<p style="font-size:.72rem;color:var(--mu);margin-top:10px">Los tildes de antes del 8/10/2026 no guardaban el día: se muestran por semana del plan.</p>':''}`;
 }
 window.abrirHistorialAlumno=abrirHistorialAlumno;
 
