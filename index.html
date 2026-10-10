@@ -5072,9 +5072,60 @@ document.getElementById('em-video').addEventListener('input',function(){showVide
 function showVideoPreview(url){
   const prev=document.getElementById('em-preview');const ytId=getYTId(url);
   if(ytId){prev.style.display='block';prev.innerHTML=`<img src="https://img.youtube.com/vi/${ytId}/mqdefault.jpg" style="width:100%;border-radius:8px;margin-top:6px">`}
-  else if(isFileVid(url)){prev.style.display='block';prev.innerHTML=`<video src="${url}" muted playsinline controls preload="metadata" style="width:100%;max-height:300px;border-radius:8px;margin-top:6px;background:#000"></video>`}
+  else if(isFileVid(url)){
+    const p=cldParse(url);
+    // Para elegir el corte se muestra el video completo, no el ya cortado.
+    const src=p?p.base+'f_auto,q_auto/'+p.rest:url;
+    prev.style.display='block';
+    prev.innerHTML=`<video id="em-prev-vid" src="${src}" muted playsinline controls preload="metadata" style="width:100%;max-height:300px;border-radius:8px;margin-top:6px;background:#000"></video>`+(p?`
+      <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:6px">
+        <span style="font-size:.78rem;font-weight:700">✂️ Cortar:</span>
+        <button type="button" class="btn bg2 xs" onclick="setVidTrim('so')">Inicio acá</button>
+        <button type="button" class="btn bg2 xs" onclick="setVidTrim('eo')">Fin acá</button>
+        <button type="button" class="btn bg2 xs" onclick="playVidTrim()">▶ Probar</button>
+        <button type="button" class="btn bg2 xs" onclick="clearVidTrim()">Sin corte</button>
+      </div>
+      <div id="em-trim-lbl" style="font-size:.75rem;color:var(--mu);margin-top:4px">${trimLabel(p)}</div>`:'');
+  }
   else prev.style.display='none';
 }
+// Corte vía transformación de Cloudinary (so_=inicio, eo_=fin, en segundos):
+// el original queda intacto y el corte vive en la URL guardada.
+function cldParse(url){
+  const m=(url||'').match(/^(https:\/\/res\.cloudinary\.com\/[^/]+\/video\/upload\/)(?:([^/]*(?:f_auto|q_auto|so_|eo_)[^/]*)\/)?(.+)$/);
+  if(!m)return null;
+  const t=m[2]||'',so=t.match(/so_([\d.]+)/),eo=t.match(/eo_([\d.]+)/);
+  return{base:m[1],rest:m[3],so:so?+so[1]:null,eo:eo?+eo[1]:null};
+}
+function cldBuild(p){return p.base+[p.so!=null?'so_'+p.so:'',p.eo!=null?'eo_'+p.eo:'','f_auto','q_auto'].filter(Boolean).join(',')+'/'+p.rest}
+function trimLabel(p){
+  if(p.so==null&&p.eo==null)return'Video completo. Pausá en el punto que quieras y tocá "Inicio acá" o "Fin acá".';
+  return`Corte: de ${p.so??0}s a ${p.eo!=null?p.eo+'s':'el final'}`;
+}
+function applyVidTrim(p){
+  document.getElementById('em-video').value=cldBuild(p);
+  document.getElementById('em-trim-lbl').textContent=trimLabel(p);
+}
+window.setVidTrim=function(which){
+  const p=cldParse(document.getElementById('em-video').value);if(!p)return;
+  const t=Math.round(document.getElementById('em-prev-vid').currentTime*10)/10;
+  if(which==='so'){if(p.eo!=null&&t>=p.eo){uiAlert('El inicio tiene que ser antes del fin.');return}p.so=t>0?t:null}
+  else{if(t<=(p.so??0)){uiAlert('El fin tiene que ser después del inicio.');return}p.eo=t}
+  applyVidTrim(p);
+};
+window.clearVidTrim=function(){
+  const p=cldParse(document.getElementById('em-video').value);if(!p)return;
+  p.so=null;p.eo=null;applyVidTrim(p);
+};
+window.playVidTrim=function(){
+  const p=cldParse(document.getElementById('em-video').value);if(!p)return;
+  const v=document.getElementById('em-prev-vid');
+  v.currentTime=p.so??0;v.play();
+  if(p.eo!=null){
+    const stop=()=>{if(v.currentTime>=p.eo){v.pause();v.removeEventListener('timeupdate',stop)}};
+    v.addEventListener('timeupdate',stop);
+  }
+};
 window.closeExModal=function(){pendingExTarget=null;document.getElementById('ex-modal').classList.remove('open')};
 
 // Cloudinary (plan gratis, sin tarjeta). Subida "unsigned": el preset define
