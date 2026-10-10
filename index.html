@@ -1116,6 +1116,7 @@ setTimeout(()=>{
   <h1>📚 Banco de Ejercicios</h1>
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
     <button class="btn bp" onclick="openAddExModal()">➕ Agregar ejercicio</button>
+    <button class="btn bg2" onclick="openSplitModal()">✂️ Cortar video largo</button>
     <button class="btn bg2" onclick="openCatModal()">⚙️ Categorías</button>
     <label class="btn bg2" style="cursor:pointer">📥 Importar CSV<input type="file" accept=".csv" style="display:none" onchange="importExercises(this)"></label>
     <button class="btn bg2" onclick="exportExercisesCSV()">📤 Exportar CSV</button>
@@ -1168,6 +1169,27 @@ setTimeout(()=>{
     <div style="display:flex;gap:8px;margin-top:16px">
       <button class="btn bp" onclick="saveExercise()" style="flex:1;justify-content:center">💾 Guardar</button>
       <button class="btn bg2" onclick="closeExModal()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CORTAR VIDEO LARGO -->
+<div class="modal-bg" id="split-modal">
+  <div class="modal" style="max-width:640px">
+    <h2>✂️ Cortar video largo</h2>
+    <p style="font-size:.8rem;color:var(--mu);margin:0 0 10px">Elegí el video con varios ejercicios. Pausá donde empieza cada ejercicio y tocá "Inicio", luego donde termina y tocá "Fin". A cada corte asignale un ejercicio.</p>
+    <label class="btn bg2" style="cursor:pointer">📂 Elegir video<input type="file" accept="video/*" style="display:none" onchange="pickSplitFile(this)"></label>
+    <video id="sp-vid" controls muted playsinline preload="metadata" style="display:none;width:100%;max-height:45vh;border-radius:8px;margin-top:10px;background:#000"></video>
+    <div id="sp-controls" style="display:none;gap:8px;margin-top:8px;flex-wrap:wrap">
+      <button type="button" class="btn bg2" onclick="splitMark('start')">⏮ Inicio</button>
+      <button type="button" class="btn bp" onclick="splitMark('end')">⏭ Fin (agrega corte)</button>
+    </div>
+    <div id="sp-pending" style="font-size:.75rem;color:var(--mu);margin-top:6px"></div>
+    <datalist id="sp-ex-list"></datalist>
+    <div id="sp-segs" style="display:flex;flex-direction:column;gap:8px;margin-top:10px"></div>
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <button class="btn bp" id="sp-go" onclick="splitGo()" style="flex:1;justify-content:center;display:none"></button>
+      <button class="btn bg2" onclick="closeSplitModal()">Cerrar</button>
     </div>
   </div>
 </div>
@@ -5261,6 +5283,148 @@ window.resyncTodosLosVideos=async function(){
   for(const c of changedClients)await setDoc(doc(db,'clients',c.id),c);
   if(tplChanged){await setDoc(doc(db,'meta','bloqueTemplates'),{list:templates});bloqueTemplatesCache=templates;}
   toast(`✅ Sincronizado: ${changedPlans.size} planes, ${changedClients.size} clientes, ${tplChanged?'plantillas actualizadas':'sin cambios en plantillas'}`);
+};
+
+// ══ CORTAR VIDEO LARGO ══
+// Un video con varios ejercicios se corta en el navegador (mediabunny copia los
+// cuadros sin recodificar, es rápido) y cada tramo se sube a Cloudinary como el
+// video de su ejercicio. El video largo nunca se sube entero.
+const MEDIABUNNY_URL='https://cdn.jsdelivr.net/npm/mediabunny@1.59.1/dist/bundles/mediabunny.min.mjs';
+let splitFile=null,splitSegs=[],splitStart=null,splitBusy=false;
+const findExByName=n=>exDB.find(e=>norm(e.name).trim()===norm(n).trim());
+const escAttr=s=>String(s??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+window.openSplitModal=function(){
+  splitFile=null;splitSegs=[];splitStart=null;
+  const v=document.getElementById('sp-vid');
+  if(v.src){URL.revokeObjectURL(v.src);v.removeAttribute('src');v.load()}
+  v.style.display='none';
+  document.getElementById('sp-controls').style.display='none';
+  document.getElementById('sp-ex-list').innerHTML=exDB.map(e=>`<option value="${escAttr(e.name)}">`).join('');
+  renderSplitSegs();
+  document.getElementById('split-modal').classList.add('open');
+};
+window.closeSplitModal=async function(){
+  if(splitBusy){uiAlert('Esperá a que terminen de subirse los videos.');return}
+  if(splitSegs.some(s=>s.status!=='✅')&&!await uiConfirm('Hay cortes sin subir. ¿Cerrar igual?'))return;
+  const v=document.getElementById('sp-vid');
+  if(v.src){URL.revokeObjectURL(v.src);v.removeAttribute('src');v.load()}
+  document.getElementById('split-modal').classList.remove('open');
+};
+window.pickSplitFile=function(inp){
+  const f=inp.files[0];inp.value='';if(!f)return;
+  splitFile=f;splitSegs=[];splitStart=null;
+  const v=document.getElementById('sp-vid');
+  if(v.src)URL.revokeObjectURL(v.src);
+  v.src=URL.createObjectURL(f);v.style.display='block';
+  document.getElementById('sp-controls').style.display='flex';
+  renderSplitSegs();
+};
+window.splitMark=function(which){
+  const t=Math.round(document.getElementById('sp-vid').currentTime*10)/10;
+  if(which==='start')splitStart=t;
+  else{
+    // Sin "Inicio" marcado, el corte arranca donde terminó el anterior.
+    const s=splitStart??(splitSegs.length?splitSegs[splitSegs.length-1].end:0);
+    if(t<=s){uiAlert('El fin tiene que ser después del inicio.');return}
+    splitSegs.push({start:s,end:t,name:'',cat:exCats[0]||'',status:''});
+    splitStart=null;
+  }
+  renderSplitSegs();
+};
+function renderSplitSegs(){
+  document.getElementById('sp-pending').textContent=splitStart!=null?`Inicio marcado en ${splitStart}s. Avanzá hasta donde termina el ejercicio y tocá "Fin".`:'';
+  document.getElementById('sp-segs').innerHTML=splitSegs.map((s,i)=>{
+    const isNew=s.name.trim()&&!findExByName(s.name);
+    return`<div style="border:1px solid var(--bd);border-radius:9px;padding:8px;display:flex;flex-direction:column;gap:6px">
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:.8rem">
+        <b>#${i+1}</b>
+        <input type="number" step="0.1" min="0" value="${s.start}" style="width:76px" onchange="splitSet(${i},'start',this.value)"> a
+        <input type="number" step="0.1" min="0" value="${s.end}" style="width:76px" onchange="splitSet(${i},'end',this.value)"> s
+        <button type="button" class="btn bg2 xs" onclick="splitPlay(${i})" title="Ver este corte">▶</button>
+        <button type="button" class="btn bd2 xs" onclick="splitDel(${i})" title="Borrar corte" aria-label="Borrar corte">🗑️</button>
+        <span id="sp-st-${i}" style="font-size:.75rem;color:var(--mu)">${escAttr(s.status)}</span>
+      </div>
+      <input list="sp-ex-list" placeholder="Ejercicio (de la biblioteca o uno nuevo)" value="${escAttr(s.name)}" oninput="splitSet(${i},'name',this.value)">
+      <div id="sp-new-${i}" style="display:${isNew?'flex':'none'};gap:6px;align-items:center;font-size:.75rem">Ejercicio nuevo, categoría:
+        <select onchange="splitSet(${i},'cat',this.value)">${exCats.map(c=>`<option ${c===s.cat?'selected':''}>${c}</option>`).join('')}</select>
+      </div>
+    </div>`;
+  }).join('');
+  const go=document.getElementById('sp-go');
+  const pend=splitSegs.filter(s=>s.status!=='✅').length;
+  go.style.display=pend?'':'none';
+  go.textContent=`✂️ Cortar y subir ${pend} video${pend===1?'':'s'}`;
+}
+window.splitSet=function(i,k,val){
+  const s=splitSegs[i];if(!s)return;
+  if(k==='start'||k==='end')s[k]=Math.max(0,Math.round((+val||0)*10)/10);
+  else s[k]=val;
+  if(k==='name')document.getElementById('sp-new-'+i).style.display=val.trim()&&!findExByName(val)?'flex':'none';
+};
+window.splitDel=function(i){if(splitBusy)return;splitSegs.splice(i,1);renderSplitSegs()};
+window.splitPlay=function(i){
+  const s=splitSegs[i],v=document.getElementById('sp-vid');
+  v.currentTime=s.start;v.play();
+  const stop=()=>{if(v.currentTime>=s.end){v.pause();v.removeEventListener('timeupdate',stop)}};
+  v.addEventListener('timeupdate',stop);
+};
+async function cutClip(MB,file,start,end,shrink){
+  const input=new MB.Input({source:new MB.BlobSource(file),formats:MB.ALL_FORMATS});
+  const output=new MB.Output({format:new MB.Mp4OutputFormat({fastStart:'in-memory'}),target:new MB.BufferTarget()});
+  // shrink: si el corte copiado pesa demasiado se recodifica a 720p.
+  const video=shrink?track=>{
+    const k=720/Math.min(track.displayWidth,track.displayHeight);
+    const o={codec:'avc',quality:MB.QUALITY_MEDIUM,forceTranscode:true};
+    if(k<1){o.width=Math.round(track.displayWidth*k/2)*2;o.height=Math.round(track.displayHeight*k/2)*2}
+    return o;
+  }:undefined;
+  const conv=await MB.Conversion.init({input,output,trim:{start,end},audio:{discard:true},video,showWarnings:false});
+  if(!conv.isValid)throw new Error('formato de video no soportado');
+  await conv.execute();
+  return new File([output.target.buffer],'clip.mp4',{type:'video/mp4'});
+}
+async function setExerciseVideo(name,cat,video){
+  const ex=findExByName(name);
+  if(ex){
+    ex.video=video;
+    await setDoc(doc(db,'exercises',ex.id),{id:ex.id,name:ex.name,cat:ex.cat,video,notes:ex.notes||'',refEx:ex.refEx||''});
+    await propagateExerciseEdit(ex.name,ex.name,video);
+  }else{
+    const id='ex'+Date.now();
+    const n={id,name,cat,video,notes:'',refEx:''};
+    await setDoc(doc(db,'exercises',id),n);
+    exDB.push(n);
+  }
+}
+window.splitGo=async function(){
+  if(splitBusy)return;
+  const pend=splitSegs.filter(s=>s.status!=='✅');
+  if(pend.some(s=>!s.name.trim())){uiAlert('Falta elegir el ejercicio en algún corte.');return}
+  if(pend.some(s=>!(s.end>s.start))){uiAlert('Hay un corte con el fin antes del inicio.');return}
+  splitBusy=true;
+  const go=document.getElementById('sp-go');go.disabled=true;
+  let MB;
+  try{MB=await import(MEDIABUNNY_URL)}
+  catch(e){splitBusy=false;go.disabled=false;uiAlert('No se pudo cargar el cortador de video. Revisá la conexión.');return}
+  let ok=0,fail=0;
+  for(let i=0;i<splitSegs.length;i++){
+    const s=splitSegs[i];if(s.status==='✅')continue;
+    const st=t=>{s.status=t;const e=document.getElementById('sp-st-'+i);if(e)e.textContent=t};
+    try{
+      st('Cortando...');
+      let clip=await cutClip(MB,splitFile,s.start,s.end,false);
+      if(clip.size>MAX_VID_MB*1048576){st('Achicando...');clip=await cutClip(MB,splitFile,s.start,s.end,true)}
+      if(clip.size>MAX_VID_MB*1048576)throw new Error(`pesa ${Math.round(clip.size/1048576)} MB, máximo ${MAX_VID_MB}`);
+      const raw=await uploadToCloudinary(clip,p=>st(`Subiendo ${Math.round(p*100)}%`));
+      st('Guardando...');
+      await setExerciseVideo(s.name.trim(),s.cat,raw.replace('/video/upload/','/video/upload/f_auto,q_auto/'));
+      st('✅');ok++;
+    }catch(err){console.error(err);st('❌ '+err.message);fail++}
+  }
+  splitBusy=false;go.disabled=false;
+  renderSplitSegs();renderExDB();populateCatFilter();
+  document.getElementById('sp-ex-list').innerHTML=exDB.map(e=>`<option value="${escAttr(e.name)}">`).join('');
+  toast(fail?`⚠️ ${ok} subidos, ${fail} con error`:`✅ ${ok} video${ok===1?'':'s'} subido${ok===1?'':'s'} y asignado${ok===1?'':'s'}`);
 };
 
 let savingExercise=false;
