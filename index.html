@@ -4814,8 +4814,14 @@ window.toggleYT=function(tap){
 // Videos propios (Cloudinary u otro .mp4): mismo comportamiento que embedYT.
 window.embedVid=function(th,url){
   const e=document.createElement('div');e.className='vid-em';e.dataset.url=url;
-  e.innerHTML=`<video src="${url}" autoplay muted loop playsinline preload="auto"></video><div class="yt-tap" onclick="toggleVid(this)"></div><button class="yt-min" onclick="collapseVid(this.parentElement)">✕ Minimizar</button>`;
+  e.innerHTML=`<video src="${url}" autoplay muted loop playsinline preload="auto" onerror="vidFallback(this)"></video><div class="yt-tap" onclick="toggleVid(this)"></div><button class="yt-min" onclick="collapseVid(this.parentElement)">✕ Minimizar</button>`;
   th.replaceWith(e);
+};
+// Si Cloudinary no puede transformar el video (ej. HDR subido antes de que la
+// app lo convirtiera), se prueba el original sin transformar.
+window.vidFallback=function(v){
+  const p=cldParse(v.getAttribute('src'));const raw=p&&p.base+p.rest;
+  if(raw&&v.getAttribute('src')!==raw)v.src=raw;
 };
 window.toggleVid=function(tap){
   const v=tap.previousElementSibling;
@@ -5099,7 +5105,7 @@ function showVideoPreview(url){
     // Para elegir el corte se muestra el video completo, no el ya cortado.
     const src=p?p.base+'f_auto,q_auto/'+p.rest:url;
     prev.style.display='block';
-    prev.innerHTML=`<video id="em-prev-vid" src="${src}" muted playsinline controls preload="metadata" style="width:100%;max-height:300px;border-radius:8px;margin-top:6px;background:#000"></video>`+(p?`
+    prev.innerHTML=`<video id="em-prev-vid" src="${src}" muted playsinline controls preload="metadata" onerror="vidFallback(this)" style="width:100%;max-height:300px;border-radius:8px;margin-top:6px;background:#000"></video>`+(p?`
       <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:6px">
         <span style="font-size:.78rem;font-weight:700">✂️ Cortar:</span>
         <button type="button" class="btn bg2 xs" onclick="setVidTrim('so')">Inicio acá</button>
@@ -5176,7 +5182,18 @@ window.uploadExVideo=async function(inp){
   const file=inp.files[0];inp.value='';
   if(!file)return;
   if(!CLOUDINARY_CLOUD||!CLOUDINARY_PRESET){uiAlert('Falta configurar Cloudinary.');return}
-  if(file.size>MAX_VID_MB*1048576){
+  // Hasta 1 GB se intenta convertir entero (un clip de celu de pocos segundos
+  // pesa mucho por el HDR); si después de convertir sigue pesado, se ofrece cortar.
+  const st=document.getElementById('em-upload-status'),btn=document.getElementById('em-upload-btn');
+  let clip=null;
+  if(file.size<=1024*1048576){
+    uploadingVideo=true;btn.disabled=true;st.textContent='Preparando video...';
+    try{clip=await cutClip(await import(MEDIABUNNY_URL),file,undefined,undefined,p=>{st.textContent=`Preparando video... ${Math.round(p*100)}%`})}
+    catch(err){console.error(err)}
+    finally{uploadingVideo=false;btn.disabled=false;st.textContent=''}
+  }
+  if(!clip&&file.size<=MAX_VID_MB*1048576)clip=file;
+  if(!clip||clip.size>MAX_VID_MB*1048576){
     if(!await uiConfirm(`El video pesa ${Math.round(file.size/1048576)} MB y el máximo por video es ${MAX_VID_MB} MB. ¿Querés cortarlo acá? Elegís el tramo y se sube solo esa parte.`))return;
     // El cortador guarda el video directo en el ejercicio, así que se cierra
     // el editor para que un "Guardar" posterior no pise el video nuevo.
@@ -5184,10 +5201,9 @@ window.uploadExVideo=async function(inp){
     closeExModal();openSplitModal();loadSplitFile(file,{name,cat});
     return;
   }
-  const st=document.getElementById('em-upload-status'),btn=document.getElementById('em-upload-btn');
   uploadingVideo=true;btn.disabled=true;st.textContent='Subiendo... 0%';
   try{
-    const raw=await uploadToCloudinary(file,p=>{st.textContent=`Subiendo... ${Math.round(p*100)}%`});
+    const raw=await uploadToCloudinary(clip,p=>{st.textContent=`Subiendo... ${Math.round(p*100)}%`});
     // f_auto,q_auto: Cloudinary entrega un formato y peso que el celu del
     // alumno puede reproducir (convierte HEVC de iPhone) y gasta menos cuota.
     const url=raw.replace('/video/upload/','/video/upload/f_auto,q_auto/');
@@ -5379,20 +5395,32 @@ window.splitPlay=function(i){
   const stop=()=>{if(v.currentTime>=s.end){v.pause();v.removeEventListener('timeupdate',stop)}};
   v.addEventListener('timeupdate',stop);
 };
-async function cutClip(MB,file,start,end,shrink){
-  const input=new MB.Input({source:new MB.BlobSource(file),formats:MB.ALL_FORMATS});
-  const output=new MB.Output({format:new MB.Mp4OutputFormat({fastStart:'in-memory'}),target:new MB.BufferTarget()});
-  // shrink: si el corte copiado pesa demasiado se recodifica a 720p.
-  const video=shrink?track=>{
-    const k=720/Math.min(track.displayWidth,track.displayHeight);
-    const o={codec:'avc',quality:MB.QUALITY_MEDIUM,forceTranscode:true};
-    if(k<1){o.width=Math.round(track.displayWidth*k/2)*2;o.height=Math.round(track.displayHeight*k/2)*2}
-    return o;
-  }:undefined;
-  const conv=await MB.Conversion.init({input,output,trim:{start,end},audio:{discard:true},video,showWarnings:false});
-  if(!conv.isValid)throw new Error('formato de video no soportado');
-  await conv.execute();
-  return new File([output.target.buffer],'clip.mp4',{type:'video/mp4'});
+// Se recodifica siempre a H.264 ≤720p, SDR y sin audio: los celus graban en
+// HEVC con HDR (Samsung HDR10+) y Cloudinary no puede transformar eso, así que
+// el alumno no veía nada. Pasar cada cuadro por un canvas lo baja a SDR.
+// Si el navegador no puede recodificar, se copia el tramo tal cual.
+async function cutClip(MB,file,start,end,onProgress){
+  const run=async transcode=>{
+    const input=new MB.Input({source:new MB.BlobSource(file),formats:MB.ALL_FORMATS});
+    const output=new MB.Output({format:new MB.Mp4OutputFormat({fastStart:'in-memory'}),target:new MB.BufferTarget()});
+    const video=transcode?track=>{
+      const k=Math.min(1,720/Math.min(track.displayWidth,track.displayHeight));
+      const w=Math.round(track.displayWidth*k/2)*2,h=Math.round(track.displayHeight*k/2)*2;
+      const cv=new OffscreenCanvas(w,h),ctx=cv.getContext('2d');
+      return{codec:'avc',quality:MB.QUALITY_MEDIUM,forceTranscode:true,width:w,height:h,fit:'fill',
+        process:s=>{s.drawWithFit(ctx,{fit:'fill'});return cv},processedWidth:w,processedHeight:h};
+    }:undefined;
+    const conv=await MB.Conversion.init({input,output,trim:start!=null?{start,end}:undefined,audio:{discard:true},video,showWarnings:false});
+    if(!conv.isValid)return null;
+    if(onProgress)conv.onProgress=onProgress;
+    await conv.execute();
+    return new File([output.target.buffer],'clip.mp4',{type:'video/mp4'});
+  };
+  let clip=null;
+  try{clip=await run(true)}catch(e){console.warn('recodificación falló, se copia',e)}
+  clip=clip||await run(false);
+  if(!clip)throw new Error('formato de video no soportado');
+  return clip;
 }
 async function setExerciseVideo(name,cat,video){
   const ex=findExByName(name);
@@ -5423,8 +5451,7 @@ window.splitGo=async function(){
     const st=t=>{s.status=t;const e=document.getElementById('sp-st-'+i);if(e)e.textContent=t};
     try{
       st('Cortando...');
-      let clip=await cutClip(MB,splitFile,s.start,s.end,false);
-      if(clip.size>MAX_VID_MB*1048576){st('Achicando...');clip=await cutClip(MB,splitFile,s.start,s.end,true)}
+      const clip=await cutClip(MB,splitFile,s.start,s.end,p=>st(`Cortando ${Math.round(p*100)}%`));
       if(clip.size>MAX_VID_MB*1048576)throw new Error(`pesa ${Math.round(clip.size/1048576)} MB, máximo ${MAX_VID_MB}`);
       const raw=await uploadToCloudinary(clip,p=>st(`Subiendo ${Math.round(p*100)}%`));
       st('Guardando...');
