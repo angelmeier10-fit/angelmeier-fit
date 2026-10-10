@@ -5176,7 +5176,14 @@ window.uploadExVideo=async function(inp){
   const file=inp.files[0];inp.value='';
   if(!file)return;
   if(!CLOUDINARY_CLOUD||!CLOUDINARY_PRESET){uiAlert('Falta configurar Cloudinary.');return}
-  if(file.size>MAX_VID_MB*1048576){uiAlert(`El video pesa ${Math.round(file.size/1048576)} MB y el máximo es ${MAX_VID_MB} MB. Recortalo o comprimilo antes de subirlo.`);return}
+  if(file.size>MAX_VID_MB*1048576){
+    if(!await uiConfirm(`El video pesa ${Math.round(file.size/1048576)} MB y el máximo por video es ${MAX_VID_MB} MB. ¿Querés cortarlo acá? Elegís el tramo y se sube solo esa parte.`))return;
+    // El cortador guarda el video directo en el ejercicio, así que se cierra
+    // el editor para que un "Guardar" posterior no pise el video nuevo.
+    const name=document.getElementById('em-name').value.trim(),cat=document.getElementById('em-cat').value;
+    closeExModal();openSplitModal();loadSplitFile(file,{name,cat});
+    return;
+  }
   const st=document.getElementById('em-upload-status'),btn=document.getElementById('em-upload-btn');
   uploadingVideo=true;btn.disabled=true;st.textContent='Subiendo... 0%';
   try{
@@ -5290,7 +5297,7 @@ window.resyncTodosLosVideos=async function(){
 // cuadros sin recodificar, es rápido) y cada tramo se sube a Cloudinary como el
 // video de su ejercicio. El video largo nunca se sube entero.
 const MEDIABUNNY_URL='https://cdn.jsdelivr.net/npm/mediabunny@1.59.1/dist/bundles/mediabunny.min.mjs';
-let splitFile=null,splitSegs=[],splitStart=null,splitBusy=false;
+let splitFile=null,splitSegs=[],splitStart=null,splitBusy=false,splitDef=null;
 const findExByName=n=>exDB.find(e=>norm(e.name).trim()===norm(n).trim());
 const escAttr=s=>String(s??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
 window.openSplitModal=function(){
@@ -5311,14 +5318,17 @@ window.closeSplitModal=async function(){
   document.getElementById('split-modal').classList.remove('open');
 };
 window.pickSplitFile=function(inp){
-  const f=inp.files[0];inp.value='';if(!f)return;
-  splitFile=f;splitSegs=[];splitStart=null;
+  const f=inp.files[0];inp.value='';if(f)loadSplitFile(f);
+};
+// def: ejercicio desde el que se llegó (editor), para precargar el primer corte.
+function loadSplitFile(f,def){
+  splitFile=f;splitSegs=[];splitStart=null;splitDef=def?.name?def:null;
   const v=document.getElementById('sp-vid');
   if(v.src)URL.revokeObjectURL(v.src);
   v.src=URL.createObjectURL(f);v.style.display='block';
   document.getElementById('sp-controls').style.display='flex';
   renderSplitSegs();
-};
+}
 window.splitMark=function(which){
   const t=Math.round(document.getElementById('sp-vid').currentTime*10)/10;
   if(which==='start')splitStart=t;
@@ -5326,7 +5336,8 @@ window.splitMark=function(which){
     // Sin "Inicio" marcado, el corte arranca donde terminó el anterior.
     const s=splitStart??(splitSegs.length?splitSegs[splitSegs.length-1].end:0);
     if(t<=s){uiAlert('El fin tiene que ser después del inicio.');return}
-    splitSegs.push({start:s,end:t,name:'',cat:exCats[0]||'',status:''});
+    const d=!splitSegs.length&&splitDef;
+    splitSegs.push({start:s,end:t,name:d?d.name:'',cat:d?d.cat:(exCats[0]||''),status:''});
     splitStart=null;
   }
   renderSplitSegs();
