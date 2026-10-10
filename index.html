@@ -257,10 +257,12 @@ textarea{resize:vertical;min-height:52px}
 .yt-em{position:relative;width:100%;padding-bottom:56.25%;border-radius:9px;overflow:hidden;margin-top:7px;background:#000}
 .yt-em iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:none}
 .yt-em.short{padding-bottom:0;aspect-ratio:9/16;width:auto;height:min(70vh,560px);max-width:100%;margin-left:auto;margin-right:auto}
-.yt-em .yt-tap{position:absolute;inset:0;cursor:pointer;display:flex;align-items:center;justify-content:center}
-.yt-em .yt-tap.paused{background:rgba(0,0,0,.6)}
-.yt-em .yt-tap.paused::after{content:'▶';color:#fff;font-size:3rem;opacity:.9}
-.yt-em .yt-min{position:absolute;top:6px;right:6px;z-index:2;background:rgba(0,0,0,.7);color:#fff;border:none;border-radius:7px;padding:5px 10px;font-size:.72rem;font-weight:700;font-family:inherit;cursor:pointer}
+.vid-em{position:relative;display:flex;justify-content:center;border-radius:9px;overflow:hidden;margin-top:7px;background:#000}
+.vid-em video{display:block;max-width:100%;max-height:min(70vh,560px)}
+.yt-em .yt-tap,.vid-em .yt-tap{position:absolute;inset:0;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.yt-em .yt-tap.paused,.vid-em .yt-tap.paused{background:rgba(0,0,0,.6)}
+.yt-em .yt-tap.paused::after,.vid-em .yt-tap.paused::after{content:'▶';color:#fff;font-size:3rem;opacity:.9}
+.yt-em .yt-min,.vid-em .yt-min{position:absolute;top:6px;right:6px;z-index:2;background:rgba(0,0,0,.7);color:#fff;border:none;border-radius:7px;padding:5px 10px;font-size:.72rem;font-weight:700;font-family:inherit;cursor:pointer}
 .plog{margin-top:11px;border-top:1px solid var(--bd);padding-top:10px}
 .lr{display:grid;grid-template-columns:1fr 1fr auto;gap:6px;margin-bottom:6px}
 .lr input{font-size:.8rem;padding:6px 9px}
@@ -1154,7 +1156,10 @@ setTimeout(()=>{
       <div class="fg"><label>Categoría</label>
         <select id="em-cat"></select>
       </div>
-      <div class="fg"><label>Link de YouTube (opcional)</label><input id="em-video" placeholder="https://youtube.com/..."></div>
+      <div class="fg"><label>Video (opcional): link de YouTube o subí un archivo</label><input id="em-video" placeholder="https://youtube.com/...">
+        <div style="display:flex;gap:8px;align-items:center;margin-top:6px"><button type="button" class="btn bg2 sm" id="em-upload-btn" onclick="document.getElementById('em-file').click()">📤 Subir video</button><span id="em-upload-status" style="font-size:.75rem;color:var(--mu)"></span></div>
+        <input type="file" id="em-file" accept="video/*" style="display:none" onchange="uploadExVideo(this)">
+      </div>
       <div id="em-preview" style="display:none"></div>
       <div class="fg"><label>Notas (opcional)</label><textarea id="em-notes" placeholder="Cómo ejecutarlo, técnica, errores comunes..."></textarea></div>
       <div class="fg"><label>Ejercicio de referencia para el peso (opcional)</label><select id="em-refex"><option value="">— Usar historial propio —</option></select></div>
@@ -2378,6 +2383,13 @@ function exHistoryRowHtml(personKey,exName){
 }
 function getYTId(url){if(!url)return null;const m=url.match(/(?:shorts\/|v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);return m?m[1]:null}
 function isYTShort(url){return /shorts\//.test(url||'')}
+function isFileVid(url){return /res\.cloudinary\.com\/.+\/video\/|\.(mp4|webm|mov|m4v)(\?|$)/i.test(url||'')}
+function vidBtnHtml(url,mt){
+  const st=`margin-top:${mt}px`;const ytId=getYTId(url);
+  if(ytId)return`<button class="btn bg2 sm" style="${st}" onclick="embedYT(this,'${ytId}',${isYTShort(url)})">▶ Ver video</button>`;
+  if(isFileVid(url))return`<button class="btn bg2 sm" style="${st}" onclick="embedVid(this,'${jsAttr(url)}')">▶ Ver video</button>`;
+  return url?`<a href="${url}" target="_blank" class="btn bg2 sm" style="${st}">▶ Ver video</a>`:'';
+}
 function hideLoading(){document.getElementById('loading').style.display='none'}
 
 // ══ INIT ══
@@ -4473,8 +4485,7 @@ window.selectCVWeek=function(clientId,key){
 function renderWarmupBlock(c,bkey,blk,bi){
   const exList=blk.exercises.map((ex,ei)=>{
     const ekey=`${bkey}-wu${ei}`;
-    const ytId=getYTId(ex.video);
-    const vidHtml=ytId?`<button class="btn bg2 sm" style="margin-top:5px" onclick="embedYT(this,'${ytId}',${isYTShort(ex.video)})">▶ Ver video</button>`:ex.video?`<a href="${ex.video}" target="_blank" class="btn bg2 sm" style="margin-top:5px">▶ Ver video</a>`:'';
+    const vidHtml=vidBtnHtml(ex.video,5);
     let schemeHtml='';
     if(ex.scheme?.length){
       const isLastEx=(ei===blk.exercises.length-1);
@@ -4547,8 +4558,7 @@ function renderFuncBlock(c,bkey,blk,bi,isAdminView){
     inner+=`<div style="font-size:.7rem;color:var(--mu);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px">Ejercicios incluidos</div>`;
     blk.exercises.forEach((ex,ei)=>{
       const ekey=bkey+'-fe'+ei;
-      const ytId=getYTId(ex.video);
-      const vidHtml=ytId?`<button class="btn bg2 sm" style="margin-top:5px" onclick="embedYT(this,'${ytId}',${isYTShort(ex.video)})">▶ Ver video</button>`:'';
+      const vidHtml=vidBtnHtml(ex.video,5);
       const logs=(c.progress||{})[c.id+'-'+ekey+'-logs']||[];
       const lastLog=logs.length?logs[logs.length-1]:null;
       const isTime=/\d+\s*(min|s$|seg|km)/i.test((ex.reps||'').trim());
@@ -4622,8 +4632,7 @@ function renderGymBlock(c,bkey,blk,bi,isAdminView){
     const vk=`${c.id}-${ekey}-variant`;
     const selVariant=c.progress[vk]||0;
     const activeEx=(selVariant>0&&ex.variants?.[selVariant-1])?ex.variants[selVariant-1]:ex;
-    const ytId=getYTId(activeEx.video);
-    const vidHtml=ytId?`<button class="btn bg2 sm" style="margin-top:6px" onclick="embedYT(this,'${ytId}',${isYTShort(activeEx.video)})">▶ Ver video</button>`:activeEx.video?`<a href="${activeEx.video}" target="_blank" class="btn bg2 sm" style="margin-top:6px">▶ Ver video</a>`:'';
+    const vidHtml=vidBtnHtml(activeEx.video,6);
     if(ei>0){
       const pause=(blk.pauses||[])[ei-1]||'';
       const pauseTimerId=`${c.id}-${bkey}-pause${ei-1}`;
@@ -4780,6 +4789,17 @@ window.toggleYT=function(tap){
   const paused=tap.classList.toggle('paused');
   tap.previousElementSibling.contentWindow.postMessage(JSON.stringify({event:'command',func:paused?'pauseVideo':'playVideo',args:[]}),'*');
 };
+// Videos propios (Cloudinary u otro .mp4): mismo comportamiento que embedYT.
+window.embedVid=function(th,url){
+  const e=document.createElement('div');e.className='vid-em';e.dataset.url=url;
+  e.innerHTML=`<video src="${url}" autoplay muted loop playsinline preload="auto"></video><div class="yt-tap" onclick="toggleVid(this)"></div><button class="yt-min" onclick="collapseVid(this.parentElement)">✕ Minimizar</button>`;
+  th.replaceWith(e);
+};
+window.toggleVid=function(tap){
+  const v=tap.previousElementSibling;
+  if(tap.classList.toggle('paused'))v.pause();else v.play();
+};
+window.collapseVid=function(e){const b=document.createElement('button');b.className='btn bg2 sm';b.style.marginTop='5px';b.textContent='▶ Ver video';const url=e.dataset.url;b.onclick=()=>embedVid(b,url);e.replaceWith(b)};
 
 // Optimista: con la caché local de Firestore la escritura queda guardada al
 // instante y se sincroniza sola; esperar el ack del servidor demoraba el tilde
@@ -4998,7 +5018,7 @@ function renderExDB(){
     return`<div class="exdb-row">
       <span>${ex.name}${ex.notes?` <span title="${ex.notes.replace(/"/g,'&quot;')}" style="cursor:help">📝</span>`:''}</span>
       <span><span class="exdb-cat">${ex.cat}</span></span>
-      <span>${ytId?`<a href="${ex.video}" target="_blank" class="yt-link">▶ ver</a>`:ex.video?`<a href="${ex.video}" target="_blank" class="yt-link">🔗 link</a>`:'<span style="color:var(--mu);font-size:.75rem">sin video</span>'}</span>
+      <span>${ytId||isFileVid(ex.video)?`<a href="${ex.video}" target="_blank" class="yt-link">▶ ver</a>`:ex.video?`<a href="${ex.video}" target="_blank" class="yt-link">🔗 link</a>`:'<span style="color:var(--mu);font-size:.75rem">sin video</span>'}</span>
       <span style="display:flex;gap:5px">
         <button class="btn bg2 xs" onclick="openEditEx('${ex.id}')" title="Editar ejercicio" aria-label="Editar ejercicio">✏️</button>
         <button class="btn bd2 xs" onclick="delEx('${ex.id}')" title="Eliminar ejercicio" aria-label="Eliminar ejercicio">🗑️</button>
@@ -5018,6 +5038,7 @@ let pendingExTarget=null;
 window.openAddExModal=function(){
   document.getElementById('em-name').value='';
   document.getElementById('em-video').value='';
+  document.getElementById('em-upload-status').textContent='';
   document.getElementById('em-notes').value='';
   document.getElementById('em-id').value='';
   document.getElementById('em-preview').style.display='none';
@@ -5038,6 +5059,7 @@ window.openEditEx=function(id){
   document.getElementById('em-name').value=ex.name;
   document.getElementById('em-cat').value=ex.cat;
   document.getElementById('em-video').value=ex.video||'';
+  document.getElementById('em-upload-status').textContent='';
   document.getElementById('em-notes').value=ex.notes||'';
   document.getElementById('em-id').value=ex.id;
   populateRefExOptions(ex.id);
@@ -5050,9 +5072,53 @@ document.getElementById('em-video').addEventListener('input',function(){showVide
 function showVideoPreview(url){
   const prev=document.getElementById('em-preview');const ytId=getYTId(url);
   if(ytId){prev.style.display='block';prev.innerHTML=`<img src="https://img.youtube.com/vi/${ytId}/mqdefault.jpg" style="width:100%;border-radius:8px;margin-top:6px">`}
+  else if(isFileVid(url)){prev.style.display='block';prev.innerHTML=`<video src="${url}" muted playsinline controls preload="metadata" style="width:100%;max-height:300px;border-radius:8px;margin-top:6px;background:#000"></video>`}
   else prev.style.display='none';
 }
 window.closeExModal=function(){pendingExTarget=null;document.getElementById('ex-modal').classList.remove('open')};
+
+// Cloudinary (plan gratis, sin tarjeta). Subida "unsigned": el preset define
+// carpeta y restricciones del lado de Cloudinary.
+const CLOUDINARY_CLOUD='cun0qr5o';
+const CLOUDINARY_PRESET='amfit_videos';
+// En el plan gratis Cloudinary solo transforma al vuelo videos de hasta 40 MB.
+const MAX_VID_MB=40;
+let uploadingVideo=false;
+function uploadToCloudinary(file,onProgress){
+  return new Promise((resolve,reject)=>{
+    const fd=new FormData();fd.append('file',file);fd.append('upload_preset',CLOUDINARY_PRESET);
+    const xhr=new XMLHttpRequest();
+    xhr.open('POST',`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/video/upload`);
+    xhr.upload.onprogress=e=>{if(e.lengthComputable)onProgress(e.loaded/e.total)};
+    xhr.onload=()=>{
+      let res={};try{res=JSON.parse(xhr.responseText)}catch(e){}
+      if(xhr.status===200&&res.secure_url)resolve(res.secure_url);
+      else reject(new Error(res.error?.message||('HTTP '+xhr.status)));
+    };
+    xhr.onerror=()=>reject(new Error('sin conexión'));
+    xhr.send(fd);
+  });
+}
+window.uploadExVideo=async function(inp){
+  const file=inp.files[0];inp.value='';
+  if(!file)return;
+  if(!CLOUDINARY_CLOUD||!CLOUDINARY_PRESET){uiAlert('Falta configurar Cloudinary.');return}
+  if(file.size>MAX_VID_MB*1048576){uiAlert(`El video pesa ${Math.round(file.size/1048576)} MB y el máximo es ${MAX_VID_MB} MB. Recortalo o comprimilo antes de subirlo.`);return}
+  const st=document.getElementById('em-upload-status'),btn=document.getElementById('em-upload-btn');
+  uploadingVideo=true;btn.disabled=true;st.textContent='Subiendo... 0%';
+  try{
+    const raw=await uploadToCloudinary(file,p=>{st.textContent=`Subiendo... ${Math.round(p*100)}%`});
+    // f_auto,q_auto: Cloudinary entrega un formato y peso que el celu del
+    // alumno puede reproducir (convierte HEVC de iPhone) y gasta menos cuota.
+    const url=raw.replace('/video/upload/','/video/upload/f_auto,q_auto/');
+    document.getElementById('em-video').value=url;
+    showVideoPreview(url);
+    st.textContent='✅ Video subido. Guardá el ejercicio.';
+  }catch(err){
+    console.error(err);st.textContent='';
+    uiAlert('No se pudo subir el video: '+err.message);
+  }finally{uploadingVideo=false;btn.disabled=false}
+};
 
 // Un ejercicio dentro de un plan/cliente es una COPIA (nombre+video) tomada
 // al momento de agregarlo, no una referencia al catálogo. Por eso editar el
@@ -5149,6 +5215,7 @@ window.resyncTodosLosVideos=async function(){
 let savingExercise=false;
 window.saveExercise=async function(){
   if(savingExercise)return;
+  if(uploadingVideo){uiAlert('Esperá a que termine de subir el video.');return}
   const name=document.getElementById('em-name').value.trim();
   if(!name){uiAlert('Ingresá el nombre.');return}
   savingExercise=true;
