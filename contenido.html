@@ -1434,6 +1434,57 @@ Historia 3 (CTA): Comentá GLUTEOS en el reel y te mando la guía completa grati
       slides: '',
       img: pieza({ cat: 'entrenamiento', formato: FMT_PORTADA_REEL, tipo: 'Portada de reel (pieza única) con una rutina express de 3 ejercicios para glúteos.', foto: 'Mujer de 25-40 años haciendo zancada búlgara con mancuernas en un gimnasio oscuro y prolijo, buena técnica. Sujeto a la derecha, dentro del área central segura.', titulo: '3 EJERCICIOS QUE NO PUEDEN FALTAR', violeta: '3 EJERCICIOS', iconos: 'ícono de cadera → HIP THRUST / ícono de barra → PESO MUERTO RUMANO / ícono de banco → BÚLGARA' }),
     },
+    {
+      id: 'presentacion-carrusel', name: 'Carrusel — Presentación: quién soy (Entrenamiento + Masajes)',
+      post: `Si recién llegás a mi perfil, te cuento quién soy y cómo te puedo ayudar 👋
+
+Soy Ángel: profe de Educación Física, masajista terapéutico hace más de 11 años y estudiante de Kinesiología. Trabajo con masajes, entrenamiento para mayores de 50 y fuerza/funcional en Zona Norte y online.
+
+Deslizá y elegí por dónde empezar 👉
+
+📩 Comentá TURNO, PLAN o GUIA y te mando la info por privado.
+
+#masajeterapeutico #entrenamientofuncional #mayoresde50 #zonanorte #profesordeeducacionfisica`,
+      stories: `Historia 1 (repost): ¿Nuevo por acá? Te cuento quién soy 👋 Deslizá al posteo 👆
+Historia 2 (encuesta): ¿Qué te interesa más? [Masajes / Entrenar]
+Historia 3 (CTA): Comentá TURNO, PLAN o GUIA en el carrusel y te escribo 📩`,
+      slides: `Slide 1 — Portada (foto mía entrenando):
+Hola, soy Ángel.
+Te ayudo a moverte sin dolor y a entrenar con un propósito.
+Deslizá →
+
+Slide 2 — Quién soy:
+Profesor de Educación Física (UNLu, ex INEF)
+Masajista terapéutico desde hace +11 años
+Estudiante avanzado de Kinesiología
+
+Slide 3 — Por qué combino las tres:
+La educación física me enseñó a diseñar el movimiento.
+El masaje, a encontrar dónde se acumula la tensión.
+La kinesiología, a entender qué hay detrás del dolor.
+
+Slide 4 — Masajes (foto de una sesión):
+Masaje terapéutico en Zona Norte.
+Para contracturas, estrés y dolores que no se van.
+
+Slide 5 — Movimiento +50:
+Recuperar postura, energía y autonomía.
+Mes a mes, no en una sesión suelta.
+
+Slide 6 — Fuerza y funcional (foto mía entrenando):
+Fuerza, CrossFit y funcional, online o presencial.
+Primero la técnica y después la carga, con progresiones medidas.
+
+Slide 7 — Cómo trabajo (captura de la app):
+Tu plan en una app: rutinas, videos de cada ejercicio y seguimiento semanal.
+
+Slide 8 — Cierre:
+¿Por dónde empezamos?
+Comentá TURNO si querés un masaje
+Comentá PLAN si querés entrenar conmigo
+Comentá GUIA si querés la guía gratuita +50`,
+      img: pieza({ cat: 'entrenamiento', carrusel: true, formato: FMT_CARRUSEL, tipo: 'Carrusel de presentación personal de 8 slides: "Hola, soy Ángel". Slide 1 portada. Slide 2 "QUIÉN SOY" con íconos PROFESOR DE ED. FÍSICA / MASAJISTA +11 AÑOS / ESTUDIANTE DE KINESIOLOGÍA. Slide 3 "POR QUÉ COMBINO LAS TRES". Slide 4 "MASAJES" (foto: sesión de masaje terapéutico en camilla). Slide 5 "MOVIMIENTO +50" (foto: adulto mayor entrenando movilidad). Slide 6 "FUERZA Y FUNCIONAL" (foto: la que te adjunto de mí haciendo remo con barra). Slide 7 "CÓMO TRABAJO" (captura de la app en un celular). Slide 8 cierre "¿POR DÓNDE EMPEZAMOS?" + "COMENTÁ TURNO · PLAN · GUIA". Generá primero solo la Slide 1 para validar el estilo.', foto: 'Slide 1: usar la foto real que te adjunto (yo haciendo peso muerto en el gimnasio), sin modificar mi cara ni mi cuerpo. Sujeto a la derecha.', titulo: 'Slide 1: HOLA, SOY ÁNGEL', violeta: 'ÁNGEL', iconos: 'Slide 1: ícono de manos → MASAJES / ícono de barra → ENTRENAMIENTO / ícono de persona → +50' }),
+    },
   ];
 
   function saveState(){ setDoc(stateRef, { checks: state }, { merge: true }).catch(()=>{}); }
@@ -1864,6 +1915,14 @@ Historia 3 (CTA): Comentá GLUTEOS en el reel y te mando la guía completa grati
           if (!topics.find(t => t.id === id)) topics.push({ ...SEED_TOPICS.find(s => s.id === id) });
         });
         setDoc(stateRef, { addedGuiaGluteosReels: true }, { merge: true }).catch(()=>{});
+        saveTopics();
+      }
+      // Alta puntual del carrusel de presentación: una sola vez.
+      if (!data.addedPresentacionCarrusel) {
+        if (!topics.find(t => t.id === 'presentacion-carrusel')) {
+          topics.push({ ...SEED_TOPICS.find(s => s.id === 'presentacion-carrusel') });
+        }
+        setDoc(stateRef, { addedPresentacionCarrusel: true }, { merge: true }).catch(()=>{});
         saveTopics();
       }
       // Los bloques de automatización pasaron de ManyChat a Meta Business Suite: actualizar los ya guardados.
