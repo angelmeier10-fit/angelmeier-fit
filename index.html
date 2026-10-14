@@ -5849,7 +5849,8 @@ async function renderProgramaUnificadoHtml(prog,cats,hasSubscription){
     const waLink=c.whatsapp?`<a href="https://wa.me/${c.whatsapp}" target="_blank" style="font-size:.72rem;color:#25D366;text-decoration:none">💬 ${c.whatsapp}</a>`:'';
     const mpLink=c.mpLink?`<a href="${c.mpLink}" target="_blank" style="font-size:.72rem;color:#009EE3;text-decoration:none">💳 Link MP</a>`:'';
     const weekNumsC=hasWeeks?Object.keys(c.weeks).map(Number).sort((a,b)=>a-b):[];
-    const weekBadge=hasWeeks?`<span class="badge bgr2">Semana ${wk} de ${weekNumsC.length}</span>`:'';
+    const mwC=macroWeekInfo(c,wk);
+    const weekBadge=hasWeeks?`<span class="badge bgr2">Semana ${mwC?mwC.currentWeek:wk} de ${mwC?mwC.totalWeeks:weekNumsC.length}</span>`:'';
     const weekSelectHtml=weekNumsC.length>1?`<select id="cli-changeweek-${c.id}" style="width:auto;font-size:.78rem">${weekNumsC.map(w=>`<option value="${w}"${w===wk?' selected':''}>Semana ${w}</option>`).join('')}</select>${startDateInputHTML(`cli-start-${c.id}`)}
     <button class="btn bg2 xs" onclick="cambiarSemanaCliente('${c.id}')">📅 Cambiar semana</button>`:'';
     return`<div style="padding:8px 0;border-bottom:1px solid var(--bd)">
@@ -5874,7 +5875,8 @@ async function renderProgramaUnificadoHtml(prog,cats,hasSubscription){
     const{exerciseLogs,notes}=buildProgressSummary(m.progress||{},days,`${plan.id}-${m.id}`,getMemberCurrentWeekKey(plan,m));
     const progressHtml=renderProgressDetailBlock(`${plan.id}-${m.id}`,exerciseLogs,days,notes)||'<div style="font-size:.78rem;color:var(--mu)">Sin registros todavía.</div>';
     const weekNumsG=planWeekNums(plan);
-    const weekBadgeG=plan.continuo?`<span class="badge bgr2">🔥 ${days.length} días</span>`:weekNumsG.length?`<span class="badge bgr2">Semana ${memberWeek} de ${weekNumsG.length}</span>`:'';
+    const mwG=macroWeekInfo(plan,memberWeek);
+    const weekBadgeG=plan.continuo?`<span class="badge bgr2">🔥 ${days.length} días</span>`:weekNumsG.length?`<span class="badge bgr2">Semana ${mwG?mwG.currentWeek:memberWeek} de ${mwG?mwG.totalWeeks:weekNumsG.length}</span>`:'';
     const weekSelectHtmlG=(!plan.continuo&&weekNumsG.length>1)?`<select id="mw-week-${m.id}" style="width:auto;font-size:.78rem">${weekNumsG.map(w=>`<option value="${w}"${w===m.startWeek?' selected':''}>Semana ${w}</option>`).join('')}</select>${startDateInputHTML(`mw-start-${m.id}`)}
     <button class="btn bg2 xs" onclick="cambiarSemanaMiembro('${plan.id}','${m.id}')">📅 Cambiar semana</button>`:'';
     // El acceso/vencimiento de este alumno se controla en un solo lugar (el
@@ -5970,7 +5972,8 @@ async function renderProgramaUnificadoHtml(prog,cats,hasSubscription){
     return`<select id="susc-changeweek-${uid}" style="width:auto;font-size:.78rem">${weekNums.map(w=>`<option value="${w}"${w===s.startWeek?' selected':''}>Semana ${w}</option>`).join('')}</select>${startDateInputHTML(`susc-start-${uid}`)}
     <button class="btn bg2 xs" onclick="cambiarSemanaAlumno('${uid}')">📅 Cambiar semana</button>`;
   })():'';
-  const weekBadgeS=(planData&&s.categoria!=='global')?(planData.continuo?`<span class="badge bgr2">🔥 ${days.length} días</span>`:`<span class="badge bgr2">Semana ${subWeek} de ${planWeekNums(planData).length}</span>`):'';
+  const mwS=planData?macroWeekInfo(planData,subWeek):null;
+  const weekBadgeS=(planData&&s.categoria!=='global')?(planData.continuo?`<span class="badge bgr2">🔥 ${days.length} días</span>`:`<span class="badge bgr2">Semana ${mwS?mwS.currentWeek:subWeek} de ${mwS?mwS.totalWeeks:planWeekNums(planData).length}</span>`):'';
   const editarPlanBtn=(s.categoria==='__personal__'&&s.planId)?`<button class="btn bpu xs" onclick="irAEditarPlanPersonal('${s.planId}')">✏️ Editar su plan</button>
     <button class="btn bd2 xs" onclick="borrarPlanSuscriptor('${uid}','${s.planId}')">🗑️ Borrar plan</button>`:'';
   const catTxt=s.categoria==='__personal__'?'🎯 Plan personalizado':(catLabel[s.categoria]||s.categoria||'—');
@@ -7057,6 +7060,25 @@ function maxWeekNum(weeks){
   const nums=weeks?Object.keys(weeks).map(Number).filter(n=>n>0):[];
   return nums.length?Math.max(...nums):0;
 }
+// Rango de semanas del plan que cubre cada macrociclo. Sin startWeek guardado,
+// cada uno arranca donde termina el anterior (el primero en la semana 1).
+function macroRanges(mcs){
+  let next=1;
+  return (mcs||[]).map(m=>{const start=m.startWeek||next;const total=m.totalWeeks||12;next=start+total;return{m,start,total}});
+}
+function nextMacroStart(mcs){
+  const r=macroRanges(mcs);
+  return r.length?r[r.length-1].start+r[r.length-1].total:1;
+}
+// "Semana X de Y" relativa al macrociclo en el que cae esa semana del plan; null si no cae en ninguno.
+function macroWeekInfo(owner,weekNum){
+  if(!owner||!weekNum)return null;
+  const r=macroRanges(owner.macrocycles).filter(r=>weekNum>=r.start&&weekNum<r.start+r.total).pop();
+  if(!r)return null;
+  const mesoWeeks=r.m.mesoWeeks||owner.mesoWeeks||4;
+  const num=weekNum-r.start+1;
+  return{currentWeek:num,totalWeeks:r.total,mesoNum:Math.ceil(num/mesoWeeks),totalMesos:Math.ceil(r.total/mesoWeeks)};
+}
 
 function renderStartWeekSelect(selectId,plan){
   const sel=document.getElementById(selectId);
@@ -7262,6 +7284,8 @@ function prevSessionRowHtml(l){
 // Info de semana/mesociclo actual del alumno, respetando su semana de inicio (no siempre arranca en la 1)
 function getMemberWeekMesoInfo(plan,member){
   const weekNum=getMemberCurrentWeekNum(plan,member)||1;
+  const inMacro=macroWeekInfo(plan,weekNum);
+  if(inMacro)return inMacro;
   const mesoWeeks=plan.mesoWeeks||4;
   const totalWeeks=Math.max(plan.totalWeeks||planWeekNums(plan).length||1,maxWeekNum(plan.weeks));
   const mesoNum=Math.ceil(weekNum/mesoWeeks);
@@ -9873,6 +9897,8 @@ function calcCurrentWeek(c){
 }
 
 function getMesoInfo(c){
+  const inMacro=macroWeekInfo(c,calcCurrentWeek(c));
+  if(inMacro)return inMacro;
   const totalWeeks=Math.max(c.totalWeeks||12,maxWeekNum(c.weeks));
   const mesoWeeks=c.mesoWeeks||4;
   const currentWeek=Math.min(calcCurrentWeek(c),totalWeeks);
@@ -9906,7 +9932,7 @@ function renderMacroPanel(clientId){
 
   var activeMcId=c._activeMcId||c.macrocycles[0].id;
   var mc=c.macrocycles.find(function(m){return m.id===activeMcId;})||c.macrocycles[0];
-  if((mc.totalWeeks||12)<maxWeekNum(c.weeks))mc.totalWeeks=maxWeekNum(c.weeks);
+  var mcStart=macroRanges(c.macrocycles).find(function(r){return r.m===mc;}).start;
 
   var h='';
 
@@ -9927,7 +9953,7 @@ function renderMacroPanel(clientId){
   h+='</div>';
 
   // Active macro info
-  h+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-top:12px">';
+  h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-top:12px">';
   h+='<div><label style="font-size:.68rem;color:var(--mu);font-weight:600;text-transform:uppercase;display:block;margin-bottom:3px">Título</label>';
   h+='<input type="text" class="macro-field" data-cid="'+clientId+'" data-mcid="'+mc.id+'" data-fn="title" value="'+mc.title+'" style="width:100%;background:var(--s2);border:1px solid var(--bd);color:var(--tx);border-radius:7px;padding:5px 9px;font-size:.82rem;font-family:inherit"></div>';
   h+='<div><label style="font-size:.68rem;color:var(--mu);font-weight:600;text-transform:uppercase;display:block;margin-bottom:3px">Fecha inicio</label>';
@@ -9936,6 +9962,8 @@ function renderMacroPanel(clientId){
   h+='<input type="date" class="macro-field" data-cid="'+clientId+'" data-mcid="'+mc.id+'" data-fn="fechaFin" value="'+(mc.fechaFin||'')+'" style="width:100%;background:var(--s2);border:1px solid var(--bd);color:var(--tx);border-radius:7px;padding:5px 9px;font-size:.82rem;font-family:inherit"></div>';
   h+='<div><label style="font-size:.68rem;color:var(--mu);font-weight:600;text-transform:uppercase;display:block;margin-bottom:3px">Total semanas</label>';
   h+='<input type="number" class="macro-field" data-cid="'+clientId+'" data-mcid="'+mc.id+'" data-fn="totalWeeks" value="'+(mc.totalWeeks||12)+'" min="1" max="52" style="width:100%;background:var(--s2);border:1px solid var(--bd);color:var(--tx);border-radius:7px;padding:5px 9px;font-size:.82rem;font-family:inherit"></div>';
+  h+='<div><label style="font-size:.68rem;color:var(--mu);font-weight:600;text-transform:uppercase;display:block;margin-bottom:3px">Empieza en semana del plan</label>';
+  h+='<input type="number" class="macro-field" data-cid="'+clientId+'" data-mcid="'+mc.id+'" data-fn="startWeek" value="'+mcStart+'" min="1" style="width:100%;background:var(--s2);border:1px solid var(--bd);color:var(--tx);border-radius:7px;padding:5px 9px;font-size:.82rem;font-family:inherit"></div>';
   h+='</div>';
   h+='</div>';
 
@@ -9943,13 +9971,14 @@ function renderMacroPanel(clientId){
   var totalWeeks=mc.totalWeeks||12;
   var mesoWeeks=mc.mesoWeeks||c.mesoWeeks||4;
   var totalMesos=Math.ceil(totalWeeks/mesoWeeks);
-  var currentWeek=calcCurrentWeek(c);
+  // Semana dentro de este macrociclo (0 = todavía no empezó; se tope en el total si ya terminó)
+  var currentWeek=Math.max(0,Math.min(calcCurrentWeek(c)-mcStart+1,totalWeeks));
   var pct=Math.min(100,Math.round((currentWeek/totalWeeks)*100));
   var mesoNum=Math.ceil(currentWeek/mesoWeeks);
 
   h+='<div style="background:var(--s1);border:1px solid var(--bd);border-radius:12px;padding:14px 16px;margin-bottom:14px">';
   h+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px">';
-  h+='<div style="background:var(--s2);border-radius:9px;padding:11px;text-align:center"><b style="font-size:1.5rem;color:var(--ac2)">'+currentWeek+'</b><div style="font-size:.68rem;color:var(--mu);text-transform:uppercase;margin-top:2px">Semana actual</div></div>';
+  h+='<div style="background:var(--s2);border-radius:9px;padding:11px;text-align:center"><b style="font-size:1.5rem;color:var(--ac2)">'+(currentWeek||'—')+'</b><div style="font-size:.68rem;color:var(--mu);text-transform:uppercase;margin-top:2px">Semana actual</div></div>';
   h+='<div style="background:var(--s2);border-radius:9px;padding:11px;text-align:center"><b style="font-size:1.5rem;color:var(--or)">'+mesoNum+'/'+totalMesos+'</b><div style="font-size:.68rem;color:var(--mu);text-transform:uppercase;margin-top:2px">Mesociclo</div></div>';
   h+='<div style="background:var(--s2);border-radius:9px;padding:11px;text-align:center"><b style="font-size:1.5rem;color:var(--gr)">'+pct+'%</b><div style="font-size:.68rem;color:var(--mu);text-transform:uppercase;margin-top:2px">Completado</div></div>';
   h+='</div>';
@@ -10048,6 +10077,7 @@ window.addMacrocycle=async function(cid){
     fechaInicio:'',fechaFin:'',
     totalWeeks:12,mesoWeeks:4,data:{}
   };
+  newMc.startWeek=nextMacroStart(c.macrocycles);
   c.macrocycles.push(newMc);
   c._activeMcId=newMc.id;
   await setDoc(doc(db,'clients',cid),c);
@@ -10064,6 +10094,7 @@ window.duplicateMacrocycle=async function(cid,mcid){
   var copy=JSON.parse(JSON.stringify(src));
   copy.id='mc'+Date.now();
   copy.title=src.title+' (copia)';
+  copy.startWeek=nextMacroStart(c.macrocycles);
   c.macrocycles.push(copy);
   c._activeMcId=copy.id;
   await setDoc(doc(db,'clients',cid),c);
@@ -10079,6 +10110,7 @@ window.deleteMacrocycle=async function(cid,mcid){
   var mc=c.macrocycles.find(function(m){return m.id===mcid;});
   if(!mc)return;
   if(!await uiConfirm('¿Borrar "'+mc.title+'"? Se pierde lo cargado en sus mesociclos.'))return;
+  macroRanges(c.macrocycles).forEach(function(r){r.m.startWeek=r.start;}); // que los siguientes no se corran
   c.macrocycles=c.macrocycles.filter(function(m){return m.id!==mcid;});
   c._activeMcId=c.macrocycles[0].id;
   await setDoc(doc(db,'clients',cid),c);
@@ -10091,15 +10123,13 @@ window.saveMacroField=async function(cid,mcid,fn,val){
   if(!c)return;
   var mc=c.macrocycles&&c.macrocycles.find(function(m){return m.id===mcid;});
   if(!mc)return;
-  mc[fn]=fn==='totalWeeks'||fn==='mesoWeeks'?parseInt(val)||12:val;
-  // El total del macrociclo activo es el que usa la ficha del alumno ("Semana X de Y")
-  if(fn==='totalWeeks'){
-    c.totalWeeks=Math.max(mc.totalWeeks,maxWeekNum(c.weeks));
-    mc.totalWeeks=c.totalWeeks;
-    var ecTw=document.getElementById('ec-totalweeks');if(ecTw)ecTw.value=c.totalWeeks;
-  }
+  if(fn==='startWeek'){
+    // Fijar el inicio de todos los anteriores para que no se corran con este cambio
+    macroRanges(c.macrocycles).forEach(function(r){r.m.startWeek=r.start;});
+    mc.startWeek=parseInt(val)||1;
+  }else mc[fn]=fn==='totalWeeks'||fn==='mesoWeeks'?parseInt(val)||12:val;
   await setDoc(doc(db,'clients',cid),c);
-  if(fn==='totalWeeks'){
+  if(fn==='totalWeeks'||fn==='startWeek'){
     document.getElementById('macro-content').innerHTML=renderMacroPanel(cid);
   }else if(fn==='title'){
     var opt=document.querySelector('#macro-content .macro-selector option[value="'+mcid+'"]');
@@ -10158,7 +10188,7 @@ function renderPlanMacroPanel(planId){
 
   var activeMcId=plan._activeMcId||plan.macrocycles[0].id;
   var mc=plan.macrocycles.find(function(m){return m.id===activeMcId;})||plan.macrocycles[0];
-  if((mc.totalWeeks||12)<maxWeekNum(plan.weeks))mc.totalWeeks=maxWeekNum(plan.weeks);
+  var mcStart=macroRanges(plan.macrocycles).find(function(r){return r.m===mc;}).start;
 
   var h='';
 
@@ -10177,7 +10207,7 @@ function renderPlanMacroPanel(planId){
   h+='<button class="add-pmacro-btn" data-pid="'+planId+'" style="background:var(--ac);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:.82rem;font-weight:600;font-family:inherit;cursor:pointer">＋ Nuevo macrociclo</button>';
   h+='</div>';
 
-  h+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-top:12px">';
+  h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-top:12px">';
   h+='<div><label style="font-size:.68rem;color:var(--mu);font-weight:600;text-transform:uppercase;display:block;margin-bottom:3px">Título</label>';
   h+='<input type="text" class="pmacro-field" data-pid="'+planId+'" data-mcid="'+mc.id+'" data-fn="title" value="'+mc.title+'" style="width:100%;background:var(--s2);border:1px solid var(--bd);color:var(--tx);border-radius:7px;padding:5px 9px;font-size:.82rem;font-family:inherit"></div>';
   h+='<div><label style="font-size:.68rem;color:var(--mu);font-weight:600;text-transform:uppercase;display:block;margin-bottom:3px">Fecha inicio</label>';
@@ -10186,6 +10216,8 @@ function renderPlanMacroPanel(planId){
   h+='<input type="date" class="pmacro-field" data-pid="'+planId+'" data-mcid="'+mc.id+'" data-fn="fechaFin" value="'+(mc.fechaFin||'')+'" style="width:100%;background:var(--s2);border:1px solid var(--bd);color:var(--tx);border-radius:7px;padding:5px 9px;font-size:.82rem;font-family:inherit"></div>';
   h+='<div><label style="font-size:.68rem;color:var(--mu);font-weight:600;text-transform:uppercase;display:block;margin-bottom:3px">Total semanas</label>';
   h+='<input type="number" class="pmacro-field" data-pid="'+planId+'" data-mcid="'+mc.id+'" data-fn="totalWeeks" value="'+(mc.totalWeeks||12)+'" min="1" max="52" style="width:100%;background:var(--s2);border:1px solid var(--bd);color:var(--tx);border-radius:7px;padding:5px 9px;font-size:.82rem;font-family:inherit"></div>';
+  h+='<div><label style="font-size:.68rem;color:var(--mu);font-weight:600;text-transform:uppercase;display:block;margin-bottom:3px">Empieza en semana del plan</label>';
+  h+='<input type="number" class="pmacro-field" data-pid="'+planId+'" data-mcid="'+mc.id+'" data-fn="startWeek" value="'+mcStart+'" min="1" style="width:100%;background:var(--s2);border:1px solid var(--bd);color:var(--tx);border-radius:7px;padding:5px 9px;font-size:.82rem;font-family:inherit"></div>';
   h+='</div>';
   h+='</div>';
 
@@ -10199,7 +10231,7 @@ function renderPlanMacroPanel(planId){
 
   h+='<div style="background:var(--s1);border:1px solid var(--bd);border-radius:12px;padding:14px 16px;margin-bottom:14px">';
   h+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px">';
-  h+='<div style="background:var(--s2);border-radius:9px;padding:11px;text-align:center"><b style="font-size:1.5rem;color:var(--ac2)">'+currentWeek+'</b><div style="font-size:.68rem;color:var(--mu);text-transform:uppercase;margin-top:2px">Semana actual</div></div>';
+  h+='<div style="background:var(--s2);border-radius:9px;padding:11px;text-align:center"><b style="font-size:1.5rem;color:var(--ac2)">'+(currentWeek||'—')+'</b><div style="font-size:.68rem;color:var(--mu);text-transform:uppercase;margin-top:2px">Semana actual</div></div>';
   h+='<div style="background:var(--s2);border-radius:9px;padding:11px;text-align:center"><b style="font-size:1.5rem;color:var(--or)">'+mesoNum+'/'+totalMesos+'</b><div style="font-size:.68rem;color:var(--mu);text-transform:uppercase;margin-top:2px">Mesociclo</div></div>';
   h+='<div style="background:var(--s2);border-radius:9px;padding:11px;text-align:center"><b style="font-size:1.5rem;color:var(--gr)">'+pct+'%</b><div style="font-size:.68rem;color:var(--mu);text-transform:uppercase;margin-top:2px">Completado</div></div>';
   h+='</div>';
@@ -10291,6 +10323,7 @@ window.addMacrocyclePlan=async function(pid){
     fechaInicio:'',fechaFin:'',
     totalWeeks:12,mesoWeeks:4,data:{}
   };
+  newMc.startWeek=nextMacroStart(plan.macrocycles);
   plan.macrocycles.push(newMc);
   plan._activeMcId=newMc.id;
   await setDoc(doc(db,'planes',pid),plan);
@@ -10307,6 +10340,7 @@ window.duplicateMacrocyclePlan=async function(pid,mcid){
   var copy=JSON.parse(JSON.stringify(src));
   copy.id='mc'+Date.now();
   copy.title=src.title+' (copia)';
+  copy.startWeek=nextMacroStart(plan.macrocycles);
   plan.macrocycles.push(copy);
   plan._activeMcId=copy.id;
   await setDoc(doc(db,'planes',pid),plan);
@@ -10322,6 +10356,7 @@ window.deleteMacrocyclePlan=async function(pid,mcid){
   var mc=plan.macrocycles.find(function(m){return m.id===mcid;});
   if(!mc)return;
   if(!await uiConfirm('¿Borrar "'+mc.title+'"? Se pierde lo cargado en sus mesociclos.'))return;
+  macroRanges(plan.macrocycles).forEach(function(r){r.m.startWeek=r.start;});
   plan.macrocycles=plan.macrocycles.filter(function(m){return m.id!==mcid;});
   plan._activeMcId=plan.macrocycles[0].id;
   await setDoc(doc(db,'planes',pid),plan);
@@ -10334,15 +10369,12 @@ window.saveMacroFieldPlan=async function(pid,mcid,fn,val){
   if(!plan)return;
   var mc=plan.macrocycles&&plan.macrocycles.find(function(m){return m.id===mcid;});
   if(!mc)return;
-  mc[fn]=fn==='totalWeeks'||fn==='mesoWeeks'?parseInt(val)||12:val;
-  // El total del macrociclo activo es el que ven los alumnos ("Semana X de Y")
-  if(fn==='totalWeeks'){
-    plan.totalWeeks=Math.max(mc.totalWeeks,maxWeekNum(plan.weeks));
-    mc.totalWeeks=plan.totalWeeks;
-    var epTw=document.getElementById('ep-totalweeks');if(epTw)epTw.value=plan.totalWeeks;
-  }
+  if(fn==='startWeek'){
+    macroRanges(plan.macrocycles).forEach(function(r){r.m.startWeek=r.start;});
+    mc.startWeek=parseInt(val)||1;
+  }else mc[fn]=fn==='totalWeeks'||fn==='mesoWeeks'?parseInt(val)||12:val;
   await setDoc(doc(db,'planes',pid),plan);
-  if(fn==='totalWeeks'){
+  if(fn==='totalWeeks'||fn==='startWeek'){
     document.getElementById('plan-macro-content').innerHTML=renderPlanMacroPanel(pid);
   }else if(fn==='title'){
     var opt=document.querySelector('#plan-macro-content .pmacro-selector option[value="'+mcid+'"]');
