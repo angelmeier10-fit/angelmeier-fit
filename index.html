@@ -4121,6 +4121,10 @@ async function updateClient(opts={}){
   c.weeks=ecWeeklyData;
   c.activeWeek=ecCurrentWeek;
   c.days=ecWeeklyData[ecCurrentWeek];
+  if(maxWeekNum(c.weeks)>c.totalWeeks){
+    c.totalWeeks=maxWeekNum(c.weeks);
+    const ecTw=document.getElementById('ec-totalweeks');if(ecTw)ecTw.value=c.totalWeeks;
+  }
   try{
     await setDoc(doc(db,'clients',editingId),c);
   }catch(err){
@@ -6621,6 +6625,10 @@ async function updatePlan(opts={}){
   plan.weeks=epWeeklyData;
   plan.activeWeek=epCurrentWeek;
   plan.days=epWeeklyData[epCurrentWeek];
+  if(maxWeekNum(plan.weeks)>plan.totalWeeks){
+    plan.totalWeeks=maxWeekNum(plan.weeks);
+    document.getElementById('ep-totalweeks').value=plan.totalWeeks;
+  }
   try{
     await setDoc(doc(db,'planes',editingPlanId),plan);
   }catch(err){
@@ -7044,6 +7052,11 @@ window.fillExistingMember=fillExistingMember;
 function planWeekNums(plan){
   return plan.weeks?Object.keys(plan.weeks).map(Number).sort((a,b)=>a-b):[];
 }
+// Número de semana más alto cargado (0 si no hay): el total nunca puede quedar por debajo.
+function maxWeekNum(weeks){
+  const nums=weeks?Object.keys(weeks).map(Number).filter(n=>n>0):[];
+  return nums.length?Math.max(...nums):0;
+}
 
 function renderStartWeekSelect(selectId,plan){
   const sel=document.getElementById(selectId);
@@ -7250,7 +7263,7 @@ function prevSessionRowHtml(l){
 function getMemberWeekMesoInfo(plan,member){
   const weekNum=getMemberCurrentWeekNum(plan,member)||1;
   const mesoWeeks=plan.mesoWeeks||4;
-  const totalWeeks=plan.totalWeeks||planWeekNums(plan).length||1;
+  const totalWeeks=Math.max(plan.totalWeeks||planWeekNums(plan).length||1,maxWeekNum(plan.weeks));
   const mesoNum=Math.ceil(weekNum/mesoWeeks);
   const totalMesos=Math.ceil(totalWeeks/mesoWeeks);
   return{currentWeek:weekNum,totalWeeks,mesoNum,totalMesos};
@@ -9841,7 +9854,7 @@ function calcCurrentWeek(c){
 }
 
 function getMesoInfo(c){
-  const totalWeeks=c.totalWeeks||12;
+  const totalWeeks=Math.max(c.totalWeeks||12,maxWeekNum(c.weeks));
   const mesoWeeks=c.mesoWeeks||4;
   const currentWeek=Math.min(calcCurrentWeek(c),totalWeeks);
   const mesoNum=Math.ceil(currentWeek/mesoWeeks);
@@ -9874,6 +9887,7 @@ function renderMacroPanel(clientId){
 
   var activeMcId=c._activeMcId||c.macrocycles[0].id;
   var mc=c.macrocycles.find(function(m){return m.id===activeMcId;})||c.macrocycles[0];
+  if((mc.totalWeeks||12)<maxWeekNum(c.weeks))mc.totalWeeks=maxWeekNum(c.weeks);
 
   var h='';
 
@@ -10044,16 +10058,28 @@ window.saveMacroField=async function(cid,mcid,fn,val){
   var mc=c.macrocycles&&c.macrocycles.find(function(m){return m.id===mcid;});
   if(!mc)return;
   mc[fn]=fn==='totalWeeks'||fn==='mesoWeeks'?parseInt(val)||12:val;
+  // El total del macrociclo activo es el que usa la ficha del alumno ("Semana X de Y")
+  if(fn==='totalWeeks'){
+    c.totalWeeks=Math.max(mc.totalWeeks,maxWeekNum(c.weeks));
+    mc.totalWeeks=c.totalWeeks;
+    var ecTw=document.getElementById('ec-totalweeks');if(ecTw)ecTw.value=c.totalWeeks;
+  }
   await setDoc(doc(db,'clients',cid),c);
-  if(fn==='totalWeeks'||fn==='title'){
+  if(fn==='totalWeeks'){
     document.getElementById('macro-content').innerHTML=renderMacroPanel(cid);
-    setupMacroListeners(cid);
+  }else if(fn==='title'){
+    var opt=document.querySelector('#macro-content .macro-selector option[value="'+mcid+'"]');
+    if(opt)opt.textContent=val;
   }
 };
 
 function setupMacroListeners(cid){
   var mc=document.getElementById('macro-content');
   if(!mc)return;
+  // El contenedor no se reemplaza (solo su innerHTML): registrar una sola vez,
+  // si no cada re-render suma listeners y un clic crea varios macrociclos.
+  if(mc.dataset.bound)return;
+  mc.dataset.bound='1';
   mc.addEventListener('click',function(e){
     var hdr=e.target.closest('.meso-hdr');
     if(hdr)toggleMesoBody(hdr.getAttribute('data-bid'));
@@ -10096,6 +10122,7 @@ function renderPlanMacroPanel(planId){
 
   var activeMcId=plan._activeMcId||plan.macrocycles[0].id;
   var mc=plan.macrocycles.find(function(m){return m.id===activeMcId;})||plan.macrocycles[0];
+  if((mc.totalWeeks||12)<maxWeekNum(plan.weeks))mc.totalWeeks=maxWeekNum(plan.weeks);
 
   var h='';
 
@@ -10257,16 +10284,27 @@ window.saveMacroFieldPlan=async function(pid,mcid,fn,val){
   var mc=plan.macrocycles&&plan.macrocycles.find(function(m){return m.id===mcid;});
   if(!mc)return;
   mc[fn]=fn==='totalWeeks'||fn==='mesoWeeks'?parseInt(val)||12:val;
+  // El total del macrociclo activo es el que ven los alumnos ("Semana X de Y")
+  if(fn==='totalWeeks'){
+    plan.totalWeeks=Math.max(mc.totalWeeks,maxWeekNum(plan.weeks));
+    mc.totalWeeks=plan.totalWeeks;
+    var epTw=document.getElementById('ep-totalweeks');if(epTw)epTw.value=plan.totalWeeks;
+  }
   await setDoc(doc(db,'planes',pid),plan);
-  if(fn==='totalWeeks'||fn==='title'){
+  if(fn==='totalWeeks'){
     document.getElementById('plan-macro-content').innerHTML=renderPlanMacroPanel(pid);
-    setupPlanMacroListeners(pid);
+  }else if(fn==='title'){
+    var opt=document.querySelector('#plan-macro-content .pmacro-selector option[value="'+mcid+'"]');
+    if(opt)opt.textContent=val;
   }
 };
 
 function setupPlanMacroListeners(pid){
   var mc=document.getElementById('plan-macro-content');
   if(!mc)return;
+  // Registrar una sola vez (ver setupMacroListeners)
+  if(mc.dataset.bound)return;
+  mc.dataset.bound='1';
   mc.addEventListener('click',function(e){
     var hdr=e.target.closest('.meso-hdr');
     if(hdr)toggleMesoBody(hdr.getAttribute('data-bid'));
