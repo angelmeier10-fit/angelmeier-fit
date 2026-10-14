@@ -9339,8 +9339,27 @@ function renderNotifPanel(){
     panel.innerHTML='<div style="padding:20px;text-align:center;color:var(--mu);font-size:.85rem">Sin novedades</div>';
     return;
   }
-  panel.innerHTML=notifications.map((n,i)=>`<div class="notif-item" onclick="goToNotification(${i})">${n.texto}</div>`).join('');
+  panel.innerHTML=`<div style="display:flex;justify-content:flex-end;padding:6px 10px;border-bottom:1px solid var(--bd)"><button onclick="event.stopPropagation();markAllNotifsSeen()" style="background:none;border:none;color:var(--ac2);font-size:.76rem;font-weight:600;cursor:pointer;font-family:inherit">✓ Marcar todas como vistas</button></div>`+
+    notifications.map((n,i)=>`<div class="notif-item" onclick="goToNotification(${i})" style="display:flex;align-items:flex-start;gap:8px"><div style="flex:1">${n.texto}</div><button onclick="event.stopPropagation();markNotifSeen(${i})" title="Marcar como vista" aria-label="Marcar como vista" style="flex-shrink:0;background:var(--s2);border:1px solid var(--bd);color:var(--gr);border-radius:6px;padding:2px 8px;font-size:.78rem;cursor:pointer;font-family:inherit">✓ Visto</button></div>`).join('');
 }
+
+function markNotifSeen(i){
+  const n=notifications[i];
+  if(!n)return;
+  dismissNotif(notifId(n));
+  notifications=notifications.filter((_,idx)=>idx!==i);
+  renderNotifBadge();
+  renderNotifPanel();
+}
+window.markNotifSeen=markNotifSeen;
+
+function markAllNotifsSeen(){
+  notifications.forEach(n=>dismissNotif(notifId(n)));
+  notifications=[];
+  renderNotifBadge();
+  renderNotifPanel();
+}
+window.markAllNotifsSeen=markAllNotifsSeen;
 
 function toggleNotifPanel(){
   notifPanelOpen=!notifPanelOpen;
@@ -9903,6 +9922,7 @@ function renderMacroPanel(clientId){
   h+='</select>';
   h+='</div>';
   h+='<button class="dup-macro-btn" data-cid="'+clientId+'" data-mcid="'+mc.id+'" style="background:var(--s2);border:1px solid var(--bd);color:var(--tx);border-radius:8px;padding:7px 14px;font-size:.82rem;font-weight:600;font-family:inherit;cursor:pointer">📋 Duplicar macrociclo</button>';
+  h+='<button class="del-macro-btn" data-cid="'+clientId+'" data-mcid="'+mc.id+'" style="background:var(--s2);border:1px solid var(--bd);color:var(--rd);border-radius:8px;padding:7px 14px;font-size:.82rem;font-weight:600;font-family:inherit;cursor:pointer">🗑️ Borrar macrociclo</button>';
   h+='<button class="add-macro-btn" data-cid="'+clientId+'" style="background:var(--ac);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:.82rem;font-weight:600;font-family:inherit;cursor:pointer">＋ Nuevo macrociclo</button>';
   h+='</div>';
 
@@ -10052,6 +10072,20 @@ window.duplicateMacrocycle=async function(cid,mcid){
   setupMacroListeners(cid);
 };
 
+window.deleteMacrocycle=async function(cid,mcid){
+  var c=clients.find(function(cl){return cl.id===cid;});
+  if(!c||!c.macrocycles)return;
+  if(c.macrocycles.length<2){toast('⚠️ Es el único macrociclo: no se puede borrar');return;}
+  var mc=c.macrocycles.find(function(m){return m.id===mcid;});
+  if(!mc)return;
+  if(!await uiConfirm('¿Borrar "'+mc.title+'"? Se pierde lo cargado en sus mesociclos.'))return;
+  c.macrocycles=c.macrocycles.filter(function(m){return m.id!==mcid;});
+  c._activeMcId=c.macrocycles[0].id;
+  await setDoc(doc(db,'clients',cid),c);
+  toast('🗑️ Macrociclo borrado');
+  document.getElementById('macro-content').innerHTML=renderMacroPanel(cid);
+};
+
 window.saveMacroField=async function(cid,mcid,fn,val){
   var c=clients.find(function(cl){return cl.id===cid;});
   if(!c)return;
@@ -10087,6 +10121,8 @@ function setupMacroListeners(cid){
     if(addBtn)addMacrocycle(addBtn.dataset.cid);
     var dupBtn=e.target.closest('.dup-macro-btn');
     if(dupBtn)duplicateMacrocycle(dupBtn.dataset.cid,dupBtn.dataset.mcid);
+    var delBtn=e.target.closest('.del-macro-btn');
+    if(delBtn)deleteMacrocycle(delBtn.dataset.cid,delBtn.dataset.mcid);
   });
   mc.addEventListener('change',function(e){
     var d=e.target.dataset;
@@ -10137,6 +10173,7 @@ function renderPlanMacroPanel(planId){
   h+='</select>';
   h+='</div>';
   h+='<button class="dup-pmacro-btn" data-pid="'+planId+'" data-mcid="'+mc.id+'" style="background:var(--s2);border:1px solid var(--bd);color:var(--tx);border-radius:8px;padding:7px 14px;font-size:.82rem;font-weight:600;font-family:inherit;cursor:pointer">📋 Duplicar macrociclo</button>';
+  h+='<button class="del-pmacro-btn" data-pid="'+planId+'" data-mcid="'+mc.id+'" style="background:var(--s2);border:1px solid var(--bd);color:var(--rd);border-radius:8px;padding:7px 14px;font-size:.82rem;font-weight:600;font-family:inherit;cursor:pointer">🗑️ Borrar macrociclo</button>';
   h+='<button class="add-pmacro-btn" data-pid="'+planId+'" style="background:var(--ac);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:.82rem;font-weight:600;font-family:inherit;cursor:pointer">＋ Nuevo macrociclo</button>';
   h+='</div>';
 
@@ -10278,6 +10315,20 @@ window.duplicateMacrocyclePlan=async function(pid,mcid){
   setupPlanMacroListeners(pid);
 };
 
+window.deleteMacrocyclePlan=async function(pid,mcid){
+  var plan=planes.find(function(p){return p.id===pid;});
+  if(!plan||!plan.macrocycles)return;
+  if(plan.macrocycles.length<2){toast('⚠️ Es el único macrociclo: no se puede borrar');return;}
+  var mc=plan.macrocycles.find(function(m){return m.id===mcid;});
+  if(!mc)return;
+  if(!await uiConfirm('¿Borrar "'+mc.title+'"? Se pierde lo cargado en sus mesociclos.'))return;
+  plan.macrocycles=plan.macrocycles.filter(function(m){return m.id!==mcid;});
+  plan._activeMcId=plan.macrocycles[0].id;
+  await setDoc(doc(db,'planes',pid),plan);
+  toast('🗑️ Macrociclo borrado');
+  document.getElementById('plan-macro-content').innerHTML=renderPlanMacroPanel(pid);
+};
+
 window.saveMacroFieldPlan=async function(pid,mcid,fn,val){
   var plan=planes.find(function(p){return p.id===pid;});
   if(!plan)return;
@@ -10312,6 +10363,8 @@ function setupPlanMacroListeners(pid){
     if(addBtn)addMacrocyclePlan(addBtn.dataset.pid);
     var dupBtn=e.target.closest('.dup-pmacro-btn');
     if(dupBtn)duplicateMacrocyclePlan(dupBtn.dataset.pid,dupBtn.dataset.mcid);
+    var delBtn=e.target.closest('.del-pmacro-btn');
+    if(delBtn)deleteMacrocyclePlan(delBtn.dataset.pid,delBtn.dataset.mcid);
   });
   mc.addEventListener('change',function(e){
     var d=e.target.dataset;
