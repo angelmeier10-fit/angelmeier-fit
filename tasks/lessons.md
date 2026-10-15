@@ -19,3 +19,7 @@
 ## 2026-10-15 — Guía de principiantes armada como si fuera para +50
 - **Error:** el usuario pidió una guía para gente que quiere empezar a entrenar y la armé con variantes de adulto mayor (sentadilla a silla, flexiones contra pared, plancha con rodillas), arrastrado por el público 55+ de los anuncios.
 - **Regla:** "principiante" no es "adulto mayor". Si el público no está dicho, preguntar o asumir joven/adulto y usar ejercicios estándar (sentadilla, flexiones, búlgaras, peso muerto a una pierna, aislados de brazos y hombros); las regresiones van solo para el público +50.
+
+## 2026-10-15 — Guía nueva con diseño inventado en vez del de las guías existentes
+- **Error:** armé el PDF de la guía Empezá a entrenar con un diseño nuevo (A4 claro) sin mirar `guia-50.pdf` ni `guia-gluteos.pdf`.
+- **Regla:** antes de crear una pieza de una serie que ya existe (guía, carrusel, landing), abrir las anteriores y copiar formato y estructura. Las guías: 1080×1350, fondo oscuro, franja diagonal violeta, Barlow Condensed itálica + Inter, portada, bienvenida, índice, capítulos con "A practicar", plan de 4 semanas y "¿Y después?".
