@@ -1569,6 +1569,36 @@ Hay que crear dos: respuesta a comentario y palabra clave por DM (la de DM se cr
 Al promocionarlo: objetivo Más mensajes, destino Instagram Direct, edad 18-35 (si no, Meta lo muestra al público 55+ de los otros anuncios).`,
       img: pieza({ cat: 'entrenamiento', formato: FMT_PORTADA_REEL, tipo: 'Portada de reel (pieza única) que ofrece una guía gratuita de 4 semanas para empezar a entrenar.', foto: 'Usar la foto real que te adjunto (yo haciendo sentadilla con mancuerna en el gimnasio), sin modificar mi cara ni mi cuerpo. Sujeto a la derecha, dentro del área central segura.', titulo: 'TU PRIMER DÍA EN EL GYM', violeta: 'PRIMER DÍA', iconos: 'ícono de calendario → 4 SEMANAS / ícono de pesa → GYM O CASA / ícono de flecha hacia arriba → PROGRESIÓN' }),
     },
+    {
+      id: 'guiaempezar-reel2', name: 'Reel — Guía Empezá a entrenar (2): rutina avanzada, si recién empezás mirá el final · palabra EMPEZAR',
+      guion: `Usar los videos de mi entrenamiento (rutina avanzada). Sin voz en off: solo texto en pantalla y música.
+
+HOOK (0-2s) — el ejercicio más llamativo, texto grande en pantalla
+"Rutina avanzada (si recién empezás, mirá el final)"
+
+DESARROLLO — clips de los ejercicios, 2-3s cada uno
+En pantalla: solo el nombre de cada ejercicio, SIN series ni repeticiones (para que nadie la tome como plan).
+
+CTA (últimos 3-4s) — texto grande en pantalla
+"¿Recién empezás? Escribime EMPEZAR y te mando la guía gratis"`,
+      post: `Esta es una rutina avanzada, de las que hago hoy después de varios años entrenando 🏋️
+
+Si recién estás empezando, no hace falta arrancar por acá. Lo que más resultado da al principio es lo básico: pocos ejercicios, bien hechos y un poco más cada semana.
+
+Para eso armé una guía gratis de 4 semanas para principiantes:
+✅ 3 días por semana, cuerpo completo
+✅ Para el gimnasio o para casa con mancuernas
+✅ Cuánto peso usar y cómo progresar
+
+👉 Escribime EMPEZAR y te la mando por privado.
+
+#rutinadegimnasio #entrenamientodefuerza #principiantes #gym #fitness`,
+      stories: `Historia 1 (repost del reel): Rutina avanzada 🏋️ Si recién empezás, mirá el final 👆
+Historia 2 (encuesta): ¿Hace cuánto entrenás? [Recién empiezo / Hace años]
+Historia 3 (CTA): ¿Recién empezás? Escribime EMPEZAR y te mando la guía gratis de 4 semanas 📩`,
+      slides: '',
+      img: pieza({ cat: 'entrenamiento', formato: FMT_PORTADA_REEL, tipo: 'Portada de reel (pieza única) de una rutina avanzada, con llamado a principiantes a pedir una guía gratuita.', foto: 'Usar la captura real que te adjunto de mi entrenamiento de hoy, sin modificar mi cara ni mi cuerpo. Sujeto a la derecha, dentro del área central segura.', titulo: 'RUTINA AVANZADA', violeta: 'AVANZADA', iconos: 'ícono de fuego → AVANZADA / ícono de pesa → FUERZA / ícono de documento → GUÍA PARA PRINCIPIANTES' }),
+    },
   ];
 
   function saveState(){ setDoc(stateRef, { checks: state }, { merge: true }).catch(()=>{}); }
@@ -2015,6 +2045,13 @@ Al promocionarlo: objetivo Más mensajes, destino Instagram Direct, edad 18-35 (
           topics.push({ ...SEED_TOPICS.find(s => s.id === 'guiaempezar-reel1') });
         }
         setDoc(stateRef, { addedGuiaEmpezarReel: true }, { merge: true }).catch(()=>{});
+        saveTopics();
+      }
+      if (!data.addedGuiaEmpezarReel2) {
+        if (!topics.find(t => t.id === 'guiaempezar-reel2')) {
+          topics.push({ ...SEED_TOPICS.find(s => s.id === 'guiaempezar-reel2') });
+        }
+        setDoc(stateRef, { addedGuiaEmpezarReel2: true }, { merge: true }).catch(()=>{});
         saveTopics();
       }
       // Los bloques de automatización pasaron de ManyChat a Meta Business Suite: actualizar los ya guardados.
