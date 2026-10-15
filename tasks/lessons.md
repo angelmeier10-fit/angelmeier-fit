@@ -15,3 +15,7 @@
 ## 2026-10-14 — Carrusel armado en Canva en vez de en el panel de contenido
 - **Error:** el usuario pidió un carrusel de presentación y lo armé en Canva (con la paleta de mano-a-mano), cuando sus piezas de Instagram se cargan en `contenido.html` con la identidad violeta #7B4FE0.
 - **Regla:** cualquier pieza de Instagram (post, carrusel, reel, historia) va primero como tema en `SEED_TOPICS` de `contenido.html` (copy + slides + prompt `pieza()`), salvo que pida explícitamente otra herramienta. No confundir la paleta de mano-a-mano con la de @angelmasaje.fit.
+
+## 2026-10-15 — Guía de principiantes armada como si fuera para +50
+- **Error:** el usuario pidió una guía para gente que quiere empezar a entrenar y la armé con variantes de adulto mayor (sentadilla a silla, flexiones contra pared, plancha con rodillas), arrastrado por el público 55+ de los anuncios.
+- **Regla:** "principiante" no es "adulto mayor". Si el público no está dicho, preguntar o asumir joven/adulto y usar ejercicios estándar (sentadilla, flexiones, búlgaras, peso muerto a una pierna, aislados de brazos y hombros); las regresiones van solo para el público +50.
