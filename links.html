@@ -85,6 +85,25 @@ body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--tx)
 .feature .title { font-weight: 600; font-size: 1.05rem; line-height: 1.2; }
 .feature .desc { font-size: .76rem; color: rgba(255,255,255,.75); margin-top: 2px; }
 
+.plan-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  margin: 0 16px 10px; padding: 14px 16px; border-radius: 14px; text-decoration: none; color: var(--tx); text-align: left;
+  background: rgba(123,79,224,.12); border: 1px solid var(--violet-bd); transition: transform .15s;
+}
+.plan-row:hover { transform: translateY(-2px); }
+.plan-row .name { font-weight: 600; font-size: .95rem; }
+.plan-row .price { font-size: .78rem; color: var(--mu); margin-top: 2px; }
+.plan-row .go { flex-shrink: 0; background: var(--violet); color: #fff; font-weight: 600; font-size: .8rem; padding: 8px 14px; border-radius: 50px; }
+.pay-note { font-size: .74rem; color: var(--mu); margin: 2px 16px 12px; }
+.pay-alt { margin: 0 16px; text-align: left; }
+.pay-alt summary { cursor: pointer; list-style: none; text-align: center; font-size: .86rem; font-weight: 600; color: #b9a2f5; }
+.pay-alt summary::-webkit-details-marker { display: none; }
+.pay-alt-box { margin-top: 10px; padding: 14px 16px; border-radius: 14px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.12); font-size: .84rem; line-height: 1.6; }
+.pay-alt-box p { margin-bottom: 6px; }
+.tx-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 6px 0; flex-wrap: wrap; }
+.tx-copy { border: 1px solid var(--violet-bd); background: transparent; color: #b9a2f5; border-radius: 50px; padding: 5px 14px; font-weight: 600; font-size: .78rem; cursor: pointer; }
+.pay-done { display: block; margin-top: 8px; color: #25D366; font-weight: 600; text-decoration: none; }
+
 footer { margin-top: 26px; font-size: .74rem; color: var(--mu); }
 </style>
 </head>
@@ -111,6 +130,33 @@ footer { margin-top: 26px; font-size: .74rem; color: var(--mu); }
       <svg viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V6a2 2 0 00-2-2zm0 16H5V10h14v10zM7 12h5v5H7z"/></svg>
     </a>
   </div>
+
+  <div class="section-label">Planes online — pagá y arrancá</div>
+
+  <a class="plan-row" href="https://mpago.la/1FWtWG7" target="_blank">
+    <div><div class="name">Programa General</div><div class="price">$18.000 / mes · Fuerza y funcional</div></div>
+    <span class="go">Pagar</span>
+  </a>
+  <a class="plan-row" href="https://mpago.la/2Nk15cV" target="_blank">
+    <div><div class="name">Programa Personalizado</div><div class="price">$35.000 / mes · Plan a tu medida</div></div>
+    <span class="go">Pagar</span>
+  </a>
+  <a class="plan-row" href="https://mpago.la/1NQEE4A" target="_blank">
+    <div><div class="name">Membresía Movimiento +50</div><div class="price">$30.000 / mes · Postura, movilidad y fuerza</div></div>
+    <span class="go">Pagar</span>
+  </a>
+  <p class="pay-note">Suscripción con Mercado Pago · Se renueva cada mes · Cancelás cuando quieras</p>
+
+  <details class="pay-alt">
+    <summary>¿Preferís pagar por transferencia?</summary>
+    <div class="pay-alt-box">
+      <p>Transferí el monto de tu plan a:</p>
+      <div class="tx-row"><span>Alias: <strong class="tx-alias"></strong></span><button type="button" class="tx-copy" onclick="copyTransfer(this, 'alias')">Copiar</button></div>
+      <div class="tx-row"><span>CVU: <strong class="tx-cvu"></strong></span><button type="button" class="tx-copy" onclick="copyTransfer(this, 'cvu')">Copiar</button></div>
+      <p>Titular: <span class="tx-name"></span></p>
+      <a class="pay-done" href="https://wa.me/5491172399988?text=Hola%20Angel%2C%20ya%20hice%20la%20transferencia%20de%20mi%20plan.%20Te%20mando%20el%20comprobante." target="_blank">Mandame el comprobante por WhatsApp →</a>
+    </div>
+  </details>
 
   <div class="section-label">Destacados</div>
 
@@ -158,5 +204,17 @@ footer { margin-top: 26px; font-size: .74rem; color: var(--mu); }
 
   <footer>Angel Meier · Buenos Aires</footer>
 </div>
+<script>
+const TRANSFER = { alias: 'angel.meier', cvu: '0000003100055855880002', titular: 'Angel Anibal Meier' };
+document.querySelectorAll('.tx-alias').forEach(el => el.textContent = TRANSFER.alias);
+document.querySelectorAll('.tx-name').forEach(el => el.textContent = TRANSFER.titular);
+document.querySelectorAll('.tx-cvu').forEach(el => el.textContent = TRANSFER.cvu);
+function copyTransfer(btn, key) {
+  navigator.clipboard.writeText(TRANSFER[key]).then(() => {
+    btn.textContent = '¡Copiado!';
+    setTimeout(() => btn.textContent = 'Copiar', 2000);
+  });
+}
+</script>
 </body>
 </html>
