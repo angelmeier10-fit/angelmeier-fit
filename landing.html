@@ -108,6 +108,19 @@ nav {
 .plan-title { font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 700; margin-bottom: 12px; }
 .plan-btn { width: 100%; justify-content: center; }
 .plan-cta-note { font-size: .8rem; color: var(--mu); margin: 10px 0 26px; }
+.btn-pay { display: flex; width: 100%; justify-content: center; background: var(--ac); color: #fff; padding: 15px 24px; border-radius: 50px; text-decoration: none; font-weight: 700; font-size: 1rem; transition: all .2s; }
+.btn-pay:hover { background: var(--ac2); transform: translateY(-2px); }
+.pay-note { font-size: .78rem; color: var(--mu); margin: 8px 0 14px; }
+.pay-alt { margin-bottom: 12px; text-align: left; }
+.pay-alt summary { cursor: pointer; font-size: .88rem; font-weight: 600; color: var(--ac); text-align: center; list-style: none; }
+.pay-alt summary::-webkit-details-marker { display: none; }
+.pay-alt-box { margin-top: 10px; background: var(--warm); border-radius: 12px; padding: 14px 16px; font-size: .86rem; line-height: 1.6; }
+.pay-alt-box p { margin: 0 0 6px; }
+.tx-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 6px 0; flex-wrap: wrap; }
+.tx-copy { border: 1px solid var(--ac); background: transparent; color: var(--ac); border-radius: 50px; padding: 5px 14px; font-weight: 600; font-size: .8rem; cursor: pointer; }
+.pay-done { display: block; font-size: .85rem; font-weight: 600; color: var(--ac); text-decoration: none; margin-bottom: 18px; }
+.plan-btn-sec { background: transparent; color: var(--wa2); border: 2px solid var(--wa); box-shadow: none; font-size: .9rem; padding: 11px 20px; }
+.plan-btn-sec:hover { background: var(--wa); color: #fff; }
 .price-includes .item strong { display: block; font-weight: 700; }
 .price-includes .item span { display: block; font-size: .86rem; color: var(--mu); margin-top: 2px; line-height: 1.5; }
 .price-alt-note { font-size: .82rem; color: var(--mu); margin-top: 24px; }
@@ -368,10 +381,22 @@ body.menu-open { overflow: hidden; }
       <div class="price-badge">Online · Sin permanencia</div>
       <h3 class="plan-title">Membresía online</h3>
       <div class="price-value">$30.000<span> /mes</span></div>
-      <p class="price-note">(USD 30 para quienes están fuera de Argentina)</p>
-      <a class="btn-wa plan-btn" href="https://wa.me/5491172399988?text=Hola%20Angel%2C%20quiero%20empezar%20el%20programa%20%2B50%20con%20la%20garant%C3%ADa%20de%207%20d%C3%ADas." target="_blank">
+      <p class="price-note">(USD 30 para quienes están fuera de Argentina: escribime por WhatsApp)</p>
+      <a class="btn-pay" href="https://mpago.la/1NQEE4A" target="_blank">Suscribirme con Mercado Pago</a>
+      <p class="pay-note">Pago seguro · Se renueva cada mes · Cancelás cuando quieras</p>
+      <details class="pay-alt">
+        <summary>¿Preferís pagar por transferencia?</summary>
+        <div class="pay-alt-box">
+          <p>Transferí <strong>$30.000</strong> a:</p>
+          <div class="tx-row"><span>Alias: <strong class="tx-alias"></strong></span><button type="button" class="tx-copy" onclick="copyTransfer(this, 'alias')">Copiar</button></div><div class="tx-row"><span>CVU: <strong class="tx-cvu"></strong></span><button type="button" class="tx-copy" onclick="copyTransfer(this, 'cvu')">Copiar</button></div>
+          <p class="tx-titular">Titular: <span class="tx-name"></span></p>
+          <p>Después mandame el comprobante por WhatsApp.</p>
+        </div>
+      </details>
+      <a class="pay-done" href="https://wa.me/5491172399988?text=Hola%20Angel%2C%20ya%20pagu%C3%A9%20la%20Membres%C3%ADa%20online%20%2B50.%20Te%20mando%20el%20comprobante." target="_blank">¿Ya pagaste? Avisame por WhatsApp y arrancás →</a>
+      <a class="btn-wa plan-btn plan-btn-sec" href="https://wa.me/5491172399988?text=Hola%20Angel%2C%20quiero%20empezar%20el%20programa%20%2B50%20con%20la%20garant%C3%ADa%20de%207%20d%C3%ADas." target="_blank">
         <svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-        Quiero sumarme a la membresía
+        Tengo dudas, prefiero hablar
       </a>
       <p class="plan-cta-note">Te respondo por WhatsApp y arrancás esta semana.</p>
       <div class="price-includes">
@@ -397,7 +422,7 @@ body.menu-open { overflow: hidden; }
         <div class="item"><div><strong>En el lugar que elijas</strong><span>Tu casa, tu gimnasio o al aire libre, dentro de Zona Norte.</span></div></div>
         <div class="item"><div><strong>Corrección postural en tiempo real</strong><span>Te acompaño en cada movimiento.</span></div></div>
         <div class="item"><div><strong>Entrená acompañado</strong><span>Con tu pareja o una amiga se divide el precio. Grupos de 3 o 4: precio promocional.</span></div></div>
-        <div class="item"><div><strong>Mínimo 8 clases por mes</strong><span>Equivale a 2 clases por semana.</span></div></div>
+        <div class="item"><div><strong>Mínimo 4 clases por mes</strong><span>Equivale a 1 clase por semana.</span></div></div>
       </div>
     </div>
     </div>
@@ -473,7 +498,7 @@ body.menu-open { overflow: hidden; }
       </div>
       <div class="faq-item">
         <button class="faq-q" onclick="toggleFaq(this)">¿Cuánto cuestan las clases presenciales? <span class="faq-icon">+</span></button>
-        <div class="faq-a">$40.000 por clase, con un mínimo de 8 clases por mes. Si entrenan 2 personas juntas, el precio se divide ($20.000 cada una), y para grupos de 3 o 4 hay precio promocional. Ideal para entrenar con tu pareja o con amigos. La garantía de 7 días aplica solo a la membresía online.</div>
+        <div class="faq-a">$40.000 por clase, con un mínimo de 4 clases por mes (1 por semana). Si entrenan 2 personas juntas, el precio se divide ($20.000 cada una), y para grupos de 3 o 4 hay precio promocional. Ideal para entrenar con tu pareja o con amigos. La garantía de 7 días aplica solo a la membresía online.</div>
       </div>
       <div class="faq-item">
         <button class="faq-q" onclick="toggleFaq(this)">¿Cuánto tiempo hasta ver resultados? <span class="faq-icon">+</span></button>
@@ -518,6 +543,16 @@ body.menu-open { overflow: hidden; }
 </a>
 
 <script>
+const TRANSFER = { alias: 'angel.meier', cvu: '0000003100055855880002', titular: 'Angel Anibal Meier' };
+document.querySelectorAll('.tx-alias').forEach(el => el.textContent = TRANSFER.alias);
+document.querySelectorAll('.tx-name').forEach(el => el.textContent = TRANSFER.titular);
+document.querySelectorAll('.tx-cvu').forEach(el => el.textContent = TRANSFER.cvu);
+function copyTransfer(btn, key) {
+  navigator.clipboard.writeText(TRANSFER[key]).then(() => {
+    btn.textContent = '¡Copiado!';
+    setTimeout(() => btn.textContent = 'Copiar', 2000);
+  });
+}
 function toggleMenu(open) {
   var m = document.getElementById('menu');
   m.classList.toggle('open', open);

@@ -115,6 +115,19 @@ nav {
 .mod-price span { font-family: 'Inter', sans-serif; font-size: .9rem; font-weight: 500; color: var(--mu); }
 .mod-btn { width: 100%; justify-content: center; font-size: .9rem; padding: 13px 18px; }
 .mod-cta-note { font-size: .78rem; color: var(--mu); font-family: 'Inter'; margin: 8px 0 20px; text-align: center; }
+.btn-pay { display: flex; width: 100%; justify-content: center; background: var(--ac); color: #fff; padding: 14px 18px; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: .95rem; transition: all .2s; }
+.btn-pay:hover { background: var(--ac2); transform: translateY(-2px); }
+.pay-note { font-size: .76rem; color: var(--mu); font-family: 'Inter'; margin: 8px 0 12px; text-align: center; }
+.pay-alt { margin-bottom: 10px; font-family: 'Inter'; }
+.pay-alt summary { cursor: pointer; font-size: .86rem; font-weight: 600; color: var(--ac); text-align: center; list-style: none; }
+.pay-alt summary::-webkit-details-marker { display: none; }
+.pay-alt-box { margin-top: 10px; background: var(--warm); border-radius: 8px; padding: 12px 14px; font-size: .84rem; line-height: 1.6; }
+.pay-alt-box p { margin: 0 0 6px; }
+.tx-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 6px 0; flex-wrap: wrap; }
+.tx-copy { border: 1px solid var(--ac); background: transparent; color: var(--ac); border-radius: 6px; padding: 5px 12px; font-weight: 600; font-size: .78rem; cursor: pointer; }
+.pay-done { display: block; text-align: center; font-family: 'Inter'; font-size: .84rem; font-weight: 600; color: var(--ac); text-decoration: none; margin-bottom: 14px; }
+.mod-btn-sec { background: transparent; color: var(--wa2); border: 2px solid var(--wa); font-size: .85rem; padding: 10px 16px; }
+.mod-btn-sec:hover { background: var(--wa); color: #fff; }
 .mod-card.presencial { border-color: var(--ac); }
 .mod-feature strong { display: block; font-weight: 700; }
 .mod-feature span { display: block; color: var(--mu); margin-top: 2px; line-height: 1.5; }
@@ -363,7 +376,19 @@ body.menu-open { overflow: hidden; }
         <h3>Programa General</h3>
         <p class="mod-desc">Un programa online prediseñado de fuerza y funcional, con seguimiento a través de la app.</p>
         <div class="mod-price">$18.000 <span>/ mes</span></div>
-        <a class="btn-wa mod-btn" href="https://wa.me/5491172399988?text=Hola%20Angel%2C%20quiero%20empezar%20con%20el%20Programa%20General." target="_blank">Quiero el Programa General</a>
+        <a class="btn-pay" href="https://mpago.la/1FWtWG7" target="_blank">Suscribirme con Mercado Pago</a>
+        <p class="pay-note">Pago seguro · Se renueva cada mes · Cancelás cuando quieras</p>
+        <details class="pay-alt">
+          <summary>¿Preferís pagar por transferencia?</summary>
+          <div class="pay-alt-box">
+            <p>Transferí <strong>$18.000</strong> a:</p>
+            <div class="tx-row"><span>Alias: <strong class="tx-alias"></strong></span><button type="button" class="tx-copy" onclick="copyTransfer(this, 'alias')">Copiar</button></div><div class="tx-row"><span>CVU: <strong class="tx-cvu"></strong></span><button type="button" class="tx-copy" onclick="copyTransfer(this, 'cvu')">Copiar</button></div>
+            <p>Titular: <span class="tx-name"></span></p>
+            <p>Después mandame el comprobante por WhatsApp.</p>
+          </div>
+        </details>
+        <a class="pay-done" href="https://wa.me/5491172399988?text=Hola%20Angel%2C%20ya%20pagu%C3%A9%20el%20Programa%20General.%20Te%20mando%20el%20comprobante." target="_blank">¿Ya pagaste? Avisame por WhatsApp y arrancás →</a>
+        <a class="btn-wa mod-btn mod-btn-sec" href="https://wa.me/5491172399988?text=Hola%20Angel%2C%20quiero%20empezar%20con%20el%20Programa%20General." target="_blank">Tengo dudas, prefiero hablar</a>
         <p class="mod-cta-note">Te respondo por WhatsApp y arrancás esta semana.</p>
         <div class="mod-features">
           <div class="mod-feature"><div><strong>100% online</strong><span>Sin horarios fijos: entrenás a tu ritmo.</span></div></div>
@@ -376,7 +401,19 @@ body.menu-open { overflow: hidden; }
         <h3>Programa Personalizado</h3>
         <p class="mod-desc">Plan 100% diseñado para vos según tu objetivo, con evaluación inicial y ajuste continuo.</p>
         <div class="mod-price">$35.000 <span>/ mes</span></div>
-        <a class="btn-wa mod-btn" href="https://wa.me/5491172399988?text=Hola%20Angel%2C%20quiero%20empezar%20con%20el%20Programa%20Personalizado." target="_blank">Quiero mi plan personalizado</a>
+        <a class="btn-pay" href="https://mpago.la/2Nk15cV" target="_blank">Suscribirme con Mercado Pago</a>
+        <p class="pay-note">Pago seguro · Se renueva cada mes · Cancelás cuando quieras</p>
+        <details class="pay-alt">
+          <summary>¿Preferís pagar por transferencia?</summary>
+          <div class="pay-alt-box">
+            <p>Transferí <strong>$35.000</strong> a:</p>
+            <div class="tx-row"><span>Alias: <strong class="tx-alias"></strong></span><button type="button" class="tx-copy" onclick="copyTransfer(this, 'alias')">Copiar</button></div><div class="tx-row"><span>CVU: <strong class="tx-cvu"></strong></span><button type="button" class="tx-copy" onclick="copyTransfer(this, 'cvu')">Copiar</button></div>
+            <p>Titular: <span class="tx-name"></span></p>
+            <p>Después mandame el comprobante por WhatsApp.</p>
+          </div>
+        </details>
+        <a class="pay-done" href="https://wa.me/5491172399988?text=Hola%20Angel%2C%20ya%20pagu%C3%A9%20el%20Programa%20Personalizado.%20Te%20mando%20el%20comprobante." target="_blank">¿Ya pagaste? Avisame por WhatsApp y arrancás →</a>
+        <a class="btn-wa mod-btn mod-btn-sec" href="https://wa.me/5491172399988?text=Hola%20Angel%2C%20quiero%20empezar%20con%20el%20Programa%20Personalizado." target="_blank">Tengo dudas, prefiero hablar</a>
         <p class="mod-cta-note">Te respondo por WhatsApp y arrancás esta semana.</p>
         <div class="mod-features">
           <div class="mod-feature"><div><strong>Evaluación física inicial</strong><span>Partimos de tu nivel real.</span></div></div>
@@ -395,7 +432,7 @@ body.menu-open { overflow: hidden; }
           <div class="mod-feature"><div><strong>En el lugar que elijas</strong><span>Tu casa, tu gimnasio o al aire libre, dentro de Zona Norte.</span></div></div>
           <div class="mod-feature"><div><strong>Corrección técnica en tiempo real</strong><span>Cada repetición, bien hecha.</span></div></div>
           <div class="mod-feature"><div><strong>Entrená acompañado</strong><span>Entre 2 personas se divide: $20.000 cada una. Grupos de 3 o 4: precio promocional.</span></div></div>
-          <div class="mod-feature"><div><strong>Mínimo 8 clases por mes</strong><span>Equivale a 2 clases por semana.</span></div></div>
+          <div class="mod-feature"><div><strong>Mínimo 4 clases por mes</strong><span>Equivale a 1 clase por semana.</span></div></div>
         </div>
       </div>
     </div>
@@ -465,7 +502,7 @@ body.menu-open { overflow: hidden; }
       </div>
       <div class="faq-item">
         <button class="faq-q" onclick="toggleFaq(this)">¿Cuánto cuestan las clases presenciales? <span class="faq-icon">+</span></button>
-        <div class="faq-a">$40.000 por clase, con un mínimo de 8 clases por mes. Si entrenan 2 personas juntas, el precio se divide ($20.000 cada una), y para grupos de 3 o 4 hay precio promocional. Las clases son en el lugar que elijas dentro de Zona Norte (tu casa, tu gimnasio o al aire libre). Escribime y te paso los horarios disponibles.</div>
+        <div class="faq-a">$40.000 por clase, con un mínimo de 4 clases por mes (1 por semana). Si entrenan 2 personas juntas, el precio se divide ($20.000 cada una), y para grupos de 3 o 4 hay precio promocional. Las clases son en el lugar que elijas dentro de Zona Norte (tu casa, tu gimnasio o al aire libre). Escribime y te paso los horarios disponibles.</div>
       </div>
       <div class="faq-item">
         <button class="faq-q" onclick="toggleFaq(this)">¿Qué pasa si no me convence? <span class="faq-icon">+</span></button>
@@ -506,6 +543,16 @@ body.menu-open { overflow: hidden; }
 </a>
 
 <script>
+const TRANSFER = { alias: 'angel.meier', cvu: '0000003100055855880002', titular: 'Angel Anibal Meier' };
+document.querySelectorAll('.tx-alias').forEach(el => el.textContent = TRANSFER.alias);
+document.querySelectorAll('.tx-name').forEach(el => el.textContent = TRANSFER.titular);
+document.querySelectorAll('.tx-cvu').forEach(el => el.textContent = TRANSFER.cvu);
+function copyTransfer(btn, key) {
+  navigator.clipboard.writeText(TRANSFER[key]).then(() => {
+    btn.textContent = '¡Copiado!';
+    setTimeout(() => btn.textContent = 'Copiar', 2000);
+  });
+}
 function toggleMenu(open) {
   var m = document.getElementById('menu');
   m.classList.toggle('open', open);
