@@ -297,6 +297,7 @@
     <li><a href="#publicaciones" data-tab="publicaciones">Publicaciones <span class="count" id="count-topics">0</span></a></li>
     <li><a href="#recordatorios" data-tab="recordatorios">Recordatorios / Links</a></li>
     <li><a href="#patio" data-tab="patio">Proyecto patio</a></li>
+    <li><a href="#comunidad" data-tab="comunidad">Comunidad WhatsApp</a></li>
   </ul>
 </nav>
 
@@ -724,6 +725,34 @@
     </div>
   </section>
 
+  <section id="comunidad">
+    <h2>Comunidad WhatsApp +60</h2>
+    <p class="lede">Comunidad gratuita de ejercicio para adultos mayores. Entran por Instagram con la palabra clave <strong>CLASE</strong>. Objetivo: dar valor, generar confianza y llevarlos a la membresía online o al patio (los de la zona).</p>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3 style="margin:0 0 8px;font-size:1rem">Estructura</h3>
+        <p style="margin:0;font-size:.9rem;line-height:1.6"><strong>Avisos:</strong> solo publico yo (rutinas, tips, anuncios). No se ven los números.<br><strong>Charla y preguntas:</strong> subgrupo abierto para todos.<br><strong>Patio Don Torcuato:</strong> subgrupo para los de la zona.</p>
+      </div>
+      <div class="card">
+        <h3 style="margin:0 0 8px;font-size:1rem">Contenido</h3>
+        <p style="margin:0;font-size:.9rem;line-height:1.6">3 publicaciones por semana: rutina corta (sentado o de pie), tip (caídas, equilibrio, rodillas), pregunta para que respondan. Usar audios. Solo 1 de cada 5 es venta; cada 4-6 semanas, desafío de 14 días o clase de prueba en el patio.</p>
+      </div>
+    </div>
+
+    <div class="stack" id="comunidad-list" style="margin-top:20px"></div>
+    <button type="button" class="copy-btn" id="comunidad-add-btn" style="margin-top:12px">+ Agregar texto</button>
+
+    <h3 style="margin:28px 0 12px;font-size:1.05rem">Pasos para armarla</h3>
+    <div class="stack">
+      <div class="task"><input type="checkbox" id="wp-crear"><label for="wp-crear">Crear la comunidad + subgrupos "Charla y preguntas" y "Patio Don Torcuato"</label></div>
+      <div class="task"><input type="checkbox" id="wp-textos"><label for="wp-textos">Pegar descripción, fijar bienvenida en Avisos y reglas en Charla</label></div>
+      <div class="task"><input type="checkbox" id="wp-auto"><label for="wp-auto">Automatización CLASE en Meta Business Suite con el link de la comunidad</label></div>
+      <div class="task"><input type="checkbox" id="wp-check"><label for="wp-check">Probar que CLASE no se dispare con consultas comunes sobre clases</label></div>
+      <div class="task"><input type="checkbox" id="wp-qr"><label for="wp-qr">Volante con QR para comercios y centro de jubilados de Don Torcuato</label></div>
+    </div>
+  </section>
+
 </main>
 
 <footer id="app-footer" style="display:none">Angel Meier — panel privado de contenido.</footer>
@@ -796,6 +825,8 @@ function startPanel(){
   let topics = [];
   let recurrentes = {};
   let links = [];
+  let comunidad = [];
+  let editingCom = null;
   let seeded = false;
   const REC_CAT_IDS = ['entrenando','masajes','cruce','encuesta-masajes','encuesta-entrenamiento','pregunta-abierta','encuesta-multiple','tips','recordatorios'];
 
@@ -1671,6 +1702,7 @@ Historia 3 (CTA): ¿Recién empezás? Escribime EMPEZAR y te mando la guía grat
   function saveTopics(){ setDoc(stateRef, { topics }, { merge: true }).catch(()=>{}); }
   function saveRecurrentes(){ setDoc(stateRef, { recurrentes }, { merge: true }).catch(()=>{}); }
   function saveLinks(){ setDoc(stateRef, { links }, { merge: true }).catch(()=>{}); }
+  function saveComunidad(){ setDoc(stateRef, { comunidad }, { merge: true }).catch(()=>{}); }
 
   function escapeHtml(s){ return (s||'').replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
 
@@ -1769,7 +1801,7 @@ Historia 3 (CTA): ¿Recién empezás? Escribime EMPEZAR y te mando la guía grat
     const promptDone = [...promptBoxes].filter(b => b.checked).length;
     document.getElementById('count-prompts').textContent = `${promptDone}/${promptBoxes.length}`;
 
-    const allBoxes = document.querySelectorAll('main section:not(#patio) input[type="checkbox"]');
+    const allBoxes = document.querySelectorAll('main section:not(#patio):not(#comunidad) input[type="checkbox"]');
     const allDone = [...allBoxes].filter(b => b.checked).length;
     const pct = allBoxes.length ? Math.round((allDone / allBoxes.length) * 100) : 0;
     document.getElementById('overall-bar').style.width = pct + '%';
@@ -2023,12 +2055,141 @@ Historia 3 (CTA): ¿Recién empezás? Escribime EMPEZAR y te mando la guía grat
     input.value = '';
   });
 
+  /* --- Comunidad WhatsApp --- */
+  const SEED_COMUNIDAD = [
+    { id: 'wp-ig', title: '1. Respuesta automática en Instagram (palabra clave CLASE)', text: `¡Hola! Qué bueno que te sumes.
+
+Te dejo el link para entrar a la comunidad de WhatsApp de ejercicio para adultos mayores:
+[link]
+
+Ahí vas a recibir rutinas simples para hacer en casa, consejos para moverte mejor y vas a poder hacer tus consultas.
+
+Cualquier duda, escribime por acá.
+Angel` },
+    { id: 'wp-desc', title: '2. Descripción de la comunidad', text: `Comunidad de ejercicio para adultos de +60, a cargo de Angel Meier, profesor de educación física.
+
+Acá vas a encontrar rutinas simples para hacer en casa, consejos para ganar fuerza y equilibrio, y un espacio para hacer preguntas.
+
+El objetivo: que las cosas de todos los días te cuesten menos.` },
+    { id: 'wp-bienv', title: '3. Mensaje de bienvenida (fijado en Avisos)', text: `¡Bienvenidos y bienvenidas!
+
+Soy Angel Meier, profesor de educación física, y armé este espacio para acompañarlos a moverse más y mejor.
+
+*Qué van a encontrar acá:*
+- Rutinas cortas para hacer en casa, sentados o de pie
+- Consejos sobre fuerza, equilibrio y cómo prevenir caídas
+- Respuestas a las preguntas que vayan surgiendo
+
+*Cómo funciona:*
+- En este grupo de avisos publico yo, así la información no se pierde.
+- Si quieren charlar, preguntar o contar cómo les fue, súmense al grupo *"Charla y preguntas"* desde la pantalla de la comunidad.
+
+*Importante:*
+- Antes de empezar cualquier actividad física, consulten con su médico.
+- Hagan los ejercicios a su ritmo y dentro de sus posibilidades. Si algo duele, paren.
+- Los ejercicios que comparto son generales y no reemplazan una evaluación personalizada.
+
+Para arrancar, cuéntenme en el grupo de charla: ¿de qué zona son y qué es lo que más les cuesta hacer en el día a día?
+
+¡Gracias por sumarse!
+Angel` },
+    { id: 'wp-reglas', title: '4. Reglas del grupo "Charla y preguntas"', text: `*Reglas del grupo*
+
+Este es un espacio para hablar de ejercicio, salud y bienestar. Para que sea agradable para todos:
+
+1. *Respeto siempre.* Cada uno tiene su ritmo y su historia.
+2. *Temas del grupo:* ejercicio, movimiento y bienestar. Nada de política, religión ni temas ajenos.
+3. *Sin cadenas, publicidad ni ventas* de otras personas.
+4. *Sin saludos diarios masivos* (buen día, stickers, imágenes), así no se llena el chat y nadie se pierde las consultas.
+5. *Las consultas médicas las responde el médico.* Acá puedo orientarlos sobre ejercicio, no diagnosticar.
+6. *Los números del grupo no se usan* para escribir en privado a otros miembros sin su permiso.
+
+Quien no respete las reglas podrá ser retirado del grupo.
+
+¡Gracias por cuidar este espacio!` },
+  ];
+
+  function renderComunidad(){
+    const container = document.getElementById('comunidad-list');
+    // Cada guardado de Firestore vuelve a renderizar: conservar lo que se está escribiendo en el editor abierto.
+    const draftTitle = container.querySelector('[data-com-title]');
+    const draftText = container.querySelector('[data-com-text]');
+    const draft = draftTitle ? { title: draftTitle.value, text: draftText.value } : null;
+    container.innerHTML = comunidad.map(it => {
+      if (it.id === editingCom) {
+        const d = draft || it;
+        return `
+      <div class="card">
+        <form class="new-topic open" data-com-form="${it.id}" style="margin-top:0">
+          <div><label>Título</label><input type="text" data-com-title value="${escapeHtml(d.title).replace(/"/g, '&quot;')}"></div>
+          <div><label>Texto</label><textarea data-com-text style="min-height:220px">${escapeHtml(d.text)}</textarea></div>
+          <div class="actions">
+            <button type="submit">Guardar</button>
+            <button type="button" data-com-cancel>Cancelar</button>
+          </div>
+        </form>
+      </div>`;
+      }
+      return `
+      <div class="card">
+        <h3 style="margin:0 0 8px;font-size:1rem">${escapeHtml(it.title)}</h3>
+        <pre class="copy" id="text-com-${it.id}">${escapeHtml(it.text)}</pre>
+        <div style="display:flex;gap:6px;margin-top:6px">
+          <button type="button" class="copy-btn" data-copy-target="text-com-${it.id}">Copiar texto</button>
+          <button type="button" class="copy-btn" data-edit-com="${it.id}">Editar</button>
+          <button type="button" class="copy-btn rec-del-btn" data-del-com="${it.id}">Eliminar</button>
+        </div>
+      </div>`;
+    }).join('');
+    container.querySelectorAll('[data-copy-target]').forEach(bindCopyBtn);
+    container.querySelectorAll('[data-edit-com]').forEach(btn => {
+      btn.addEventListener('click', () => { editingCom = btn.dataset.editCom; container.innerHTML = ''; renderComunidad(); });
+    });
+    container.querySelectorAll('[data-del-com]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const item = comunidad.find(i => i.id === btn.dataset.delCom);
+        if (!item || !confirm(`¿Eliminar "${item.title}"?`)) return;
+        comunidad = comunidad.filter(i => i.id !== item.id);
+        saveComunidad();
+        renderComunidad();
+      });
+    });
+    const form = container.querySelector('[data-com-form]');
+    if (form) {
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const item = comunidad.find(i => i.id === form.dataset.comForm);
+        if (item) {
+          item.title = form.querySelector('[data-com-title]').value.trim() || 'Sin título';
+          item.text = form.querySelector('[data-com-text]').value.trim();
+        }
+        editingCom = null;
+        saveComunidad();
+        renderComunidad();
+      });
+      form.querySelector('[data-com-cancel]').addEventListener('click', () => {
+        editingCom = null;
+        container.innerHTML = '';
+        renderComunidad();
+      });
+    }
+  }
+  document.getElementById('comunidad-add-btn').addEventListener('click', () => {
+    const id = 'com' + Date.now();
+    comunidad.push({ id, title: 'Nuevo texto', text: '' });
+    editingCom = id;
+    document.getElementById('comunidad-list').innerHTML = '';
+    saveComunidad();
+    renderComunidad();
+  });
+
   onSnapshot(stateRef, (snap) => {
     const data = snap.exists() ? snap.data() : {};
     state = data.checks || {};
     topics = data.topics || [];
     recurrentes = data.recurrentes || {};
     links = data.links || [];
+    comunidad = data.comunidad || [];
     if (!seeded) {
       seeded = true;
       if (!data.topics) {
@@ -2151,11 +2312,16 @@ Historia 3 (CTA): ¿Recién empezás? Escribime EMPEZAR y te mando la guía grat
         });
         saveRecurrentes();
       }
+      if (!data.comunidad) {
+        comunidad = SEED_COMUNIDAD.map(c => ({ ...c }));
+        saveComunidad();
+      }
     }
     applyAllChecks();
     renderTopics();
     REC_CAT_IDS.forEach(renderRecurrenteList);
     renderLinks();
+    renderComunidad();
     updateCounts();
   });
 }
