@@ -11,15 +11,25 @@ Lugar: patio techado 5x6 m, Arata 1967, Don Torcuato.
 - Horario exacto de cada turno: a definir (ej. 9 y 10 h / 17 y 18 h).
 - Cupo fijo por horario (no se cambian de día libremente).
 
-## A. Armado del patio (Angel)
-- [ ] 5 sillas firmes sin ruedas (levantarse/sentarse, apoyo).
-- [ ] 5 colchonetas + 5 steps.
-- [ ] Bandas elásticas (2-3 resistencias por persona).
-- [ ] Mancuernas livianas (1-5 kg) y pesas rusas (4, 6, 8, 12 kg).
-- [ ] 2-3 discos inestables, conos, pelotas.
-- [ ] 1-2 TRX + anclaje firme a viga/pared.
-- [ ] Piso antideslizante en la zona de trabajo.
-- [ ] Baño accesible, agua, ventilador/estufa, botiquín.
+## A. Armado del patio (Angel) — precios orientativos MercadoLibre, oct 2026, verificar antes de comprar
+Etapa 1 (para arrancar, ~$615.000):
+- [ ] 5 sillas plásticas reforzadas sin apoyabrazos — ~$100.000 (estimado)
+- [ ] 5 colchonetas 100x50x3-5 cm — ~$100.000
+- [ ] 5 pares de mancuernas 2 kg + 3 pares 1 kg + 3 pares 3 kg (PVC) — ~$85.000
+- [ ] 5 sets de bandas con manija + 5 mini bandas — ~$75.000
+- [ ] Pesas rusas PVC: 4, 6, 8, 8 y 12 kg — ~$50.000
+- [ ] Botiquín + tensiómetro digital + oxímetro — ~$85.000
+- [ ] Pelotas (2 de pilates, 2 medicinales 1-2 kg) + conos — ~$70.000
+- [ ] Organizador/estante para guardar — ~$50.000
+Etapa 2 (cuando haya alumnos, ~$260.000):
+- [ ] 5 steps — ~$150.000 (estimado)
+- [ ] 3 discos de equilibrio — ~$50.000
+- [ ] 2 bandas de suspensión tipo TRX + anclaje a viga/pared — ~$60.000
+Piso (opcional según el piso actual):
+- [ ] Goma EVA 10 mm en encastre, zona de 10 a 20 m² — $350.000 a $700.000 (~$35.000/m²)
+Otros:
+- [ ] Ventilador de pie / estufa — ~$70.000
+- [ ] Baño accesible y agua.
 - [ ] Seguro de responsabilidad civil.
 - [ ] Averiguar habilitación en el municipio de Tigre.
 - [ ] Ficha de evaluación + apto médico obligatorio (reusar `anamnesis_digital.html`).
