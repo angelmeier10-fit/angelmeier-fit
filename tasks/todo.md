@@ -1,4 +1,6 @@
-# Plan: Grupos +50 en el patio (Don Torcuato) — PENDIENTE DE CONFIRMAR (2026-10-26)
+# Plan: Grupos +60 en el patio (Don Torcuato) — landing online con noindex (2026-10-26)
+
+Público del patio: +60 (horarios diurnos, grupos parejos). El +50 queda para el online (`landing.html`).
 
 Modelo tomado de RA Gimnasio: funcional grupal +50, máx. 5 por grupo, evaluación inicial gratis, sin matrícula ni permanencia.
 Lugar: patio techado 5x6 m, Arata 1967, Don Torcuato.
