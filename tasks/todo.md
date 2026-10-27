@@ -1,3 +1,62 @@
+# Plan: Grupos +50 en el patio (Don Torcuato) — PENDIENTE DE CONFIRMAR (2026-10-26)
+
+Modelo tomado de RA Gimnasio: funcional grupal +50, máx. 5 por grupo, evaluación inicial gratis, sin matrícula ni permanencia.
+Lugar: patio techado 5x6 m, Arata 1967, Don Torcuato.
+
+## Grupos y planes
+- Plan 2x semana — martes y jueves a la mañana — $85.000/mes
+- Plan 3x semana — lunes, miércoles y viernes a la tarde — $100.000/mes
+- Horario exacto de cada turno: a definir (ej. 9 y 10 h / 17 y 18 h).
+- Cupo fijo por horario (no se cambian de día libremente).
+
+## A. Armado del patio (Angel)
+- [ ] 5 sillas firmes sin ruedas (levantarse/sentarse, apoyo).
+- [ ] 5 colchonetas + 5 steps.
+- [ ] Bandas elásticas (2-3 resistencias por persona).
+- [ ] Mancuernas livianas (1-5 kg) y pesas rusas (4, 6, 8, 12 kg).
+- [ ] 2-3 discos inestables, conos, pelotas.
+- [ ] 1-2 TRX + anclaje firme a viga/pared.
+- [ ] Piso antideslizante en la zona de trabajo.
+- [ ] Baño accesible, agua, ventilador/estufa, botiquín.
+- [ ] Seguro de responsabilidad civil.
+- [ ] Averiguar habilitación en el municipio de Tigre.
+- [ ] Ficha de evaluación + apto médico obligatorio (reusar `anamnesis_digital.html`).
+
+## B. Landing `patio.html` (Claude, borrador sin linkear) — HECHO, sin deploy
+- [x] Mismo diseño que `landing.html` (paleta, tipografías, FAQ, botón de WhatsApp).
+- [x] Hero: "Entrenamiento funcional para +50 en Don Torcuato" · grupos de hasta 5 · evaluación gratis.
+- [x] Momentos cotidianos (escaleras, levantarse de la silla, cargar las compras, nietos).
+- [x] Cómo entrenamos + equipamiento.
+- [x] Tres pasos: agendá la evaluación → evaluamos → entrenás en tu grupo.
+- [x] Horarios y planes (2 tarjetas).
+- [x] "Para familias" (hijos que buscan algo para sus padres).
+- [x] Ubicación: barrio + mapa; dirección exacta por WhatsApp.
+- [x] FAQ: seguridad, apto médico, faltas/recuperos, acompañantes, pago.
+- [x] Botón principal único: "Agendá tu evaluación gratis" → WhatsApp con mensaje armado.
+- [x] `noindex` hasta el lanzamiento (Firebase sube todos los HTML aunque no estén linkeados).
+- [x] Verificar en navegador a 390px y en compu.
+
+## C. Lanzamiento (cuando el patio esté listo)
+- [ ] Sacar `noindex`, sumar el link en `links.html` y en `landing.html` (sección presencial).
+- [ ] Deploy a Firebase Hosting.
+- [ ] Contenido IG: reel del patio + palabra clave para la automatización de Meta.
+
+## D. Diferenciación de productos
+- El precio lo define el formato, no el público: +50 = grupo de máx. 5 + evaluación + plan propio ($85-100k). Funcional/cross general = volumen, grupos de 12-15 ($40-50k).
+- En el patio (máx. 5) solo cierra el +50. El funcional general recién en el galpón.
+- Cada producto con su página y su precio, nunca juntos: `patio.html` (+50 presencial), `landing.html` (+50 online), `landing-fuerza.html` (fuerza/recomposición online y personalizado).
+
+## E. Etapas a futuro (galpón ~30x10)
+1. Llenar el patio con +50 y sumar horarios de lunes a sábado.
+2. Validar demanda de fuerza/cross: grupo nocturno en el patio o personalizados.
+3. Pasar al galpón (20x10 cross + 10x10 +50) solo cuando se cumplan las tres:
+   - [ ] Patio lleno con lista de espera.
+   - [ ] La facturación actual cubre el costo fijo del galpón (alquiler, servicios, seguro, habilitación comercial).
+   - [ ] Demanda de fuerza/cross probada.
+- Separar ruido y horarios entre cross y +50. Si se usa la marca "CrossFit", requiere afiliación paga ("cross training" no).
+
+---
+
 # Plan: Reemplazar alert/confirm/prompt por modales — HECHO, sin deploy (2026-10-07)
 
 - [x] Helper `uiDialog` + `uiAlert` / `uiConfirm` / `uiPrompt` (promesas, junto a `toast`). Usa `.modal-bg`/`.modal` existentes, z-index 10001 para quedar arriba de otros modales.
