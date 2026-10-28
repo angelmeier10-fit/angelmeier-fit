@@ -348,6 +348,65 @@ textarea{resize:vertical;min-height:52px}
 .tfs .cf-timer-sub{font-size:1.1rem}
 .tfs #timer-progress-wrap,.tfs .cf-timer-progress{height:10px}
 .tfs .tm-ctrls,.tfs .cf-timer-controls{justify-content:center}
+#timer-next:empty,#cf-timer-ex:empty{display:none}
+#timer-next{font-size:.85rem;font-weight:700;color:var(--tx);margin:2px 0 6px}
+.tfs #timer-next{font-size:clamp(1.2rem,5vw,1.8rem);margin:8px 0 14px}
+#cf-timer-ex{font-size:.85rem;font-weight:700;color:var(--tx);margin-top:3px}
+#cf-timer-ex small{display:block;font-weight:500;color:var(--mu);font-size:.85em}
+.tfs #cf-timer-ex{font-size:clamp(1.4rem,6vw,2.2rem);margin-top:10px}
+/* Modo entrenamiento: z-index debajo de los timers (9999) para que el descanso se vea encima */
+.wo-bar{display:flex;gap:10px;margin-bottom:14px}
+.wo-start{flex:1;background:var(--gr);color:#0f1117;border:none;border-radius:12px;padding:16px;font-size:1.05rem;font-weight:800;font-family:inherit;cursor:pointer}
+.wo-aa{min-width:60px;background:var(--s2);color:var(--tx);border:1px solid var(--bd);border-radius:12px;font-size:1.15rem;font-weight:800;font-family:inherit;cursor:pointer}
+body.bigtxt .wo-aa{background:var(--ac2);color:#fff;border-color:var(--ac2)}
+#wo-ov{display:none;position:fixed;inset:0;z-index:9990;background:var(--bg);flex-direction:column;padding:16px max(16px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
+#wo-ov.open{display:flex}
+.wo-top{display:flex;align-items:center;gap:12px;max-width:640px;width:100%;margin:0 auto}
+.wo-top-txt{flex:1;min-width:0}
+.wo-block{font-size:.9rem;font-weight:700;color:var(--mu);margin-bottom:6px}
+.wo-prog{background:var(--s2);border-radius:99px;height:8px;overflow:hidden}
+.wo-prog>div{height:100%;background:var(--gr);border-radius:99px;transition:width .3s}
+.wo-min{background:var(--s2);color:var(--tx);border:1px solid var(--bd);border-radius:10px;padding:10px 14px;font-size:.9rem;font-weight:700;font-family:inherit;cursor:pointer;flex-shrink:0}
+.wo-body{flex:1;overflow-y:auto;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:14px;max-width:640px;width:100%;margin:0 auto;padding:18px 0}
+.wo-sub{font-size:1.15rem;font-weight:700;color:var(--ac2);text-transform:uppercase;letter-spacing:.04em}
+.wo-name{font-size:clamp(1.9rem,8vw,3rem);font-weight:800;line-height:1.15;color:var(--tx)}
+.wo-chips{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.wo-chip{background:color-mix(in srgb,var(--gr) 14%,transparent);color:var(--gr);border:2px solid color-mix(in srgb,var(--gr) 40%,transparent);border-radius:12px;padding:8px 16px;font-size:clamp(1.3rem,5.5vw,1.9rem);font-weight:800}
+.wo-chip2{background:color-mix(in srgb,var(--or) 14%,transparent);color:var(--or);border-color:color-mix(in srgb,var(--or) 40%,transparent)}
+.wo-desc{font-size:1.05rem;line-height:1.55;color:var(--tx);white-space:pre-wrap;background:var(--s1);border-radius:12px;padding:12px 16px;max-width:100%}
+.wo-desc-lg{font-size:1.25rem}
+.wo-items{display:flex;flex-direction:column;gap:10px;width:100%}
+.wo-item{display:flex;align-items:center;gap:14px;background:var(--s1);border:1px solid var(--bd);border-radius:14px;padding:14px 16px;text-align:left}
+.wo-item-reps{font-size:1.3rem;font-weight:800;color:var(--gr);min-width:64px}
+.wo-item-name{font-size:clamp(1.25rem,5vw,1.6rem);font-weight:700;color:var(--tx)}
+.wo-w{display:flex;align-items:center;justify-content:center;gap:10px;font-size:1.05rem;font-weight:600;color:var(--mu);flex-wrap:wrap}
+.wo-w input{width:110px;font-size:1.3rem;padding:10px;text-align:center}
+.wo-w #wo-cfr{width:190px;font-size:1.05rem}
+.wo-next{text-align:center;font-size:1.05rem;font-weight:600;color:var(--mu);padding:10px 0;max-width:640px;width:100%;margin:0 auto}
+.wo-actions{display:flex;gap:10px;max-width:640px;width:100%;margin:0 auto}
+.wo-btn{border:none;border-radius:14px;min-height:64px;font-size:1.2rem;font-weight:800;font-family:inherit;cursor:pointer}
+.wo-btn:disabled{opacity:.45;cursor:default}
+.wo-sec{min-width:70px;background:var(--s2);color:var(--tx);border:1px solid var(--bd)}
+.wo-main{flex:1;background:var(--gr);color:#0f1117;font-size:1.35rem}
+.wo-main.wo-done{background:var(--s2);color:var(--gr);border:2px solid var(--gr)}
+.wo-cf{width:100%;background:var(--or);color:#0f1117}
+.wo-small{min-height:48px;font-size:1rem;padding:0 16px}
+.wo-end{display:flex;flex-direction:column;align-items:center;gap:12px}
+.wo-end-ic{font-size:4rem}
+#wo-pill{display:none;position:fixed;left:50%;transform:translateX(-50%);bottom:calc(90px + env(safe-area-inset-bottom));z-index:9980;background:var(--gr);color:#0f1117;border:none;border-radius:99px;padding:16px 26px;font-size:1.05rem;font-weight:800;font-family:inherit;box-shadow:0 6px 24px rgba(0,0,0,.35);cursor:pointer;white-space:nowrap}
+/* Letra grande para la vista normal de la rutina */
+body.bigtxt .cvg-title{font-size:1.1rem}
+body.bigtxt .cvg-sub{font-size:.9rem}
+body.bigtxt .cv-ex-name{font-size:1.25rem}
+body.bigtxt .cv-obs{font-size:.98rem}
+body.bigtxt .stbl td{font-size:1rem;padding-top:10px;padding-bottom:10px}
+body.bigtxt .stbl th{font-size:.82rem}
+body.bigtxt .stbl input{font-size:1rem!important;width:76px!important}
+body.bigtxt .cf-enm{font-size:1.15rem}
+body.bigtxt .cf-rbdg{font-size:.98rem}
+body.bigtxt .cv-sep{font-size:.88rem}
+body.bigtxt .ckbtn{width:54px;height:54px;font-size:1.3rem}
+body.bigtxt .badge{font-size:.85rem}
 #cv-client-list [data-cid]:hover{background:var(--s2)}
 #toast{position:fixed;bottom:20px;right:20px;background:var(--gr);color:#0f1117;padding:10px 16px;border-radius:10px;font-weight:600;font-size:.83rem;transform:translateY(80px);opacity:0;transition:all .3s;z-index:10000;pointer-events:none}
 #toast.show{transform:translateY(0);opacity:1}
@@ -800,6 +859,7 @@ setTimeout(()=>{
     <div class="cf-timer-info">
       <div class="cf-timer-label" id="cf-timer-label">Timer</div>
       <div class="cf-timer-sub" id="cf-timer-sub"></div>
+      <div id="cf-timer-ex"></div>
       <div class="cf-timer-progress"><div class="cf-timer-prog-bar" id="cf-timer-prog-bar" style="background:var(--or)"></div></div>
     </div>
     <div class="cf-timer-controls">
@@ -893,12 +953,17 @@ setTimeout(()=>{
   </div>
 </div>
 
+<!-- MODO ENTRENAMIENTO (pantalla completa, debajo de los timers) -->
+<div id="wo-ov" role="dialog" aria-label="Modo entrenamiento"></div>
+<button id="wo-pill" onclick="woResume()">▶ Continuar entrenamiento</button>
+
 <!-- TIMER BAR (sticky bottom) -->
 <div id="timer-bar" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9999;background:var(--s1);border-top:2px solid var(--or);padding:10px 20px;box-shadow:0 -4px 20px rgba(0,0,0,.4)">
   <div style="max-width:980px;margin:0 auto;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
     <div id="timer-big" style="font-family:'Space Grotesk',sans-serif;font-size:2.2rem;font-weight:700;color:var(--or);min-width:64px;text-align:center;line-height:1">60</div>
     <div class="tm-info" style="flex:1;min-width:0">
       <div style="font-size:.68rem;color:var(--mu);text-transform:uppercase;letter-spacing:.08em;font-weight:600;margin-bottom:4px">⏱ Descanso</div>
+      <div id="timer-next"></div>
       <div id="timer-progress-wrap" style="background:var(--s2);border-radius:99px;height:6px;overflow:hidden">
         <div id="timer-progress" style="height:100%;background:var(--or);border-radius:99px;transition:width .9s linear;width:100%"></div>
       </div>
@@ -5596,7 +5661,9 @@ function timerTick(){
     prog.style.width='100%';prog.style.background='var(--gr)';
     bar.style.borderTopColor='var(--gr)';
     beepFinal();
+    try{navigator.vibrate?.([300,150,300])}catch(e){}
     setTimeout(()=>{bar.style.display='none'},3000);
+    woTimerDone(false);
   }
 }
 // Igual que con el timer de CrossFit: el navegador pausa o retrasa los
@@ -5650,7 +5717,7 @@ function startTimer(secs){
   timerLastTickAt=Date.now();
   timerInterval=setInterval(timerCatchUp,1000);
 }
-window.stopTimer=function(){clearInterval(timerInterval);timerRunning=false;document.getElementById('timer-bar').style.display='none'};
+window.stopTimer=function(){clearInterval(timerInterval);timerRunning=false;document.getElementById('timer-bar').style.display='none';woTimerDone(true)};
 window.restartWithCustom=function(){
   const v=parseInt(document.getElementById('timer-custom').value)||60;
   startTimer(Math.max(5,Math.min(600,v)));
@@ -7810,7 +7877,8 @@ function renderGroupDay(plan,member,dIdx){
   // Reuse same render functions but with plan+member as client proxy
   const fakeClient={id:`grp::${plan.id}::${member.id}`,name:member.name,email:member.email||'',progress:member.progress||{},days,weeks:plan.weeks||{[wv.view.num]:days},readOnly:wv.readOnly};
   const memberWeek=wv.view.key;
-  let html='';
+  woRegister(fakeClient.id,day,memberWeek,dIdx,fakeClient.progress,'gday-view-'+gkey);
+  let html=wv.readOnly?'':woToolbarHtml(fakeClient.id);
   day.blocks.forEach((blk,bi)=>{
     const bkey=`w${memberWeek}-${dIdx}-${bi}`;
     if(blk.kind==='warmup') html+=renderWarmupBlock(fakeClient,bkey,blk,bi);
@@ -8252,7 +8320,8 @@ function renderAlumnoDay(plan,member,dIdx,uid){
   if(!day||!day.blocks?.length){container.innerHTML='<div style="text-align:center;padding:40px;color:var(--mu)">Sin bloques en este día.</div>';return}
   const fakeClient={id:akey,name:member.name,email:member.email||'',progress:member.progress||{},days,weeks:plan.weeks||{[wv.view.num]:days},readOnly:wv.readOnly};
   const memberWeek=wv.view.key;
-  let html='';
+  woRegister(akey,day,memberWeek,dIdx,fakeClient.progress,'aday-view-'+akey);
+  let html=wv.readOnly?'':woToolbarHtml(akey);
   day.blocks.forEach((blk,bi)=>{
     const bkey=`w${memberWeek}-${dIdx}-${bi}`;
     if(blk.kind==='warmup') html+=renderWarmupBlock(fakeClient,bkey,blk,bi);
@@ -8280,6 +8349,264 @@ function renderAlumnoDay(plan,member,dIdx,uid){
 async function persistAlumnoProgress(){
   await updateDoc(doc(db,'subscribers',alumnoState.uid),{progress:alumnoState.sub.progress||{}});
 }
+
+// ══ MODO ENTRENAMIENTO ══
+// Convierte un día en una secuencia de pasos (una pantalla por serie/ronda/WOD).
+// Las keys de progreso (rk/ekey) y los argumentos de toggleSerie son los mismos
+// que arman renderGymBlock/renderWarmupBlock/renderFuncBlock/renderCFBlock, así
+// el tilde en pantalla completa y el de la vista normal son el mismo dato.
+function buildWorkoutSteps(day,week,dIdx,cId,progress,refOf){
+  progress=progress||{};
+  refOf=refOf||(ex=>ex.refEx||ex.name);
+  const steps=[];
+  const nBlocks=(day?.blocks||[]).length;
+  (day?.blocks||[]).forEach((blk,bi)=>{
+    const bkey=`w${week}-${dIdx}-${bi}`;
+    const blockNum=`Bloque ${bi+1} de ${nBlocks}`;
+    if(blk.kind==='gym'||blk.kind==='warmup'){
+      const exs=blk.exercises||[];
+      const isWu=blk.kind==='warmup';
+      const typeLabel=isWu?'Entrada en calor'+(blk.series?` · circuito × ${blk.series}`:''):blk.type==='super'?'Superserie':blk.type==='tri'?'Triserie':blk.type==='giant'?'Serie gigante':'';
+      const maxSets=Math.max(0,...exs.map(e=>(e.scheme||[]).length));
+      const restSecs=isWu?0:parseRestToSeconds(blk.rest);
+      for(let si=0;si<maxSets;si++){
+        exs.forEach((ex,ei)=>{
+          const s=(ex.scheme||[])[si];if(!s)return;
+          const ekey=`${bkey}-${isWu?'wu':'e'}${ei}`;
+          const vi=isWu?0:(progress[`${cId}-${ekey}-variant`]||0);
+          const act=(vi>0&&ex.variants?.[vi-1])?ex.variants[vi-1]:ex;
+          const isLast=ei===exs.length-1;
+          steps.push({kind:'set',bi,block:blockNum,typeLabel,name:act.name||'',reps:s.reps||'',load:s.load||'',obs:ex.obs||'',video:act.video||'',
+            sub:`Serie ${si+1} de ${(ex.scheme||[]).length}`,
+            rk:`${cId}-${ekey}-${si}`,ekey,si,isLast,rest:restSecs,
+            pause:isWu?undefined:(isLast?0:parseRestToSeconds((blk.pauses||[])[ei]||'')),
+            weightId:isWu?null:`sw-${cId}-${ekey}-${si}`,refName:refOf(act)});
+        });
+      }
+    }else if(blk.kind==='func'){
+      const items=(blk.exercises||[]).map(ex=>({name:ex.name||'',reps:ex.reps||'',video:ex.video||'',obs:ex.obs||''}));
+      const n=parseInt(blk.sets)||0;
+      const restSecs=parseRestToSeconds(blk.rest);
+      const base={bi,block:blockNum,typeLabel:blk.title||'Actividad funcional',desc:blk.desc||'',items,commonReps:blk.reps||''};
+      if(n>0){
+        for(let ri=0;ri<n;ri++){
+          steps.push({...base,kind:'round',sub:`Ronda ${ri+1} de ${n}`,rk:`${cId}-${bkey}-round${ri}`,ekey:bkey,si:ri,isLast:ri===n-1,rest:restSecs,pause:restSecs});
+        }
+      }else steps.push({...base,kind:'info',sub:''});
+    }else if(blk.kind==='note'){
+      steps.push({kind:'info',bi,block:blockNum,typeLabel:'Nota',desc:blk.text||'',items:[],sub:''});
+    }else{
+      const sections=blk.sections?.length?blk.sections:[{meta:blk.meta||{},exercises:blk.exercises||[],pause:''}];
+      sections.forEach((sec,si)=>{
+        const exs=sec.exercises||[];
+        const items=exs.map(ex=>({name:ex.name||'',reps:ex.reps||'',video:ex.video||''}));
+        const secLabel=sections.length>1?` · Sección ${si+1}`:'';
+        const base={bi,block:blockNum,cftype:blk.cftype,meta:sec.meta||{},items,notes:si===sections.length-1?(blk.notes||''):''};
+        const isRepsCircuit=(blk.cftype==='circuit'||blk.cftype==='intervals')&&exs.some(e=>e.name)&&
+          exs.every(ex=>!/\d+\s*(min|s$|seg|km)/i.test((ex.reps||'').trim()));
+        if(isRepsCircuit){
+          const n=parseInt(sec.meta?.rounds)||3;
+          const restSecs=parseToSecs(sec.meta?.rest||'60s');
+          for(let ri=0;ri<n;ri++){
+            steps.push({...base,kind:'round',typeLabel:'Circuito'+secLabel,sub:`Ronda ${ri+1} de ${n}`,
+              rk:`${cId}-${bkey}-s${si}-cfround${ri}`,ekey:`${bkey}-s${si}`,si:ri,isLast:false,rest:null,pause:restSecs});
+          }
+        }else{
+          steps.push({...base,kind:'wod',typeLabel:'WOD'+secLabel,sub:'',bkey,
+            exNames:exs.map(e=>e.name).filter(Boolean),resultKey:`${cId}-${bkey}-cfresult`});
+        }
+      });
+    }
+  });
+  return steps;
+}
+// ══ FIN MODO ENTRENAMIENTO (pasos) ══
+
+function woStepLabel(st){
+  if(!st)return'';
+  if(st.kind==='set')return[st.name,st.reps].filter(Boolean).join(' · ');
+  if(st.kind==='round')return`${st.sub} — ${st.items.map(i=>i.name).filter(Boolean).join(', ')}`;
+  return st.typeLabel||'';
+}
+const woEsc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let woCtx={};
+let wo=null;
+let woWakeLock=null;
+async function woKeepAwake(on){
+  try{
+    if(on&&!woWakeLock&&navigator.wakeLock){woWakeLock=await navigator.wakeLock.request('screen');woWakeLock.addEventListener('release',()=>{woWakeLock=null});}
+    else if(!on&&woWakeLock){await woWakeLock.release();woWakeLock=null;}
+  }catch(e){}
+}
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible'&&wo&&document.getElementById('wo-ov')?.classList.contains('open'))woKeepAwake(true);
+});
+function woRegister(cId,day,week,dIdx,progress,containerId){
+  woCtx[cId]={day,week,dIdx,progress,containerId};
+  if(wo&&wo.cId===cId&&(wo.dIdx!==dIdx||wo.week!==week))woEnd();
+}
+function woToolbarHtml(cId){
+  return`<div class="wo-bar"><button class="wo-start" onclick="startWorkout('${cId}')">▶ Empezar entrenamiento</button><button class="wo-aa" onclick="toggleBigText()" title="Letra grande" aria-label="Letra grande">Aa</button></div>`;
+}
+function woIsDone(st){
+  return !!document.getElementById('sr-'+st.rk)?.querySelector('.ckbtn')?.classList.contains('done');
+}
+window.startWorkout=function(cId){
+  const ctx=woCtx[cId];if(!ctx)return;
+  const refOf=ex=>{const b=exDB.find(e=>norm(e.name).trim()===norm(ex.name||'').trim());return ex.refEx||b?.refEx||ex.name;};
+  const steps=buildWorkoutSteps(ctx.day,ctx.week,ctx.dIdx,cId,ctx.progress,refOf);
+  if(!steps.length){toast('Este día no tiene ejercicios');return}
+  wo={cId,steps,dIdx:ctx.dIdx,week:ctx.week,containerId:ctx.containerId,idx:0,waiting:false};
+  const first=steps.findIndex(st=>st.rk?!woIsDone(st):false);
+  wo.idx=first>=0?first:0;
+  woOpen();
+};
+function woOpen(){
+  document.getElementById('wo-ov').classList.add('open');
+  document.getElementById('wo-pill').style.display='none';
+  document.body.style.overflow='hidden';
+  woKeepAwake(true);
+  woRender();
+}
+window.woMinimize=function(){
+  document.getElementById('wo-ov').classList.remove('open');
+  document.body.style.overflow='';
+  if(wo)document.getElementById('wo-pill').style.display='block';
+  woKeepAwake(false);
+};
+window.woResume=function(){
+  if(!wo||!document.getElementById(wo.containerId)){woEnd();return}
+  woOpen();
+};
+function woEnd(){
+  wo=null;
+  document.getElementById('wo-ov')?.classList.remove('open');
+  const pill=document.getElementById('wo-pill');if(pill)pill.style.display='none';
+  document.body.style.overflow='';
+  const nx=document.getElementById('timer-next');if(nx)nx.textContent='';
+  woKeepAwake(false);
+}
+window.woClose=function(){
+  const cid=wo?.containerId;
+  woEnd();
+  const note=cid&&document.querySelector(`#${CSS.escape(cid)} textarea`);
+  if(note)note.scrollIntoView({behavior:'smooth',block:'center'});
+};
+window.woGo=function(i){
+  if(!wo)return;
+  wo.waiting=false;
+  wo.idx=Math.max(0,Math.min(wo.steps.length,i));
+  woRender();
+};
+// Lo llama el timer de descanso al terminar o al cerrarlo: si el descanso lo
+// arrancó un "Hecho" del modo entrenamiento, se pasa solo al paso siguiente.
+function woTimerDone(skipped){
+  const nx=document.getElementById('timer-next');if(nx)nx.textContent='';
+  if(!wo||!wo.waiting)return;
+  wo.waiting=false;
+  const go=()=>{
+    if(!wo)return;
+    document.getElementById('timer-bar').style.display='none';
+    woGo(wo.idx+1);
+  };
+  if(skipped)go();else setTimeout(go,1200);
+}
+window.woDone=async function(){
+  if(!wo)return;
+  const st=wo.steps[wo.idx];if(!st)return;
+  if(!st.rk||woIsDone(st)){woGo(wo.idx+1);return}
+  const next=wo.steps[wo.idx+1];
+  const nx=document.getElementById('timer-next');
+  if(nx)nx.textContent=next?'Próximo: '+woStepLabel(next):'Último ejercicio terminado';
+  // Sin await: el tilde y el arranque del descanso son sincrónicos; esperar el
+  // guardado demoraría la pantalla con mala señal.
+  toggleSerie(wo.cId,st.ekey,st.si,st.rk,st.isLast,st.rest,st.pause);
+  if(timerRunning){
+    wo.waiting=true;
+    if(next)speakText('Próximo: '+woStepLabel(next));
+    woRender();
+  }else{
+    if(nx)nx.textContent='';
+    setTimeout(()=>{if(wo&&!wo.waiting)woGo(wo.idx+1)},500);
+  }
+};
+window.woSaveWeight=function(i,val){
+  const st=wo?.steps[i];if(!st?.weightId)return;
+  const inp=document.getElementById(st.weightId);if(!inp)return;
+  inp.value=val;
+  autoSaveGym(wo.cId,st.ekey,st.refName);
+};
+window.woStartCF=function(){
+  const st=wo?.steps[wo.idx];if(!st)return;
+  openCFTimerConfig(st.cftype,st.meta,st.exNames);
+};
+window.woSaveCF=function(){
+  const st=wo?.steps[wo.idx];if(!st)return;
+  const v=document.getElementById('wo-cfr')?.value.trim();if(!v)return;
+  const inp=document.getElementById(`cfr-${wo.cId}-${st.bkey}`);if(!inp)return;
+  inp.value=v;
+  logCF(wo.cId,st.bkey,st.resultKey);
+  document.getElementById('wo-cfr').value='';
+};
+function woRender(){
+  const ov=document.getElementById('wo-ov');
+  if(!wo||!ov)return;
+  const total=wo.steps.length;
+  const st=wo.steps[wo.idx];
+  const pct=Math.round((wo.idx/total)*100);
+  let body='',actions='';
+  if(!st){
+    body=`<div class="wo-end"><div class="wo-end-ic">🎉</div><div class="wo-name">¡Entrenamiento terminado!</div><p class="wo-desc">Muy bien. Si querés, dejá una nota de cómo te sentiste.</p></div>`;
+    actions=`<button class="wo-btn wo-sec" onclick="woGo(${total-1})">◀</button><button class="wo-btn wo-main" onclick="woClose()">Cerrar</button>`;
+  }else{
+    const done=st.rk?woIsDone(st):false;
+    const vid=st.video?vidBtnHtml(st.video,5):'';
+    const itemsHtml=(st.items||[]).map(it=>`<div class="wo-item"><span class="wo-item-reps">${woEsc(it.reps||st.commonReps||'')}</span><span class="wo-item-name">${woEsc(it.name)}</span></div>${it.video?vidBtnHtml(it.video,5):''}`).join('');
+    if(st.kind==='set'){
+      const curW=st.weightId?(document.getElementById(st.weightId)?.value||''):'';
+      const ph=st.weightId?(document.getElementById(st.weightId)?.placeholder||'kg'):'';
+      body=`<div class="wo-sub">${woEsc(st.sub)}</div>
+        <div class="wo-name">${woEsc(st.name)}</div>
+        <div class="wo-chips">${st.reps?`<span class="wo-chip">${woEsc(st.reps)}</span>`:''}${st.load?`<span class="wo-chip wo-chip2">${woEsc(st.load)}</span>`:''}</div>
+        ${st.obs?`<div class="wo-desc">📝 ${woEsc(st.obs)}</div>`:''}
+        ${st.weightId?`<label class="wo-w">Peso usado <input type="number" step="0.5" inputmode="decimal" value="${woEsc(curW)}" placeholder="${woEsc(ph)}" onchange="woSaveWeight(${wo.idx},this.value)"> kg</label>`:''}
+        ${vid}`;
+    }else if(st.kind==='round'){
+      body=`<div class="wo-sub">${woEsc(st.sub)}</div>
+        ${st.desc?`<div class="wo-desc">${woEsc(st.desc)}</div>`:''}
+        <div class="wo-items">${itemsHtml}</div>`;
+    }else if(st.kind==='wod'){
+      const cfg=CF_TYPES[st.cftype]||{label:st.cftype||'WOD',icon:'🏋️',fields:[]};
+      const chips=(cfg.fields||[]).map(f=>st.meta?.[f.id]?`<span class="wo-chip">${woEsc(f.label.replace(/\s*\(ej:[^)]*\)/i,''))}: ${woEsc(st.meta[f.id])}</span>`:'').join('');
+      body=`<div class="wo-name">${cfg.icon||''} ${woEsc(cfg.label)}</div>
+        <div class="wo-chips">${chips}</div>
+        <div class="wo-items">${itemsHtml}</div>
+        ${st.notes?`<div class="wo-desc">${woEsc(st.notes)}</div>`:''}
+        <button class="wo-btn wo-cf" onclick="woStartCF()">⏱ Iniciar timer</button>
+        <div class="wo-w">Resultado <input type="text" id="wo-cfr" placeholder="Ej: 8 rondas / 12:34"><button class="wo-btn wo-sec wo-small" onclick="woSaveCF()">Guardar</button></div>`;
+    }else{
+      body=`${st.desc?`<div class="wo-desc wo-desc-lg">${woEsc(st.desc)}</div>`:''}<div class="wo-items">${itemsHtml}</div>`;
+    }
+    const mainBtn=wo.waiting?`<button class="wo-btn wo-main" disabled>⏱ Descansando...</button>`
+      :st.rk?`<button class="wo-btn wo-main${done?' wo-done':''}" onclick="woDone()">${done?'✓ Hecho — seguir':'✓ Hecho'}</button>`
+      :`<button class="wo-btn wo-main" onclick="woGo(${wo.idx+1})">Siguiente ▶</button>`;
+    actions=`<button class="wo-btn wo-sec" onclick="woGo(${wo.idx-1})" ${wo.idx===0?'disabled':''} aria-label="Anterior">◀</button>${mainBtn}<button class="wo-btn wo-sec" onclick="woGo(${wo.idx+1})" aria-label="Siguiente">▶</button>`;
+  }
+  const next=st?wo.steps[wo.idx+1]:null;
+  ov.innerHTML=`<div class="wo-top">
+      <div class="wo-top-txt"><div class="wo-block">${st?woEsc(st.block)+(st.typeLabel?' · '+woEsc(st.typeLabel):''):'Fin'}</div>
+      <div class="wo-prog"><div style="width:${pct}%"></div></div></div>
+      <button class="wo-min" onclick="woMinimize()">▾ Minimizar</button>
+    </div>
+    <div class="wo-body">${body}</div>
+    ${next?`<div class="wo-next">Próximo: ${woEsc(woStepLabel(next))}</div>`:''}
+    <div class="wo-actions">${actions}</div>`;
+}
+window.toggleBigText=function(){
+  const on=document.body.classList.toggle('bigtxt');
+  try{localStorage.setItem('bigtxt',on?'1':'0')}catch(e){}
+};
+try{if(localStorage.getItem('bigtxt')==='1')document.body.classList.add('bigtxt')}catch(e){}
 
 window.saveAlumnoNote=async function(dIdx){
   const uid=alumnoState.uid;
@@ -8833,6 +9160,13 @@ function cfTimerUpdateDisplay(){
   } else {
     sub.textContent='';
   }
+  // Ejercicio actual y próximo en grande (EMOM rota un ejercicio por minuto)
+  const exEl=document.getElementById('cf-timer-ex');
+  const exs=cfTimer.exercises||[];
+  let cur=-1;
+  if(exs.length>1&&(cfTimer.mode==='interval'||cfTimer.mode==='tabata'))cur=cfTimer.currentExIdx||0;
+  else if(exs.length>1&&cfTimer.mode==='emom')cur=((cfTimer.currentRound||1)-1)%exs.length;
+  if(exEl)exEl.innerHTML=cur>=0?`${woEsc(exs[cur])}<small>Próximo: ${woEsc(exs[(cur+1)%exs.length])}</small>`:'';
   // Color warnings
   if(cfTimer.mode==='fortime'){
     if(cfTimer.totalSecs>0){

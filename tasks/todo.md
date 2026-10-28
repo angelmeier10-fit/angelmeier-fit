@@ -1,3 +1,44 @@
+# Plan: Modo entrenamiento a pantalla completa + letra grande (2026-10-27)
+
+Objetivo: que el alumno (sobre todo +60) vea un ejercicio por vez, en grande, sin marearse con la lista completa.
+Alcance: vista del alumno (`renderAlumnoDay`) y grupos (`renderGroupDay`). Sin cambios en el modelo de datos ni en los planes cargados.
+
+## Decisiones tomadas
+- Después de "Hecho" + descanso, **avanza solo** al siguiente paso.
+- Se suma un ajuste de **letra grande** para la vista normal.
+
+## A. Armado de pasos (función pura `buildWorkoutSteps(day)`)
+- [x] gym simple: 1 paso por serie (`scheme[i]`), descanso del bloque entre series
+- [x] súper/tri/giant: alterna por serie (A1 s1 → pausa → A2 s1 → descanso → A1 s2...)
+- [x] warmup y func: 1 paso por vuelta con todos los ejercicios de la vuelta
+- [x] cf circuit/intervals con rondas por reps: 1 paso por ronda
+- [x] cf resto (AMRAP, EMOM, For Time, Tabata...): 1 paso "WOD" con todo en grande + botón del timer existente + campo resultado
+- [x] note: paso informativo
+- [x] Test en node de `buildWorkoutSteps` con días de ejemplo (gym, súper, func, cf)
+
+## B. Pantalla completa (overlay)
+- [x] Botón "▶ Empezar entrenamiento" arriba del día
+- [x] Overlay: bloque + "Serie X de N", nombre grande, reps · carga, obs, video, input peso usado
+- [x] Botones: Hecho ✓ (usa `toggleSerie` → misma key de progreso), Anterior, Siguiente, Minimizar
+- [x] Hecho con descanso/pausa → timer grande con "Próximo: ejercicio · reps" → al terminar avanza solo
+- [x] Minimizar → vista normal + botón flotante "Continuar entrenamiento" en el mismo paso
+- [x] Arranca en el primer paso sin tildar
+- [x] Wake Lock (pantalla no se apaga), vibración al terminar descanso, voz "Próximo: ..." con `speakText`
+- [x] En el timer de CF (EMOM/Tabata/intervalos): ejercicio actual y próximo en grande
+
+## C. Letra grande
+- [x] Toggle "Aa" en la vista del alumno → clase en body que agranda nombres, reps, tablas y botones; se guarda en localStorage
+
+## D. Verificación
+- [x] Probado en navegador con página de prueba (CSS y código reales, día de ejemplo): súper serie, pausa con "Próximo", avance solo, ronda, WOD, minimizar/continuar, pantalla final
+- [ ] Pendiente: Angel prueba en la vista previa del admin con un alumno real
+- [x] Revisado a 390px, tema claro y oscuro
+- [ ] Commit, push y `firebase deploy --only hosting`
+
+## Revisión
+- Los tildes del modo entrenamiento usan toggleSerie con las mismas keys que la vista normal (test en node lo verifica).
+- La app real sin login entra en bucle de recarga por permission-denied, por eso la prueba visual se hizo con una página de prueba local.
+
 # Plan: Grupos +60 en el patio (Don Torcuato) — landing online con noindex (2026-10-26)
 
 Público del patio: +60 (horarios diurnos, grupos parejos). El +50 queda para el online (`landing.html`).
