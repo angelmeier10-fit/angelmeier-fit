@@ -31,9 +31,9 @@ Alcance: vista del alumno (`renderAlumnoDay`) y grupos (`renderGroupDay`). Sin c
 
 ## D. Verificación
 - [x] Probado en navegador con página de prueba (CSS y código reales, día de ejemplo): súper serie, pausa con "Próximo", avance solo, ronda, WOD, minimizar/continuar, pantalla final
-- [ ] Pendiente: Angel prueba en la vista previa del admin con un alumno real
+- [x] Angel probó en la app real: andaba tapado por #view-alumno (z-index), video cortaba la barra superior, voz de "Próximo" sacada a pedido. Todo corregido y desplegado.
 - [x] Revisado a 390px, tema claro y oscuro
-- [ ] Commit, push y `firebase deploy --only hosting`
+- [x] Commit, push y `firebase deploy --only hosting`
 
 ## Revisión
 - Los tildes del modo entrenamiento usan toggleSerie con las mismas keys que la vista normal (test en node lo verifica).

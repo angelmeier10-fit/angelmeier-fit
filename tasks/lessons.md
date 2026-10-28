@@ -23,3 +23,7 @@
 ## 2026-10-15 — Guía nueva con diseño inventado en vez del de las guías existentes
 - **Error:** armé el PDF de la guía Empezá a entrenar con un diseño nuevo (A4 claro) sin mirar `guia-50.pdf` ni `guia-gluteos.pdf`.
 - **Regla:** antes de crear una pieza de una serie que ya existe (guía, carrusel, landing), abrir las anteriores y copiar formato y estructura. Las guías: 1080×1350, fondo oscuro, franja diagonal violeta, Barlow Condensed itálica + Inter, portada, bienvenida, índice, capítulos con "A practicar", plan de 4 semanas y "¿Y después?".
+
+## 2026-10-28 — Modo entrenamiento tapado por la vista de alumno
+- **Error:** el overlay nuevo (z-index 9990) quedó debajo de `#view-alumno` (fixed, z-index 9998); en la página de prueba no apareció porque no reproducía ese contenedor. También el contenido centrado con flex se cortaba arriba al crecer (video).
+- **Regla:** antes de agregar un overlay fijo en index.html, buscar los z-index de los contenedores fijos donde se va a usar (`#view-alumno` 9998, timers 9999, modales 10000). En columnas flex con scroll, usar `min-height:0` y no `justify-content:center` (corta el contenido de arriba).
