@@ -7938,7 +7938,7 @@ function renderGroupDay(plan,member,dIdx){
   // Reuse same render functions but with plan+member as client proxy
   const fakeClient={id:`grp::${plan.id}::${member.id}`,name:member.name,email:member.email||'',progress:member.progress||{},days,weeks:plan.weeks||{[wv.view.num]:days},readOnly:wv.readOnly};
   const memberWeek=wv.view.key;
-  woRegister(fakeClient.id,day,memberWeek,dIdx,fakeClient.progress,'gday-view-'+gkey);
+  woRegister(fakeClient.id,day,memberWeek,dIdx,fakeClient.progress,'gday-view-'+gkey,pk);
   let html=wv.readOnly?'':woToolbarHtml(fakeClient.id);
   day.blocks.forEach((blk,bi)=>{
     const bkey=`w${memberWeek}-${dIdx}-${bi}`;
@@ -8396,7 +8396,7 @@ function renderAlumnoDay(plan,member,dIdx,uid){
   if(!day||!day.blocks?.length){container.innerHTML='<div style="text-align:center;padding:40px;color:var(--mu)">Sin bloques en este día.</div>';return}
   const fakeClient={id:akey,name:member.name,email:member.email||'',progress:member.progress||{},days,weeks:plan.weeks||{[wv.view.num]:days},readOnly:wv.readOnly};
   const memberWeek=wv.view.key;
-  woRegister(akey,day,memberWeek,dIdx,fakeClient.progress,'aday-view-'+akey);
+  woRegister(akey,day,memberWeek,dIdx,fakeClient.progress,'aday-view-'+akey,pk);
   let html=wv.readOnly?'':woToolbarHtml(akey);
   day.blocks.forEach((blk,bi)=>{
     const bkey=`w${memberWeek}-${dIdx}-${bi}`;
@@ -8476,7 +8476,7 @@ function buildWorkoutSteps(day,week,dIdx,cId,progress,refOf){
         });
       }
     }else if(blk.kind==='func'){
-      const items=(blk.exercises||[]).map(ex=>({name:ex.name||'',reps:ex.reps||'',video:ex.video||'',obs:ex.obs||''}));
+      const items=(blk.exercises||[]).map(ex=>({name:ex.name||'',reps:ex.reps||'',video:ex.video||'',obs:ex.obs||'',refName:refOf(ex)}));
       const n=parseInt(blk.sets)||0;
       const restSecs=parseRestToSeconds(blk.rest);
       const typeLabel=blk.title||'Actividad funcional';
@@ -8486,7 +8486,7 @@ function buildWorkoutSteps(day,week,dIdx,cId,progress,refOf){
         for(let ri=0;ri<n;ri++)items.forEach((it,ii)=>{
           const rk=`${cId}-${bkey}-round${ri}`;const lastEx=ii===items.length-1;
           steps.push({kind:'set',bi,block:blockNum,typeLabel,name:it.name,reps:it.reps||blk.reps||'',load:'',
-            obs:it.obs||(ii===0?blk.desc||'':''),video:it.video,
+            obs:it.obs,bdesc:blk.desc||'',video:it.video,refName:it.refName,
             sub:`Ronda ${ri+1} de ${n} · Ejercicio ${ii+1} de ${items.length}`,
             rk:lastEx?rk:`${rk}-x${ii}`,ekey:bkey,si:ri,isLast:lastEx&&ri===n-1,rest:restSecs,pause:lastEx?restSecs:0,weightId:null});
         });
@@ -8499,7 +8499,7 @@ function buildWorkoutSteps(day,week,dIdx,cId,progress,refOf){
         const exs=sec.exercises||[];
         const items=exs.map(ex=>({name:ex.name||'',reps:ex.reps||'',video:ex.video||''}));
         const secLabel=sections.length>1?` · Sección ${si+1}`:'';
-        const base={bi,block:blockNum,cftype:blk.cftype,meta:sec.meta||{},items,notes:si===sections.length-1?(blk.notes||''):''};
+        const base={bi,block:blockNum,cftype:blk.cftype,meta:sec.meta||{},items,notes:blk.notes||''};
         const isRepsCircuit=(blk.cftype==='circuit'||blk.cftype==='intervals')&&exs.some(e=>e.name)&&
           exs.every(ex=>!/\d+\s*(min|s$|seg|km)/i.test((ex.reps||'').trim()));
         if(isRepsCircuit){
@@ -8539,8 +8539,8 @@ async function woKeepAwake(on){
 document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='visible'&&wo&&document.getElementById('wo-ov')?.classList.contains('open'))woKeepAwake(true);
 });
-function woRegister(cId,day,week,dIdx,progress,containerId){
-  woCtx[cId]={day,week,dIdx,progress,containerId};
+function woRegister(cId,day,week,dIdx,progress,containerId,pk){
+  woCtx[cId]={day,week,dIdx,progress,containerId,pk};
   if(wo&&wo.cId===cId&&(wo.dIdx!==dIdx||wo.week!==week))woEnd();
 }
 function woToolbarHtml(cId){
@@ -8567,7 +8567,7 @@ window.startWorkout=function(cId,bi){
   const refOf=ex=>{const b=exDB.find(e=>norm(e.name).trim()===norm(ex.name||'').trim());return ex.refEx||b?.refEx||ex.name;};
   const steps=buildWorkoutSteps(ctx.day,ctx.week,ctx.dIdx,cId,ctx.progress,refOf);
   if(!steps.length){toast('Este día no tiene ejercicios');return}
-  wo={cId,steps,dIdx:ctx.dIdx,week:ctx.week,containerId:ctx.containerId,idx:0,waiting:false};
+  wo={cId,steps,dIdx:ctx.dIdx,week:ctx.week,containerId:ctx.containerId,pk:ctx.pk,idx:0,waiting:false};
   const inBlk=st=>bi==null||st.bi===bi;
   const first=steps.findIndex(st=>inBlk(st)&&st.rk&&!woIsDone(st));
   wo.idx=first>=0?first:Math.max(0,steps.findIndex(inBlk));
@@ -8751,6 +8751,12 @@ window.woSaveCF=function(){
   logCF(wo.cId,st.bkey,st.resultKey);
   document.getElementById('wo-cfr').value='';
 };
+// Notas del ejercicio: banco (📖), observación del bloque y nota personal del alumno.
+function woNotesHtml(name,obs,refName){
+  const b=exDB.find(e=>norm(e.name).trim()===norm(name).trim());
+  const pn=wo?.pk?exHistoryCache[wo.pk]?.ex?.[norm(refName||name).trim()]?.note:'';
+  return[b?.notes&&'📖 '+b.notes,obs&&'📝 '+obs,pn&&'📝 '+pn].filter(Boolean).map(t=>`<div class="wo-desc">${woEsc(t)}</div>`).join('');
+}
 function woRender(){
   const ov=document.getElementById('wo-ov');
   if(!wo||!ov)return;
@@ -8764,29 +8770,30 @@ function woRender(){
   }else{
     const done=st.rk?woIsDone(st):false;
     const vid=st.video?vidBtnHtml(st.video,5):'';
-    const itemsHtml=(st.items||[]).map(it=>`<div class="wo-item"><span class="wo-item-reps">${woEsc(it.reps||st.commonReps||'')}</span><span class="wo-item-name">${woEsc(it.name)}</span></div>${it.video?vidBtnHtml(it.video,5):''}`).join('');
+    const itemsHtml=(st.items||[]).map(it=>`<div class="wo-item"><span class="wo-item-reps">${woEsc(it.reps||st.commonReps||'')}</span><span class="wo-item-name">${woEsc(it.name)}</span></div>${woNotesHtml(it.name,it.obs,it.refName)}${it.video?vidBtnHtml(it.video,5):''}`).join('');
     if(st.kind==='set'){
       const curW=st.weightId?(document.getElementById(st.weightId)?.value||''):'';
       const ph=st.weightId?(document.getElementById(st.weightId)?.placeholder||'kg'):'';
       body=`<div class="wo-sub">${woEsc(st.sub)}</div>
         <div class="wo-name">${woEsc(st.name)}</div>
         <div class="wo-chips">${st.reps?`<span class="wo-chip">${woEsc(st.reps)}</span>`:''}${st.load?`<span class="wo-chip wo-chip2">${woEsc(st.load)}</span>`:''}</div>
-        ${st.obs?`<div class="wo-desc">📝 ${woEsc(st.obs)}</div>`:''}
+        ${st.bdesc?`<div class="wo-desc">${woEsc(st.bdesc)}</div>`:''}
+        ${woNotesHtml(st.name,st.obs,st.refName)}
         ${woTmHtml(woTimeSecs(st.reps),'set|'+st.bi+'|'+st.name)}
         ${st.weightId?`<label class="wo-w">Peso usado <input type="number" step="0.5" inputmode="decimal" value="${woEsc(curW)}" placeholder="${woEsc(ph)}" onchange="woSaveWeight(${wo.idx},this.value)"> kg</label>`:''}
         ${vid}`;
     }else if(st.kind==='round'){
       body=`<div class="wo-sub">${woEsc(st.sub)}</div>
-        ${st.desc?`<div class="wo-desc">${woEsc(st.desc)}</div>`:''}
         ${woTmHtml(0,'round|'+st.bi)}
-        <div class="wo-items">${itemsHtml}</div>`;
+        <div class="wo-items">${itemsHtml}</div>
+        ${st.notes?`<div class="wo-desc">📝 ${woEsc(st.notes)}</div>`:''}`;
     }else if(st.kind==='wod'){
       const cfg=CF_TYPES[st.cftype]||{label:st.cftype||'WOD',icon:'🏋️',fields:[]};
       const chips=(cfg.fields||[]).map(f=>st.meta?.[f.id]?`<span class="wo-chip">${woEsc(f.label.replace(/\s*\(ej:[^)]*\)/i,''))}: ${woEsc(st.meta[f.id])}</span>`:'').join('');
       body=`<div class="wo-name">${cfg.icon||''} ${woEsc(cfg.label)}</div>
         <div class="wo-chips">${chips}</div>
         <div class="wo-items">${itemsHtml}</div>
-        ${st.notes?`<div class="wo-desc">${woEsc(st.notes)}</div>`:''}
+        ${st.notes?`<div class="wo-desc">📝 ${woEsc(st.notes)}</div>`:''}
         <button class="wo-btn wo-cf" onclick="woStartCF()">⏱ Iniciar timer</button>
         <div class="wo-w">Resultado <input type="text" id="wo-cfr" placeholder="Ej: 8 rondas / 12:34"><button class="wo-btn wo-sec wo-small" onclick="woSaveCF()">Guardar</button></div>`;
     }else{
