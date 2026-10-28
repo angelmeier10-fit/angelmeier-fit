@@ -8525,7 +8525,6 @@ window.woDone=async function(){
   toggleSerie(wo.cId,st.ekey,st.si,st.rk,st.isLast,st.rest,st.pause);
   if(timerRunning){
     wo.waiting=true;
-    if(next)speakText('Próximo: '+woStepLabel(next));
     woRender();
   }else{
     if(nx)nx.textContent='';
