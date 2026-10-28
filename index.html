@@ -394,6 +394,9 @@ body.bigtxt .wo-aa{background:var(--ac2);color:#fff;border-color:var(--ac2)}
 .wo-main.wo-done{background:var(--s2);color:var(--gr);border:2px solid var(--gr)}
 .wo-cf{width:100%;background:var(--or);color:#0f1117}
 .wo-small{min-height:48px;font-size:1rem;padding:0 16px}
+.wo-vars{display:flex;flex-direction:column;gap:8px;width:100%}
+.wo-var{min-height:52px;border-radius:12px;border:1.5px solid var(--ac2);background:transparent;color:var(--ac2);font-size:1.1rem;font-weight:700;font-family:inherit;cursor:pointer;padding:8px 14px}
+.wo-var.on{background:var(--ac2);color:#fff}
 .wo-tm{display:flex;align-items:center;justify-content:center;gap:10px;background:var(--s1);border:1px solid var(--bd);border-radius:14px;padding:10px 14px}
 .wo-tm-n{font-size:clamp(2rem,9vw,2.8rem);font-weight:800;font-variant-numeric:tabular-nums;min-width:4ch;color:var(--tx)}
 .wo-tm-n.cd{color:var(--or)}.wo-tm-n.fin{color:var(--gr)}
@@ -8472,7 +8475,8 @@ function buildWorkoutSteps(day,week,dIdx,cId,progress,refOf){
             sub:`Serie ${si+1} de ${(ex.scheme||[]).length}`,
             rk:`${cId}-${ekey}-${si}`,ekey,si,isLast,rest:restSecs,
             pause:isLast?0:parseRestToSeconds((blk.pauses||[])[ei]||''),
-            weightId:`sw-${cId}-${ekey}-${si}`,refName:refOf(act)});
+            weightId:`sw-${cId}-${ekey}-${si}`,refName:refOf(act),
+            vk:`${cId}-${ekey}-variant`,vi,variants:ex.variants?.length?[ex.name||'',...ex.variants.map(v=>v.name||'')]:null});
         });
       }
     }else if(blk.kind==='func'){
@@ -8542,6 +8546,10 @@ document.addEventListener('visibilitychange',()=>{
 function woRegister(cId,day,week,dIdx,progress,containerId,pk){
   woCtx[cId]={day,week,dIdx,progress,containerId,pk};
   if(wo&&wo.cId===cId&&(wo.dIdx!==dIdx||wo.week!==week))woEnd();
+  else if(wo&&wo.cId===cId){
+    wo.steps=buildWorkoutSteps(day,week,dIdx,cId,progress,woRefOf);
+    wo.idx=Math.min(wo.idx,wo.steps.length);
+  }
 }
 function woToolbarHtml(cId){
   return`<div class="wo-bar"><button class="wo-start" onclick="startWorkout('${cId}')">▶ Empezar entrenamiento</button><button class="wo-aa" onclick="toggleBigText()" title="Letra grande" aria-label="Letra grande">Aa</button></div>`;
@@ -8562,10 +8570,10 @@ function woProgress(cId){
 function woIsDone(st){
   return !!(wo&&st.rk&&woProgress(wo.cId)[st.rk]);
 }
+function woRefOf(ex){const b=exDB.find(e=>norm(e.name).trim()===norm(ex.name||'').trim());return ex.refEx||b?.refEx||ex.name;}
 window.startWorkout=function(cId,bi){
   const ctx=woCtx[cId];if(!ctx)return;
-  const refOf=ex=>{const b=exDB.find(e=>norm(e.name).trim()===norm(ex.name||'').trim());return ex.refEx||b?.refEx||ex.name;};
-  const steps=buildWorkoutSteps(ctx.day,ctx.week,ctx.dIdx,cId,ctx.progress,refOf);
+  const steps=buildWorkoutSteps(ctx.day,ctx.week,ctx.dIdx,cId,ctx.progress,woRefOf);
   if(!steps.length){toast('Este día no tiene ejercicios');return}
   wo={cId,steps,dIdx:ctx.dIdx,week:ctx.week,containerId:ctx.containerId,pk:ctx.pk,idx:0,waiting:false};
   const inBlk=st=>bi==null||st.bi===bi;
@@ -8609,7 +8617,7 @@ window.woGo=function(i){
   if(!wo)return;
   wo.waiting=false;
   const ni=Math.max(0,Math.min(wo.steps.length,i));
-  if(ni!==wo.idx)woTmReset();
+  if(ni!==wo.idx){woTmReset();wo.showVar=false;}
   wo.idx=ni;
   woRender();
 };
@@ -8739,6 +8747,15 @@ window.woSaveWeight=function(i,val){
   inp.value=val;
   autoSaveGym(wo.cId,st.ekey,st.refName);
 };
+window.woVarToggle=function(){if(!wo)return;wo.showVar=!wo.showVar;woRender();};
+// Usa selectExVariant (mismo dato que los chips de la vista normal); al re-renderizar
+// el día, woRegister rearma los pasos con la variante nueva.
+window.woSelectVariant=async function(i){
+  const st=wo?.steps[wo.idx];if(!st?.vk)return;
+  wo.showVar=false;
+  if(i!==st.vi)await selectExVariant(wo.cId,st.ekey,st.vk,i);
+  woRender();
+};
 window.woStartCF=function(){
   const st=wo?.steps[wo.idx];if(!st)return;
   openCFTimerConfig(st.cftype,st.meta,st.exNames);
@@ -8777,6 +8794,8 @@ function woRender(){
       body=`<div class="wo-sub">${woEsc(st.sub)}</div>
         <div class="wo-name">${woEsc(st.name)}</div>
         <div class="wo-chips">${st.reps?`<span class="wo-chip">${woEsc(st.reps)}</span>`:''}${st.load?`<span class="wo-chip wo-chip2">${woEsc(st.load)}</span>`:''}</div>
+        ${st.variants?`<button class="wo-btn wo-sec wo-small" onclick="woVarToggle()">🔁 Variantes (${st.variants.length-1}) ${wo.showVar?'▴':'▾'}</button>`:''}
+        ${st.variants&&wo.showVar?`<div class="wo-vars">${st.variants.map((v,i)=>`<button class="wo-var${i===st.vi?' on':''}" onclick="woSelectVariant(${i})">${i===st.vi?'✓ ':''}${woEsc(v)}${i===0?' (original)':''}</button>`).join('')}</div>`:''}
         ${st.bdesc?`<div class="wo-desc">${woEsc(st.bdesc)}</div>`:''}
         ${woNotesHtml(st.name,st.obs,st.refName)}
         ${woTmHtml(woTimeSecs(st.reps),'set|'+st.bi+'|'+st.name)}
