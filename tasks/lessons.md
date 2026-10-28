@@ -27,3 +27,7 @@
 ## 2026-10-28 — Modo entrenamiento tapado por la vista de alumno
 - **Error:** el overlay nuevo (z-index 9990) quedó debajo de `#view-alumno` (fixed, z-index 9998); en la página de prueba no apareció porque no reproducía ese contenedor. También el contenido centrado con flex se cortaba arriba al crecer (video).
 - **Regla:** antes de agregar un overlay fijo en index.html, buscar los z-index de los contenedores fijos donde se va a usar (`#view-alumno` 9998, timers 9999, modales 10000). En columnas flex con scroll, usar `min-height:0` y no `justify-content:center` (corta el contenido de arriba).
+
+## 2026-10-28 — Pasos sin tilde en entrada en calor y funcional (modo entrenamiento)
+- **Error:** al pasar a un paso por ejercicio/ronda, solo el último paso tenía `rk` (el tilde de la vista normal); en los demás "Hecho" avanzaba sin guardar nada, así que no quedaban marcados.
+- **Regla:** en el modo entrenamiento, cada paso que tenga botón "Hecho" necesita su propia key de progreso (aunque no exista fila en la vista normal). Si se divide un tilde de la vista normal en varios pasos, dar keys derivadas (`-r{ronda}`, `-x{ejercicio}`) y leer el estado desde `progress`, no desde el DOM.

@@ -986,6 +986,7 @@ setTimeout(()=>{
         <input id="timer-custom" type="number" min="5" max="600" value="60" style="width:64px;font-size:.85rem;padding:5px 8px;text-align:center">
         <span style="font-size:.75rem;color:var(--mu)">seg</span>
       </div>
+      <button id="timer-pause" onclick="toggleTimerPause()" class="btn bgr sm">⏸ Pausar</button>
       <button onclick="restartWithCustom()" class="btn bor sm">↺ Reiniciar</button>
       <button onclick="toggleTimerFs('timer-bar')" class="btn bg2 sm tfs-btn" title="Agrandar o minimizar timer" aria-label="Agrandar o minimizar timer">⛶</button>
       <button onclick="stopTimer()" class="btn bd2 sm" title="Cerrar timer" aria-label="Cerrar timer">✕</button>
@@ -4934,7 +4935,8 @@ window.collapseVid=function(e){const b=document.createElement('button');b.classN
 // instante y se sincroniza sola; esperar el ack del servidor demoraba el tilde
 // varios segundos con mala señal. Solo se revierte si la escritura es rechazada.
 async function toggleSerieOptimistic(progress,rk,isLast,blockRest,pauseSecs,save){
-  const row=document.getElementById('sr-'+rk);const btn=row.querySelector('.ckbtn');
+  // Los tildes por ronda/ejercicio del modo entrenamiento no tienen fila en la vista normal.
+  const row=document.getElementById('sr-'+rk);const btn=row?.querySelector('.ckbtn');
   const prev=progress[rk];
   const done=!prev;
   const prevTildes=progress._tildes;
@@ -4945,7 +4947,7 @@ async function toggleSerieOptimistic(progress,rk,isLast,blockRest,pauseSecs,save
   const tildes=(progress._tildes||[]).filter(t=>!(t.k===rk&&t.date===hoy));
   if(done){progress._ultimo=hoy;tildes.push({date:hoy,k:rk});}
   progress._tildes=tildes;
-  row.classList.toggle('done-row',done);btn.classList.toggle('done',done);
+  row?.classList.toggle('done-row',done);btn?.classList.toggle('done',done);
   if(done){
     if(isLast){
       const secs=blockRest||parseInt(document.getElementById('timer-custom')?.value)||60;
@@ -4965,7 +4967,7 @@ async function toggleSerieOptimistic(progress,rk,isLast,blockRest,pauseSecs,save
   }catch(e){
     progress[rk]=prev;
     if(prevTildes)progress._tildes=prevTildes;else delete progress._tildes;
-    row.classList.toggle('done-row',!!prev);btn.classList.toggle('done',!!prev);
+    row?.classList.toggle('done-row',!!prev);btn?.classList.toggle('done',!!prev);
     toast('⚠️ No se pudo guardar, probá de nuevo');
   }
 }
@@ -5688,7 +5690,7 @@ function timerTick(){
   if(timerSeconds===10)beep2();
   if(timerSeconds===3||timerSeconds===2||timerSeconds===1)beep1();
   if(timerSeconds<=0){
-    clearInterval(timerInterval);timerRunning=false;
+    clearInterval(timerInterval);timerRunning=false;timerPauseBtn();
     big.textContent='✓';big.style.color='var(--gr)';
     prog.style.width='100%';prog.style.background='var(--gr)';
     bar.style.borderTopColor='var(--gr)';
@@ -5745,11 +5747,28 @@ function startTimer(secs){
   bar.style.borderTopColor='var(--or)';
   big.textContent=timerSeconds;big.style.color='var(--or)';
   prog.style.background='var(--or)';prog.style.width='100%';
-  timerRunning=true;
+  timerRunning=true;timerPaused=false;timerPauseBtn();
   timerLastTickAt=Date.now();
   timerInterval=setInterval(timerCatchUp,1000);
 }
-window.stopTimer=function(){clearInterval(timerInterval);timerRunning=false;document.getElementById('timer-bar').style.display='none';woTimerDone(true)};
+let timerPaused=false;
+function timerPauseBtn(){
+  const b=document.getElementById('timer-pause');if(!b)return;
+  b.textContent=timerPaused?'▶ Seguir':'⏸ Pausar';
+  b.style.display=timerRunning||timerPaused?'':'none';
+}
+window.toggleTimerPause=function(){
+  if(timerPaused){
+    timerPaused=false;timerRunning=true;
+    timerLastTickAt=Date.now();
+    timerInterval=setInterval(timerCatchUp,1000);
+  }else if(timerRunning){
+    timerCatchUp();
+    clearInterval(timerInterval);timerRunning=false;timerPaused=true;
+  }
+  timerPauseBtn();
+};
+window.stopTimer=function(){clearInterval(timerInterval);timerRunning=false;timerPaused=false;document.getElementById('timer-bar').style.display='none';woTimerDone(true)};
 window.restartWithCustom=function(){
   const v=parseInt(document.getElementById('timer-custom').value)||60;
   startTimer(Math.max(5,Math.min(600,v)));
@@ -8424,17 +8443,18 @@ function buildWorkoutSteps(day,week,dIdx,cId,progress,refOf){
     const bkey=`w${week}-${dIdx}-${bi}`;
     const blockNum=`Bloque ${bi+1} de ${nBlocks}`;
     if(blk.kind==='warmup'){
-      // Circuito: se recorre cada ejercicio por ronda; el tilde de la serie se
-      // marca en la última ronda (en la vista normal hay un solo tilde por serie).
+      // Circuito: se recorre cada ejercicio por ronda. Cada ronda tiene su propio
+      // tilde (-r{ronda}); la última usa la key de la serie, que es el tilde de
+      // la vista normal (ahí hay uno solo por serie).
       const exs=blk.exercises||[];
       const nR=Math.max(1,parseInt(blk.series)||1);
       const maxSets=Math.max(0,...exs.map(e=>(e.scheme||[]).length));
       for(let r=0;r<nR;r++)for(let si=0;si<maxSets;si++)exs.forEach((ex,ei)=>{
         const s=(ex.scheme||[])[si];if(!s)return;
-        const ekey=`${bkey}-wu${ei}`;const rk=`${cId}-${ekey}-${si}`;
+        const ekey=`${bkey}-wu${ei}`;const rk=`${cId}-${ekey}-${si}`;const lastR=r===nR-1;
         steps.push({kind:'set',bi,block:blockNum,typeLabel:'Entrada en calor',name:ex.name||'',reps:s.reps||'',load:s.load||'',obs:ex.obs||'',video:ex.video||'',
           sub:nR>1?`Ronda ${r+1} de ${nR}`+(maxSets>1?` · Serie ${si+1}`:''):`Serie ${si+1} de ${(ex.scheme||[]).length}`,
-          rk:r===nR-1?rk:null,chk:rk,ekey,si,isLast:ei===exs.length-1,rest:0,weightId:null,refName:refOf(ex)});
+          rk:lastR?rk:`${rk}-r${r}`,ekey,si,isLast:lastR&&ei===exs.length-1,rest:0,weightId:null,refName:refOf(ex)});
       });
     }else if(blk.kind==='gym'){
       const exs=blk.exercises||[];
@@ -8461,13 +8481,14 @@ function buildWorkoutSteps(day,week,dIdx,cId,progress,refOf){
       const restSecs=parseRestToSeconds(blk.rest);
       const typeLabel=blk.title||'Actividad funcional';
       if(n>0&&items.length){
-        // Un paso por ejercicio; el tilde de la ronda va en el último ejercicio.
+        // Un paso por ejercicio, cada uno con su tilde (-x{ejercicio}); el último
+        // de la ronda usa la key de la ronda (tilde de la vista normal) y arranca el descanso.
         for(let ri=0;ri<n;ri++)items.forEach((it,ii)=>{
-          const rk=`${cId}-${bkey}-round${ri}`;
+          const rk=`${cId}-${bkey}-round${ri}`;const lastEx=ii===items.length-1;
           steps.push({kind:'set',bi,block:blockNum,typeLabel,name:it.name,reps:it.reps||blk.reps||'',load:'',
             obs:it.obs||(ii===0?blk.desc||'':''),video:it.video,
             sub:`Ronda ${ri+1} de ${n} · Ejercicio ${ii+1} de ${items.length}`,
-            rk:ii===items.length-1?rk:null,chk:rk,ekey:bkey,si:ri,isLast:ri===n-1,rest:restSecs,pause:restSecs,weightId:null});
+            rk:lastEx?rk:`${rk}-x${ii}`,ekey:bkey,si:ri,isLast:lastEx&&ri===n-1,rest:restSecs,pause:lastEx?restSecs:0,weightId:null});
         });
       }else steps.push({bi,block:blockNum,typeLabel,desc:blk.desc||'',items,commonReps:blk.reps||'',kind:'info',sub:''});
     }else if(blk.kind==='note'){
@@ -8528,8 +8549,18 @@ function woToolbarHtml(cId){
 function woBlockStart(html,cId,bi){
   return html.replace('<div class="cvg-body">',`<div class="cvg-body"><button class="wo-blk" onclick="startWorkout('${cId}',${bi})">▶ Empezar este bloque</button>`);
 }
+// Mismo objeto progress que modifica toggleSerie para cada tipo de cId.
+function woProgress(cId){
+  if(cId.startsWith('alu-'))return alumnoState.sub?.progress||{};
+  if(cId.startsWith('grp::')){
+    const[,planId,memberId]=cId.split('::');
+    const plan=planes.find(p=>p.id===planId);
+    return(plan&&resolveGroupMember(plan,memberId)?.progress)||{};
+  }
+  return clients.find(c=>c.id===cId)?.progress||{};
+}
 function woIsDone(st){
-  return !!document.getElementById('sr-'+(st.chk||st.rk))?.querySelector('.ckbtn')?.classList.contains('done');
+  return !!(wo&&st.rk&&woProgress(wo.cId)[st.rk]);
 }
 window.startWorkout=function(cId,bi){
   const ctx=woCtx[cId];if(!ctx)return;
@@ -8538,7 +8569,7 @@ window.startWorkout=function(cId,bi){
   if(!steps.length){toast('Este día no tiene ejercicios');return}
   wo={cId,steps,dIdx:ctx.dIdx,week:ctx.week,containerId:ctx.containerId,idx:0,waiting:false};
   const inBlk=st=>bi==null||st.bi===bi;
-  const first=steps.findIndex(st=>inBlk(st)&&(st.chk||st.rk)&&!woIsDone(st));
+  const first=steps.findIndex(st=>inBlk(st)&&st.rk&&!woIsDone(st));
   wo.idx=first>=0?first:Math.max(0,steps.findIndex(inBlk));
   woOpen();
 };
@@ -8721,7 +8752,7 @@ function woRender(){
     body=`<div class="wo-end"><div class="wo-end-ic">🎉</div><div class="wo-name">¡Entrenamiento terminado!</div><p class="wo-desc">Muy bien. Si querés, dejá una nota de cómo te sentiste.</p></div>`;
     actions=`<button class="wo-btn wo-sec" onclick="woGo(${total-1})">◀</button><button class="wo-btn wo-main" onclick="woClose()">Cerrar</button>`;
   }else{
-    const done=(st.chk||st.rk)?woIsDone(st):false;
+    const done=st.rk?woIsDone(st):false;
     const vid=st.video?vidBtnHtml(st.video,5):'';
     const itemsHtml=(st.items||[]).map(it=>`<div class="wo-item"><span class="wo-item-reps">${woEsc(it.reps||st.commonReps||'')}</span><span class="wo-item-name">${woEsc(it.name)}</span></div>${it.video?vidBtnHtml(it.video,5):''}`).join('');
     if(st.kind==='set'){
@@ -8752,7 +8783,7 @@ function woRender(){
       body=`${st.desc?`<div class="wo-desc wo-desc-lg">${woEsc(st.desc)}</div>`:''}${st.typeLabel!=='Nota'?woTmHtml(0,'info|'+st.bi):''}<div class="wo-items">${itemsHtml}</div>`;
     }
     const mainBtn=wo.waiting?`<button class="wo-btn wo-main" disabled>⏱ Descansando...</button>`
-      :(st.rk||st.chk)?`<button class="wo-btn wo-main${done?' wo-done':''}" onclick="woDone()">${done?'✓ Hecho — seguir':'✓ Hecho'}</button>`
+      :st.rk?`<button class="wo-btn wo-main${done?' wo-done':''}" onclick="woDone()">${done?'✓ Hecho — seguir':'✓ Hecho'}</button>`
       :`<button class="wo-btn wo-main" onclick="woGo(${wo.idx+1})">Siguiente ▶</button>`;
     actions=`<button class="wo-btn wo-sec" onclick="woGo(${wo.idx-1})" ${wo.idx===0?'disabled':''} aria-label="Anterior">◀</button>${mainBtn}<button class="wo-btn wo-sec" onclick="woGo(${wo.idx+1})" aria-label="Siguiente">▶</button>`;
   }
@@ -9377,7 +9408,7 @@ function cfTimerTick(){
   if(cfTimer.currentSecs<=0){
     if(cfTimer.mode==='countdown'){
       // Simple countdown done
-      clearInterval(cfTimer.interval);cfTimer.running=false;
+      clearInterval(cfTimer.interval);cfTimer.running=false;cfTimer.started=false;
       document.getElementById('cf-timer-startstop').textContent='▶ Iniciar';
       document.getElementById('cf-timer-display').textContent='¡TIEMPO!';
       beepFinal();
@@ -9388,7 +9419,7 @@ function cfTimerTick(){
       beep3(true);
       cfTimer.currentRound++;
       if(cfTimer.currentRound>cfTimer.rounds){
-        clearInterval(cfTimer.interval);cfTimer.running=false;
+        clearInterval(cfTimer.interval);cfTimer.running=false;cfTimer.started=false;
         document.getElementById('cf-timer-startstop').textContent='▶ Iniciar';
         document.getElementById('cf-timer-display').textContent='¡LISTO!';
         beepFinal();return;
@@ -9418,7 +9449,7 @@ function cfTimerTick(){
           cfTimer.currentRound++;
         }
         if(cfTimer.currentRound>cfTimer.rounds){
-          clearInterval(cfTimer.interval);cfTimer.running=false;
+          clearInterval(cfTimer.interval);cfTimer.running=false;cfTimer.started=false;
           document.getElementById('cf-timer-startstop').textContent='▶ Iniciar';
           document.getElementById('cf-timer-display').textContent='¡LISTO!';
           beepFinal();
@@ -9456,6 +9487,7 @@ function cfTimerCatchUpTick(){
   for(let i=0;i<n&&cfTimer.running;i++){try{cfTimerTick();}catch(e){cfTimer.currentSecs--;}}
 }
 function cfTimerStartMainInterval(){
+  cfTimer.started=true;
   cfTimer.lastTickAt=Date.now();
   cfTimer.interval=setInterval(cfTimerCatchUpTick,1000);
 }
@@ -9469,12 +9501,19 @@ window.cfTimerToggle=function(){
   const btn=document.getElementById('cf-timer-startstop');
   if(cfTimer.running){
     clearInterval(cfTimer.interval);cfTimer.running=false;
-    btn.textContent='▶ Iniciar';
+    btn.textContent=cfTimer.started?'▶ Seguir':'▶ Iniciar';
     // Cancel countdown if running
     if(cfTimer._countingDown){
       cfTimer._countingDown=false;
       document.getElementById('cf-timer-display').style.fontSize='2.4rem';
+      document.getElementById('cf-timer-label').textContent=cfTimer._savedLabel;
+      cfTimerUpdateDisplay();
     }
+  } else if(cfTimer.started){
+    // Reanudar después de una pausa: sigue directo, sin la cuenta de "Preparate".
+    cfTimer.running=true;
+    btn.textContent='⏸ Pausar';
+    cfTimerStartMainInterval();
   } else {
     // Start with 10s countdown
     cfTimer._countingDown=true;
@@ -9482,7 +9521,7 @@ window.cfTimerToggle=function(){
     btn.textContent='⏸ Pausar';
     const disp=document.getElementById('cf-timer-display');
     const lbl=document.getElementById('cf-timer-label');
-    const savedLabel=lbl.textContent;
+    const savedLabel=lbl.textContent;cfTimer._savedLabel=savedLabel;
     let countdown=10;
     disp.style.fontSize='3.5rem';
     disp.style.color='var(--yw)';
@@ -9515,7 +9554,7 @@ window.cfTimerToggle=function(){
   }
 };
 window.cfTimerReset=function(){
-  clearInterval(cfTimer.interval);cfTimer.running=false;
+  clearInterval(cfTimer.interval);cfTimer.running=false;cfTimer.started=false;
   document.getElementById('cf-timer-startstop').textContent='▶ Iniciar';
   if(cfTimer.mode==='interval'||cfTimer.mode==='tabata'){
     cfTimer.currentSecs=cfTimer.workSecs;cfTimer.totalSecs=cfTimer.workSecs;
@@ -9531,7 +9570,7 @@ window.cfTimerReset=function(){
   cfTimerUpdateDisplay();
 };
 window.cfTimerClose=function(){
-  clearInterval(cfTimer.interval);cfTimer.running=false;
+  clearInterval(cfTimer.interval);cfTimer.running=false;cfTimer.started=false;
   document.getElementById('cf-timer-bar').style.display='none';
 };
 
@@ -9540,7 +9579,7 @@ window.cfTimerApplyEdit=function(){
   const val=inp.value.trim();if(!val)return;
   const secs=parseToSecs(val);
   if(secs<=0){toast('Tiempo inválido. Usá: 20 min, 45s, etc.');return;}
-  clearInterval(cfTimer.interval);cfTimer.running=false;
+  clearInterval(cfTimer.interval);cfTimer.running=false;cfTimer.started=false;
   document.getElementById('cf-timer-startstop').textContent='▶ Iniciar';
   cfTimer._countingDown=false;
   if(cfTimer.mode==='fortime'){
@@ -9567,7 +9606,7 @@ function parseToSecs(str){
 function launchCFTimer(cftype, meta, customLabel, exNames){
   const bar=document.getElementById('cf-timer-bar');
   const label=document.getElementById('cf-timer-label');
-  clearInterval(cfTimer.interval);cfTimer.running=false;
+  clearInterval(cfTimer.interval);cfTimer.running=false;cfTimer.started=false;cfTimer._countingDown=false;
   document.getElementById('cf-timer-startstop').textContent='▶ Iniciar';
   cfTimer.exercises=exNames&&exNames.length?exNames:null;
   cfTimer.currentExIdx=0;
@@ -9659,7 +9698,7 @@ window.launchExTimer=function(exTimerId, exName, prefillVal){
   // Launch countdown timer
   const bar=document.getElementById('cf-timer-bar');
   const label=document.getElementById('cf-timer-label');
-  clearInterval(cfTimer.interval);cfTimer.running=false;
+  clearInterval(cfTimer.interval);cfTimer.running=false;cfTimer.started=false;cfTimer._countingDown=false;
   document.getElementById('cf-timer-startstop').textContent='▶ Iniciar';
   cfTimer.mode='countdown';cfTimer.totalSecs=secs;cfTimer.currentSecs=secs;
   label.textContent=`⏱ ${exName} — ${val}`;
