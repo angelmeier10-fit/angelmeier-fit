@@ -8723,6 +8723,16 @@ window.woDone=async function(){
     setTimeout(()=>{if(wo&&!wo.waiting)woGo(wo.idx+1)},500);
   }
 };
+// Desmarca el paso actual; si estaba corriendo el descanso que arrancó ese
+// "Hecho", lo corta sin pasar al paso siguiente.
+window.woUndo=async function(){
+  const st=wo?.steps[wo.idx];if(!st?.rk||!woIsDone(st))return;
+  if(wo.waiting){wo.waiting=false;stopTimer();}
+  const p=toggleSerie(wo.cId,st.ekey,st.si,st.rk,st.isLast,st.rest,st.pause);
+  woRender();
+  await p;
+  woRender();
+};
 window.woSaveWeight=function(i,val){
   const st=wo?.steps[i];if(!st?.weightId)return;
   const inp=document.getElementById(st.weightId);if(!inp)return;
@@ -8782,6 +8792,7 @@ function woRender(){
     }else{
       body=`${st.desc?`<div class="wo-desc wo-desc-lg">${woEsc(st.desc)}</div>`:''}${st.typeLabel!=='Nota'?woTmHtml(0,'info|'+st.bi):''}<div class="wo-items">${itemsHtml}</div>`;
     }
+    if(done)body+=`<button class="wo-btn wo-sec wo-small" onclick="woUndo()">↩ Deshacer</button>`;
     const mainBtn=wo.waiting?`<button class="wo-btn wo-main" disabled>⏱ Descansando...</button>`
       :st.rk?`<button class="wo-btn wo-main${done?' wo-done':''}" onclick="woDone()">${done?'✓ Hecho — seguir':'✓ Hecho'}</button>`
       :`<button class="wo-btn wo-main" onclick="woGo(${wo.idx+1})">Siguiente ▶</button>`;
