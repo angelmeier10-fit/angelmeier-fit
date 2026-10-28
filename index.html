@@ -399,6 +399,11 @@ body.bigtxt .wo-aa{background:var(--ac2);color:#fff;border-color:var(--ac2)}
 .wo-tm-n.cd{color:var(--or)}.wo-tm-n.fin{color:var(--gr)}
 .wo-tm button{min-width:52px;min-height:52px;border-radius:12px;border:1px solid var(--bd);background:var(--s2);color:var(--tx);font-size:1.3rem;font-weight:800;font-family:inherit;cursor:pointer}
 .wo-tm button.go{background:var(--gr);color:#0f1117;border-color:var(--gr)}
+.wo-tm-wrap{display:flex;flex-direction:column;align-items:center;gap:8px}
+.wo-tm-adj{display:flex;gap:10px}
+.wo-tm-ms{display:flex;align-items:center;gap:4px;font-size:1.3rem;font-weight:800;color:var(--tx)}
+.wo-tm-ms input{width:52px;min-height:44px;font-size:1.2rem;font-weight:700;text-align:center;padding:6px}
+.wo-tm-adj button{min-width:76px;min-height:44px;border-radius:10px;border:1px solid var(--bd);background:var(--s2);color:var(--tx);font-size:1rem;font-weight:700;font-family:inherit;cursor:pointer}
 .wo-end{display:flex;flex-direction:column;align-items:center;gap:12px}
 .wo-end-ic{font-size:4rem}
 #wo-pill{display:none;position:fixed;left:50%;transform:translateX(-50%);bottom:calc(90px + env(safe-area-inset-bottom));z-index:9998;background:var(--gr);color:#0f1117;border:none;border-radius:99px;padding:16px 26px;font-size:1.05rem;font-weight:800;font-family:inherit;box-shadow:0 6px 24px rgba(0,0,0,.35);cursor:pointer;white-space:nowrap}
@@ -8513,7 +8518,7 @@ window.woResume=function(){
 };
 function woEnd(){
   wo=null;
-  woTmReset();
+  woTmReset();woTm.custom={};
   document.getElementById('wo-ov')?.classList.remove('open');
   const pill=document.getElementById('wo-pill');if(pill)pill.style.display='none';
   document.body.style.overflow='';
@@ -8536,7 +8541,7 @@ window.woGo=function(i){
 };
 // Timer del ejercicio: cuenta regresiva si las reps son por tiempo
 // ("30s", "45''", "1 min", "0:40"); si no, cronómetro libre.
-let woTm={target:0,elapsed:0,startAt:0,iv:null,lastBeep:null};
+let woTm={target:0,elapsed:0,startAt:0,iv:null,lastBeep:null,key:'',custom:{}};
 function woTimeSecs(reps){
   const s=String(reps||'').toLowerCase().trim();
   const cm=s.match(/^(\d+)\s*:\s*(\d{2})$/);if(cm)return parseInt(cm[1])*60+parseInt(cm[2]);
@@ -8557,6 +8562,11 @@ function woTmPaint(){
   }else{n.textContent=woFmt(el);n.className='wo-tm-n';}
   const b=document.getElementById('wo-tm-go');
   if(b){b.textContent=woTm.iv?'⏸':'▶';b.classList.toggle('go',!woTm.iv);}
+  const mi=document.getElementById('wo-tm-m'),si=document.getElementById('wo-tm-s');
+  if(mi&&si&&document.activeElement!==mi&&document.activeElement!==si){
+    mi.value=String(Math.floor(woTm.target/60)).padStart(2,'0');
+    si.value=String(woTm.target%60).padStart(2,'0');
+  }
 }
 function woTmTick(){
   const el=woTmElapsed();
@@ -8585,9 +8595,28 @@ window.woTmToggle=function(){
 };
 function woTmReset(){clearInterval(woTm.iv);woTm.iv=null;woTm.elapsed=0;woTm.lastBeep=null;}
 window.woTmRestart=function(){woTmReset();woTmPaint();};
-function woTmHtml(target){
-  woTm.target=target;
-  return`<div class="wo-tm"><span id="wo-tm-n" class="wo-tm-n"></span><button id="wo-tm-go" onclick="woTmToggle()" aria-label="Iniciar o pausar timer"></button><button onclick="woTmRestart()" aria-label="Reiniciar timer">↺</button></div>`;
+// El tiempo ajustado se recuerda por ejercicio durante el entrenamiento, así
+// en la ronda siguiente el mismo ejercicio arranca con el valor modificado.
+window.woTmAdj=function(d){
+  const t=Math.max(0,Math.min(3600,woTm.target+d));
+  if(!woTm.target&&t){clearInterval(woTm.iv);woTm.iv=null;woTm.elapsed=0;}
+  woTm.target=t;woTm.custom[woTm.key]=t;woTm.lastBeep=null;
+  if(woTm.iv&&t&&woTmElapsed()>=t)woTmTick();
+  woTmPaint();
+};
+window.woTmSet=function(){
+  const m=parseInt(document.getElementById('wo-tm-m')?.value)||0;
+  const s=parseInt(document.getElementById('wo-tm-s')?.value)||0;
+  const t=Math.min(3600,m*60+s);
+  woTmReset();
+  woTm.target=t;woTm.custom[woTm.key]=t;
+  woTmPaint();
+};
+function woTmHtml(target,key){
+  woTm.key=key||'';
+  woTm.target=woTm.custom[woTm.key]??target;
+  return`<div class="wo-tm-wrap"><div class="wo-tm"><span id="wo-tm-n" class="wo-tm-n"></span><button id="wo-tm-go" onclick="woTmToggle()" aria-label="Iniciar o pausar timer"></button><button onclick="woTmRestart()" aria-label="Reiniciar timer">↺</button></div>
+    <div class="wo-tm-adj"><button onclick="woTmAdj(-5)">−5s</button><span class="wo-tm-ms"><input id="wo-tm-m" type="text" inputmode="numeric" maxlength="2" placeholder="00" aria-label="Minutos" onfocus="this.select()" onchange="woTmSet()" onkeydown="if(event.key==='Enter')this.blur()">:<input id="wo-tm-s" type="text" inputmode="numeric" maxlength="2" placeholder="00" aria-label="Segundos" onfocus="this.select()" onchange="woTmSet()" onkeydown="if(event.key==='Enter')this.blur()"></span><button onclick="woTmAdj(5)">+5s</button></div></div>`;
 }
 // Lo llama el timer de descanso al terminar o al cerrarlo: si el descanso lo
 // arrancó un "Hecho" del modo entrenamiento, se pasa solo al paso siguiente.
@@ -8659,13 +8688,13 @@ function woRender(){
         <div class="wo-name">${woEsc(st.name)}</div>
         <div class="wo-chips">${st.reps?`<span class="wo-chip">${woEsc(st.reps)}</span>`:''}${st.load?`<span class="wo-chip wo-chip2">${woEsc(st.load)}</span>`:''}</div>
         ${st.obs?`<div class="wo-desc">📝 ${woEsc(st.obs)}</div>`:''}
-        ${woTmHtml(woTimeSecs(st.reps))}
+        ${woTmHtml(woTimeSecs(st.reps),'set|'+st.bi+'|'+st.name)}
         ${st.weightId?`<label class="wo-w">Peso usado <input type="number" step="0.5" inputmode="decimal" value="${woEsc(curW)}" placeholder="${woEsc(ph)}" onchange="woSaveWeight(${wo.idx},this.value)"> kg</label>`:''}
         ${vid}`;
     }else if(st.kind==='round'){
       body=`<div class="wo-sub">${woEsc(st.sub)}</div>
         ${st.desc?`<div class="wo-desc">${woEsc(st.desc)}</div>`:''}
-        ${woTmHtml(0)}
+        ${woTmHtml(0,'round|'+st.bi)}
         <div class="wo-items">${itemsHtml}</div>`;
     }else if(st.kind==='wod'){
       const cfg=CF_TYPES[st.cftype]||{label:st.cftype||'WOD',icon:'🏋️',fields:[]};
@@ -8677,7 +8706,7 @@ function woRender(){
         <button class="wo-btn wo-cf" onclick="woStartCF()">⏱ Iniciar timer</button>
         <div class="wo-w">Resultado <input type="text" id="wo-cfr" placeholder="Ej: 8 rondas / 12:34"><button class="wo-btn wo-sec wo-small" onclick="woSaveCF()">Guardar</button></div>`;
     }else{
-      body=`${st.desc?`<div class="wo-desc wo-desc-lg">${woEsc(st.desc)}</div>`:''}${st.typeLabel!=='Nota'?woTmHtml(0):''}<div class="wo-items">${itemsHtml}</div>`;
+      body=`${st.desc?`<div class="wo-desc wo-desc-lg">${woEsc(st.desc)}</div>`:''}${st.typeLabel!=='Nota'?woTmHtml(0,'info|'+st.bi):''}<div class="wo-items">${itemsHtml}</div>`;
     }
     const mainBtn=wo.waiting?`<button class="wo-btn wo-main" disabled>⏱ Descansando...</button>`
       :(st.rk||st.chk)?`<button class="wo-btn wo-main${done?' wo-done':''}" onclick="woDone()">${done?'✓ Hecho — seguir':'✓ Hecho'}</button>`
