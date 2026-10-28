@@ -367,7 +367,9 @@ body.bigtxt .wo-aa{background:var(--ac2);color:#fff;border-color:var(--ac2)}
 .wo-prog{background:var(--s2);border-radius:99px;height:8px;overflow:hidden}
 .wo-prog>div{height:100%;background:var(--gr);border-radius:99px;transition:width .3s}
 .wo-min{background:var(--s2);color:var(--tx);border:1px solid var(--bd);border-radius:10px;padding:10px 14px;font-size:.9rem;font-weight:700;font-family:inherit;cursor:pointer;flex-shrink:0}
-.wo-body{flex:1;overflow-y:auto;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:14px;max-width:640px;width:100%;margin:0 auto;padding:18px 0}
+.wo-body{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;align-items:center;text-align:center;gap:14px;max-width:640px;width:100%;margin:0 auto;padding:18px 0}
+.wo-body>:first-child{margin-top:auto}.wo-body>:last-child{margin-bottom:auto}
+.wo-body .yt-em.short{height:min(50vh,440px)}.wo-body .yt-em{flex-shrink:0}.wo-body .vid-em video{max-height:50vh}
 .wo-sub{font-size:1.15rem;font-weight:700;color:var(--ac2);text-transform:uppercase;letter-spacing:.04em}
 .wo-name{font-size:clamp(1.9rem,8vw,3rem);font-weight:800;line-height:1.15;color:var(--tx)}
 .wo-chips{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
