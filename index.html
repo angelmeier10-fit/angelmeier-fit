@@ -5681,6 +5681,21 @@ function getAudioCtx(){
   if(sharedAudioCtx.state==='suspended')sharedAudioCtx.resume();
   return sharedAudioCtx;
 }
+// Con la app en segundo plano (otra app adelante) el navegador congela la
+// página y los timers no suenan, salvo que esté reproduciendo audio. Mientras
+// corre algún timer se emite un tono de 20 Hz a volumen mínimo (inaudible en
+// parlantes de celular) para que la página cuente como "con audio" y siga viva.
+let keepAliveOsc=null;
+function audioKeepAlive(on){
+  try{
+    if(on&&!keepAliveOsc){
+      const ctx=getAudioCtx();const o=ctx.createOscillator();const g=ctx.createGain();
+      o.frequency.value=20;g.gain.value=0.003;o.connect(g);g.connect(ctx.destination);o.start();
+      keepAliveOsc=o;
+    }else if(!on&&keepAliveOsc){keepAliveOsc.stop();keepAliveOsc.disconnect();keepAliveOsc=null;}
+  }catch(e){}
+}
+setInterval(()=>audioKeepAlive(timerRunning||cfTimer.running||!!woTm.iv),1000);
 function beep(){try{const ctx=getAudioCtx();const o=ctx.createOscillator();const g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.frequency.setValueAtTime(880,ctx.currentTime);g.gain.setValueAtTime(0.3,ctx.currentTime);g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.6);o.start();o.stop(ctx.currentTime+0.6);}catch(e){}}
 function timerTick(){
   const bar=document.getElementById('timer-bar');
@@ -5729,6 +5744,15 @@ document.addEventListener('visibilitychange',()=>{
 // de que la app volvió a primer plano.
 window.addEventListener('focus',timerCatchUp);
 window.addEventListener('pageshow',timerCatchUp);
+// La barra minimizada del timer queda encima de la pantalla de entrenamiento:
+// se le da a esa pantalla un margen inferior del alto de la barra.
+const woPadRO=new ResizeObserver(()=>{
+  const h=['timer-bar','cf-timer-bar'].map(id=>document.getElementById(id))
+    .filter(b=>b&&!b.classList.contains('tfs')).reduce((m,b)=>Math.max(m,b.offsetHeight),0);
+  const ov=document.getElementById('wo-ov');
+  if(ov)ov.style.paddingBottom=h?(h+12)+'px':'';
+});
+['timer-bar','cf-timer-bar'].forEach(id=>{const b=document.getElementById(id);if(b)woPadRO.observe(b)});
 function setTimerFs(bar,on){
   bar.classList.toggle('tfs',on);
   const b=bar.querySelector('.tfs-btn');
