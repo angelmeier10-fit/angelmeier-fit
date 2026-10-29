@@ -371,6 +371,7 @@ body.bigtxt .wo-aa{background:var(--ac2);color:#fff;border-color:var(--ac2)}
 .wo-body{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;align-items:center;text-align:center;gap:14px;max-width:640px;width:100%;margin:0 auto;padding:18px 0}
 .wo-body>:first-child{margin-top:auto}.wo-body>:last-child{margin-bottom:auto}
 .wo-body .yt-em.short{height:min(50vh,440px)}.wo-body .yt-em{flex-shrink:0}.wo-body .vid-em video{max-height:50vh}
+.wo-type{background:color-mix(in srgb,var(--or) 16%,transparent);color:var(--or);border:2px solid color-mix(in srgb,var(--or) 45%,transparent);border-radius:99px;padding:5px 16px;font-size:1rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em}
 .wo-sub{font-size:1.15rem;font-weight:700;color:var(--ac2);text-transform:uppercase;letter-spacing:.04em}
 .wo-name{font-size:clamp(1.9rem,8vw,3rem);font-weight:800;line-height:1.15;color:var(--tx)}
 .wo-chips{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
@@ -8503,6 +8504,7 @@ function buildWorkoutSteps(day,week,dIdx,cId,progress,refOf){
         const exs=sec.exercises||[];
         const items=exs.map(ex=>({name:ex.name||'',reps:ex.reps||'',video:ex.video||''}));
         const secLabel=sections.length>1?` · Sección ${si+1}`:'';
+        const cfLabel=CF_TYPES[blk.cftype]?.label||'WOD';
         const base={bi,block:blockNum,cftype:blk.cftype,meta:sec.meta||{},items,notes:blk.notes||''};
         const isRepsCircuit=(blk.cftype==='circuit'||blk.cftype==='intervals')&&exs.some(e=>e.name)&&
           exs.every(ex=>!/\d+\s*(min|s$|seg|km)/i.test((ex.reps||'').trim()));
@@ -8510,11 +8512,11 @@ function buildWorkoutSteps(day,week,dIdx,cId,progress,refOf){
           const n=parseInt(sec.meta?.rounds)||3;
           const restSecs=parseToSecs(sec.meta?.rest||'60s');
           for(let ri=0;ri<n;ri++){
-            steps.push({...base,kind:'round',typeLabel:'Circuito'+secLabel,sub:`Ronda ${ri+1} de ${n}`,
+            steps.push({...base,kind:'round',typeLabel:cfLabel+secLabel,sub:`Ronda ${ri+1} de ${n}`,
               rk:`${cId}-${bkey}-s${si}-cfround${ri}`,ekey:`${bkey}-s${si}`,si:ri,isLast:false,rest:null,pause:restSecs});
           }
         }else{
-          steps.push({...base,kind:'wod',typeLabel:'WOD'+secLabel,sub:'',bkey,
+          steps.push({...base,kind:'wod',typeLabel:cfLabel+secLabel,sub:'',bkey,
             exNames:exs.map(e=>e.name).filter(Boolean),resultKey:`${cId}-${bkey}-cfresult`});
         }
       });
@@ -8818,6 +8820,7 @@ function woRender(){
     }else{
       body=`${st.desc?`<div class="wo-desc wo-desc-lg">${woEsc(st.desc)}</div>`:''}${st.typeLabel!=='Nota'?woTmHtml(0,'info|'+st.bi):''}<div class="wo-items">${itemsHtml}</div>`;
     }
+    if(st.typeLabel&&st.kind!=='wod'&&st.typeLabel!=='Nota')body=`<div class="wo-type">${woEsc(st.typeLabel)}</div>`+body;
     if(done)body+=`<button class="wo-btn wo-sec wo-small" onclick="woUndo()">↩ Deshacer</button>`;
     const mainBtn=wo.waiting?`<button class="wo-btn wo-main" disabled>⏱ Descansando...</button>`
       :st.rk?`<button class="wo-btn wo-main${done?' wo-done':''}" onclick="woDone()">${done?'✓ Hecho — seguir':'✓ Hecho'}</button>`
@@ -8826,7 +8829,7 @@ function woRender(){
   }
   const next=st?wo.steps[wo.idx+1]:null;
   ov.innerHTML=`<div class="wo-top">
-      <div class="wo-top-txt"><div class="wo-block">${st?woEsc(st.block)+(st.typeLabel?' · '+woEsc(st.typeLabel):''):'Fin'}</div>
+      <div class="wo-top-txt"><div class="wo-block">${st?woEsc(st.block):'Fin'}</div>
       <div class="wo-prog"><div style="width:${pct}%"></div></div></div>
       <button class="wo-min" onclick="woMinimize()">▾ Minimizar</button>
     </div>
