@@ -349,6 +349,11 @@ textarea{resize:vertical;min-height:52px}
 .tfs #timer-progress-wrap,.tfs .cf-timer-progress{height:10px}
 .tfs .tm-ctrls,.tfs .cf-timer-controls{justify-content:center}
 #timer-next:empty,#cf-timer-ex:empty{display:none}
+/* Minimizada, la barra del timer deja solo lo que se usa entre series; el ajuste de tiempo queda en pantalla completa */
+#timer-bar:not(.tfs) .tm-full,#cf-timer-bar:not(.tfs) .tm-full{display:none!important}
+.tm-wo{display:none;flex:1 1 auto;justify-content:center;background:var(--gr);color:#0f1117;border:none;border-radius:10px;padding:9px 14px;font-size:.9rem;font-weight:800;font-family:inherit;cursor:pointer;white-space:nowrap}
+body.wo-min .tm-wo{display:inline-flex}
+@media(max-width:600px){#timer-bar:not(.tfs) .tm-ctrls,#cf-timer-bar:not(.tfs) .cf-timer-controls{flex:1 1 100%;flex-wrap:nowrap!important}.tm-wo{min-width:0;white-space:normal;line-height:1.2}.tm-ctrls>.btn,.cf-timer-controls>.btn{flex-shrink:0;white-space:nowrap}}
 #timer-next{font-size:.85rem;font-weight:700;color:var(--tx);margin:2px 0 6px}
 .tfs #timer-next{font-size:clamp(1.2rem,5vw,1.8rem);margin:8px 0 14px}
 #cf-timer-ex{font-size:.85rem;font-weight:700;color:var(--tx);margin-top:3px}
@@ -880,14 +885,15 @@ setTimeout(()=>{
       <div class="cf-timer-progress"><div class="cf-timer-prog-bar" id="cf-timer-prog-bar" style="background:var(--or)"></div></div>
     </div>
     <div class="cf-timer-controls">
-      <div style="display:flex;align-items:center;gap:4px">
+      <button class="tm-wo" onclick="woResume()">▶ Volver al entrenamiento</button>
+      <div class="tm-full" style="display:flex;align-items:center;gap:4px">
         <input id="cf-timer-edit" type="text" placeholder="Ej: 20 min" 
           style="width:72px;font-size:.8rem;padding:4px 7px;border-radius:7px;border:1px solid var(--bd);background:var(--s2);color:var(--tx)"
           onkeydown="if(event.key==='Enter')cfTimerApplyEdit()">
         <button onclick="cfTimerApplyEdit()" class="btn bg2 sm" style="padding:4px 8px;font-size:.75rem" title="Aplicar" aria-label="Aplicar">✓</button>
       </div>
       <button id="cf-timer-startstop" onclick="cfTimerToggle()" class="btn bor sm">▶ Iniciar</button>
-      <button onclick="cfTimerReset()" class="btn bg2 sm" title="Reiniciar timer" aria-label="Reiniciar timer">↺</button>
+      <button onclick="cfTimerReset()" class="btn bg2 sm tm-full" title="Reiniciar timer" aria-label="Reiniciar timer">↺</button>
       <button onclick="toggleTimerFs('cf-timer-bar')" class="btn bg2 sm tfs-btn" title="Agrandar o minimizar timer" aria-label="Agrandar o minimizar timer">⛶</button>
       <button onclick="cfTimerClose()" class="btn bd2 sm" title="Cerrar timer" aria-label="Cerrar timer">✕</button>
     </div>
@@ -986,12 +992,13 @@ setTimeout(()=>{
       </div>
     </div>
     <div class="tm-ctrls" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-      <div style="display:flex;align-items:center;gap:5px">
+      <button class="tm-wo" onclick="woResume()">▶ Volver al entrenamiento</button>
+      <div class="tm-full" style="display:flex;align-items:center;gap:5px">
         <input id="timer-custom" type="number" min="5" max="600" value="60" style="width:64px;font-size:.85rem;padding:5px 8px;text-align:center">
         <span style="font-size:.75rem;color:var(--mu)">seg</span>
       </div>
       <button id="timer-pause" onclick="toggleTimerPause()" class="btn bgr sm">⏸ Pausar</button>
-      <button onclick="restartWithCustom()" class="btn bor sm">↺ Reiniciar</button>
+      <button onclick="restartWithCustom()" class="btn bor sm tm-full">↺ Reiniciar</button>
       <button onclick="toggleTimerFs('timer-bar')" class="btn bg2 sm tfs-btn" title="Agrandar o minimizar timer" aria-label="Agrandar o minimizar timer">⛶</button>
       <button onclick="stopTimer()" class="btn bd2 sm" title="Cerrar timer" aria-label="Cerrar timer">✕</button>
     </div>
@@ -4618,10 +4625,11 @@ function renderWarmupBlock(c,bkey,blk,bi){
     if(ex.scheme?.length){
       const isLastEx=(ei===blk.exercises.length-1);
       const restSecs=0;
-      schemeHtml=`<table class="stbl"><thead><tr><th>#</th><th>Reps / Tiempo</th><th>Carga / RPE</th><th>✓</th></tr></thead><tbody>`;
+      const hasLoad=ex.scheme.some(s=>s.load);
+      schemeHtml=`<table class="stbl"><thead><tr><th>#</th><th>Reps / Tiempo</th>${hasLoad?'<th>Carga / RPE</th>':''}<th>✓</th></tr></thead><tbody>`;
       ex.scheme.forEach((s,si)=>{
         const rk=`${c.id}-${ekey}-${si}`;const done=c.progress[rk]||false;
-        schemeHtml+=`<tr id="sr-${rk}" class="${done?'done-row':''}"><td>Serie ${si+1}</td><td>${s.reps||'—'}</td><td>${s.load||'—'}</td><td><button class="ckbtn ${done?'done':''}" onclick="toggleSerie('${c.id}','${ekey}',${si},'${rk}',${isLastEx},${restSecs})" title="Marcar serie como hecha" aria-label="Marcar serie como hecha">✓</button></td></tr>`;
+        schemeHtml+=`<tr id="sr-${rk}" class="${done?'done-row':''}"><td>Serie ${si+1}</td><td>${s.reps||'—'}</td>${hasLoad?`<td>${s.load||'—'}</td>`:''}<td><button class="ckbtn ${done?'done':''}" onclick="toggleSerie('${c.id}','${ekey}',${si},'${rk}',${isLastEx},${restSecs})" title="Marcar serie como hecha" aria-label="Marcar serie como hecha">✓</button></td></tr>`;
       });
       schemeHtml+=`</tbody></table>`;
     }
@@ -4787,12 +4795,13 @@ function renderGymBlock(c,bkey,blk,bi,isAdminView){
       setCount=ex.scheme.length;
       const lastLogPre=(c.progress[`${c.id}-${ekey}-logs`]||[]).slice(-1)[0];
       const lastWeights=lastLogPre?.weights||prevSess?.weights||[];
-      inner+=`<div style="overflow-x:auto"><table class="stbl"><thead><tr><th>#</th><th>Reps / Tiempo</th><th>Carga / RPE</th><th>Peso usado</th><th>✓</th></tr></thead><tbody>`;
+      const hasLoad=ex.scheme.some(s=>s.load);
+      inner+=`<div style="overflow-x:auto"><table class="stbl"><thead><tr><th>#</th><th>Reps / Tiempo</th>${hasLoad?'<th>Carga / RPE</th>':''}<th>Peso usado</th><th>✓</th></tr></thead><tbody>`;
       const isLastEx=(ei===blk.exercises.length-1);
       const restSecs=parseRestToSeconds(blk.rest);
       const pauseSecs=isLastEx?0:parseRestToSeconds((blk.pauses||[])[ei]||'');
       ex.scheme.forEach((s,si)=>{const rk=`${c.id}-${ekey}-${si}`;const done=c.progress[rk]||false;
-        inner+=`<tr id="sr-${rk}" class="${done?'done-row':''}"><td>Serie ${si+1}</td><td>${s.reps||'—'}</td><td>${s.load||'—'}</td><td><input type="number" id="sw-${c.id}-${ekey}-${si}" placeholder="${lastWeights[si]?lastWeights[si]+'kg':'kg'}" step="0.5" style="width:62px;font-size:.78rem;padding:4px 6px" onchange="autoSaveGym('${c.id}','${ekey}','${jsAttr(refName)}')"></td><td><button class="ckbtn ${done?'done':''}" onclick="toggleSerie('${c.id}','${ekey}',${si},'${rk}',${isLastEx},${restSecs},${pauseSecs})" title="Marcar serie como hecha" aria-label="Marcar serie como hecha">✓</button></td></tr>`});
+        inner+=`<tr id="sr-${rk}" class="${done?'done-row':''}"><td>Serie ${si+1}</td><td>${s.reps||'—'}</td>${hasLoad?`<td>${s.load||'—'}</td>`:''}<td><input type="number" id="sw-${c.id}-${ekey}-${si}" placeholder="${lastWeights[si]?lastWeights[si]+'kg':'kg'}" step="0.5" style="width:62px;font-size:.78rem;padding:4px 6px" onchange="autoSaveGym('${c.id}','${ekey}','${jsAttr(refName)}')"></td><td><button class="ckbtn ${done?'done':''}" onclick="toggleSerie('${c.id}','${ekey}',${si},'${rk}',${isLastEx},${restSecs},${pauseSecs})" title="Marcar serie como hecha" aria-label="Marcar serie como hecha">✓</button></td></tr>`});
       inner+=`</tbody></table></div>`;
     }
     inner+=vidHtml;
@@ -4899,15 +4908,26 @@ function renderCFBlock(c,bkey,blk,bi){
 }
 
 window.toggleG=function(id){document.getElementById(id).classList.toggle('open')};
-window.collapseYT=function(e,ytId,isShort){const b=document.createElement('button');b.className='btn bg2 sm';b.style.marginTop='5px';b.textContent='▶ Ver video';b.onclick=()=>embedYT(b,ytId,isShort);e.replaceWith(b)};
+// En el modo entrenamiento el video abierto lleva data-wovid: al minimizarlo, ese
+// ejercicio no se vuelve a abrir solo en las series siguientes.
+function woVidOff(e){const k=e.dataset.wovid;if(k&&wo)(wo.vidOff||={})[k]=1}
+window.collapseYT=function(e,ytId,isShort){woVidOff(e);const b=document.createElement('button');b.className='btn bg2 sm';b.style.marginTop='5px';b.textContent='▶ Ver video';b.onclick=()=>embedYT(b,ytId,isShort);e.replaceWith(b)};
 // Sin controles de YouTube: una capa encima toma los toques y pausa/reanuda
 // por postMessage (enablejsapi), así no aparecen título, barra ni sugeridos.
-window.embedYT=function(th,ytId,isShort){
-  const e=document.createElement('div');e.className='yt-em'+(isShort?' short':'');
+function ytEmHtml(ytId,isShort,attr=''){
   const params=`autoplay=1&mute=1&controls=0&rel=0&playsinline=1&loop=1&playlist=${ytId}&modestbranding=1&iv_load_policy=3&cc_load_policy=0&disablekb=1&fs=0&enablejsapi=1`;
-  e.innerHTML=`<iframe src="https://www.youtube.com/embed/${ytId}?${params}" allow="autoplay;encrypted-media" onload="ytNoCaptions(this)"></iframe><div class="yt-tap" onclick="toggleYT(this)"></div><button class="yt-min" onclick="collapseYT(this.parentElement,'${ytId}',${!!isShort})">✕ Minimizar</button>`;
-  th.replaceWith(e);
-};
+  return`<div class="yt-em${isShort?' short':''}"${attr}><iframe src="https://www.youtube.com/embed/${ytId}?${params}" allow="autoplay;encrypted-media" onload="ytNoCaptions(this)"></iframe><div class="yt-tap" onclick="toggleYT(this)"></div><button class="yt-min" onclick="collapseYT(this.parentElement,'${ytId}',${!!isShort})">✕ Minimizar</button></div>`;
+}
+function vidEmHtml(url,attr=''){
+  const u=url.replace(/"/g,'&quot;');
+  return`<div class="vid-em" data-url="${u}"${attr}><video src="${u}" autoplay muted loop playsinline preload="auto" onerror="vidFallback(this)"></video><div class="yt-tap" onclick="toggleVid(this)"></div><button class="yt-min" onclick="collapseVid(this.parentElement)">✕ Minimizar</button></div>`;
+}
+// Video ya abierto (YouTube o archivo); '' si el link no se puede embeber.
+function vidEmbedHtml(url,attr){
+  const ytId=getYTId(url);
+  return ytId?ytEmHtml(ytId,isYTShort(url),attr):isFileVid(url)?vidEmHtml(url,attr):'';
+}
+window.embedYT=function(th,ytId,isShort){th.insertAdjacentHTML('afterend',ytEmHtml(ytId,isShort));th.remove()};
 // En silencio YouTube activa subtítulos automáticos; cc_load_policy no alcanza,
 // así que se descarga el módulo de subtítulos cuando el reproductor ya cargó.
 window.ytNoCaptions=function(fr){
@@ -4918,11 +4938,7 @@ window.toggleYT=function(tap){
   tap.previousElementSibling.contentWindow.postMessage(JSON.stringify({event:'command',func:paused?'pauseVideo':'playVideo',args:[]}),'*');
 };
 // Videos propios (Cloudinary u otro .mp4): mismo comportamiento que embedYT.
-window.embedVid=function(th,url){
-  const e=document.createElement('div');e.className='vid-em';e.dataset.url=url;
-  e.innerHTML=`<video src="${url}" autoplay muted loop playsinline preload="auto" onerror="vidFallback(this)"></video><div class="yt-tap" onclick="toggleVid(this)"></div><button class="yt-min" onclick="collapseVid(this.parentElement)">✕ Minimizar</button>`;
-  th.replaceWith(e);
-};
+window.embedVid=function(th,url){th.insertAdjacentHTML('afterend',vidEmHtml(url));th.remove()};
 // Si Cloudinary no puede transformar el video (ej. HDR subido antes de que la
 // app lo convirtiera), se prueba el original sin transformar.
 window.vidFallback=function(v){
@@ -4933,7 +4949,7 @@ window.toggleVid=function(tap){
   const v=tap.previousElementSibling;
   if(tap.classList.toggle('paused'))v.pause();else v.play();
 };
-window.collapseVid=function(e){const b=document.createElement('button');b.className='btn bg2 sm';b.style.marginTop='5px';b.textContent='▶ Ver video';const url=e.dataset.url;b.onclick=()=>embedVid(b,url);e.replaceWith(b)};
+window.collapseVid=function(e){woVidOff(e);const b=document.createElement('button');b.className='btn bg2 sm';b.style.marginTop='5px';b.textContent='▶ Ver video';const url=e.dataset.url;b.onclick=()=>embedVid(b,url);e.replaceWith(b)};
 
 // Optimista: con la caché local de Firestore la escritura queda guardada al
 // instante y se sincroniza sola; esperar el ack del servidor demoraba el tilde
@@ -5751,6 +5767,7 @@ const woPadRO=new ResizeObserver(()=>{
     .filter(b=>b&&!b.classList.contains('tfs')).reduce((m,b)=>Math.max(m,b.offsetHeight),0);
   const ov=document.getElementById('wo-ov');
   if(ov)ov.style.paddingBottom=h?(h+12)+'px':'';
+  woSyncResume();
 });
 ['timer-bar','cf-timer-bar'].forEach(id=>{const b=document.getElementById(id);if(b)woPadRO.observe(b)});
 function setTimerFs(bar,on){
@@ -8607,9 +8624,19 @@ window.startWorkout=function(cId,bi){
   wo.idx=first>=0?first:Math.max(0,steps.findIndex(inBlk));
   woOpen();
 };
+// Con el entrenamiento minimizado, "Volver al entrenamiento" va dentro de la
+// barra del timer si hay uno a la vista; si no, como botón flotante.
+function woSyncResume(){
+  const min=!!wo&&!document.getElementById('wo-ov')?.classList.contains('open');
+  document.body.classList.toggle('wo-min',min);
+  const tmVisible=['timer-bar','cf-timer-bar'].some(id=>document.getElementById(id)?.offsetHeight);
+  const pill=document.getElementById('wo-pill');
+  if(pill)pill.style.display=min&&!tmVisible?'block':'none';
+}
 function woOpen(){
   document.getElementById('wo-ov').classList.add('open');
-  document.getElementById('wo-pill').style.display='none';
+  ['timer-bar','cf-timer-bar'].forEach(id=>{const b=document.getElementById(id);if(b)setTimerFs(b,false)});
+  woSyncResume();
   document.body.style.overflow='hidden';
   woKeepAwake(true);
   woRender();
@@ -8617,7 +8644,7 @@ function woOpen(){
 window.woMinimize=function(){
   document.getElementById('wo-ov').classList.remove('open');
   document.body.style.overflow='';
-  if(wo)document.getElementById('wo-pill').style.display='block';
+  woSyncResume();
   woKeepAwake(false);
 };
 window.woResume=function(){
@@ -8628,7 +8655,7 @@ function woEnd(){
   wo=null;
   woTmReset();woTm.custom={};
   document.getElementById('wo-ov')?.classList.remove('open');
-  const pill=document.getElementById('wo-pill');if(pill)pill.style.display='none';
+  woSyncResume();
   document.body.style.overflow='';
   const nx=document.getElementById('timer-next');if(nx)nx.textContent='';
   woKeepAwake(false);
@@ -8812,7 +8839,7 @@ function woRender(){
     actions=`<button class="wo-btn wo-sec" onclick="woGo(${total-1})">◀</button><button class="wo-btn wo-main" onclick="woClose()">Cerrar</button>`;
   }else{
     const done=st.rk?woIsDone(st):false;
-    const vid=st.video?vidBtnHtml(st.video,5):'';
+    const vid=!st.video?'':(!wo.vidOff?.[st.name]&&vidEmbedHtml(st.video,` data-wovid="${woEsc(st.name)}"`))||vidBtnHtml(st.video,5);
     const itemsHtml=(st.items||[]).map(it=>`<div class="wo-item"><span class="wo-item-reps">${woEsc(it.reps||st.commonReps||'')}</span><span class="wo-item-name">${woEsc(it.name)}</span></div>${woNotesHtml(it.name,it.obs,it.refName)}${it.video?vidBtnHtml(it.video,5):''}`).join('');
     if(st.kind==='set'){
       const curW=st.weightId?(document.getElementById(st.weightId)?.value||''):'';
