@@ -309,6 +309,31 @@ Multi-tenant robusto, generación dinámica/personalizada de planes, migración 
   - `activarSuscriptorManual`/`desactivarSuscriptorManual`/`cambiarCategoriaSuscriptorManual` ahora refrescan cualquiera de los dos paneles que esté visible (`refreshSuscriptorPanels()`)
   - Pendiente de probar en navegador; Paso B (borrar las 4 pantallas viejas) queda para después de que Angel confirme que la nueva cubre todo
 
+## Plan personalizado adicional (2026-11-06)
+Objetivo: un alumno con cuenta puede tener un plan personalizado y otros planes a la vez, en cualquier orden. El vencimiento y el acceso son de la persona.
+
+Enfoque: el plan personalizado (`kind:'personal'`) tiene al alumno en `members`, con `id` = uid y sin vencimiento propio, como un plan grupal asignado. Se reutilizan la ficha, las semanas, el selector de planes, el progreso en `planes/{id}/progreso/{uid}`, Actividad y el historial. Un campo nuevo, `subscribers/{uid}.extraPlanIds`, da acceso a los planes privados adicionales.
+
+- [x] 1. Reglas (`firestore.rules`): `subscriberActiveFor` acepta `planId in extraPlanIds`. El alumno no puede crear ni modificar ese campo (las 2 ramas de `create` y las 3 de `update` del dueño).
+- [x] 2. Tests de reglas con el emulador, escritos antes del cambio: acceso con y sin el campo, alumno vencido o desactivado sin acceso, alumno que intenta agregarse un plan ajeno rechazado.
+- [x] 3. Ficha: botón "🎯 Crear plan personalizado" para quien tiene cuenta y no tiene uno. Crea el plan con el alumno como member, guarda `extraPlanIds` y abre el editor.
+- [x] 4. Ficha: en los planes `kind:'personal'`, sumar "✏️ Editar". "Sacar" pide confirmación y borra el plan y su progreso. "Borrar alumno" también lo borra para que no quede huérfano.
+- [x] 5. Ficha: "Agregar a un plan grupal" pasa a "Agregar otro plan". Si el plan es privado, también lo suma a `extraPlanIds`, y "Sacar" lo quita.
+- [x] 6. Selector actual: confirmación antes de reemplazar un plan, y "Guardar" escrito en lugar del 💾 solo.
+- [x] 7. App del alumno: cargar los planes de `extraPlanIds` junto con los públicos y abrir el personalizado al entrar, sin impedir volver al otro desde el selector.
+- [x] 8. Verificar que editar y guardar el plan personalizado no pise `members`.
+- [x] 9. Probar en navegador con una cuenta de prueba, también en tamaño celular: los dos órdenes, vencido, desactivado, progreso separado, Actividad e historial.
+- [x] 10. Publicar primero las reglas y después el hosting. `sw.js` no se toca: la app ya se actualiza sola.
+
+Fuera de alcance: migrar a los que ya tienen el personalizado como plan principal, lentitud de carga, riesgo de sobrescribir categorías. Ya no existen alumnos sin cuenta.
+
+Revisión (2026-11-06): 23/23 tests de reglas en emulador. Flujo completo probado con emuladores y datos ficticios: los dos órdenes, arranque en el personalizado, cambio de plan, progreso en navegador sin datos, vencido, desactivado, Actividad, reemplazo con confirmación, borrado del plan. Publicado reglas y hosting. No probado con cuentas reales ni en un celular físico (solo tamaño celular simulado); "Borrar alumno" con plan personalizado adicional y el historial no se ejercitaron.
+
+Pendientes detectados:
+- Alumnos que ya estaban agregados a planes privados no los ven hasta volver a agregarlos (no tienen `extraPlanIds`).
+- `renderAlumnoPlanView`, caso sin plan principal: sigue usando `loadPlanProgreso`, que un alumno no puede listar, y no muestra su progreso en un dispositivo nuevo.
+- Un alumno desactivado ve "Falta completar el pago" en vez de un mensaje de cuenta desactivada.
+
 ## Pendiente a confirmar
 - ¿Los links públicos de planes grupales por WhatsApp deben seguir 100% sin login? (asumido que sí, vía flag `public:true`)
 - ¿Angel quiere en algún momento pasar a Blaze para automatizar el pago con `crearPago`/`mpWebhook` (ya escritos, sin usar)? Por ahora se descartó por el costo/trámite de habilitar Cloud Functions.

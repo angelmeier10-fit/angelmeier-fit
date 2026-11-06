@@ -20,7 +20,14 @@ service cloud.firestore {
         && (get(/databases/$(database)/documents/subscribers/$(request.auth.uid)).data.planId == planId
             // La suscripción "global" no tiene un único planId: da acceso a
             // cualquier plan fijo marcado privado (los 4 mapeados en planesFijos).
-            || get(/databases/$(database)/documents/subscribers/$(request.auth.uid)).data.categoria == 'global');
+            || get(/databases/$(database)/documents/subscribers/$(request.auth.uid)).data.categoria == 'global'
+            // Planes privados adicionales (ej. plan personalizado además de la
+            // suscripción). Solo el admin puede escribir esta lista.
+            || planId in get(/databases/$(database)/documents/subscribers/$(request.auth.uid)).data.get('extraPlanIds', []));
+    }
+
+    function extraPlanIdsUnchanged() {
+      return request.resource.data.get('extraPlanIds', []) == resource.data.get('extraPlanIds', []);
     }
 
     // Datos operativos del entrenador: solo admin.
@@ -112,7 +119,8 @@ service cloud.firestore {
         || (isOwner(uid)
             && request.resource.data.status == 'pending'
             && !('expiry' in request.resource.data)
-            && !('lastPaymentId' in request.resource.data))
+            && !('lastPaymentId' in request.resource.data)
+            && !('extraPlanIds' in request.resource.data))
         // Desafío Glúteos 21 días: gratuito, acceso inmediato sin pasar por
         // el estado "pending" de pago (no aplica a ninguna otra categoría).
         // A diferencia del alta paga, acá SÍ puede traer "expiry" ya en la
@@ -121,14 +129,16 @@ service cloud.firestore {
         || (isOwner(uid)
             && request.resource.data.categoria == 'desafio-gluteos-21'
             && request.resource.data.status == 'active'
-            && !('lastPaymentId' in request.resource.data));
+            && !('lastPaymentId' in request.resource.data)
+            && !('extraPlanIds' in request.resource.data));
       allow update: if isAdmin()
         || (isOwner(uid)
             && request.resource.data.status == resource.data.status
             && request.resource.data.expiry == resource.data.expiry
             && request.resource.data.lastPaymentId == resource.data.lastPaymentId
             && request.resource.data.categoria == resource.data.categoria
-            && request.resource.data.planId == resource.data.planId)
+            && request.resource.data.planId == resource.data.planId
+            && extraPlanIdsUnchanged())
         // Renovación del Desafío Glúteos: el propio dueño puede actualizar
         // su "expiry" mientras la categoría siga siendo la del desafío antes
         // y después del cambio (no permite migrarse a otra categoría paga
@@ -138,7 +148,8 @@ service cloud.firestore {
             && request.resource.data.categoria == 'desafio-gluteos-21'
             && request.resource.data.status == 'active'
             && request.resource.data.planId == resource.data.planId
-            && request.resource.data.lastPaymentId == resource.data.get('lastPaymentId', null))
+            && request.resource.data.lastPaymentId == resource.data.get('lastPaymentId', null)
+            && extraPlanIdsUnchanged())
         // Reingreso: alumna existente sin "categoria" (plan vencido y
         // reseteado por el admin/webhook) puede elegir una categoría nueva
         // y vuelve a pending. No puede tocar expiry/lastPaymentId por su
@@ -147,7 +158,8 @@ service cloud.firestore {
             && resource.data.get('categoria', null) == null
             && request.resource.data.status == 'pending'
             && request.resource.data.expiry == resource.data.get('expiry', null)
-            && request.resource.data.lastPaymentId == resource.data.get('lastPaymentId', null));
+            && request.resource.data.lastPaymentId == resource.data.get('lastPaymentId', null)
+            && extraPlanIdsUnchanged());
       allow delete: if isAdmin();
     }
 

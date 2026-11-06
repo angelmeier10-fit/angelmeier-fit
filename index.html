@@ -1347,7 +1347,7 @@ function toggleTheme(){
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, getDoc, getDocs, getDocFromCache, getDocsFromCache, getDocFromServer, getDocsFromServer, setDoc, updateDoc, deleteDoc, addDoc, collection, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, getDoc, getDocs, getDocFromCache, getDocsFromCache, getDocFromServer, getDocsFromServer, setDoc, updateDoc, deleteDoc, addDoc, collection, query, where, onSnapshot, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 /* r3 */
@@ -6062,11 +6062,12 @@ async function renderProgramaUnificadoHtml(prog,cats,hasSubscription){
           <button class="btn bcy xs" onclick="updateMemberExpiry('${plan.id}','${m.id}')">💾 Vencimiento</button>`;
     return`<div style="padding:8px 0;border-bottom:1px solid var(--bd)">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
-        <div style="font-size:.84rem"><b>${plan.name}</b> ${statusBadge} ${weekBadgeG}</div>
+        <div style="font-size:.84rem"><b>${plan.kind==='personal'?'🎯 ':''}${plan.name}</b> ${statusBadge} ${weekBadgeG}</div>
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
           ${weekSelectHtmlG}
           ${vencimientoHtmlG}
-          <button class="btn bd2 xs" onclick="removeMemberFromAlumnos('${plan.id}','${m.id}')">✕ Sacar</button>
+          ${plan.kind==='personal'?`<button class="btn bpu xs" onclick="irAEditarPlanPersonal('${plan.id}')">✏️ Editar su plan</button>`:''}
+          <button class="btn bd2 xs" onclick="removeMemberFromAlumnos('${plan.id}','${m.id}')">${plan.kind==='personal'?'🗑️ Borrar plan':'✕ Sacar'}</button>
         </div>
       </div>
       ${progressHtml}
@@ -6176,8 +6177,9 @@ async function renderProgramaUnificadoHtml(prog,cats,hasSubscription){
       <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
         ${editarPlanBtn}
         ${cambiarSemanaHtml}
+        <label style="font-size:.68rem;color:var(--mu);width:100%">Plan principal (cambiarlo reemplaza el actual)</label>
         <select id="susc-cat-${uid}" style="width:auto;font-size:.78rem">${catOptions}</select>
-        <button class="btn bg2 xs" onclick="cambiarCategoriaSuscriptorManual('${uid}')" title="Guardar" aria-label="Guardar">💾</button>
+        <button class="btn bg2 xs" onclick="cambiarCategoriaSuscriptorManual('${uid}')">💾 Guardar</button>
         ${accionBtn}
       </div>
     </div>
@@ -6488,7 +6490,7 @@ async function renderAlumnosUnificado(searchTerm){
     const convertBtn=hasSubscription?'':`<button class="btn bcy xs" onclick="event.stopPropagation();precargarAltaSuscriptor(${ai})">🔔 Convertir en suscriptor</button>`;
     const availablePlans=planes.filter(p=>p.kind!=='personal'&&!a.programs.some(pr=>pr.type==='group'&&pr.plan.id===p.id));
     const addPlanForm=availablePlans.length?`<div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--bd)">
-        <div style="font-size:.76rem;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">➕ Agregar a un plan grupal</div>
+        <div style="font-size:.76rem;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">➕ Agregar otro plan</div>
         <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:end">
           <select id="uni-addplan-${ai}" onchange="onUniAddPlanChange(${ai})" style="font-size:.8rem">
             <option value="">Elegir plan…</option>
@@ -6501,6 +6503,8 @@ async function renderAlumnosUnificado(searchTerm){
         </div>
       </div>`:'';
     const subProg=a.programs.find(p=>p.type==='subscription');
+    const tienePersonal=subProg?.sub.categoria==='__personal__'||a.programs.some(p=>p.type==='group'&&p.plan.kind==='personal');
+    const crearPersonalBtn=subProg&&!tienePersonal?`<button class="btn bpu sm" style="margin-top:10px" onclick="crearPlanPersonalAdicional(${ai})">🎯 Crear plan personalizado</button>`:'';
     // Único control de acceso por alumno, siempre en el header (una sola
     // fila, sin expandir la ficha): activar/desactivar + la fecha exacta de
     // vencimiento, todo junto. No queda ningún otro lugar en la ficha
@@ -6546,6 +6550,7 @@ async function renderAlumnosUnificado(searchTerm){
       </div>
       <div class="collapsible-card-body collapsed" id="${bodyId}" style="margin-top:10px">
         ${progRows.join('')}
+        ${crearPersonalBtn}
         ${addPlanForm}
       </div>
     </div>`;
@@ -6599,10 +6604,33 @@ window.addUniAlumnoToPlan=async function(ai){
   if(!plan.members)plan.members=[];
   plan.members.push(member);
   await setDoc(doc(db,'planes',planId),plan);
+  // Un plan privado no aparece en la consulta de planes públicos del alumno:
+  // sin esto queda agregado en la ficha pero el alumno nunca lo ve.
+  if(subProg&&plan.public===false)await updateDoc(doc(db,'subscribers',subProg.uid),{extraPlanIds:arrayUnion(planId)});
   toast('✅ Agregado a '+plan.name);
   renderAlumnosUnificado(document.getElementById('uni-search')?.value);
   buildNotifications();
 };
+// Plan personalizado además de los que ya tiene el alumno: queda como member
+// de un plan privado propio, sin vencimiento (el acceso lo gobierna su cuenta).
+window.crearPlanPersonalAdicional=async function(ai){
+  const a=alumnosUniCache[ai];
+  const subProg=a?.programs.find(p=>p.type==='subscription');
+  if(!subProg)return;
+  const planId=await crearPlanPersonalVacio(a.name||a.email);
+  const plan=planes.find(p=>p.id===planId);
+  plan.members=[{id:subProg.uid,name:a.name,email:a.email,status:'active',expiry:'',addedAt:new Date().toLocaleDateString('es-AR'),startDate:defaultStartDate(),startWeek:1}];
+  await setDoc(doc(db,'planes',planId),plan);
+  await updateDoc(doc(db,'subscribers',subProg.uid),{extraPlanIds:arrayUnion(planId)});
+  toast('✅ Plan personalizado creado');
+  renderAlumnosUnificado(document.getElementById('uni-search')?.value);
+  irAEditarPlanPersonal(planId);
+};
+// Sin esto, sacar a un alumno de un plan privado le dejaría acceso de lectura.
+async function quitarExtraPlanId(planId,memberId){
+  const snap=await getDoc(doc(db,'subscribers',memberId));
+  if(snap.exists()&&(snap.data().extraPlanIds||[]).includes(planId))await updateDoc(doc(db,'subscribers',memberId),{extraPlanIds:arrayRemove(planId)});
+}
 window.precargarAltaSuscriptor=function(ai){
   const a=alumnosUniCache[ai];
   if(!a)return;
@@ -6689,11 +6717,19 @@ async function updateMemberExpiry(planId,memberId){
 window.updateMemberExpiry=updateMemberExpiry;
 
 async function removeMemberFromAlumnos(planId,memberId){
-  if(!await uiConfirm('¿Sacar a este alumno de este plan?'))return;
   const plan=planes.find(p=>p.id===planId);
-  plan.members=plan.members.filter(m=>m.id!==memberId);
-  await setDoc(doc(db,'planes',planId),plan);
-  toast('🗑️ Alumno sacado del plan');
+  const esPersonal=plan.kind==='personal';
+  if(!await uiConfirm(esPersonal?'¿Borrar este plan personalizado? Se pierde el plan y todo su progreso registrado. Esta acción no se puede deshacer.':'¿Sacar a este alumno de este plan?'))return;
+  if(esPersonal){
+    await deleteDoc(doc(db,'planes',planId,'progreso',memberId));
+    await deleteDoc(doc(db,'planes',planId));
+    planes=planes.filter(p=>p.id!==planId);
+  }else{
+    plan.members=plan.members.filter(m=>m.id!==memberId);
+    await setDoc(doc(db,'planes',planId),plan);
+  }
+  await quitarExtraPlanId(planId,memberId);
+  toast(esPersonal?'🗑️ Plan personalizado borrado':'🗑️ Alumno sacado del plan');
   renderAlumnosUnificado(document.getElementById('uni-search')?.value);
   buildNotifications();
 }
@@ -6709,7 +6745,11 @@ async function deleteAlumnoCompleto(ai){
       clients=clients.filter(c=>c.id!==prog.client.id);
     } else if(prog.type==='group'){
       const plan=planes.find(p=>p.id===prog.plan.id);
-      if(plan){
+      if(plan?.kind==='personal'){
+        await deleteDoc(doc(db,'planes',plan.id,'progreso',prog.member.id));
+        await deleteDoc(doc(db,'planes',plan.id));
+        planes=planes.filter(p=>p.id!==plan.id);
+      }else if(plan){
         plan.members=(plan.members||[]).filter(m=>m.id!==prog.member.id);
         await setDoc(doc(db,'planes',plan.id),plan);
       }
@@ -7642,6 +7682,7 @@ async function removeMember(planId,memberId){
   const plan=planes.find(p=>p.id===planId);
   plan.members=plan.members.filter(m=>m.id!==memberId);
   await setDoc(doc(db,'planes',planId),plan);
+  await quitarExtraPlanId(planId,memberId);
   toast('🗑️ Alumno eliminado');
   renderMembersList(planId);
   buildNotifications();
@@ -7805,6 +7846,22 @@ function loadPlanProgreso(plan,fresh){
   })());
   return planProgresoLoaded.get(plan.id);
 }
+// Las reglas dejan a cada alumno leer solo su propio doc de progreso, no listar
+// los del plan como hace loadPlanProgreso (eso es para el entrenador).
+async function loadProgresoAlumno(plan,member){
+  const snap=await getDoc(doc(db,'planes',plan.id,'progreso',member.id)).catch(()=>null);
+  if(snap?.exists())member.progress=snap.data().progress||{};
+}
+// Los planes privados adicionales no salen en la consulta de públicos: se traen
+// por id. Del servidor para que vea los cambios recientes del entrenador.
+async function loadExtraPlanes(sub){
+  const ids=(sub.extraPlanIds||[]).filter(id=>!planes.some(p=>p.id===id));
+  const snaps=await Promise.all(ids.map(id=>{
+    const ref=doc(db,'planes',id);
+    return getDocFromServer(ref).catch(()=>getDoc(ref)).catch(()=>null);
+  }));
+  snaps.forEach(s=>{if(s?.exists())planes.push({id:s.id,...s.data()})});
+}
 function programPickerHTML(gkey,progs,activeType,activePlanId,mode='client'){
   if(progs.length<2)return'';
   // planIdOf/isActiveOf comparan por plan.id en vez de por "type" para los
@@ -7856,10 +7913,11 @@ window.switchToGroupProgramAlumno=async function(planId,memberId){
   const plan=planes.find(p=>p.id===planId);
   const member=plan?.members?.find(m=>m.id===memberId);
   if(!plan||!member)return;
-  await loadPlanProgreso(plan);
+  await loadProgresoAlumno(plan,member);
   renderGroupCV(plan,member,'alumno');
 };
 window.switchToPersonalProgramAlumno=function(){
+  alumnoState.verPrincipal=true;
   renderAlumnoPlanView(alumnoState.sub,alumnoState.uid);
 };
 // Desafío Glúteos como plan adicional (subscribers/{uid}.extraDesafioGluteos,
@@ -8305,6 +8363,23 @@ async function renderAlumnoPlanView(sub,uid){
     switcherEl.innerHTML='';
   }
 
+  // Al entrar arranca en el plan personalizado adicional; verPrincipal indica
+  // que eligió el otro desde el selector y no hay que devolverlo acá.
+  const verPrincipal=alumnoState.verPrincipal;
+  alumnoState.verPrincipal=false;
+  await loadExtraPlanes(sub);
+  const planPersonal=verPrincipal?null:planes.find(p=>p.kind==='personal'&&(sub.extraPlanIds||[]).includes(p.id));
+  const memberPersonal=planPersonal?.members?.find(m=>m.id===uid);
+  if(memberPersonal){
+    // El selector necesita el nombre del plan principal para listarlo.
+    if(planId){
+      const mainSnap=await getDocFromServer(doc(db,'planes',planId)).catch(()=>null);
+      if(mainSnap?.exists())alumnoState.plan={id:planId,...mainSnap.data()};
+    }
+    await loadProgresoAlumno(planPersonal,memberPersonal);
+    renderGroupCV(planPersonal,memberPersonal,'alumno');
+    return;
+  }
   const contentEl=document.getElementById('alumno-cv-content');
   if(!planId){
     // Suscripción global sin categoría elegida todavía (preview del admin):
@@ -8356,6 +8431,7 @@ async function renderAlumnoPlanView(sub,uid){
 
 window.cambiarCategoriaGlobalAlumno=async function(categoria){
   alumnoState.categoria=categoria;
+  alumnoState.verPrincipal=true;
   await renderAlumnoPlanView(alumnoState.sub,alumnoState.uid);
 };
 
@@ -9035,6 +9111,10 @@ window.toggleAlumnoActivo=async function(uid,currentActivo,ai){
 
 window.cambiarCategoriaSuscriptorManual=async function(uid){
   const categoria=document.getElementById('susc-cat-'+uid).value;
+  const actualSnap=await getDoc(doc(db,'subscribers',uid));
+  const actual=actualSnap.data();
+  const valorActual=actual.categoria||(actual.planId?'plan:'+actual.planId:'');
+  if(valorActual&&valorActual!==categoria&&!await uiConfirm('Esto reemplaza el plan principal de este alumno. Si querés sumarle un plan sin sacarle el que tiene, usá "Crear plan personalizado" o "Agregar otro plan". ¿Reemplazarlo igual?'))return;
   if(categoria.startsWith('plan:')){
     // Plan grupal puntual, elegido directo por afuera del mapeo de
     // categorías fijas: el alumno pasa a ver nada más ese plan (planId),

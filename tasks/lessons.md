@@ -31,3 +31,7 @@
 ## 2026-10-28 — Pasos sin tilde en entrada en calor y funcional (modo entrenamiento)
 - **Error:** al pasar a un paso por ejercicio/ronda, solo el último paso tenía `rk` (el tilde de la vista normal); en los demás "Hecho" avanzaba sin guardar nada, así que no quedaban marcados.
 - **Regla:** en el modo entrenamiento, cada paso que tenga botón "Hecho" necesita su propia key de progreso (aunque no exista fila en la vista normal). Si se divide un tilde de la vista normal en varios pasos, dar keys derivadas (`-r{ronda}`, `-x{ejercicio}`) y leer el estado desde `progress`, no desde el DOM.
+
+## 2026-11-06 — Pregunté por el vencimiento de un plan
+- **Error:** pregunté qué pasaba con un plan personalizado cuando vencía la suscripción de otro plan del mismo alumno.
+- **Regla:** el vencimiento y el acceso son de la persona, no de cada plan. Un plan adicional no lleva fecha propia: cuando vence la persona, pierde acceso a todos sus planes.
