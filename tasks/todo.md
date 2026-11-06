@@ -329,6 +329,8 @@ Fuera de alcance: migrar a los que ya tienen el personalizado como plan principa
 
 Revisión (2026-11-06): 23/23 tests de reglas en emulador. Flujo completo probado con emuladores y datos ficticios: los dos órdenes, arranque en el personalizado, cambio de plan, progreso en navegador sin datos, vencido, desactivado, Actividad, reemplazo con confirmación, borrado del plan. Publicado reglas y hosting. No probado con cuentas reales ni en un celular físico (solo tamaño celular simulado); "Borrar alumno" con plan personalizado adicional y el historial no se ejercitaron.
 
+Corregido (2026-11-06): con lectura sin respuesta en un dispositivo sin caché, la app creaba 76 ejercicios y pisaba `meta/categories`. Reproducido en emulador. Ahora solo crea datos por defecto si el servidor confirma que no hay, y `saveCats` no guarda sin haber cargado. Probado: lectura lenta, servidor caído y base realmente vacía.
+
 Pendientes detectados:
 - Alumnos que ya estaban agregados a planes privados no los ven hasta volver a agregarlos (no tienen `extraPlanIds`).
 - `renderAlumnoPlanView`, caso sin plan principal: sigue usando `loadPlanProgreso`, que un alumno no puede listar, y no muestra su progreso en un dispositivo nuevo.
