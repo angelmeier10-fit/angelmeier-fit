@@ -35,3 +35,7 @@
 ## 2026-11-06 — Pregunté por el vencimiento de un plan
 - **Error:** pregunté qué pasaba con un plan personalizado cuando vencía la suscripción de otro plan del mismo alumno.
 - **Regla:** el vencimiento y el acceso son de la persona, no de cada plan. Un plan adicional no lleva fecha propia: cuando vence la persona, pierde acceso a todos sus planes.
+
+## 2026-11-12 — Flash al cambiar el video del timer
+- **Error:** el timer en pantalla completa reemplazaba el iframe de YouTube en cada cambio de ejercicio; el iframe nuevo cargaba de cero y se veía un flash.
+- **Regla:** cuando un video tiene que cambiar mientras se mira (timers, pasos seguidos), cargar todos los iframes una vez, apilados, y alternar la visibilidad. No reemplazar el iframe con innerHTML.

@@ -359,7 +359,8 @@ body.wo-min .tm-wo{display:inline-flex}
 #cf-timer-ex{font-size:.85rem;font-weight:700;color:var(--tx);margin-top:3px}
 #cf-timer-ex small{display:block;font-weight:500;color:var(--mu);font-size:.85em}
 .tfs #cf-timer-ex{font-size:clamp(1.4rem,6vw,2.2rem);margin-top:10px}
-#cf-timer-bar:not(.tfs) #cf-timer-vid,#cf-timer-vid:empty{display:none}
+#cf-timer-bar:not(.tfs) #cf-timer-vid,#cf-timer-vid:empty,#cf-timer-vid.none{display:none}
+#cf-timer-vid{display:grid}#cf-timer-vid>div{grid-area:1/1;min-width:0}#cf-timer-vid>.off{visibility:hidden}
 #cf-timer-vid .yt-em.short{height:38vh}#cf-timer-vid .vid-em video{max-height:38vh}
 /* Modo entrenamiento: z-index debajo de los timers (9999) para que el descanso se vea encima */
 .wo-bar{display:flex;gap:10px;margin-bottom:14px}
@@ -8654,15 +8655,25 @@ function buildWorkoutSteps(day,week,dIdx,cId,progress,refOf){
         const secLabel=sections.length>1?` · Sección ${si+1}`:'';
         const cfLabel=CF_TYPES[blk.cftype]?.label||'WOD';
         const base={bi,block:blockNum,cftype:blk.cftype,meta:sec.meta||{},items,notes:blk.notes||''};
-        const isRepsCircuit=(blk.cftype==='circuit'||blk.cftype==='intervals')&&exs.some(e=>e.name)&&
-          exs.every(ex=>!/\d+\s*(min|s$|seg|km)/i.test((ex.reps||'').trim()));
-        if(isRepsCircuit){
-          const n=parseInt(sec.meta?.rounds)||3;
-          const restSecs=parseToSecs(sec.meta?.rest||'60s');
-          for(let ri=0;ri<n;ri++){
-            steps.push({...base,kind:'round',typeLabel:cfLabel+secLabel,sub:`Ronda ${ri+1} de ${n}`,
-              rk:`${cId}-${bkey}-s${si}-cfround${ri}`,ekey:`${bkey}-s${si}`,si:ri,isLast:false,rest:null,pause:restSecs});
-          }
+        // Circuito, intervalos y tabata: una pantalla por ejercicio y ronda, como
+        // la entrada en calor. Si el ejercicio es por tiempo (sus reps o el
+        // "Trabajo" del bloque), avanza solo: trabajo → descanso → siguiente.
+        // El tilde del último ejercicio de cada ronda es el de la vista normal.
+        const named=exs.filter(e=>e.name);
+        if(['circuit','intervals','tabata'].includes(blk.cftype)&&named.length){
+          const isTab=blk.cftype==='tabata';
+          const n=parseInt(sec.meta?.rounds)||(isTab?8:3);
+          const work=sec.meta?.work||(isTab?'20s':'');
+          const restSecs=parseToSecs(sec.meta?.rest||(isTab?'10s':blk.cftype==='circuit'?'60s':'20s'));
+          for(let ri=0;ri<n;ri++)named.forEach((ex,ii)=>{
+            const rk=`${cId}-${bkey}-s${si}-cfround${ri}`;const lastEx=ii===named.length-1;
+            const reps=ex.reps||work;
+            const pause=(ri===n-1&&lastEx)?0:(blk.cftype==='circuit'?(lastEx?restSecs:0):restSecs);
+            steps.push({kind:'set',bi,block:blockNum,typeLabel:cfLabel+secLabel,name:ex.name,reps,load:'',obs:'',
+              bdesc:blk.notes||'',video:ex.video||'',refName:refOf(ex),auto:woTimeSecs(reps)>0,
+              sub:`Ronda ${ri+1} de ${n} · Ejercicio ${ii+1} de ${named.length}`,
+              rk:lastEx?rk:`${rk}-x${ii}`,ekey:`${bkey}-s${si}`,si:ri,isLast:false,rest:null,pause,weightId:null});
+          });
         }else{
           steps.push({...base,kind:'wod',typeLabel:cfLabel+secLabel,sub:'',bkey,
             exNames:exs.map(e=>e.name).filter(Boolean),exVideos:exs.filter(e=>e.name).map(e=>e.video||''),resultKey:`${cId}-${bkey}-cfresult`});
@@ -8677,7 +8688,6 @@ function buildWorkoutSteps(day,week,dIdx,cId,progress,refOf){
 function woStepLabel(st){
   if(!st)return'';
   if(st.kind==='set')return[st.name,st.reps].filter(Boolean).join(' · ');
-  if(st.kind==='round')return`${st.sub} — ${st.items.map(i=>i.name).filter(Boolean).join(', ')}`;
   return st.typeLabel||'';
 }
 const woEsc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -8780,6 +8790,9 @@ window.woGo=function(i){
   if(ni!==wo.idx){woTmReset();wo.showVar=false;}
   wo.idx=ni;
   woRender();
+  if(wo.autoRun){
+    if(wo.steps[ni]?.auto&&woTm.target)woTmToggle();else wo.autoRun=false;
+  }
 };
 // Timer del ejercicio: cuenta regresiva si las reps son por tiempo
 // ("30s", "45''", "1 min", "0:40"); si no, cronómetro libre.
@@ -8820,14 +8833,19 @@ function woTmTick(){
       if(left<=0){
         clearInterval(woTm.iv);woTm.iv=null;woTm.elapsed=woTm.target;
         beepFinal();try{navigator.vibrate?.([300,150,300])}catch(e){}
+        if(wo?.autoRun&&wo.steps[wo.idx]?.auto)woDone();
       }
     }
   }
   woTmPaint();
 }
+// En los pasos "auto" (circuito/intervalos/tabata por tiempo), darle play al
+// timer deja corriendo la secuencia sola; pausarlo la corta.
 window.woTmToggle=function(){
-  if(woTm.iv){woTm.elapsed=woTmElapsed();clearInterval(woTm.iv);woTm.iv=null;}
+  const auto=!!wo?.steps[wo.idx]?.auto;
+  if(woTm.iv){woTm.elapsed=woTmElapsed();clearInterval(woTm.iv);woTm.iv=null;if(wo)wo.autoRun=false;}
   else{
+    if(wo)wo.autoRun=auto;
     if(woTm.target&&woTm.elapsed>=woTm.target)woTm.elapsed=0;
     getAudioCtx();
     woTm.startAt=Date.now();woTm.lastBeep=null;
@@ -8961,11 +8979,6 @@ function woRender(){
         ${woTmHtml(woTimeSecs(st.reps),'set|'+st.bi+'|'+st.name)}
         ${st.weightId?`<label class="wo-w">Peso usado <input type="number" step="0.5" inputmode="decimal" value="${woEsc(curW)}" placeholder="${woEsc(ph)}" onchange="woSaveWeight(${wo.idx},this.value)"> kg</label>`:''}
         ${vid}`;
-    }else if(st.kind==='round'){
-      body=`<div class="wo-sub">${woEsc(st.sub)}</div>
-        ${woTmHtml(0,'round|'+st.bi)}
-        <div class="wo-items">${itemsHtml}</div>
-        ${st.notes?`<div class="wo-desc">📝 ${woEsc(st.notes)}</div>`:''}`;
     }else if(st.kind==='wod'){
       const cfg=CF_TYPES[st.cftype]||{label:st.cftype||'WOD',icon:'🏋️',fields:[]};
       const chips=(cfg.fields||[]).map(f=>st.meta?.[f.id]?`<span class="wo-chip">${woEsc(f.label.replace(/\s*\(ej:[^)]*\)/i,''))}: ${woEsc(st.meta[f.id])}</span>`:'').join('');
@@ -9577,16 +9590,23 @@ function cfTimerUpdateDisplay(){
   if(exs.length>1&&(cfTimer.mode==='interval'||cfTimer.mode==='tabata'))cur=cfTimer.currentExIdx||0;
   else if(exs.length>1&&cfTimer.mode==='emom')cur=((cfTimer.currentRound||1)-1)%exs.length;
   if(exEl)exEl.innerHTML=cur>=0?`${woEsc(exs[cur])}<small>Próximo: ${woEsc(exs[(cur+1)%exs.length])}</small>`:'';
-  // Video del ejercicio en curso (en el descanso, el del próximo); se rearma
-  // solo cuando cambia el link para no reiniciarlo en cada segundo.
+  // Video del ejercicio en curso (en el descanso, el del próximo). Todos los
+  // videos del bloque se cargan una vez, apilados, y solo se muestra el que
+  // toca: reemplazar el iframe en cada cambio hacía un flash mientras cargaba.
   const vids=cfTimer.videos||[];
   let vi=cur>=0?cur:(vids.length===1?0:-1);
   if(cur>=0&&cfTimer.isWork===false&&(cfTimer.mode==='interval'||cfTimer.mode==='tabata'))vi=(cur+1)%vids.length;
   const vUrl=vi>=0?(vids[vi]||''):'';
-  if(vUrl!==cfTimer._vidUrl){
-    cfTimer._vidUrl=vUrl;
-    const vEl=document.getElementById('cf-timer-vid');
-    if(vEl)vEl.innerHTML=vUrl?vidEmbedHtml(vUrl):'';
+  const vEl=document.getElementById('cf-timer-vid');
+  if(vEl){
+    if(cfTimer._vidSet!==cfTimer.videos){
+      cfTimer._vidSet=cfTimer.videos;
+      cfTimer._vidList=[...new Set(vids.filter(Boolean))];
+      vEl.innerHTML=cfTimer._vidList.map(u=>`<div>${vidEmbedHtml(u)}</div>`).join('');
+    }
+    const k=cfTimer._vidList.indexOf(vUrl);
+    [...vEl.children].forEach((d,i)=>d.classList.toggle('off',i!==k));
+    vEl.classList.toggle('none',k<0);
   }
   // Color warnings
   if(cfTimer.mode==='fortime'){
@@ -9785,7 +9805,7 @@ window.cfTimerReset=function(){
 window.cfTimerClose=function(){
   clearInterval(cfTimer.interval);cfTimer.running=false;cfTimer.started=false;
   document.getElementById('cf-timer-bar').style.display='none';
-  document.getElementById('cf-timer-vid').innerHTML='';cfTimer._vidUrl='';
+  document.getElementById('cf-timer-vid').innerHTML='';cfTimer._vidSet=undefined;
 };
 
 window.cfTimerApplyEdit=function(){
