@@ -39,3 +39,7 @@
 ## 2026-11-12 — Flash al cambiar el video del timer
 - **Error:** el timer en pantalla completa reemplazaba el iframe de YouTube en cada cambio de ejercicio; el iframe nuevo cargaba de cero y se veía un flash.
 - **Regla:** cuando un video tiene que cambiar mientras se mira (timers, pasos seguidos), cargar todos los iframes una vez, apilados, y alternar la visibilidad. No reemplazar el iframe con innerHTML.
+
+## 2026-11-12 — Pausa entre secciones ignorada en el modo entrenamiento
+- **Error:** al pasar circuito/intervalos/tabata a pasos por ejercicio no tuve en cuenta `sec.pause` (pausa entre secciones de un WOD); al terminar la sección 1 no arrancaba la pausa.
+- **Regla:** al convertir un bloque CF en pasos, recorrer todos los campos de la sección y del bloque (`meta`, `pause`, `notes`) y probar con un bloque de varias secciones.

@@ -8668,7 +8668,9 @@ function buildWorkoutSteps(day,week,dIdx,cId,progress,refOf){
           for(let ri=0;ri<n;ri++)named.forEach((ex,ii)=>{
             const rk=`${cId}-${bkey}-s${si}-cfround${ri}`;const lastEx=ii===named.length-1;
             const reps=ex.reps||work;
-            const pause=(ri===n-1&&lastEx)?0:(blk.cftype==='circuit'?(lastEx?restSecs:0):restSecs);
+            // Al terminar la sección va la pausa entre secciones (nada si es la última).
+            const secEnd=si<sections.length-1?(woTimeSecs(sec.pause)||parseToSecs(sec.pause||'')):0;
+            const pause=(ri===n-1&&lastEx)?secEnd:(blk.cftype==='circuit'?(lastEx?restSecs:0):restSecs);
             steps.push({kind:'set',bi,block:blockNum,typeLabel:cfLabel+secLabel,name:ex.name,reps,load:'',obs:'',
               bdesc:blk.notes||'',video:ex.video||'',refName:refOf(ex),auto:woTimeSecs(reps)>0,
               sub:`Ronda ${ri+1} de ${n} · Ejercicio ${ii+1} de ${named.length}`,
