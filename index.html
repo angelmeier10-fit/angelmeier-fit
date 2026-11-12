@@ -359,6 +359,8 @@ body.wo-min .tm-wo{display:inline-flex}
 #cf-timer-ex{font-size:.85rem;font-weight:700;color:var(--tx);margin-top:3px}
 #cf-timer-ex small{display:block;font-weight:500;color:var(--mu);font-size:.85em}
 .tfs #cf-timer-ex{font-size:clamp(1.4rem,6vw,2.2rem);margin-top:10px}
+#cf-timer-bar:not(.tfs) #cf-timer-vid,#cf-timer-vid:empty{display:none}
+#cf-timer-vid .yt-em.short{height:38vh}#cf-timer-vid .vid-em video{max-height:38vh}
 /* Modo entrenamiento: z-index debajo de los timers (9999) para que el descanso se vea encima */
 .wo-bar{display:flex;gap:10px;margin-bottom:14px}
 .wo-start{flex:1;background:var(--gr);color:#0f1117;border:none;border-radius:12px;padding:16px;font-size:1.05rem;font-weight:800;font-family:inherit;cursor:pointer}
@@ -882,6 +884,7 @@ setTimeout(()=>{
       <div class="cf-timer-label" id="cf-timer-label">Timer</div>
       <div class="cf-timer-sub" id="cf-timer-sub"></div>
       <div id="cf-timer-ex"></div>
+      <div id="cf-timer-vid"></div>
       <div class="cf-timer-progress"><div class="cf-timer-prog-bar" id="cf-timer-prog-bar" style="background:var(--or)"></div></div>
     </div>
     <div class="cf-timer-controls">
@@ -4867,7 +4870,7 @@ function renderCFBlock(c,bkey,blk,bi){
           ${ex.video?`<a href="${ex.video}" target="_blank" style="font-size:.7rem;color:var(--ac2);text-decoration:none;flex-shrink:0">▶</a>`:''}
         </div>
         ${prefill?`<div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;padding-left:4px">
-          <button onclick="launchExTimer('${exTimerId}','${ex.name}','${prefill}')"
+          <button onclick="launchExTimer('${exTimerId}','${ex.name}','${prefill}','${jsAttr(ex.video||'')}')"
             style="background:${cfg.color}22;color:${cfg.color};border:1px solid ${cfg.color}44;border-radius:7px;padding:5px 12px;font-size:.78rem;font-weight:700;font-family:inherit;cursor:pointer;display:flex;align-items:center;gap:5px">
             ⏱ ${prefill}
           </button>
@@ -4877,6 +4880,7 @@ function renderCFBlock(c,bkey,blk,bi){
     }).join('');
     const sectionLabel=sections.length>1?`<div style="font-size:.7rem;color:var(--mu);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Sección ${si+1}</div>`:'';
     const exNamesForTimer=(sec.exercises||[]).map(e=>e.name).filter(Boolean);
+    const exVidsForTimer=(sec.exercises||[]).filter(e=>e.name).map(e=>e.video||'');
     // Circuito/intervalos con ejercicios por repeticiones (no por tiempo): no
     // tiene sentido un timer de "trabajo" — en vez de eso, un check por ronda
     // que arranca el descanso al tildarlo (reusa toggleSerie, mismo mecanismo
@@ -4901,7 +4905,7 @@ function renderCFBlock(c,bkey,blk,bi){
       </div>`;
       timerBtn='';
     } else {
-      timerBtn=`<button onclick='openCFTimerConfig(${JSON.stringify(blk.cftype)},${JSON.stringify(sec.meta||{})},${JSON.stringify(exNamesForTimer)})' style="display:flex;align-items:center;gap:7px;background:${cfg.color}22;color:${cfg.color};border:1px solid ${cfg.color}44;border-radius:9px;padding:9px 16px;font-size:.85rem;font-weight:700;font-family:inherit;cursor:pointer;width:100%;justify-content:center;margin-bottom:${si<sections.length-1&&sec.pause?4:10}px">
+      timerBtn=`<button onclick='openCFTimerConfig(${JSON.stringify(blk.cftype)},${JSON.stringify(sec.meta||{})},${JSON.stringify(exNamesForTimer)},${JSON.stringify(exVidsForTimer)})' style="display:flex;align-items:center;gap:7px;background:${cfg.color}22;color:${cfg.color};border:1px solid ${cfg.color}44;border-radius:9px;padding:9px 16px;font-size:.85rem;font-weight:700;font-family:inherit;cursor:pointer;width:100%;justify-content:center;margin-bottom:${si<sections.length-1&&sec.pause?4:10}px">
         ⏱ Iniciar timer${sections.length>1?' — Sección '+(si+1):' del WOD'}
       </button>`;
     }
@@ -8661,7 +8665,7 @@ function buildWorkoutSteps(day,week,dIdx,cId,progress,refOf){
           }
         }else{
           steps.push({...base,kind:'wod',typeLabel:cfLabel+secLabel,sub:'',bkey,
-            exNames:exs.map(e=>e.name).filter(Boolean),resultKey:`${cId}-${bkey}-cfresult`});
+            exNames:exs.map(e=>e.name).filter(Boolean),exVideos:exs.filter(e=>e.name).map(e=>e.video||''),resultKey:`${cId}-${bkey}-cfresult`});
         }
       });
     }
@@ -8914,7 +8918,7 @@ window.woSelectVariant=async function(i){
 };
 window.woStartCF=function(){
   const st=wo?.steps[wo.idx];if(!st)return;
-  openCFTimerConfig(st.cftype,st.meta,st.exNames);
+  openCFTimerConfig(st.cftype,st.meta,st.exNames,st.exVideos);
 };
 window.woSaveCF=function(){
   const st=wo?.steps[wo.idx];if(!st)return;
@@ -9573,6 +9577,17 @@ function cfTimerUpdateDisplay(){
   if(exs.length>1&&(cfTimer.mode==='interval'||cfTimer.mode==='tabata'))cur=cfTimer.currentExIdx||0;
   else if(exs.length>1&&cfTimer.mode==='emom')cur=((cfTimer.currentRound||1)-1)%exs.length;
   if(exEl)exEl.innerHTML=cur>=0?`${woEsc(exs[cur])}<small>Próximo: ${woEsc(exs[(cur+1)%exs.length])}</small>`:'';
+  // Video del ejercicio en curso (en el descanso, el del próximo); se rearma
+  // solo cuando cambia el link para no reiniciarlo en cada segundo.
+  const vids=cfTimer.videos||[];
+  let vi=cur>=0?cur:(vids.length===1?0:-1);
+  if(cur>=0&&cfTimer.isWork===false&&(cfTimer.mode==='interval'||cfTimer.mode==='tabata'))vi=(cur+1)%vids.length;
+  const vUrl=vi>=0?(vids[vi]||''):'';
+  if(vUrl!==cfTimer._vidUrl){
+    cfTimer._vidUrl=vUrl;
+    const vEl=document.getElementById('cf-timer-vid');
+    if(vEl)vEl.innerHTML=vUrl?vidEmbedHtml(vUrl):'';
+  }
   // Color warnings
   if(cfTimer.mode==='fortime'){
     if(cfTimer.totalSecs>0){
@@ -9770,6 +9785,7 @@ window.cfTimerReset=function(){
 window.cfTimerClose=function(){
   clearInterval(cfTimer.interval);cfTimer.running=false;cfTimer.started=false;
   document.getElementById('cf-timer-bar').style.display='none';
+  document.getElementById('cf-timer-vid').innerHTML='';cfTimer._vidUrl='';
 };
 
 window.cfTimerApplyEdit=function(){
@@ -9801,12 +9817,13 @@ function parseToSecs(str){
   const n=parseFloat(s);return isNaN(n)?0:Math.round(n);
 }
 
-function launchCFTimer(cftype, meta, customLabel, exNames){
+function launchCFTimer(cftype, meta, customLabel, exNames, exVideos){
   const bar=document.getElementById('cf-timer-bar');
   const label=document.getElementById('cf-timer-label');
   clearInterval(cfTimer.interval);cfTimer.running=false;cfTimer.started=false;cfTimer._countingDown=false;
   document.getElementById('cf-timer-startstop').textContent='▶ Iniciar';
   cfTimer.exercises=exNames&&exNames.length?exNames:null;
+  cfTimer.videos=exVideos&&exVideos.some(Boolean)?exVideos:null;
   cfTimer.currentExIdx=0;
 
   if(cftype==='amrap'||cftype==='endurance'||cftype==='chipper'||cftype==='ladder'){
@@ -9864,8 +9881,8 @@ window.launchCFTimer=launchCFTimer;
 // descanso (los campos configurados por el entrenador para ese bloque)
 // antes de arrancar — tanto el entrenador como el alumno pueden ajustarlo.
 let pendingCFTimer=null;
-window.openCFTimerConfig=function(cftype,meta,exNames){
-  pendingCFTimer={cftype,exNames};
+window.openCFTimerConfig=function(cftype,meta,exNames,exVideos){
+  pendingCFTimer={cftype,exNames,exVideos};
   const cfg=CF_TYPES[cftype]||{fields:[]};
   const fieldsToShow=cfg.fields.length?cfg.fields:[{id:'duration',label:'Duración'}];
   document.getElementById('cf-config-fields').innerHTML=fieldsToShow.map(f=>
@@ -9875,18 +9892,19 @@ window.openCFTimerConfig=function(cftype,meta,exNames){
 };
 window.confirmCFTimerConfig=function(){
   if(!pendingCFTimer)return;
-  const{cftype,exNames}=pendingCFTimer;
+  const{cftype,exNames,exVideos}=pendingCFTimer;
   const cfg=CF_TYPES[cftype]||{fields:[]};
   const fieldsToShow=cfg.fields.length?cfg.fields:[{id:'duration',label:'Duración'}];
   const meta={};
   fieldsToShow.forEach(f=>{const el=document.getElementById('cfc-'+f.id);if(el)meta[f.id]=el.value.trim()});
   document.getElementById('cf-config-modal').classList.remove('open');
   pendingCFTimer=null;
-  launchCFTimer(cftype,meta,'',exNames);
+  launchCFTimer(cftype,meta,'',exNames,exVideos);
 };
 
-window.launchExTimer=function(exTimerId, exName, prefillVal){
+window.launchExTimer=function(exTimerId, exName, prefillVal, video){
   const val=(prefillVal||'').trim();
+  cfTimer.videos=video?[video]:null;
   if(!val){toast('Este ejercicio no tiene tiempo definido. Ingresalo en la barra del timer.');
     {const b=document.getElementById('cf-timer-bar');b.style.display='block';setTimerFs(b,true);}
     document.getElementById('cf-timer-edit').focus();return;}
