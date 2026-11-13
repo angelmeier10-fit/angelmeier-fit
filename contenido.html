@@ -774,49 +774,8 @@
     </div>
 
     <h3 style="margin:28px 0 12px;font-size:1.05rem">Mensajes</h3>
-    <div class="grid-2">
-      <div class="card">
-        <strong>Base (cualquier rubro)</strong>
-        <pre class="copy" id="text-cupo-1" style="margin-top:10px">Hola [nombre del negocio]! Vi tu cuenta y me encantó lo que hacés. Te escribo porque armé Cupo, una agenda online para que tus clientes reserven solos desde un link, sin que tengas que coordinar cada turno por mensaje. Tiene recordatorios por WhatsApp, ficha de cada cliente y gift cards. Podés probarla gratis un mes, sin tarjeta: https://angelmeier10-fit.github.io/mano-a-mano-turnos/cupo/
-Cualquier duda te ayudo a configurarla.</pre>
-        <button class="copy-btn" data-copy-target="text-cupo-1">Copiar texto</button>
-      </div>
-      <div class="card">
-        <strong>Masajistas</strong>
-        <pre class="copy" id="text-cupo-2" style="margin-top:10px">Hola [nombre]! Soy masajista también y me cansé de pasar turnos por WhatsApp entre sesión y sesión, así que armé Cupo: tus clientes eligen el horario desde un link y vos solo confirmás. También podés vender combos de sesiones y gift cards. Un mes gratis para probarla: https://angelmeier10-fit.github.io/mano-a-mano-turnos/cupo/</pre>
-        <button class="copy-btn" data-copy-target="text-cupo-2">Copiar texto</button>
-      </div>
-      <div class="card">
-        <strong>Kinesiólogos</strong>
-        <pre class="copy" id="text-cupo-3" style="margin-top:10px">Hola [nombre]! Te comparto Cupo, una agenda online para que tus pacientes reserven solos en los horarios que vos abrís. Guarda anamnesis, notas y el seguimiento de cada sesión en la ficha del paciente, y manda recordatorios por WhatsApp para bajar las ausencias. Un mes gratis: https://angelmeier10-fit.github.io/mano-a-mano-turnos/cupo/</pre>
-        <button class="copy-btn" data-copy-target="text-cupo-3">Copiar texto</button>
-      </div>
-      <div class="card">
-        <strong>Manicuras / uñas</strong>
-        <pre class="copy" id="text-cupo-4" style="margin-top:10px">Hola [nombre]! Qué lindos trabajos. Te escribo por Cupo, una agenda online: pegás el link en tu bio y tus clientas reservan solas el servicio y el horario, sin que tengas que contestar "¿tenés lugar el sábado?" con las manos ocupadas. Un mes gratis, sin tarjeta: https://angelmeier10-fit.github.io/mano-a-mano-turnos/cupo/</pre>
-        <button class="copy-btn" data-copy-target="text-cupo-4">Copiar texto</button>
-      </div>
-      <div class="card">
-        <strong>Peluquerías / barberías</strong>
-        <pre class="copy" id="text-cupo-5" style="margin-top:10px">Hola [nombre]! Te paso Cupo, una agenda de turnos online: tus clientes reservan corte, color o lo que ofrezcas desde un link, a cualquier hora. Les mandás el recordatorio por WhatsApp con un toque y ves lo que cobraste en el mes. Probala un mes gratis: https://angelmeier10-fit.github.io/mano-a-mano-turnos/cupo/</pre>
-        <button class="copy-btn" data-copy-target="text-cupo-5">Copiar texto</button>
-      </div>
-      <div class="card">
-        <strong>Estética (cosmetología, depilación, pestañas)</strong>
-        <pre class="copy" id="text-cupo-6" style="margin-top:10px">Hola [nombre]! Te comparto Cupo: tus clientas reservan solas desde tu link de Instagram, podés vender packs de sesiones y gift cards, y cada clienta tiene su ficha con historial y notas. Un mes gratis para probarla: https://angelmeier10-fit.github.io/mano-a-mano-turnos/cupo/</pre>
-        <button class="copy-btn" data-copy-target="text-cupo-6">Copiar texto</button>
-      </div>
-      <div class="card">
-        <strong>Sin link (si caen en Solicitudes)</strong>
-        <pre class="copy" id="text-cupo-7" style="margin-top:10px">Hola [nombre]! Vi tu cuenta y me encantó lo que hacés. Armé una agenda online para que tus clientes reserven solos, sin coordinar cada turno por mensaje, y la estoy ofreciendo con un mes gratis. ¿Te paso el link para que la veas?</pre>
-        <button class="copy-btn" data-copy-target="text-cupo-7">Copiar texto</button>
-      </div>
-      <div class="card">
-        <strong>Seguimiento (3 o 4 días después)</strong>
-        <pre class="copy" id="text-cupo-8" style="margin-top:10px">Hola [nombre]! Te escribí por la agenda de turnos. Si querés, te la dejo configurada en 10 minutos por videollamada, sin compromiso.</pre>
-        <button class="copy-btn" data-copy-target="text-cupo-8">Copiar texto</button>
-      </div>
-    </div>
+    <div class="grid-2" id="cupo-list"></div>
+    <button type="button" class="copy-btn" id="cupo-add-btn" style="margin-top:12px">+ Agregar mensaje</button>
 
     <div class="card" style="margin-top:20px">
       <h3 style="margin:0 0 8px;font-size:1rem">Para que no te bloqueen</h3>
@@ -902,8 +861,51 @@ function startPanel(){
   let recurrentes = {};
   let links = [];
   let comunidad = [];
-  let editingCom = null;
+  let cupoMensajes = [];
   let seeded = false;
+  const SEED_CUPO_MENSAJES = [
+    {
+      "id": "cupo1",
+      "title": "Base (cualquier rubro)",
+      "text": "Hola [nombre del negocio]! Vi tu cuenta y me encantó lo que hacés. Te escribo porque armé Cupo, una agenda online para que tus clientes reserven solos desde un link, sin que tengas que coordinar cada turno por mensaje. Tiene recordatorios por WhatsApp, ficha de cada cliente y gift cards. Podés probarla gratis un mes, sin tarjeta: https://angelmeier10-fit.github.io/mano-a-mano-turnos/cupo/\nCualquier duda te ayudo a configurarla."
+    },
+    {
+      "id": "cupo2",
+      "title": "Masajistas",
+      "text": "Hola [nombre]! Soy masajista también y me cansé de pasar turnos por WhatsApp entre sesión y sesión, así que armé Cupo: tus clientes eligen el horario desde un link y vos solo confirmás. También podés vender combos de sesiones y gift cards. Un mes gratis para probarla: https://angelmeier10-fit.github.io/mano-a-mano-turnos/cupo/"
+    },
+    {
+      "id": "cupo3",
+      "title": "Kinesiólogos",
+      "text": "Hola [nombre]! Te comparto Cupo, una agenda online para que tus pacientes reserven solos en los horarios que vos abrís. Guarda anamnesis, notas y el seguimiento de cada sesión en la ficha del paciente, y manda recordatorios por WhatsApp para bajar las ausencias. Un mes gratis: https://angelmeier10-fit.github.io/mano-a-mano-turnos/cupo/"
+    },
+    {
+      "id": "cupo4",
+      "title": "Manicuras / uñas",
+      "text": "Hola [nombre]! Qué lindos trabajos. Te escribo por Cupo, una agenda online: pegás el link en tu bio y tus clientas reservan solas el servicio y el horario, sin que tengas que contestar \"¿tenés lugar el sábado?\" con las manos ocupadas. Un mes gratis, sin tarjeta: https://angelmeier10-fit.github.io/mano-a-mano-turnos/cupo/"
+    },
+    {
+      "id": "cupo5",
+      "title": "Peluquerías / barberías",
+      "text": "Hola [nombre]! Te paso Cupo, una agenda de turnos online: tus clientes reservan corte, color o lo que ofrezcas desde un link, a cualquier hora. Les mandás el recordatorio por WhatsApp con un toque y ves lo que cobraste en el mes. Probala un mes gratis: https://angelmeier10-fit.github.io/mano-a-mano-turnos/cupo/"
+    },
+    {
+      "id": "cupo6",
+      "title": "Estética (cosmetología, depilación, pestañas)",
+      "text": "Hola [nombre]! Te comparto Cupo: tus clientas reservan solas desde tu link de Instagram, podés vender packs de sesiones y gift cards, y cada clienta tiene su ficha con historial y notas. Un mes gratis para probarla: https://angelmeier10-fit.github.io/mano-a-mano-turnos/cupo/"
+    },
+    {
+      "id": "cupo7",
+      "title": "Sin link (si caen en Solicitudes)",
+      "text": "Hola [nombre]! Vi tu cuenta y me encantó lo que hacés. Armé una agenda online para que tus clientes reserven solos, sin coordinar cada turno por mensaje, y la estoy ofreciendo con un mes gratis. ¿Te paso el link para que la veas?"
+    },
+    {
+      "id": "cupo8",
+      "title": "Seguimiento (3 o 4 días después)",
+      "text": "Hola [nombre]! Te escribí por la agenda de turnos. Si querés, te la dejo configurada en 10 minutos por videollamada, sin compromiso."
+    }
+  ];
+
   const REC_CAT_IDS = ['entrenando','masajes','cruce','encuesta-masajes','encuesta-entrenamiento','pregunta-abierta','encuesta-multiple','tips','recordatorios'];
 
   const SEED_RECURRENTES = {
@@ -1779,6 +1781,7 @@ Historia 3 (CTA): ¿Recién empezás? Escribime EMPEZAR y te mando la guía grat
   function saveRecurrentes(){ setDoc(stateRef, { recurrentes }, { merge: true }).catch(()=>{}); }
   function saveLinks(){ setDoc(stateRef, { links }, { merge: true }).catch(()=>{}); }
   function saveComunidad(){ setDoc(stateRef, { comunidad }, { merge: true }).catch(()=>{}); }
+  function saveCupoMensajes(){ setDoc(stateRef, { cupoMensajes }, { merge: true }).catch(()=>{}); }
 
   function escapeHtml(s){ return (s||'').replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
 
@@ -2185,78 +2188,92 @@ Quien no respete las reglas podrá ser retirado del grupo.
 ¡Gracias por cuidar este espacio!` },
   ];
 
-  function renderComunidad(){
-    const container = document.getElementById('comunidad-list');
-    // Cada guardado de Firestore vuelve a renderizar: conservar lo que se está escribiendo en el editor abierto.
-    const draftTitle = container.querySelector('[data-com-title]');
-    const draftText = container.querySelector('[data-com-text]');
-    const draft = draftTitle ? { title: draftTitle.value, text: draftText.value } : null;
-    container.innerHTML = comunidad.map(it => {
-      if (it.id === editingCom) {
-        const d = draft || it;
-        return `
+  // Lista de textos con Copiar / Editar / Eliminar / Agregar, guardada en el doc del panel.
+  function editableList({ containerId, addBtnId, prefix, newTitle, get, set, save }){
+    let editing = null;
+    const container = document.getElementById(containerId);
+    function render(){
+      // Cada guardado de Firestore vuelve a renderizar: conservar lo que se está escribiendo en el editor abierto.
+      const draftTitle = container.querySelector('[data-el-title]');
+      const draftText = container.querySelector('[data-el-text]');
+      const draft = draftTitle ? { title: draftTitle.value, text: draftText.value } : null;
+      container.innerHTML = get().map(it => {
+        if (it.id === editing) {
+          const d = draft || it;
+          return `
       <div class="card">
-        <form class="new-topic open" data-com-form="${it.id}" style="margin-top:0">
-          <div><label>Título</label><input type="text" data-com-title value="${escapeHtml(d.title).replace(/"/g, '&quot;')}"></div>
-          <div><label>Texto</label><textarea data-com-text style="min-height:220px">${escapeHtml(d.text)}</textarea></div>
+        <form class="new-topic open" data-el-form="${it.id}" style="margin-top:0">
+          <div><label>Título</label><input type="text" data-el-title value="${escapeHtml(d.title).replace(/"/g, '&quot;')}"></div>
+          <div><label>Texto</label><textarea data-el-text style="min-height:220px">${escapeHtml(d.text)}</textarea></div>
           <div class="actions">
             <button type="submit">Guardar</button>
-            <button type="button" data-com-cancel>Cancelar</button>
+            <button type="button" data-el-cancel>Cancelar</button>
           </div>
         </form>
       </div>`;
-      }
-      return `
+        }
+        return `
       <div class="card">
         <h3 style="margin:0 0 8px;font-size:1rem">${escapeHtml(it.title)}</h3>
-        <pre class="copy" id="text-com-${it.id}">${escapeHtml(it.text)}</pre>
+        <pre class="copy" id="text-${prefix}-${it.id}">${escapeHtml(it.text)}</pre>
         <div style="display:flex;gap:6px;margin-top:6px">
-          <button type="button" class="copy-btn" data-copy-target="text-com-${it.id}">Copiar texto</button>
-          <button type="button" class="copy-btn" data-edit-com="${it.id}">Editar</button>
-          <button type="button" class="copy-btn rec-del-btn" data-del-com="${it.id}">Eliminar</button>
+          <button type="button" class="copy-btn" data-copy-target="text-${prefix}-${it.id}">Copiar texto</button>
+          <button type="button" class="copy-btn" data-el-edit="${it.id}">Editar</button>
+          <button type="button" class="copy-btn rec-del-btn" data-el-del="${it.id}">Eliminar</button>
         </div>
       </div>`;
-    }).join('');
-    container.querySelectorAll('[data-copy-target]').forEach(bindCopyBtn);
-    container.querySelectorAll('[data-edit-com]').forEach(btn => {
-      btn.addEventListener('click', () => { editingCom = btn.dataset.editCom; container.innerHTML = ''; renderComunidad(); });
-    });
-    container.querySelectorAll('[data-del-com]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const item = comunidad.find(i => i.id === btn.dataset.delCom);
-        if (!item || !confirm(`¿Eliminar "${item.title}"?`)) return;
-        comunidad = comunidad.filter(i => i.id !== item.id);
-        saveComunidad();
-        renderComunidad();
+      }).join('');
+      container.querySelectorAll('[data-copy-target]').forEach(bindCopyBtn);
+      container.querySelectorAll('[data-el-edit]').forEach(btn => {
+        btn.addEventListener('click', () => { editing = btn.dataset.elEdit; container.innerHTML = ''; render(); });
       });
-    });
-    const form = container.querySelector('[data-com-form]');
-    if (form) {
-      form.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const item = comunidad.find(i => i.id === form.dataset.comForm);
-        if (item) {
-          item.title = form.querySelector('[data-com-title]').value.trim() || 'Sin título';
-          item.text = form.querySelector('[data-com-text]').value.trim();
-        }
-        editingCom = null;
-        saveComunidad();
-        renderComunidad();
+      container.querySelectorAll('[data-el-del]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const item = get().find(i => i.id === btn.dataset.elDel);
+          if (!item || !confirm(`¿Eliminar "${item.title}"?`)) return;
+          set(get().filter(i => i.id !== item.id));
+          save();
+          render();
+        });
       });
-      form.querySelector('[data-com-cancel]').addEventListener('click', () => {
-        editingCom = null;
-        container.innerHTML = '';
-        renderComunidad();
-      });
+      const form = container.querySelector('[data-el-form]');
+      if (form) {
+        form.addEventListener('submit', (e) => {
+          e.preventDefault();
+          const item = get().find(i => i.id === form.dataset.elForm);
+          if (item) {
+            item.title = form.querySelector('[data-el-title]').value.trim() || 'Sin título';
+            item.text = form.querySelector('[data-el-text]').value.trim();
+          }
+          editing = null;
+          save();
+          render();
+        });
+        form.querySelector('[data-el-cancel]').addEventListener('click', () => {
+          editing = null;
+          container.innerHTML = '';
+          render();
+        });
+      }
     }
+    document.getElementById(addBtnId).addEventListener('click', () => {
+      const id = prefix + Date.now();
+      set([...get(), { id, title: newTitle, text: '' }]);
+      editing = id;
+      container.innerHTML = '';
+      save();
+      render();
+    });
+    return render;
   }
-  document.getElementById('comunidad-add-btn').addEventListener('click', () => {
-    const id = 'com' + Date.now();
-    comunidad.push({ id, title: 'Nuevo texto', text: '' });
-    editingCom = id;
-    document.getElementById('comunidad-list').innerHTML = '';
-    saveComunidad();
-    renderComunidad();
+
+  const renderComunidad = editableList({
+    containerId: 'comunidad-list', addBtnId: 'comunidad-add-btn', prefix: 'com', newTitle: 'Nuevo texto',
+    get: () => comunidad, set: v => { comunidad = v; }, save: saveComunidad,
+  });
+  const renderCupoMensajes = editableList({
+    containerId: 'cupo-list', addBtnId: 'cupo-add-btn', prefix: 'cupom', newTitle: 'Nuevo mensaje',
+    get: () => cupoMensajes, set: v => { cupoMensajes = v; }, save: saveCupoMensajes,
   });
 
   onSnapshot(stateRef, (snap) => {
@@ -2266,6 +2283,7 @@ Quien no respete las reglas podrá ser retirado del grupo.
     recurrentes = data.recurrentes || {};
     links = data.links || [];
     comunidad = data.comunidad || [];
+    cupoMensajes = data.cupoMensajes || [];
     if (!seeded) {
       seeded = true;
       if (!data.topics) {
@@ -2392,12 +2410,17 @@ Quien no respete las reglas podrá ser retirado del grupo.
         comunidad = SEED_COMUNIDAD.map(c => ({ ...c }));
         saveComunidad();
       }
+      if (!data.cupoMensajes) {
+        cupoMensajes = SEED_CUPO_MENSAJES.map(c => ({ ...c }));
+        saveCupoMensajes();
+      }
     }
     applyAllChecks();
     renderTopics();
     REC_CAT_IDS.forEach(renderRecurrenteList);
     renderLinks();
     renderComunidad();
+    renderCupoMensajes();
     updateCounts();
   });
 }
