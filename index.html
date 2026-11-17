@@ -4824,12 +4824,12 @@ function renderGymBlock(c,bkey,blk,bi,isAdminView){
       const lastLogPre=(c.progress[`${c.id}-${ekey}-logs`]||[]).slice(-1)[0];
       const lastWeights=lastLogPre?.weights||prevSess?.weights||[];
       const hasLoad=ex.scheme.some(s=>s.load);
-      inner+=`<div style="overflow-x:auto"><table class="stbl"><thead><tr><th>#</th><th>Reps / Tiempo</th>${hasLoad?'<th>Carga / RPE</th>':''}<th>Peso usado</th><th>✓</th></tr></thead><tbody>`;
+      inner+=`<div style="overflow-x:auto"><table class="stbl"><thead><tr><th>#</th><th>Reps / Tiempo</th>${hasLoad?'<th>Carga / RPE</th>':''}<th>Peso usado</th><th>Reps hechas</th><th>✓</th></tr></thead><tbody>`;
       const isLastEx=(ei===blk.exercises.length-1);
       const restSecs=parseRestToSeconds(blk.rest);
       const pauseSecs=isLastEx?0:parseRestToSeconds((blk.pauses||[])[ei]||'');
       ex.scheme.forEach((s,si)=>{const rk=`${c.id}-${ekey}-${si}`;const done=c.progress[rk]||false;
-        inner+=`<tr id="sr-${rk}" class="${done?'done-row':''}"><td>Serie ${si+1}</td><td>${s.reps||'—'}</td>${hasLoad?`<td>${s.load||'—'}</td>`:''}<td><input type="number" id="sw-${c.id}-${ekey}-${si}" placeholder="${lastWeights[si]?lastWeights[si]+'kg':'kg'}" step="0.5" style="width:62px;font-size:.78rem;padding:4px 6px" onchange="autoSaveGym('${c.id}','${ekey}','${jsAttr(refName)}')"></td><td><button class="ckbtn ${done?'done':''}" onclick="toggleSerie('${c.id}','${ekey}',${si},'${rk}',${isLastEx},${restSecs},${pauseSecs})" title="Marcar serie como hecha" aria-label="Marcar serie como hecha">✓</button></td></tr>`});
+        inner+=`<tr id="sr-${rk}" class="${done?'done-row':''}"><td>Serie ${si+1}</td><td>${s.reps||'—'}</td>${hasLoad?`<td>${s.load||'—'}</td>`:''}<td><input type="number" id="sw-${c.id}-${ekey}-${si}" placeholder="${lastWeights[si]?lastWeights[si]+'kg':'kg'}" step="0.5" style="width:62px;font-size:.78rem;padding:4px 6px" onchange="autoSaveGym('${c.id}','${ekey}','${jsAttr(refName)}')"></td><td><input type="number" id="srp-${c.id}-${ekey}-${si}" placeholder="${s.reps?escHtml(s.reps):'reps'}" inputmode="numeric" style="width:52px;font-size:.78rem;padding:4px 6px" onchange="autoSaveGym('${c.id}','${ekey}','${jsAttr(refName)}')"></td><td><button class="ckbtn ${done?'done':''}" onclick="toggleSerie('${c.id}','${ekey}',${si},'${rk}',${isLastEx},${restSecs},${pauseSecs})" title="Marcar serie como hecha" aria-label="Marcar serie como hecha">✓</button></td></tr>`});
       inner+=`</tbody></table></div>`;
     }
     inner+=vidHtml;
@@ -5035,6 +5035,17 @@ function collectSetWeights(cId,ekey){
   }
   return weights;
 }
+function collectSetReps(cId,ekey){
+  const setCount=parseInt(document.getElementById('pwcount-'+cId+'-'+ekey)?.dataset.setcount)||0;
+  const reps=[];
+  for(let si=0;si<setCount;si++)reps.push(document.getElementById(`srp-${cId}-${ekey}-${si}`)?.value||'');
+  return reps;
+}
+function logLoadTxt(l){
+  const w=l.weights?.some(x=>x)?l.weights.map(x=>x||'—').join(' / ')+' kg':(l.weight?l.weight+' kg':'');
+  const r=l.setReps?.some(x=>x)?l.setReps.map(x=>x||'—').join(' / '):(l.reps||'');
+  return[w,r?(w?'× ':'')+r+' reps':''].filter(Boolean).join(' ');
+}
 function clearSetWeights(cId,ekey,setCount){
   for(let si=0;si<setCount;si++){
     const inp=document.getElementById(`sw-${cId}-${ekey}-${si}`);if(inp)inp.value='';
@@ -5055,6 +5066,11 @@ function mergeTodayLog(logsArr,patch){
     const lastNonEmpty=[...w].reverse().find(x=>x);
     if(lastNonEmpty)last.weight=lastNonEmpty;
   }
+  if(patch.setReps&&patch.setReps.some(r=>r)){
+    const r=last.setReps?last.setReps.slice():[];
+    patch.setReps.forEach((val,i)=>{if(val)r[i]=val});
+    last.setReps=r;
+  }
   if(patch.singleW)last.weight=patch.singleW;
   if(patch.reps)last.reps=patch.reps;
   if(patch.note)last.note=patch.note;
@@ -5066,10 +5082,11 @@ window.autoSaveGym=async function(cId,ekey,exName){
   const singleW=document.getElementById('pw-'+cId+'-'+ekey)?.value||'';
   const r=document.getElementById('pr-'+cId+'-'+ekey)?.value||'';
   const n=(document.getElementById('pn-'+cId+'-'+ekey)?.value||'').trim();
-  if(!weights.some(w=>w)&&!singleW&&!r&&!n)return;
+  const setReps=collectSetReps(cId,ekey);
+  if(!weights.some(w=>w)&&!setReps.some(x=>x)&&!singleW&&!r&&!n)return;
   const key=cId+'-'+ekey+'-logs';
   if(!c.progress[key])c.progress[key]=[];
-  mergeTodayLog(c.progress[key],{weights,singleW,reps:r,note:n});
+  mergeTodayLog(c.progress[key],{weights,setReps,singleW,reps:r,note:n});
   try{
     await updateDoc(doc(db,'clients',cId),{progress:c.progress});
   }catch(e){
@@ -6347,7 +6364,7 @@ async function historialAlumno(a){
       const sn=k.match(/^snote-w(\d+)(?:c\d+)?-(\d+)$/);
       if(sn){v.forEach(n=>{if(n?.date&&n.text)grupo(diaDe(n.date),sn[1],sn[2]).notas.push(n.text);});continue;}
       if(k.endsWith('-logs')){
-        v.forEach(l=>{if(l?.date&&(l.weight||l.weights?.some(x=>x)||l.reps||l.note)){const it=item(diaDe(l.date),k);if(it)it.log=l;}});
+        v.forEach(l=>{if(l?.date&&(l.weight||l.weights?.some(x=>x)||l.setReps?.some(x=>x)||l.reps||l.note)){const it=item(diaDe(l.date),k);if(it)it.log=l;}});
       }else if(k.endsWith('-cfresult')){
         v.forEach(r=>{if(r?.date&&r.result){const it=item(diaDe(r.date),k);if(it)it.resultados.push(r.result);}});
       }
@@ -6401,8 +6418,7 @@ async function abrirHistorialAlumno(i){
   const itemHtml=it=>{
     const l=it.log;const partes=[];
     if(l){
-      const w=l.weights?.some(x=>x)?l.weights.map(x=>x||'—').join(' / ')+' kg':(l.weight?l.weight+' kg':'');
-      const txt=[w,l.reps?(w?'× ':'')+l.reps+' reps':''].filter(Boolean).join(' ');
+      const txt=logLoadTxt(l);
       if(txt)partes.push(escHtml(txt));
     }
     it.resultados.forEach(r=>partes.push(escHtml(r)));
@@ -7513,7 +7529,7 @@ function prevSessionFor(c,weeks,exName){
     const ex=weeks[m[1]]?.[+m[2]]?.blocks?.[+m[3]]?.exercises?.[+m[4]];
     if(!ex||norm(ex.name).trim()!==target)continue;
     (c.progress[k]||[]).forEach(l=>{
-      if(l.date===today||!(l.weight||l.weights?.some(w=>w)||l.reps))return;
+      if(l.date===today||!(l.weight||l.weights?.some(w=>w)||l.setReps?.some(x=>x)||l.reps))return;
       if(!best||compareDates(l.date,best.date)>0)best=l;
     });
   }
@@ -7521,8 +7537,7 @@ function prevSessionFor(c,weeks,exName){
 }
 function prevSessionRowHtml(l){
   if(!l)return'';
-  const wTxt=l.weights?.some(w=>w)?l.weights.map(w=>w||'—').join(' / ')+' kg':(l.weight?l.weight+' kg':'');
-  const txt=[wTxt,l.reps?(wTxt?'× ':'')+l.reps+' reps':''].filter(Boolean).join(' ');
+  const txt=logLoadTxt(l);
   return`<div style="font-size:.76rem;color:var(--mu);font-weight:600;margin:2px 0 4px">↩ La vez anterior (${l.date.split('/').slice(0,2).join('/')}): <span style="color:var(--tx)">${txt}</span></div>`;
 }
 
@@ -8142,11 +8157,12 @@ window.autoSaveGym=async function(cId,ekey,exName){
     const singleW=document.getElementById('pw-'+cId+'-'+ekey)?.value||'';
     const r=document.getElementById('pr-'+cId+'-'+ekey)?.value||'';
     const n=(document.getElementById('pn-'+cId+'-'+ekey)?.value||'').trim();
-    if(!weights.some(w=>w)&&!singleW&&!r&&!n)return;
+    const setReps=collectSetReps(cId,ekey);
+    if(!weights.some(w=>w)&&!setReps.some(x=>x)&&!singleW&&!r&&!n)return;
     if(!alumnoState.sub.progress)alumnoState.sub.progress={};
     const key=cId+'-'+ekey+'-logs';
     if(!alumnoState.sub.progress[key])alumnoState.sub.progress[key]=[];
-    mergeTodayLog(alumnoState.sub.progress[key],{weights,singleW,reps:r,note:n});
+    mergeTodayLog(alumnoState.sub.progress[key],{weights,setReps,singleW,reps:r,note:n});
     try{
       await persistAlumnoProgress();
     }catch(e){
@@ -8166,11 +8182,12 @@ window.autoSaveGym=async function(cId,ekey,exName){
     const singleW=document.getElementById('pw-'+cId+'-'+ekey)?.value||'';
     const r=document.getElementById('pr-'+cId+'-'+ekey)?.value||'';
     const n=(document.getElementById('pn-'+cId+'-'+ekey)?.value||'').trim();
-    if(!weights.some(w=>w)&&!singleW&&!r&&!n)return;
+    const setReps=collectSetReps(cId,ekey);
+    if(!weights.some(w=>w)&&!setReps.some(x=>x)&&!singleW&&!r&&!n)return;
     if(!member.progress)member.progress={};
     const key=cId+'-'+ekey+'-logs';
     if(!member.progress[key])member.progress[key]=[];
-    mergeTodayLog(member.progress[key],{weights,singleW,reps:r,note:n});
+    mergeTodayLog(member.progress[key],{weights,setReps,singleW,reps:r,note:n});
     try{
       await setDoc(doc(db,'planes',planId,'progreso',memberId),{progress:member.progress});
     }catch(e){
@@ -8625,7 +8642,7 @@ function buildWorkoutSteps(day,week,dIdx,cId,progress,refOf){
             sub:`Serie ${si+1} de ${(ex.scheme||[]).length}`,
             rk:`${cId}-${ekey}-${si}`,ekey,si,isLast,rest:restSecs,
             pause:isLast?0:parseRestToSeconds((blk.pauses||[])[ei]||''),
-            weightId:`sw-${cId}-${ekey}-${si}`,refName:refOf(act),
+            weightId:`sw-${cId}-${ekey}-${si}`,repsId:`srp-${cId}-${ekey}-${si}`,refName:refOf(act),
             vk:`${cId}-${ekey}-variant`,vi,variants:ex.variants?.length?[ex.name||'',...ex.variants.map(v=>v.name||'')]:null});
         });
       }
@@ -8921,9 +8938,9 @@ window.woUndo=async function(){
   await p;
   woRender();
 };
-window.woSaveWeight=function(i,val){
-  const st=wo?.steps[i];if(!st?.weightId)return;
-  const inp=document.getElementById(st.weightId);if(!inp)return;
+window.woSaveWeight=function(i,val,field='weightId'){
+  const st=wo?.steps[i];if(!st?.[field])return;
+  const inp=document.getElementById(st[field]);if(!inp)return;
   inp.value=val;
   autoSaveGym(wo.cId,st.ekey,st.refName);
 };
@@ -8971,6 +8988,8 @@ function woRender(){
     if(st.kind==='set'){
       const curW=st.weightId?(document.getElementById(st.weightId)?.value||''):'';
       const ph=st.weightId?(document.getElementById(st.weightId)?.placeholder||'kg'):'';
+      const curR=st.repsId?(document.getElementById(st.repsId)?.value||''):'';
+      const phR=st.repsId?(document.getElementById(st.repsId)?.placeholder||'reps'):'';
       body=`<div class="wo-sub">${woEsc(st.sub)}</div>
         <div class="wo-name">${woEsc(st.name)}</div>
         <div class="wo-chips">${st.reps?`<span class="wo-chip">${woEsc(st.reps)}</span>`:''}${st.load?`<span class="wo-chip wo-chip2">${woEsc(st.load)}</span>`:''}</div>
@@ -8980,6 +8999,7 @@ function woRender(){
         ${woNotesHtml(st.name,st.obs,st.refName)}
         ${woTmHtml(woTimeSecs(st.reps),'set|'+st.bi+'|'+st.name)}
         ${st.weightId?`<label class="wo-w">Peso usado <input type="number" step="0.5" inputmode="decimal" value="${woEsc(curW)}" placeholder="${woEsc(ph)}" onchange="woSaveWeight(${wo.idx},this.value)"> kg</label>`:''}
+        ${st.repsId?`<label class="wo-w">Reps hechas <input type="number" inputmode="numeric" value="${woEsc(curR)}" placeholder="${woEsc(phR)}" onchange="woSaveWeight(${wo.idx},this.value,'repsId')"></label>`:''}
         ${vid}`;
     }else if(st.kind==='wod'){
       const cfg=CF_TYPES[st.cftype]||{label:st.cftype||'WOD',icon:'🏋️',fields:[]};
