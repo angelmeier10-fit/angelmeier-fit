@@ -8609,6 +8609,13 @@ function buildWorkoutSteps(day,week,dIdx,cId,progress,refOf){
   refOf=refOf||(ex=>ex.refEx||ex.name);
   const steps=[];
   const nBlocks=(day?.blocks||[]).length;
+  // Pantalla "Preparar bloque" antes de los bloques de varios ejercicios, para
+  // armar el lugar con todo lo que se va a usar.
+  const schemeReps=sc=>{const r=sc.map(s=>s.reps||'');return r.every(x=>x===r[0])?(r[0]?`${sc.length}×${r[0]}`:`${sc.length} series`):r.join('-')};
+  const schemeLoad=sc=>[...new Set(sc.map(s=>s.load||'').filter(Boolean))].join(' / ');
+  const pushIntro=(bi,block,typeLabel,items,info)=>{
+    if(items.length>1)steps.push({kind:'intro',bi,block,typeLabel,items,info:info.filter(Boolean).join(' · ')});
+  };
   (day?.blocks||[]).forEach((blk,bi)=>{
     const bkey=`w${week}-${dIdx}-${bi}`;
     const blockNum=`Bloque ${bi+1} de ${nBlocks}`;
@@ -8619,6 +8626,8 @@ function buildWorkoutSteps(day,week,dIdx,cId,progress,refOf){
       const exs=blk.exercises||[];
       const nR=Math.max(1,parseInt(blk.series)||1);
       const maxSets=Math.max(0,...exs.map(e=>(e.scheme||[]).length));
+      pushIntro(bi,blockNum,'Entrada en calor',exs.filter(e=>e.scheme?.length).map(ex=>({name:ex.name||'',reps:schemeReps(ex.scheme),load:schemeLoad(ex.scheme),video:ex.video||''})),
+        [nR>1&&`${nR} rondas`]);
       for(let r=0;r<nR;r++)for(let si=0;si<maxSets;si++)exs.forEach((ex,ei)=>{
         const s=(ex.scheme||[])[si];if(!s)return;
         const ekey=`${bkey}-wu${ei}`;const rk=`${cId}-${ekey}-${si}`;const lastR=r===nR-1;
@@ -8631,6 +8640,12 @@ function buildWorkoutSteps(day,week,dIdx,cId,progress,refOf){
       const typeLabel=blk.type==='super'?'Superserie':blk.type==='tri'?'Triserie':blk.type==='giant'?'Serie gigante':'';
       const maxSets=Math.max(0,...exs.map(e=>(e.scheme||[]).length));
       const restSecs=parseRestToSeconds(blk.rest);
+      pushIntro(bi,blockNum,typeLabel,exs.map((ex,ei)=>{
+        if(!ex.scheme?.length)return null;
+        const vi=progress[`${cId}-${bkey}-e${ei}-variant`]||0;
+        const act=(vi>0&&ex.variants?.[vi-1])?ex.variants[vi-1]:ex;
+        return{name:act.name||'',reps:schemeReps(ex.scheme),load:schemeLoad(ex.scheme),video:act.video||''};
+      }).filter(Boolean),[`${maxSets} series`,blk.rest&&`descanso ${blk.rest}`]);
       for(let si=0;si<maxSets;si++){
         exs.forEach((ex,ei)=>{
           const s=(ex.scheme||[])[si];if(!s)return;
@@ -8652,6 +8667,7 @@ function buildWorkoutSteps(day,week,dIdx,cId,progress,refOf){
       const restSecs=parseRestToSeconds(blk.rest);
       const typeLabel=blk.title||'Actividad funcional';
       if(n>0&&items.length){
+        pushIntro(bi,blockNum,typeLabel,items.map(it=>({...it,reps:it.reps||blk.reps||''})),[`${n} rondas`,blk.rest&&`descanso ${blk.rest}`]);
         // Un paso por ejercicio, cada uno con su tilde (-x{ejercicio}); el último
         // de la ronda usa la key de la ronda (tilde de la vista normal) y arranca el descanso.
         for(let ri=0;ri<n;ri++)items.forEach((it,ii)=>{
@@ -8682,6 +8698,8 @@ function buildWorkoutSteps(day,week,dIdx,cId,progress,refOf){
           const n=parseInt(sec.meta?.rounds)||(isTab?8:3);
           const work=sec.meta?.work||(isTab?'20s':'');
           const restSecs=parseToSecs(sec.meta?.rest||(isTab?'10s':blk.cftype==='circuit'?'60s':'20s'));
+          pushIntro(bi,blockNum,cfLabel+secLabel,named.map(ex=>({name:ex.name,reps:ex.reps||work,video:ex.video||''})),
+            [`${n} rondas`,work&&`trabajo ${work}`,sec.meta?.rest&&`descanso ${sec.meta.rest}`]);
           for(let ri=0;ri<n;ri++)named.forEach((ex,ii)=>{
             const rk=`${cId}-${bkey}-s${si}-cfround${ri}`;const lastEx=ii===named.length-1;
             const reps=ex.reps||work;
@@ -8707,6 +8725,7 @@ function buildWorkoutSteps(day,week,dIdx,cId,progress,refOf){
 function woStepLabel(st){
   if(!st)return'';
   if(st.kind==='set')return[st.name,st.reps].filter(Boolean).join(' · ');
+  if(st.kind==='intro')return`nuevo bloque — ${st.typeLabel||'Bloque'} (${st.items.length} ejercicios)`;
   return st.typeLabel||'';
 }
 const woEsc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -8756,7 +8775,9 @@ window.startWorkout=function(cId,bi){
   if(!steps.length){toast('Este día no tiene ejercicios');return}
   wo={cId,steps,dIdx:ctx.dIdx,week:ctx.week,containerId:ctx.containerId,pk:ctx.pk,idx:0,waiting:false};
   const inBlk=st=>bi==null||st.bi===bi;
-  const first=steps.findIndex(st=>inBlk(st)&&st.rk&&!woIsDone(st));
+  let first=steps.findIndex(st=>inBlk(st)&&st.rk&&!woIsDone(st));
+  // Si el bloque todavía no se empezó, arranca por su pantalla de preparación.
+  if(first>0&&steps[first-1].kind==='intro'&&steps[first-1].bi===steps[first].bi)first--;
   wo.idx=first>=0?first:Math.max(0,steps.findIndex(inBlk));
   woOpen();
 };
@@ -9001,6 +9022,11 @@ function woRender(){
         ${st.weightId?`<label class="wo-w">Peso usado <input type="number" step="0.5" inputmode="decimal" value="${woEsc(curW)}" placeholder="${woEsc(ph)}" onchange="woSaveWeight(${wo.idx},this.value)"> kg</label>`:''}
         ${st.repsId?`<label class="wo-w">Reps hechas <input type="number" inputmode="numeric" value="${woEsc(curR)}" placeholder="${woEsc(phR)}" onchange="woSaveWeight(${wo.idx},this.value,'repsId')"></label>`:''}
         ${vid}`;
+    }else if(st.kind==='intro'){
+      body=`<div class="wo-sub">Prepará el lugar</div>
+        <div class="wo-name">${woEsc(st.typeLabel||'Bloque')}</div>
+        ${st.info?`<div class="wo-chips"><span class="wo-chip">${woEsc(st.info)}</span></div>`:''}
+        <div class="wo-items">${st.items.map((it,i)=>`<div class="wo-item"><span class="wo-item-reps">${i+1}.</span><span class="wo-item-name">${woEsc(it.name)}${it.reps?` · ${woEsc(it.reps)}`:''}${it.load?` · ${woEsc(it.load)}`:''}</span></div>${it.video?vidBtnHtml(it.video,5):''}`).join('')}</div>`;
     }else if(st.kind==='wod'){
       const cfg=CF_TYPES[st.cftype]||{label:st.cftype||'WOD',icon:'🏋️',fields:[]};
       const chips=(cfg.fields||[]).map(f=>st.meta?.[f.id]?`<span class="wo-chip">${woEsc(f.label.replace(/\s*\(ej:[^)]*\)/i,''))}: ${woEsc(st.meta[f.id])}</span>`:'').join('');
@@ -9013,11 +9039,11 @@ function woRender(){
     }else{
       body=`${st.desc?`<div class="wo-desc wo-desc-lg">${woEsc(st.desc)}</div>`:''}${st.typeLabel!=='Nota'?woTmHtml(0,'info|'+st.bi):''}<div class="wo-items">${itemsHtml}</div>`;
     }
-    if(st.typeLabel&&st.kind!=='wod'&&st.typeLabel!=='Nota')body=`<div class="wo-type">${woEsc(st.typeLabel)}</div>`+body;
+    if(st.typeLabel&&st.kind!=='wod'&&st.kind!=='intro'&&st.typeLabel!=='Nota')body=`<div class="wo-type">${woEsc(st.typeLabel)}</div>`+body;
     if(done)body+=`<button class="wo-btn wo-sec wo-small" onclick="woUndo()">↩ Deshacer</button>`;
     const mainBtn=wo.waiting?`<button class="wo-btn wo-main" disabled>⏱ Descansando...</button>`
       :st.rk?`<button class="wo-btn wo-main${done?' wo-done':''}" onclick="woDone()">${done?'✓ Hecho — seguir':'✓ Hecho'}</button>`
-      :`<button class="wo-btn wo-main" onclick="woGo(${wo.idx+1})">Siguiente ▶</button>`;
+      :`<button class="wo-btn wo-main" onclick="woGo(${wo.idx+1})">${st.kind==='intro'?'▶ Empezar bloque':'Siguiente ▶'}</button>`;
     actions=`<button class="wo-btn wo-sec" onclick="woGo(${wo.idx-1})" ${wo.idx===0?'disabled':''} aria-label="Anterior">◀</button>${mainBtn}<button class="wo-btn wo-sec" onclick="woGo(${wo.idx+1})" aria-label="Siguiente">▶</button>`;
   }
   const next=st?wo.steps[wo.idx+1]:null;
