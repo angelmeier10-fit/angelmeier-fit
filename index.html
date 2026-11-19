@@ -372,7 +372,9 @@ body.bigtxt .wo-aa{background:var(--ac2);color:#fff;border-color:var(--ac2)}
 #wo-ov.open{display:flex}
 .wo-top{display:flex;align-items:center;gap:12px;max-width:640px;width:100%;margin:0 auto}
 .wo-top-txt{flex:1;min-width:0}
-.wo-block{font-size:.9rem;font-weight:700;color:var(--mu);margin-bottom:6px}
+.wo-block{font-size:.9rem;font-weight:700;color:var(--mu);margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.wo-clk{background:none;border:1px solid var(--bd);border-radius:8px;padding:2px 8px;font-size:.8rem;font-weight:700;font-family:inherit;color:var(--mu);font-variant-numeric:tabular-nums;cursor:pointer;flex-shrink:0}
+.wo-clk.off{color:var(--yw);border-color:var(--yw)}
 .wo-prog{background:var(--s2);border-radius:99px;height:8px;overflow:hidden}
 .wo-prog>div{height:100%;background:var(--gr);border-radius:99px;transition:width .3s}
 .wo-min{background:var(--s2);color:var(--tx);border:1px solid var(--bd);border-radius:10px;padding:10px 14px;font-size:.9rem;font-weight:700;font-family:inherit;cursor:pointer;flex-shrink:0}
@@ -6363,6 +6365,8 @@ async function historialAlumno(a){
       if(k==='_tildes'){v.forEach(t=>{const it=t?.date&&item(diaDe(t.date),t.k);if(it)it.tildes++;});continue;}
       const sn=k.match(/^snote-w(\d+)(?:c\d+)?-(\d+)$/);
       if(sn){v.forEach(n=>{if(n?.date&&n.text)grupo(diaDe(n.date),sn[1],sn[2]).notas.push(n.text);});continue;}
+      const wt=k.match(/^wotime-w(\d+)(?:c\d+)?-(\d+)$/);
+      if(wt){v.forEach(e=>{if(e?.date&&e.secs)grupo(diaDe(e.date),wt[1],wt[2]).secs=e.secs;});continue;}
       if(k.endsWith('-logs')){
         v.forEach(l=>{if(l?.date&&(l.weight||l.weights?.some(x=>x)||l.setReps?.some(x=>x)||l.reps||l.note)){const it=item(diaDe(l.date),k);if(it)it.log=l;}});
       }else if(k.endsWith('-cfresult')){
@@ -6434,7 +6438,7 @@ async function abrirHistorialAlumno(i){
     m.dias.push(d);
   });
   const gruposHtml=d=>[...d.grupos.values()].map(g=>`<div style="background:var(--s2);border-radius:9px;padding:8px 11px;margin-top:8px">
-        <div style="font-size:.74rem;color:var(--mu);font-weight:700;margin-bottom:2px">${escHtml(g.titulo)}</div>
+        <div style="font-size:.74rem;color:var(--mu);font-weight:700;margin-bottom:2px">${escHtml(g.titulo)}${g.secs?` · ⏱ ${g.secs<3600?Math.round(g.secs/60)+' min':Math.floor(g.secs/3600)+' h '+Math.round(g.secs%3600/60)+' min'}`:''}
         ${[...g.items.values()].sort((x,y)=>x.orden-y.orden).map(itemHtml).join('')}
         ${g.notas.map(n=>`<div style="font-size:.82rem;margin-top:4px;white-space:pre-wrap">💬 ${escHtml(n)}</div>`).join('')}
       </div>`).join('');
@@ -8773,7 +8777,11 @@ window.startWorkout=function(cId,bi){
   const ctx=woCtx[cId];if(!ctx)return;
   const steps=buildWorkoutSteps(ctx.day,ctx.week,ctx.dIdx,cId,ctx.progress,woRefOf);
   if(!steps.length){toast('Este día no tiene ejercicios');return}
-  wo={cId,steps,dIdx:ctx.dIdx,week:ctx.week,containerId:ctx.containerId,pk:ctx.pk,idx:0,waiting:false};
+  // Volver a empezar el mismo día (o un bloque suelto) mantiene el reloj total.
+  const clk=(wo&&wo.cId===cId&&wo.dIdx===ctx.dIdx&&wo.week===ctx.week)?wo.clk:{acc:0,startAt:Date.now()};
+  if(clk.done){clk.done=false;if(!clk.startAt)clk.startAt=Date.now();}
+  wo={cId,steps,dIdx:ctx.dIdx,week:ctx.week,containerId:ctx.containerId,pk:ctx.pk,idx:0,waiting:false,clk};
+  woClkRun();
   const inBlk=st=>bi==null||st.bi===bi;
   let first=steps.findIndex(st=>inBlk(st)&&st.rk&&!woIsDone(st));
   // Si el bloque todavía no se empezó, arranca por su pantalla de preparación.
@@ -8808,7 +8816,48 @@ window.woResume=function(){
   if(!wo||!document.getElementById(wo.containerId)){woEnd();return}
   woOpen();
 };
+// Reloj del entrenamiento completo: corre desde "Empezar" hasta la pantalla
+// final (también minimizado y en los descansos); solo lo frena la pausa.
+let woClkIv=null;
+function woClkSecs(){const c=wo?.clk;return c?c.acc+(c.startAt?Math.floor((Date.now()-c.startAt)/1000):0):0}
+function woClkFmt(t){const h=Math.floor(t/3600);return h?`${h}:${String(Math.floor(t%3600/60)).padStart(2,'0')}:${String(t%60).padStart(2,'0')}`:woFmt(t)}
+function woClkPaint(){
+  const b=document.getElementById('wo-clk');if(!b||!wo)return;
+  const run=!!wo.clk.startAt;
+  b.textContent=(run?'⏱ ':'⏸ ')+woClkFmt(woClkSecs());
+  b.classList.toggle('off',!run&&!wo.clk.done);
+}
+function woClkRun(){clearInterval(woClkIv);woClkIv=setInterval(woClkPaint,1000);}
+function woClkStop(){const c=wo?.clk;if(c?.startAt){c.acc=woClkSecs();c.startAt=0;}}
+window.woClkToggle=function(){
+  const c=wo?.clk;if(!c||c.done)return;
+  if(c.startAt)woClkStop();else c.startAt=Date.now();
+  woClkPaint();
+};
+// Guarda el tiempo total del día en progress (wotime-w{semana}-{día}); si ese
+// día ya tenía un tiempo de hoy, lo reemplaza.
+async function woSaveTime(){
+  if(!wo)return;
+  const{cId,week,dIdx}=wo;const secs=woClkSecs();
+  if(secs<60)return;
+  let prog,save;
+  if(cId.startsWith('alu-')){
+    if(!alumnoState.sub.progress)alumnoState.sub.progress={};
+    prog=alumnoState.sub.progress;save=persistAlumnoProgress;
+  }else if(cId.startsWith('grp::')){
+    const[,planId,memberId]=cId.split('::');
+    const member=resolveGroupMember(planes.find(p=>p.id===planId)||{},memberId);if(!member)return;
+    if(!member.progress)member.progress={};
+    prog=member.progress;save=()=>setDoc(doc(db,'planes',planId,'progreso',memberId),{progress:member.progress});
+  }else return;
+  const key=`wotime-w${week}-${dIdx}`;const hoy=todayStr();
+  const prev=prog[key];
+  prog[key]=(prev||[]).filter(e=>e.date!==hoy).concat({date:hoy,secs});
+  try{await save();}
+  catch(e){if(prev)prog[key]=prev;else delete prog[key];toast('⚠️ No se pudo guardar el tiempo');}
+}
 function woEnd(){
+  clearInterval(woClkIv);woClkIv=null;
   wo=null;
   woTmReset();woTm.custom={};
   document.getElementById('wo-ov')?.classList.remove('open');
@@ -9000,7 +9049,8 @@ function woRender(){
   const pct=Math.round((wo.idx/total)*100);
   let body='',actions='';
   if(!st){
-    body=`<div class="wo-end"><div class="wo-end-ic">🎉</div><div class="wo-name">¡Entrenamiento terminado!</div><p class="wo-desc">Muy bien. Si querés, dejá una nota de cómo te sentiste.</p></div>`;
+    if(!wo.clk.done){woClkStop();wo.clk.done=true;woSaveTime();}
+    body=`<div class="wo-end"><div class="wo-end-ic">🎉</div><div class="wo-name">¡Entrenamiento terminado!</div><div class="wo-chips"><span class="wo-chip">⏱ ${woClkFmt(woClkSecs())}</span></div><p class="wo-desc">Muy bien. Si querés, dejá una nota de cómo te sentiste.</p></div>`;
     actions=`<button class="wo-btn wo-sec" onclick="woGo(${total-1})">◀</button><button class="wo-btn wo-main" onclick="woClose()">Cerrar</button>`;
   }else{
     const done=st.rk?woIsDone(st):false;
@@ -9048,14 +9098,14 @@ function woRender(){
   }
   const next=st?wo.steps[wo.idx+1]:null;
   ov.innerHTML=`<div class="wo-top">
-      <div class="wo-top-txt"><div class="wo-block">${st?woEsc(st.block):'Fin'}</div>
+      <div class="wo-top-txt"><div class="wo-block"><span>${st?woEsc(st.block):'Fin'}</span><button id="wo-clk" class="wo-clk" onclick="woClkToggle()" aria-label="Pausar o seguir el tiempo total"></button></div>
       <div class="wo-prog"><div style="width:${pct}%"></div></div></div>
       <button class="wo-min" onclick="woMinimize()">▾ Minimizar</button>
     </div>
     <div class="wo-body">${body}</div>
     ${next?`<div class="wo-next">Próximo: ${woEsc(woStepLabel(next))}</div>`:''}
     <div class="wo-actions">${actions}</div>`;
-  woTmPaint();
+  woTmPaint();woClkPaint();
 }
 window.toggleBigText=function(){
   const on=document.body.classList.toggle('bigtxt');
