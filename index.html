@@ -6366,7 +6366,7 @@ async function historialAlumno(a){
       const sn=k.match(/^snote-w(\d+)(?:c\d+)?-(\d+)$/);
       if(sn){v.forEach(n=>{if(n?.date&&n.text)grupo(diaDe(n.date),sn[1],sn[2]).notas.push(n.text);});continue;}
       const wt=k.match(/^wotime-w(\d+)(?:c\d+)?-(\d+)$/);
-      if(wt){v.forEach(e=>{if(e?.date&&e.secs)grupo(diaDe(e.date),wt[1],wt[2]).secs=e.secs;});continue;}
+      if(wt){v.forEach(e=>{if(e?.date&&e.secs)(grupo(diaDe(e.date),wt[1],wt[2]).tiempos||=[]).push(e.secs);});continue;}
       if(k.endsWith('-logs')){
         v.forEach(l=>{if(l?.date&&(l.weight||l.weights?.some(x=>x)||l.setReps?.some(x=>x)||l.reps||l.note)){const it=item(diaDe(l.date),k);if(it)it.log=l;}});
       }else if(k.endsWith('-cfresult')){
@@ -6437,8 +6437,9 @@ async function abrirHistorialAlumno(i){
     if(!m||m.key!==mk)meses.push(m={key:mk,titulo:d.fecha?d.fecha.toLocaleDateString('es-AR',{month:'long',year:'numeric'}).replace(/^./,c=>c.toUpperCase()):'Sin fecha',dias:[]});
     m.dias.push(d);
   });
+  const minTxt=s=>s<3600?Math.round(s/60)+' min':Math.floor(s/3600)+' h '+Math.round(s%3600/60)+' min';
   const gruposHtml=d=>[...d.grupos.values()].map(g=>`<div style="background:var(--s2);border-radius:9px;padding:8px 11px;margin-top:8px">
-        <div style="font-size:.74rem;color:var(--mu);font-weight:700;margin-bottom:2px">${escHtml(g.titulo)}${g.secs?` · ⏱ ${g.secs<3600?Math.round(g.secs/60)+' min':Math.floor(g.secs/3600)+' h '+Math.round(g.secs%3600/60)+' min'}`:''}
+        <div style="font-size:.74rem;color:var(--mu);font-weight:700;margin-bottom:2px">${escHtml(g.titulo)}${g.tiempos?` · ⏱ ${minTxt(g.tiempos.reduce((a,b)=>a+b,0))}${g.tiempos.length>1?` (${g.tiempos.length} sesiones: ${g.tiempos.map(s=>Math.round(s/60)).join(' + ')})`:''}`:''}
         ${[...g.items.values()].sort((x,y)=>x.orden-y.orden).map(itemHtml).join('')}
         ${g.notas.map(n=>`<div style="font-size:.82rem;margin-top:4px;white-space:pre-wrap">💬 ${escHtml(n)}</div>`).join('')}
       </div>`).join('');
@@ -8744,6 +8745,8 @@ async function woKeepAwake(on){
 }
 document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='visible'&&wo&&document.getElementById('wo-ov')?.classList.contains('open'))woKeepAwake(true);
+  // Si cierra la app o cambia de app a mitad del entrenamiento, queda guardado el tiempo hasta ahí.
+  if(document.visibilityState==='hidden'&&wo&&!wo.clk.done)woSaveTime();
 });
 function woRegister(cId,day,week,dIdx,progress,containerId,pk){
   woCtx[cId]={day,week,dIdx,progress,containerId,pk};
@@ -8778,7 +8781,7 @@ window.startWorkout=function(cId,bi){
   const steps=buildWorkoutSteps(ctx.day,ctx.week,ctx.dIdx,cId,ctx.progress,woRefOf);
   if(!steps.length){toast('Este día no tiene ejercicios');return}
   // Volver a empezar el mismo día (o un bloque suelto) mantiene el reloj total.
-  const clk=(wo&&wo.cId===cId&&wo.dIdx===ctx.dIdx&&wo.week===ctx.week)?wo.clk:{acc:0,startAt:Date.now()};
+  const clk=(wo&&wo.cId===cId&&wo.dIdx===ctx.dIdx&&wo.week===ctx.week)?wo.clk:{acc:0,startAt:Date.now(),id:Date.now()};
   if(clk.done){clk.done=false;if(!clk.startAt)clk.startAt=Date.now();}
   wo={cId,steps,dIdx:ctx.dIdx,week:ctx.week,containerId:ctx.containerId,pk:ctx.pk,idx:0,waiting:false,clk};
   woClkRun();
@@ -8807,6 +8810,7 @@ function woOpen(){
   woRender();
 }
 window.woMinimize=function(){
+  if(!wo?.clk.done)woSaveTime();
   document.getElementById('wo-ov').classList.remove('open');
   document.body.style.overflow='';
   woSyncResume();
@@ -8834,8 +8838,8 @@ window.woClkToggle=function(){
   if(c.startAt)woClkStop();else c.startAt=Date.now();
   woClkPaint();
 };
-// Guarda el tiempo total del día en progress (wotime-w{semana}-{día}); si ese
-// día ya tenía un tiempo de hoy, lo reemplaza.
+// Guarda el tiempo en progress (wotime-w{semana}-{día}), una entrada por sesión:
+// cada guardado de la misma sesión (mismo id) pisa la suya; una sesión nueva suma otra.
 async function woSaveTime(){
   if(!wo)return;
   const{cId,week,dIdx}=wo;const secs=woClkSecs();
@@ -8850,14 +8854,15 @@ async function woSaveTime(){
     if(!member.progress)member.progress={};
     prog=member.progress;save=()=>setDoc(doc(db,'planes',planId,'progreso',memberId),{progress:member.progress});
   }else return;
-  const key=`wotime-w${week}-${dIdx}`;const hoy=todayStr();
+  const key=`wotime-w${week}-${dIdx}`;const id=wo.clk.id;
   const prev=prog[key];
-  prog[key]=(prev||[]).filter(e=>e.date!==hoy).concat({date:hoy,secs});
+  prog[key]=(prev||[]).filter(e=>e.id!==id).concat({date:todayStr(),secs,id});
   try{await save();}
   catch(e){if(prev)prog[key]=prev;else delete prog[key];toast('⚠️ No se pudo guardar el tiempo');}
 }
 function woEnd(){
   clearInterval(woClkIv);woClkIv=null;
+  if(wo&&!wo.clk.done)woSaveTime();
   wo=null;
   woTmReset();woTm.custom={};
   document.getElementById('wo-ov')?.classList.remove('open');

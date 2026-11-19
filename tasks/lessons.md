@@ -43,3 +43,7 @@
 ## 2026-11-12 — Pausa entre secciones ignorada en el modo entrenamiento
 - **Error:** al pasar circuito/intervalos/tabata a pasos por ejercicio no tuve en cuenta `sec.pause` (pausa entre secciones de un WOD); al terminar la sección 1 no arrancaba la pausa.
 - **Regla:** al convertir un bloque CF en pasos, recorrer todos los campos de la sección y del bloque (`meta`, `pause`, `notes`) y probar con un bloque de varias secciones.
+
+## 2026-11-18 — Implementé de más al confirmar un comportamiento que ya existía
+- **Error:** el usuario pidió que el reloj siguiera corriendo al bloquear el celular o cambiar de app; ya funcionaba así, pero además agregué persistencia en localStorage para cuando el sistema cierra la página. No lo había pedido y lo hizo revertir.
+- **Regla:** si lo que pide el usuario ya funciona, confirmarlo y explicar el caso borde aparte como pregunta. No implementar el caso borde sin que lo pida.
