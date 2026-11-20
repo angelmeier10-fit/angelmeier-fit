@@ -6081,7 +6081,7 @@ async function renderProgramaUnificadoHtml(prog,cats,hasSubscription){
     const mpLink=c.mpLink?`<a href="${c.mpLink}" target="_blank" style="font-size:.72rem;color:#009EE3;text-decoration:none">💳 Link MP</a>`:'';
     const weekNumsC=hasWeeks?Object.keys(c.weeks).map(Number).sort((a,b)=>a-b):[];
     const mwC=macroWeekInfo(c,wk);
-    const weekBadge=hasWeeks?`<span class="badge bgr2">Semana ${mwC?mwC.currentWeek:wk} de ${mwC?mwC.totalWeeks:weekNumsC.length}</span>`:'';
+    const weekBadge=hasWeeks?`<span class="badge bgr2">Semana ${mwC?mwC.currentWeek:wk} de ${mwC?mwC.totalWeeks:weekNumsC.length}</span>${planEndBadge(clientWeekTimeline(c).slice(-1)[0],c.repeatLast)}`:'';
     const weekSelectHtml=weekNumsC.length>1?`<select id="cli-changeweek-${c.id}" style="width:auto;font-size:.78rem">${weekNumsC.map(w=>`<option value="${w}"${w===wk?' selected':''}>Semana ${w}</option>`).join('')}</select>${startDateInputHTML(`cli-start-${c.id}`)}
     <button class="btn bg2 xs" onclick="cambiarSemanaCliente('${c.id}')">📅 Cambiar semana</button>`:'';
     return`<div style="padding:8px 0;border-bottom:1px solid var(--bd)">
@@ -6107,7 +6107,7 @@ async function renderProgramaUnificadoHtml(prog,cats,hasSubscription){
     const progressHtml=renderProgressDetailBlock(`${plan.id}-${m.id}`,exerciseLogs,days,notes)||'<div style="font-size:.78rem;color:var(--mu)">Sin registros todavía.</div>';
     const weekNumsG=planWeekNums(plan);
     const mwG=macroWeekInfo(plan,memberWeek);
-    const weekBadgeG=plan.continuo?`<span class="badge bgr2">🔥 ${days.length} días</span>`:weekNumsG.length?`<span class="badge bgr2">Semana ${mwG?mwG.currentWeek:memberWeek} de ${mwG?mwG.totalWeeks:weekNumsG.length}</span>`:'';
+    const weekBadgeG=plan.continuo?`<span class="badge bgr2">🔥 ${days.length} días</span>`:weekNumsG.length?`<span class="badge bgr2">Semana ${mwG?mwG.currentWeek:memberWeek} de ${mwG?mwG.totalWeeks:weekNumsG.length}</span>${planEndBadge(memberWeekView(plan,m).cur,plan.repeatLast)}`:'';
     const weekSelectHtmlG=(!plan.continuo&&weekNumsG.length>1)?`<select id="mw-week-${m.id}" style="width:auto;font-size:.78rem">${weekNumsG.map(w=>`<option value="${w}"${w===m.startWeek?' selected':''}>Semana ${w}</option>`).join('')}</select>${startDateInputHTML(`mw-start-${m.id}`)}
     <button class="btn bg2 xs" onclick="cambiarSemanaMiembro('${plan.id}','${m.id}')">📅 Cambiar semana</button>`:'';
     // El acceso/vencimiento de este alumno se controla en un solo lugar (el
@@ -6205,7 +6205,7 @@ async function renderProgramaUnificadoHtml(prog,cats,hasSubscription){
     <button class="btn bg2 xs" onclick="cambiarSemanaAlumno('${uid}')">📅 Cambiar semana</button>`;
   })():'';
   const mwS=planData?macroWeekInfo(planData,subWeek):null;
-  const weekBadgeS=(planData&&s.categoria!=='global')?(planData.continuo?`<span class="badge bgr2">🔥 ${days.length} días</span>`:`<span class="badge bgr2">Semana ${mwS?mwS.currentWeek:subWeek} de ${mwS?mwS.totalWeeks:planWeekNums(planData).length}</span>`):'';
+  const weekBadgeS=(planData&&s.categoria!=='global')?(planData.continuo?`<span class="badge bgr2">🔥 ${days.length} días</span>`:`<span class="badge bgr2">Semana ${mwS?mwS.currentWeek:subWeek} de ${mwS?mwS.totalWeeks:planWeekNums(planData).length}</span>${planEndBadge(memberWeekView(planData,{startWeek:s.startWeek||1,startDate:s.startDate||''}).cur,planData.repeatLast)}`):'';
   const editarPlanBtn=(s.categoria==='__personal__'&&s.planId)?`<button class="btn bpu xs" onclick="irAEditarPlanPersonal('${s.planId}')">✏️ Editar su plan</button>
     <button class="btn bd2 xs" onclick="borrarPlanSuscriptor('${uid}','${s.planId}')">🗑️ Borrar plan</button>`:'';
   const catTxt=s.categoria==='__personal__'?'🎯 Plan personalizado':(catLabel[s.categoria]||s.categoria||'—');
@@ -7419,6 +7419,11 @@ function getClientCurrentWeekNum(c){
 // Semana en la posición `pos` de la línea de tiempo. Al pasarse de la última:
 // vuelve a la primera (ciclo nuevo) o, con repeatLast, repite la última; cada
 // repetición lleva su propio ciclo para que los registros queden aparte.
+// Aviso para el panel del profe: el alumno ya pasó la última semana cargada.
+function planEndBadge(cur,repeatLast){
+  if(!cur||!cur.cycle)return'';
+  return`<span class="badge" style="background:#fbbf2422;color:var(--yw)">⚠️ Plan terminado · ${repeatLast?`repitiendo semana ${cur.num}`:`volvió a empezar (vuelta ${cur.cycle+1})`}</span>`;
+}
 function weekAtPos(weekNums,pos,repeatLast){
   const n=weekNums.length;
   if(repeatLast&&pos>=n){const cycle=pos-n+1;return{num:weekNums[n-1],cycle,rep:cycle}}
@@ -7632,7 +7637,7 @@ async function renderMembersList(planId){
       return`<div class="member-row">
         <div class="member-av">${m.name.charAt(0).toUpperCase()}</div>
         <div style="flex:1;min-width:0">
-          <div style="font-weight:600;font-size:.86rem">${m.name} ${statusBadge}${(()=>{if(plan.continuo)return'';if(!plan.weeks||!m.startDate)return'';const info=getMemberWeekMesoInfo(plan,m);return` <span class="badge" style="background:var(--ac)22;color:var(--ac2)">🗓️ Sem ${info.currentWeek}/${info.totalWeeks} · Meso ${info.mesoNum}/${info.totalMesos}</span>`;})()}</div>
+          <div style="font-weight:600;font-size:.86rem">${m.name} ${statusBadge}${(()=>{if(plan.continuo)return'';if(!plan.weeks||!m.startDate)return'';const info=getMemberWeekMesoInfo(plan,m);return` <span class="badge" style="background:var(--ac)22;color:var(--ac2)">🗓️ Sem ${info.currentWeek}/${info.totalWeeks} · Meso ${info.mesoNum}/${info.totalMesos}</span> ${planEndBadge(memberWeekView(plan,m).cur,plan.repeatLast)}`;})()}</div>
           <div style="font-size:.72rem;color:var(--mu)">${m.email||''} ${m.expiry?'· Vence: '+new Date(m.expiry+'T00:00:00').toLocaleDateString('es-AR'):''}</div>
           <div style="font-size:.7rem;color:var(--ac2);word-break:break-all;margin-top:2px">${link}</div>
         </div>
