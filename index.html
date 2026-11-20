@@ -734,6 +734,7 @@ setTimeout(()=>{
         <div class="fg"><label>Total de semanas (macrociclo)</label><input id="nc-totalweeks" type="number" value="12" min="1" max="52"></div>
         <div class="fg"><label>Semanas por mesociclo</label><input id="nc-mesoweeks" type="number" value="4" min="1" max="12"></div>
         <div class="fg"><label>Semana actual (manual, opcional)</label><input id="nc-currentweek" type="number" min="1" placeholder="Ej: 3"></div>
+        <div class="fg"><label>Al terminar la última semana</label><select id="nc-endmode"><option value="loop">Volver a la semana 1</option><option value="repeat">Repetir la última semana</option></select></div>
       </div></div>
     </div>
     <div class="card" style="margin-bottom:10px;padding:14px 16px">
@@ -797,6 +798,7 @@ setTimeout(()=>{
         <div class="fg"><label>Total de semanas (macrociclo)</label><input id="ec-totalweeks" type="number" value="12"></div>
         <div class="fg"><label>Semanas por mesociclo</label><input id="ec-mesoweeks" type="number" value="4"></div>
         <div class="fg"><label>Semana actual (manual)</label><input id="ec-currentweek" type="number" min="1" placeholder="Ej: 3"></div>
+        <div class="fg"><label>Al terminar la última semana</label><select id="ec-endmode"><option value="loop">Volver a la semana 1</option><option value="repeat">Repetir la última semana</option></select></div>
       </div></div>
     </div>
     <div class="card" id="ec-seg-card">
@@ -1057,6 +1059,7 @@ setTimeout(()=>{
         <div class="fg"><label>Categoría</label><input id="np-cat" placeholder="Ej: Glúteos, Postural, Cardio..."></div>
         <div class="fg"><label>Total de semanas (macrociclo)</label><input id="np-totalweeks" type="number" value="12" min="1" max="52"></div>
         <div class="fg"><label>Semanas por mesociclo</label><input id="np-mesoweeks" type="number" value="4" min="1" max="12"></div>
+        <div class="fg"><label>Al terminar la última semana</label><select id="np-endmode"><option value="loop">Volver a la semana 1</option><option value="repeat">Repetir la última semana</option></select></div>
         <div class="fg full"><label>Cantidad de días de entrenamiento</label><input id="np-days" type="number" value="3" min="1" max="14"></div>
         <div class="fg full"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="np-private" style="width:auto"> 🔒 Plan privado (solo alumnos con suscripción activa, no accesible por link público)</label></div>
         <div class="fg full"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="np-continuo" style="width:auto"> 🔥 Desafío continuo (mostrar todos los días seguidos al alumno, sin separar por semanas)</label></div>
@@ -1114,6 +1117,7 @@ setTimeout(()=>{
         <div class="fg"><label>Categoría</label><input id="ep-cat"></div>
         <div class="fg"><label>Total de semanas (macrociclo)</label><input id="ep-totalweeks" type="number" min="1" max="52"></div>
         <div class="fg"><label>Semanas por mesociclo</label><input id="ep-mesoweeks" type="number" min="1" max="12"></div>
+        <div class="fg"><label>Al terminar la última semana</label><select id="ep-endmode"><option value="loop">Volver a la semana 1</option><option value="repeat">Repetir la última semana</option></select></div>
         <div class="fg full"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="ep-private" style="width:auto"> 🔒 Plan privado (solo alumnos con suscripción activa, no accesible por link público)</label></div>
         <div class="fg full"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="ep-continuo" style="width:auto"> 🔥 Desafío continuo (mostrar todos los días seguidos al alumno, sin separar por semanas)</label></div>
         <input type="hidden" id="ep-days">
@@ -2758,6 +2762,7 @@ window.showPanel=showPanel;
 function initNewClient(){
   ['nc-name','nc-age','nc-weight','nc-goal','nc-notes','nc-rname'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});
   document.getElementById('nc-days').value=4;
+  document.getElementById('nc-endmode').value='loop';
   ncWeeklyData={1:[]};
   ncCurrentWeek=1;
   ncSavedId=null;
@@ -4189,7 +4194,7 @@ async function saveClient(opts={}){
   // Save current week's days into weeklyData before building client
   ncWeeklyData[ncCurrentWeek]=collectDays('days-container',count);
   const client={id,name,age:document.getElementById('nc-age').value,weight:document.getElementById('nc-weight').value,level:document.getElementById('nc-level').value,goal:document.getElementById('nc-goal').value,routineName:document.getElementById('nc-rname').value||'PROGRAMA',notes:document.getElementById('nc-notes').value,email:document.getElementById('nc-email').value.trim(),whatsapp:document.getElementById('nc-whatsapp').value.trim(),
-    mpLink:document.getElementById('nc-mp').value.trim(),payStatus:document.getElementById('nc-paid').value,expiry:document.getElementById('nc-expiry').value||'',startDate:(document.getElementById('nc-startdate')||{}).value||'',totalWeeks:parseInt((document.getElementById('nc-totalweeks')||{}).value)||12,mesoWeeks:parseInt((document.getElementById('nc-mesoweeks')||{}).value)||4,currentWeekManual:parseInt((document.getElementById('nc-currentweek')||{}).value)||null,
+    mpLink:document.getElementById('nc-mp').value.trim(),payStatus:document.getElementById('nc-paid').value,expiry:document.getElementById('nc-expiry').value||'',startDate:(document.getElementById('nc-startdate')||{}).value||'',totalWeeks:parseInt((document.getElementById('nc-totalweeks')||{}).value)||12,mesoWeeks:parseInt((document.getElementById('nc-mesoweeks')||{}).value)||4,currentWeekManual:parseInt((document.getElementById('nc-currentweek')||{}).value)||null,repeatLast:document.getElementById('nc-endmode').value==='repeat',
     weeks:ncWeeklyData,activeWeek:ncCurrentWeek,
     days:ncWeeklyData[ncCurrentWeek],progress:{},createdAt:new Date().toLocaleDateString('es-AR')};
   try{
@@ -4236,6 +4241,7 @@ async function updateClient(opts={}){
   c.totalWeeks=parseInt((document.getElementById('ec-totalweeks')||{}).value)||c.totalWeeks||12;
   c.mesoWeeks=parseInt((document.getElementById('ec-mesoweeks')||{}).value)||c.mesoWeeks||4;
   c.currentWeekManual=parseInt((document.getElementById('ec-currentweek')||{}).value)||null;
+  c.repeatLast=document.getElementById('ec-endmode').value==='repeat';
   const ecCount=parseInt(document.getElementById('ec-days').value)||4;
   ecWeeklyData[ecCurrentWeek]=collectDays('edit-days-container',ecCount);
   c.weeks=ecWeeklyData;
@@ -4310,6 +4316,7 @@ function openEdit(id){
   document.getElementById('ec-mp').value=c.mpLink||'';
   document.getElementById('ec-paid').value=c.payStatus||'free';
   document.getElementById('ec-expiry').value=c.expiry||'';
+  document.getElementById('ec-endmode').value=c.repeatLast?'repeat':'loop';
   // Setup weekly routine data - migrate old single-week clients automatically
   if(c.weeks&&Object.keys(c.weeks).length){
     ecWeeklyData=JSON.parse(JSON.stringify(c.weeks));
@@ -6829,6 +6836,7 @@ function initNewPlan(){
   document.getElementById('np-duration').value=30;
   document.getElementById('np-totalweeks').value=12;
   document.getElementById('np-mesoweeks').value=4;
+  document.getElementById('np-endmode').value='loop';
   document.getElementById('np-days').value=3;
   npWeeklyData={1:[]};
   npCurrentWeek=1;
@@ -6856,6 +6864,7 @@ async function savePlan(){
     cat:document.getElementById('np-cat').value,
     totalWeeks:parseInt(document.getElementById('np-totalweeks').value)||12,
     mesoWeeks:parseInt(document.getElementById('np-mesoweeks').value)||4,
+    repeatLast:document.getElementById('np-endmode').value==='repeat',
     weeks:npWeeklyData,activeWeek:npCurrentWeek,
     days:npWeeklyData[npCurrentWeek],
     members:[],
@@ -6886,6 +6895,7 @@ async function updatePlan(opts={}){
   plan.mesoWeeks=parseInt(document.getElementById('ep-mesoweeks').value)||4;
   plan.public=!document.getElementById('ep-private').checked;
   plan.continuo=document.getElementById('ep-continuo').checked;
+  plan.repeatLast=document.getElementById('ep-endmode').value==='repeat';
   const blocks=[...document.getElementById('ep-days-container').querySelectorAll('.day-block')];
   epWeeklyData[epCurrentWeek]=blocks.map(db2=>({
     name:db2.querySelector('.day-name-input').value,
@@ -7072,6 +7082,7 @@ function openEditPlan(id){
   document.getElementById('ep-mesoweeks').value=plan.mesoWeeks||4;
   document.getElementById('ep-private').checked=plan.public===false;
   document.getElementById('ep-continuo').checked=!!plan.continuo;
+  document.getElementById('ep-endmode').value=plan.repeatLast?'repeat':'loop';
   // Migrar planes viejos de una sola semana (plan.days) a plan.weeks
   epWeeklyData=plan.weeks&&Object.keys(plan.weeks).length?JSON.parse(JSON.stringify(plan.weeks)):{1:plan.days||[]};
   epCurrentWeek=plan.activeWeek&&epWeeklyData[plan.activeWeek]?plan.activeWeek:Object.keys(epWeeklyData).map(Number)[0]||1;
@@ -7138,6 +7149,7 @@ window.aplicarBaseEnEdicion=async function(sourcePlanId){
   epCurrentWeek=src.activeWeek&&epWeeklyData[src.activeWeek]?src.activeWeek:Object.keys(epWeeklyData).map(Number)[0]||1;
   document.getElementById('ep-totalweeks').value=src.totalWeeks||12;
   document.getElementById('ep-mesoweeks').value=src.mesoWeeks||4;
+  document.getElementById('ep-endmode').value=src.repeatLast?'repeat':'loop';
   setupWeekSelector('ep');
   const weekDays=epWeeklyData[epCurrentWeek]||[];
   document.getElementById('ep-days').value=weekDays.length||4;
@@ -7219,6 +7231,7 @@ window.confirmUseAsBase=async function(){
     personalPlan.weeks=JSON.parse(JSON.stringify(plan.weeks||{}));
     personalPlan.totalWeeks=plan.totalWeeks||12;
     personalPlan.mesoWeeks=plan.mesoWeeks||4;
+    personalPlan.repeatLast=!!plan.repeatLast;
     personalPlan.activeWeek=plan.activeWeek||1;
     personalPlan.days=JSON.parse(JSON.stringify(plan.days||plan.weeks?.[String(plan.activeWeek||1)]||[]));
     await setDoc(doc(db,'planes',targetPlanId),personalPlan);
@@ -7233,7 +7246,7 @@ window.confirmUseAsBase=async function(){
     const email=document.getElementById('ub-new-email').value.trim();
     clientId='c'+Date.now();
     const newClient={id:clientId,name,age:'',weight:'',level:plan.level||'',goal:'',routineName:plan.name,notes:'',email,whatsapp:'',
-      mpLink:'',payStatus:'pending',expiry:'',startDate:'',totalWeeks:plan.totalWeeks||12,mesoWeeks:plan.mesoWeeks||4,currentWeekManual:null,
+      mpLink:'',payStatus:'pending',expiry:'',startDate:'',totalWeeks:plan.totalWeeks||12,mesoWeeks:plan.mesoWeeks||4,currentWeekManual:null,repeatLast:!!plan.repeatLast,
       weeks:JSON.parse(JSON.stringify(plan.weeks||{})),activeWeek:plan.activeWeek||1,
       days:JSON.parse(JSON.stringify(plan.days||plan.weeks?.[String(plan.activeWeek||1)]||[])),progress:{},createdAt:new Date().toLocaleDateString('es-AR')};
     await setDoc(doc(db,'clients',clientId),newClient);
@@ -7244,6 +7257,7 @@ window.confirmUseAsBase=async function(){
     c.weeks=JSON.parse(JSON.stringify(plan.weeks||{}));
     c.totalWeeks=plan.totalWeeks||12;
     c.mesoWeeks=plan.mesoWeeks||4;
+    c.repeatLast=!!plan.repeatLast;
     c.activeWeek=plan.activeWeek||1;
     c.days=JSON.parse(JSON.stringify(plan.days||plan.weeks?.[String(plan.activeWeek||1)]||[]));
     if(!c.routineName)c.routineName=plan.name;
@@ -7390,7 +7404,7 @@ function getMemberCurrentWeekNum(plan,member){
   if(plan.continuo)return weekNums.includes(member?.startWeek)?member.startWeek:weekNums[0];
   const startIdx=weekNums.includes(member?.startWeek)?weekNums.indexOf(member.startWeek):0;
   const elapsedWeeks=sundayAlignedElapsedWeeks(member?.startDate);
-  return weekNums[(startIdx+elapsedWeeks)%weekNums.length];
+  return weekAtPos(weekNums,startIdx+elapsedWeeks,plan.repeatLast).num;
 }
 
 // Semana activa de un cliente individual según fecha de inicio, alineada a domingo, con loop si se pasa de la última semana cargada
@@ -7400,14 +7414,22 @@ function getClientCurrentWeekNum(c){
   if(!c.startDate)return weekNums.includes(c.activeWeek)?c.activeWeek:weekNums[0];
   const startIdx=weekNums.includes(c.activeWeek)?weekNums.indexOf(c.activeWeek):0;
   const elapsedWeeks=sundayAlignedElapsedWeeks(c.startDate);
-  return weekNums[(startIdx+elapsedWeeks)%weekNums.length];
+  return weekAtPos(weekNums,startIdx+elapsedWeeks,c.repeatLast).num;
+}
+// Semana en la posición `pos` de la línea de tiempo. Al pasarse de la última:
+// vuelve a la primera (ciclo nuevo) o, con repeatLast, repite la última; cada
+// repetición lleva su propio ciclo para que los registros queden aparte.
+function weekAtPos(weekNums,pos,repeatLast){
+  const n=weekNums.length;
+  if(repeatLast&&pos>=n){const cycle=pos-n+1;return{num:weekNums[n-1],cycle,rep:cycle}}
+  return{num:weekNums[pos%n],cycle:Math.floor(pos/n)};
 }
 
 // Semanas transcurridas desde el inicio del alumno, de la primera a la actual.
 // `key` va en las claves de progreso (w{key}-día-bloque): el primer ciclo
 // conserva w{n} (datos existentes); al volver al inicio del plan se suma
 // c{ciclo} para no heredar los tildes del ciclo anterior.
-function weekTimeline(weekNums,startWeek,startDate){
+function weekTimeline(weekNums,startWeek,startDate,repeatLast){
   if(!weekNums.length)return[];
   const n=weekNums.length;
   const startIdx=weekNums.includes(startWeek)?weekNums.indexOf(startWeek):0;
@@ -7416,9 +7438,9 @@ function weekTimeline(weekNums,startWeek,startDate){
   if(sunday)sunday.setDate(sunday.getDate()-sunday.getDay());
   const out=[];
   for(let e=0;e<=elapsed;e++){
-    const pos=startIdx+e;const num=weekNums[pos%n];const cycle=Math.floor(pos/n);
+    const{num,cycle,rep}=weekAtPos(weekNums,startIdx+e,repeatLast);
     const from=sunday?new Date(sunday.getFullYear(),sunday.getMonth(),sunday.getDate()+7*e):null;
-    out.push({num,cycle,key:cycle?`${num}c${cycle}`:String(num),from});
+    out.push({num,cycle,rep,key:cycle?`${num}c${cycle}`:String(num),from});
   }
   return out;
 }
@@ -7427,7 +7449,7 @@ function clientWeekTimeline(c){
   const fixed=num=>[{num,cycle:0,key:String(num)}];
   if(!weekNums.length)return fixed(c.activeWeek||1);
   if(!c.startDate)return fixed(weekNums.includes(c.activeWeek)?c.activeWeek:weekNums[0]);
-  return weekTimeline(weekNums,c.activeWeek,c.startDate);
+  return weekTimeline(weekNums,c.activeWeek,c.startDate,c.repeatLast);
 }
 // viewKey: semana elegida en el selector (vacío = la actual). Las pasadas son solo lectura.
 function memberWeekView(plan,member,viewKey){
@@ -7436,7 +7458,7 @@ function memberWeekView(plan,member,viewKey){
     const num=getMemberCurrentWeekNum(plan,member)||1;const w={num,cycle:0,key:String(num)};
     return{timeline:[w],cur:w,view:w,days:getMemberPlanDays(plan,member),readOnly:false};
   }
-  const timeline=withRecordedWeeks(weekTimeline(weekNums,member?.startWeek,member?.startDate),member?.progress,weekNums);
+  const timeline=withRecordedWeeks(weekTimeline(weekNums,member?.startWeek,member?.startDate,plan.repeatLast),member?.progress,weekNums);
   const cur=timeline[timeline.length-1];
   const view=timeline.find(w=>w.key===viewKey)||cur;
   return{timeline,cur,view,days:plan.weeks[view.num]||[],readOnly:view!==cur};
@@ -7466,14 +7488,14 @@ function weekPickerHTML(timeline,viewKey,callPrefix,mesoWeeks,pid){
   const cur=timeline[timeline.length-1];
   const sel=timeline.find(w=>w.key===viewKey)||cur;
   const mw=mesoWeeks||4;
-  const showCycle=timeline.some(w=>w.cycle>0);
+  const showCycle=timeline.some(w=>w.cycle>0&&!w.rep);
   const dm=d=>d.getDate()+'/'+(d.getMonth()+1);
   const end=d=>new Date(d.getFullYear(),d.getMonth(),d.getDate()+6);
   const range=w=>w.from?`${dm(w.from)} – ${dm(end(w.from))}`:'';
-  const name=w=>`Semana ${w.num}${w===cur?' · esta semana':''}`;
+  const name=w=>`Semana ${w.num}${w.rep?` · repetición ${w.rep}`:''}${w===cur?' · esta semana':''}`;
   const groups=[];
   timeline.slice().reverse().forEach(w=>{
-    const meso=Math.ceil(w.num/mw);const id=w.cycle+'-'+meso;
+    const meso=Math.ceil(w.num/mw);const id=(w.rep?0:w.cycle)+'-'+meso;
     let g=groups[groups.length-1];
     if(!g||g.id!==id)groups.push(g={id,label:`${showCycle?`Ciclo ${w.cycle+1} · `:''}Meso ${meso} · semanas ${(meso-1)*mw+1}-${meso*mw}`,weeks:[]});
     g.weeks.push(w);
