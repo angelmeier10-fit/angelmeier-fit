@@ -4485,7 +4485,7 @@ async function renderCV(clientId){
     const isDone=isDayDone(c,activeDays,i,wi.key);
     const badge=i===nextIdx&&!wi.readOnly?`<span style="font-size:.68rem;padding:2px 8px;border-radius:20px;font-weight:600;background:var(--ac)33;color:var(--ac2)">Siguiente</span>`:isDone?`<span style="font-size:.68rem;padding:2px 8px;border-radius:20px;font-weight:600;background:var(--gr)22;color:var(--gr)">✓</span>`:'';
     return`<div class="cv-day-item${i===nextIdx?' active':''}" id="cv-ditem-${clientId}-${i}" onclick="selectCVDay('${clientId}',${i})">
-      <span class="cv-day-item-name">${d.name||'Día '+(i+1)}</span>${badge}
+      <span class="cv-day-item-name">${d.name||'Día '+(i+1)}</span>${dayTimeBadge(c.progress,wi.key,i,badge)}
     </div>`;
   }).join('');
   document.getElementById('cv-content').innerHTML=`
@@ -7422,8 +7422,11 @@ function getClientCurrentWeekNum(c){
 // Aviso para el panel del profe: el alumno ya pasó la última semana cargada.
 function planEndBadge(cur,repeatLast){
   if(!cur||!cur.cycle)return'';
-  return`<span class="badge" style="background:#fbbf2422;color:var(--yw)">⚠️ Plan terminado · ${repeatLast?`repitiendo semana ${cur.num}`:`volvió a empezar (vuelta ${cur.cycle+1})`}</span>`;
+  return`<span class="badge" style="background:#fbbf2422;color:var(--yw)">⚠️ Plan terminado · ${repeatLast?`va por la semana ${weekDisp(cur)} (repite la ${cur.num}) · cargá la ${weekDisp(cur)}`:`volvió a empezar (vuelta ${cur.cycle+1})`}</span>`;
 }
+// Número que ve el alumno: las repeticiones de la última semana siguen la
+// numeración (12 → 13, 14...) para que no se note que es la misma.
+function weekDisp(w){return w.num+(w.rep||0)}
 function weekAtPos(weekNums,pos,repeatLast){
   const n=weekNums.length;
   if(repeatLast&&pos>=n){const cycle=pos-n+1;return{num:weekNums[n-1],cycle,rep:cycle}}
@@ -7497,10 +7500,10 @@ function weekPickerHTML(timeline,viewKey,callPrefix,mesoWeeks,pid){
   const dm=d=>d.getDate()+'/'+(d.getMonth()+1);
   const end=d=>new Date(d.getFullYear(),d.getMonth(),d.getDate()+6);
   const range=w=>w.from?`${dm(w.from)} – ${dm(end(w.from))}`:'';
-  const name=w=>`Semana ${w.num}${w.rep?` · repetición ${w.rep}`:''}${w===cur?' · esta semana':''}`;
+  const name=w=>`Semana ${weekDisp(w)}${w===cur?' · esta semana':''}`;
   const groups=[];
   timeline.slice().reverse().forEach(w=>{
-    const meso=Math.ceil(w.num/mw);const id=(w.rep?0:w.cycle)+'-'+meso;
+    const meso=Math.ceil(weekDisp(w)/mw);const id=(w.rep?0:w.cycle)+'-'+meso;
     let g=groups[groups.length-1];
     if(!g||g.id!==id)groups.push(g={id,label:`${showCycle?`Ciclo ${w.cycle+1} · `:''}Meso ${meso} · semanas ${(meso-1)*mw+1}-${meso*mw}`,weeks:[]});
     g.weeks.push(w);
@@ -7531,7 +7534,7 @@ window.toggleWkGroup=function(btn){
 };
 function pastWeekBannerHTML(w,callPrefix){
   return`<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;background:var(--s2);border:1px dashed var(--bd);border-radius:var(--ra);padding:10px 14px;margin-bottom:12px;font-size:.8rem;color:var(--mu)">
-    <span>👀 Semana ${w.num}${w.cycle?` (ciclo ${w.cycle+1})`:''} — solo lectura</span>
+    <span>👀 Semana ${weekDisp(w)}${w.cycle&&!w.rep?` (ciclo ${w.cycle+1})`:''} — solo lectura</span>
     <button type="button" class="btn bg2 sm" onclick="${callPrefix}'')">Volver a esta semana</button></div>`;
 }
 // Deja ver videos y desplegar bloques, pero no tildar ni registrar nada.
@@ -7575,7 +7578,7 @@ function prevSessionRowHtml(l){
 
 // Info de semana/mesociclo actual del alumno, respetando su semana de inicio (no siempre arranca en la 1)
 function getMemberWeekMesoInfo(plan,member){
-  const weekNum=getMemberCurrentWeekNum(plan,member)||1;
+  const weekNum=plan.continuo?(getMemberCurrentWeekNum(plan,member)||1):weekDisp(memberWeekView(plan,member).cur);
   const inMacro=macroWeekInfo(plan,weekNum);
   if(inMacro)return inMacro;
   const mesoWeeks=plan.mesoWeeks||4;
@@ -8049,7 +8052,7 @@ function renderGroupCV(plan,member,mode='client'){
     const isDone=isDayDone(fakeC,days,i,memberWeek);
     const badge=i===nextIdx&&!wv.readOnly?`<span style="font-size:.68rem;padding:2px 8px;border-radius:20px;font-weight:600;background:var(--ac)33;color:var(--ac2)">Siguiente</span>`:isDone?`<span style="font-size:.68rem;padding:2px 8px;border-radius:20px;font-weight:600;background:var(--gr)22;color:var(--gr)">✓</span>`:'';
     return`<div class="cv-day-item${i===nextIdx?' active':''}" id="gv-ditem-${gkey}-${i}" onclick="selectGroupCVDay('${plan.id}','${member.id}',${i})">
-      <span class="cv-day-item-name">${d.name||'Día '+(i+1)}</span>${badge}
+      <span class="cv-day-item-name">${d.name||'Día '+(i+1)}</span>${dayTimeBadge(fakeC.progress,memberWeek,i,badge)}
     </div>`;
   }).join('');
   document.getElementById(mode==='alumno'?'alumno-cv-content':'cv-content').innerHTML=`
@@ -8531,7 +8534,7 @@ function renderAlumnoCV(plan,member,uid){
     const isDone=isDayDone(fakeC,days,i,memberWeek);
     const badge=i===nextIdx&&!wv.readOnly?`<span style="font-size:.68rem;padding:2px 8px;border-radius:20px;font-weight:600;background:var(--ac)33;color:var(--ac2)">Siguiente</span>`:isDone?`<span style="font-size:.68rem;padding:2px 8px;border-radius:20px;font-weight:600;background:var(--gr)22;color:var(--gr)">✓</span>`:'';
     return`<div class="cv-day-item${i===nextIdx?' active':''}" id="av-ditem-${akey}-${i}" onclick="selectAlumnoCVDay(${i})">
-      <span class="cv-day-item-name">${d.name||'Día '+(i+1)}</span>${badge}
+      <span class="cv-day-item-name">${d.name||'Día '+(i+1)}</span>${dayTimeBadge(fakeC.progress,memberWeek,i,badge)}
     </div>`;
   }).join('');
   document.getElementById('alumno-cv-content').innerHTML=`
@@ -8865,6 +8868,13 @@ window.woClkToggle=function(){
   if(c.startAt)woClkStop();else c.startAt=Date.now();
   woClkPaint();
 };
+// Tiempo total entrenado ese día (suma de sesiones guardadas), junto al badge de estado.
+function dayTimeBadge(progress,week,dIdx,badge){
+  const secs=(progress?.[`wotime-w${week}-${dIdx}`]||[]).reduce((a,e)=>a+(e?.secs||0),0);
+  if(secs<60)return badge;
+  const txt=secs<3600?Math.round(secs/60)+' min':Math.floor(secs/3600)+' h '+Math.round(secs%3600/60)+' min';
+  return`<span style="display:flex;gap:6px;align-items:center"><span style="font-size:.68rem;padding:2px 8px;border-radius:20px;font-weight:600;background:var(--s2);color:var(--mu)">⏱ ${txt}</span>${badge}</span>`;
+}
 // Guarda el tiempo en progress (wotime-w{semana}-{día}), una entrada por sesión:
 // cada guardado de la misma sesión (mismo id) pisa la suya; una sesión nueva suma otra.
 async function woSaveTime(){
