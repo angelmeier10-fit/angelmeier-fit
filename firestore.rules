@@ -26,6 +26,12 @@ service cloud.firestore {
             || planId in get(/databases/$(database)/documents/subscribers/$(request.auth.uid)).data.get('extraPlanIds', []));
     }
 
+    // Con get(): leer un campo que no existe en el doc es un error y deniega
+    // la escritura (alumnos migrados o del desafío no tienen lastPaymentId).
+    function unchanged(f) {
+      return request.resource.data.get(f, null) == resource.data.get(f, null);
+    }
+
     function extraPlanIdsUnchanged() {
       return request.resource.data.get('extraPlanIds', []) == resource.data.get('extraPlanIds', []);
     }
@@ -134,10 +140,10 @@ service cloud.firestore {
       allow update: if isAdmin()
         || (isOwner(uid)
             && request.resource.data.status == resource.data.status
-            && request.resource.data.expiry == resource.data.expiry
-            && request.resource.data.lastPaymentId == resource.data.lastPaymentId
-            && request.resource.data.categoria == resource.data.categoria
-            && request.resource.data.planId == resource.data.planId
+            && unchanged('expiry')
+            && unchanged('lastPaymentId')
+            && unchanged('categoria')
+            && unchanged('planId')
             && extraPlanIdsUnchanged())
         // Renovación del Desafío Glúteos: el propio dueño puede actualizar
         // su "expiry" mientras la categoría siga siendo la del desafío antes
@@ -147,8 +153,8 @@ service cloud.firestore {
             && resource.data.categoria == 'desafio-gluteos-21'
             && request.resource.data.categoria == 'desafio-gluteos-21'
             && request.resource.data.status == 'active'
-            && request.resource.data.planId == resource.data.planId
-            && request.resource.data.lastPaymentId == resource.data.get('lastPaymentId', null)
+            && unchanged('planId')
+            && unchanged('lastPaymentId')
             && extraPlanIdsUnchanged())
         // Reingreso: alumna existente sin "categoria" (plan vencido y
         // reseteado por el admin/webhook) puede elegir una categoría nueva
@@ -157,8 +163,8 @@ service cloud.firestore {
         || (isOwner(uid)
             && resource.data.get('categoria', null) == null
             && request.resource.data.status == 'pending'
-            && request.resource.data.expiry == resource.data.get('expiry', null)
-            && request.resource.data.lastPaymentId == resource.data.get('lastPaymentId', null)
+            && unchanged('expiry')
+            && unchanged('lastPaymentId')
             && extraPlanIdsUnchanged());
       allow delete: if isAdmin();
     }
