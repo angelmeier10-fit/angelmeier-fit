@@ -3595,13 +3595,21 @@ function showDd(input,ddId){
 }
 function vidBadgeHtml(video){return`<span class="ex-vid-badge" data-has="${video?'1':'0'}" style="display:${video?'block':'none'}" onmousedown="event.preventDefault();event.stopPropagation();window.open('${video}','_blank')" title="Ver video">🎬</span>`}
 function exEditBtnHtml(){return`<button type="button" class="ex-edit-btn" title="Editar este ejercicio en la biblioteca" onmousedown="event.preventDefault()" onclick="event.stopPropagation();openEditExFromPlan(this)" style="background:none;border:none;color:var(--mu);cursor:pointer;font-size:.85rem;padding:2px 4px;flex-shrink:0" aria-label="Editar este ejercicio en la biblioteca">✏️</button>`}
-window.openEditExFromPlan=function(btn){
+window.openEditExFromPlan=async function(btn){
   const wrap=btn.closest('.ex-wrap');
   const input=wrap.querySelector('.ex-search');
-  const name=(input.dataset.name||input.value).trim();
+  const name=(input.value||input.dataset.name||'').trim();
   if(!name){toast('⚠️ Elegí un ejercicio primero');return}
-  const ex=exDB.find(e=>norm(e.name).trim()===norm(name).trim());
-  if(!ex){toast('⚠️ Ese ejercicio todavía no está en la biblioteca — agregalo primero');return}
+  const key=s=>norm(s).replace(/\s+/g,' ').trim();
+  const findEx=()=>exDB.find(e=>key(e.name)===key(name));
+  let ex=findEx();
+  if(!ex){
+    // exDB se carga una sola vez al iniciar (y puede venir del caché): si el ejercicio
+    // se agregó desde otro dispositivo, todavía no está acá.
+    const snap=await leerDelServidor(()=>getDocsFromServer(collection(db,'exercises')));
+    if(snap){exDB=snap.docs.map(d=>d.data());renderExDB();populateCatFilter();ex=findEx();}
+  }
+  if(!ex){input.value=name;openAddExFromPlan(input,wrap.querySelector('.ex-dd')?.id);return}
   openEditEx(ex.id);
   pendingExTarget={input,ddId:null};
 };
