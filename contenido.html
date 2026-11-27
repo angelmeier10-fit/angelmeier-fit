@@ -299,6 +299,7 @@
     <li><a href="#patio" data-tab="patio">Proyecto patio</a></li>
     <li><a href="#comunidad" data-tab="comunidad">Comunidad WhatsApp</a></li>
     <li><a href="#cupo" data-tab="cupo">Cupo (agenda)</a></li>
+    <li><a href="#mensajes-ig" data-tab="mensajes-ig">Mensajes Instagram</a></li>
   </ul>
 </nav>
 
@@ -788,6 +789,13 @@
     </div>
   </section>
 
+  <section id="mensajes-ig">
+    <h2>Mensajes Instagram</h2>
+    <p class="lede">Respuestas automáticas de Instagram y Messenger. Se editan en business.facebook.com → Mensajes → Automatizaciones (no se cambian desde acá). Máximo 500 caracteres por mensaje y 5 palabras clave por automatización; las palabras se activan si el mensaje las <strong>contiene</strong>.</p>
+    <div class="stack" id="mensajes-ig-list" style="margin-top:20px"></div>
+    <button type="button" class="copy-btn" id="mensajes-ig-add-btn" style="margin-top:12px">+ Agregar texto</button>
+  </section>
+
 </main>
 
 <footer id="app-footer" style="display:none">Angel Meier — panel privado de contenido.</footer>
@@ -862,6 +870,53 @@ function startPanel(){
   let links = [];
   let comunidad = [];
   let cupoMensajes = [];
+  let mensajesIg = [];
+  const MSG_PLAN = `💪 Entrenamiento online con app, videos y seguimiento:
+• Programa General: $18.000/mes
+• Personalizado: $35.000/mes
+• Club +50: $30.000/mes
+7 días de garantía 🛡️
+
+📝 Completá esta ficha y te armo el plan 👉 https://angelmeier-fit.web.app/anamnesis_digital.html
+
+Ver planes 👉 https://angelmeier-fit.web.app/landing-fuerza.html
+🌿 ¿Tenés más de 50? 👉 https://angelmeier-fit.web.app/landing.html
+
+Si el link no se abre, respondeme cualquier cosa o dale ❤️ a este mensaje y se activa.`;
+  const MSG_MASAJES = `💆 Valores por sesión:
+• Medio torso (40 min): $30.000
+• Medio torso + ventosas (40 min): $40.000
+• Cuerpo completo (60 min): $40.000
+• Cuerpo completo + ventosas (60 min): $50.000
+
+Reservá tu turno acá 👉 https://angelmeier10-fit.github.io/mano-a-mano-turnos/mano-a-mano-reservas/
+
+Si el link no se abre, respondeme cualquier cosa o dale ❤️ a este mensaje y se activa.`;
+  const SEED_MENSAJES_IG = [
+    { id: 'ig-bienv', title: 'Bienvenida (Auto reply — primer mensaje)', text: `¡Hola! 👋 ¿Qué te interesa?
+
+💆 Escribí MASAJES → precios y turnos
+💪 Escribí ENTRENAR → planes online
+
+O contame qué buscás y te respondo yo 💜` },
+    { id: 'ig-masajes', title: 'Masajes precios — palabras: MASAJE, Masaje, masaje, precio, valor', text: MSG_MASAJES },
+    { id: 'ig-turno', title: 'Turnos de masaje — palabras: TURNO, Turno, turno, TURNOS, turnos', text: MSG_MASAJES },
+    { id: 'ig-plan', title: 'Plan de entrenamiento — palabras: PLAN, Plan, plan, ENTRENAR, entrenar', text: MSG_PLAN },
+    { id: 'ig-faq', title: 'Preguntas frecuentes (Instagram máx. 4, Messenger 5)', text: `Instagram:
+1. 📥 Quiero la guía gratis +50
+2. 🏋️ Quiero la guía para empezar a entrenar
+3. 💪 Info del entrenamiento online → mismo texto que PLAN
+4. 💆 Turno de masajes → precios + link de reservas
+
+Messenger: las mismas 4 + 🍑 Quiero la guía de glúteos.
+
+Respuesta "guía para empezar a entrenar":
+¡Acá la tenés! 👉 https://angelmeier-fit.web.app/guia-empezar.pdf
+
+Si querés un plan con progresión semana a semana, mirá acá: https://angelmeier-fit.web.app/landing-fuerza.html 💪
+
+Si el link no se abre, respondeme cualquier cosa o dale ❤️ a este mensaje y se activa.` },
+  ];
   let seeded = false;
   const SEED_CUPO_MENSAJES = [
     {
@@ -1840,6 +1895,7 @@ Capturas: carpeta "App masajes/Capturas gift card" (2-pestana-regalar, 3-formula
   function saveLinks(){ setDoc(stateRef, { links }, { merge: true }).catch(()=>{}); }
   function saveComunidad(){ setDoc(stateRef, { comunidad }, { merge: true }).catch(()=>{}); }
   function saveCupoMensajes(){ setDoc(stateRef, { cupoMensajes }, { merge: true }).catch(()=>{}); }
+  function saveMensajesIg(){ setDoc(stateRef, { mensajesIg }, { merge: true }).catch(()=>{}); }
 
   function escapeHtml(s){ return (s||'').replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
 
@@ -2333,6 +2389,10 @@ Quien no respete las reglas podrá ser retirado del grupo.
     containerId: 'cupo-list', addBtnId: 'cupo-add-btn', prefix: 'cupom', newTitle: 'Nuevo mensaje',
     get: () => cupoMensajes, set: v => { cupoMensajes = v; }, save: saveCupoMensajes,
   });
+  const renderMensajesIg = editableList({
+    containerId: 'mensajes-ig-list', addBtnId: 'mensajes-ig-add-btn', prefix: 'msgig', newTitle: 'Nuevo texto',
+    get: () => mensajesIg, set: v => { mensajesIg = v; }, save: saveMensajesIg,
+  });
 
   onSnapshot(stateRef, (snap) => {
     const data = snap.exists() ? snap.data() : {};
@@ -2342,6 +2402,7 @@ Quien no respete las reglas podrá ser retirado del grupo.
     links = data.links || [];
     comunidad = data.comunidad || [];
     cupoMensajes = data.cupoMensajes || [];
+    mensajesIg = data.mensajesIg || [];
     if (!seeded) {
       seeded = true;
       if (!data.topics) {
@@ -2479,6 +2540,10 @@ Quien no respete las reglas podrá ser retirado del grupo.
         cupoMensajes = SEED_CUPO_MENSAJES.map(c => ({ ...c }));
         saveCupoMensajes();
       }
+      if (!data.mensajesIg) {
+        mensajesIg = SEED_MENSAJES_IG.map(c => ({ ...c }));
+        saveMensajesIg();
+      }
     }
     applyAllChecks();
     renderTopics();
@@ -2486,6 +2551,7 @@ Quien no respete las reglas podrá ser retirado del grupo.
     renderLinks();
     renderComunidad();
     renderCupoMensajes();
+    renderMensajesIg();
     updateCounts();
   });
 }
