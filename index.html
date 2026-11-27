@@ -8819,7 +8819,7 @@ window.startWorkout=function(cId,bi){
   const steps=buildWorkoutSteps(ctx.day,ctx.week,ctx.dIdx,cId,ctx.progress,woRefOf);
   if(!steps.length){toast('Este día no tiene ejercicios');return}
   // Volver a empezar el mismo día (o un bloque suelto) mantiene el reloj total.
-  const clk=(wo&&wo.cId===cId&&wo.dIdx===ctx.dIdx&&wo.week===ctx.week)?wo.clk:{acc:0,startAt:Date.now(),id:Date.now()};
+  const clk=(wo&&wo.cId===cId&&wo.dIdx===ctx.dIdx&&wo.week===ctx.week)?wo.clk:(woClkRestore(cId,ctx.week,ctx.dIdx)||{acc:0,startAt:Date.now(),id:Date.now()});
   if(clk.done){clk.done=false;if(!clk.startAt)clk.startAt=Date.now();}
   wo={cId,steps,dIdx:ctx.dIdx,week:ctx.week,containerId:ctx.containerId,pk:ctx.pk,idx:0,waiting:false,clk};
   woClkRun();
@@ -8871,6 +8871,24 @@ function woClkPaint(){
 }
 function woClkRun(){clearInterval(woClkIv);woClkIv=setInterval(woClkPaint,1000);}
 function woClkStop(){const c=wo?.clk;if(c?.startAt){c.acc=woClkSecs();c.startAt=0;}}
+// El reloj vive en memoria: si el celular cierra la app en un descanso, al volver
+// arrancaría de 0. Se guarda en localStorage y "Empezar" lo retoma (mismo día y
+// misma sesión, así woSaveTime pisa la misma entrada en vez de sumar otra).
+const WO_CLK_LS='woClk';
+function woClkPersist(run){
+  if(!wo)return;
+  try{localStorage.setItem(WO_CLK_LS,JSON.stringify({k:`${wo.cId}|${wo.week}|${wo.dIdx}`,date:todayStr(),id:wo.clk.id,acc:woClkSecs(),run:run??!!wo.clk.startAt,at:Date.now()}))}catch(e){}
+}
+function woClkRestore(cId,week,dIdx){
+  try{
+    const s=JSON.parse(localStorage.getItem(WO_CLK_LS)||'null');
+    if(!s||s.k!==`${cId}|${week}|${dIdx}`||s.date!==todayStr())return null;
+    // Si estaba corriendo, cuenta el tiempo con la app cerrada (un descanso), salvo ausencias largas.
+    const gap=Date.now()-s.at;
+    return{acc:s.acc+(s.run&&gap<30*60000?Math.floor(gap/1000):0),startAt:Date.now(),id:s.id};
+  }catch(e){return null}
+}
+window.addEventListener('pagehide',()=>woClkPersist());
 window.woClkToggle=function(){
   const c=wo?.clk;if(!c||c.done)return;
   if(c.startAt)woClkStop();else c.startAt=Date.now();
@@ -8887,6 +8905,7 @@ function dayTimeBadge(progress,week,dIdx,badge){
 // cada guardado de la misma sesión (mismo id) pisa la suya; una sesión nueva suma otra.
 async function woSaveTime(){
   if(!wo)return;
+  woClkPersist();
   const{cId,week,dIdx}=wo;const secs=woClkSecs();
   if(secs<60)return;
   let prog,save;
@@ -8908,6 +8927,7 @@ async function woSaveTime(){
 function woEnd(){
   clearInterval(woClkIv);woClkIv=null;
   if(wo&&!wo.clk.done)woSaveTime();
+  woClkPersist(false);
   wo=null;
   woTmReset();woTm.custom={};
   document.getElementById('wo-ov')?.classList.remove('open');
@@ -8927,6 +8947,8 @@ window.woGo=function(i){
   wo.waiting=false;
   const ni=Math.max(0,Math.min(wo.steps.length,i));
   if(ni!==wo.idx){woTmReset();wo.showVar=false;}
+  // Volver desde la pantalla final a seguir entrenando: el reloj total vuelve a correr.
+  if(ni<wo.steps.length&&wo.clk.done){wo.clk.done=false;wo.clk.startAt=Date.now();}
   wo.idx=ni;
   woRender();
   if(wo.autoRun){
